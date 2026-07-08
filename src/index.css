@@ -1313,9 +1313,11 @@ body {
   overflow-y: auto;
   direction: rtl;
   border-radius: 12px;
-  background: #fff;
-  color: #2c3e50;
+  border: 1px solid hsl(var(--primary) / 0.16);
+  background: linear-gradient(180deg, #fff 0%, hsl(var(--primary) / 0.035) 100%);
+  color: #1f2937;
   font-family: "Rubik", Arial, sans-serif;
+  text-align: right;
 }
 
 .stats-modal-react {
@@ -1326,7 +1328,7 @@ body {
 .legacy-modal-content h2,
 .legacy-modal-content h3,
 .legacy-modal-content h4 {
-  color: #2c3e50;
+  color: hsl(var(--primary));
   text-align: center;
   font-weight: 700;
 }

@@ -29,4 +29,11 @@ describe("checkWerkzeugPasswordHash", () => {
       )
     ).resolves.toBe(false);
   });
+
+  it("rejects malformed hashes", async () => {
+    await expect(checkWerkzeugPasswordHash("not-a-werkzeug-hash", "Secret123!")).resolves.toBe(false);
+    await expect(checkWerkzeugPasswordHash("pbkdf2:sha1:1000$salt$abcdef", "Secret123!")).resolves.toBe(false);
+    await expect(checkWerkzeugPasswordHash("pbkdf2:sha256:0$salt$abcdef", "Secret123!")).resolves.toBe(false);
+    await expect(checkWerkzeugPasswordHash("pbkdf2:sha256:1000$salt$not-hex", "Secret123!")).resolves.toBe(false);
+  });
 });
