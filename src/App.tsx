@@ -48,7 +48,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/privacy" element={<Privacy />} />
@@ -59,7 +59,8 @@ function App() {
               {/* Protected Routes inside AppLayout */}
               <Route element={<PrivateRoute />}>
                 <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Navigate to="/" replace />} />
                   <Route path="/coupons" element={<CouponsList />} />
                   <Route path="/statistics" element={<Statistics />} />
                   <Route path="/sharing" element={<SharingPage />} />

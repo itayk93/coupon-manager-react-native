@@ -19,10 +19,10 @@ export default function NotFound() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button asChild size="lg">
-            <Link href="/">חזרה לדף הבית</Link>
+            <Link to="/">חזרה לדף הבית</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/coupons">לקופונים שלי</Link>
+            <Link to="/coupons">לקופונים שלי</Link>
           </Button>
         </div>
       </motion.div>

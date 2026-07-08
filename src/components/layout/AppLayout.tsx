@@ -20,7 +20,7 @@ export function AppLayout() {
   const { isAdmin, signOut } = useAuth();
 
   const navigation = [
-    { name: 'דשבורד', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'דשבורד', href: '/', icon: LayoutDashboard },
     { name: 'קופונים', href: '/coupons', icon: Tags },
     { name: 'סטטיסטיקות', href: '/statistics', icon: BarChart3 },
     { name: 'שיתופים', href: '/sharing', icon: Share2 },

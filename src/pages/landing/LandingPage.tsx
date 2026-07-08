@@ -6,13 +6,13 @@ export default function LandingPage() {
   const { user, isLoading } = useAuth();
 
   if (!isLoading && user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
     <div className="landing-page">
       <header className="landing-topbar">
-        <Link to="/" className="landing-brand">Coupon Master</Link>
+        <Link to="/landing" className="landing-brand">Coupon Master</Link>
         <nav>
           <Link to="/about">אודות</Link>
           <Link to="/login">התחברות</Link>
