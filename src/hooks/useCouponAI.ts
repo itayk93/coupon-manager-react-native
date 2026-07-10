@@ -14,8 +14,8 @@ export type ParsedCoupon = {
   card_exp: string | null;
 };
 
-// Calls the `parse-coupon` Supabase Edge Function which uses an LLM (Claude) to
-// extract structured coupon fields from free text or an uploaded image.
+// Calls the `parse-coupon` Supabase Edge Function which uses an LLM (OpenAI
+// gpt-4o-mini) to extract structured coupon fields from free text or an image.
 export function useParseCoupon() {
   const { user } = useAuth();
 

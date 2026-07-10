@@ -17,8 +17,8 @@ supabase db push
 
 ## 2. סודות (Secrets)
 ```bash
-# פענוח AI (חובה לפיצ'ר ה-AI)
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+# פענוח AI (חובה לפיצ'ר ה-AI) — OpenAI gpt-4o-mini
+supabase secrets set OPENAI_API_KEY=sk-...
 
 # דוא"ל (חובה למערכת הדוא"ל) — Resend
 supabase secrets set RESEND_API_KEY=re_...
