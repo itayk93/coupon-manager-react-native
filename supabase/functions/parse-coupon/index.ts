@@ -1,10 +1,10 @@
 // Supabase Edge Function: parse-coupon
-// Uses the Claude API (Anthropic) to extract structured coupon fields from free
+// Uses the OpenAI API (gpt-4o-mini) to extract structured coupon fields from free
 // text or an uploaded image, and logs token usage to the gpt_usage table.
 //
 // Env vars required (set with `supabase secrets set`):
-//   ANTHROPIC_API_KEY   - Claude API key
-//   SUPABASE_URL        - injected automatically
+//   OPENAI_API_KEY            - OpenAI API key
+//   SUPABASE_URL              - injected automatically
 //   SUPABASE_SERVICE_ROLE_KEY - injected automatically
 //
 // Deploy: supabase functions deploy parse-coupon
@@ -12,8 +12,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-opus-4-8';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const MODEL = 'gpt-4o-mini';
 
 const COUPON_SCHEMA = {
   type: 'object',
@@ -48,51 +48,56 @@ Deno.serve(async (req: Request) => {
     const { text, imageBase64, user_id } = await req.json();
     if (!text && !imageBase64) return jsonResponse({ error: 'צריך טקסט או תמונה' }, 400);
 
-    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-    if (!apiKey) return jsonResponse({ error: 'ANTHROPIC_API_KEY לא מוגדר' }, 500);
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) return jsonResponse({ error: 'OPENAI_API_KEY לא מוגדר' }, 500);
 
-    const content: unknown[] = [];
+    const content: unknown[] = [
+      {
+        type: 'text',
+        text: text
+          ? `חלץ את פרטי הקופון מהטקסט הבא:\n\n${text}`
+          : 'חלץ את פרטי הקופון מהתמונה המצורפת.',
+      },
+    ];
     if (imageBase64) {
       content.push({
-        type: 'image',
-        source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 },
+        type: 'image_url',
+        image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
       });
     }
-    content.push({
-      type: 'text',
-      text: text
-        ? `חלץ את פרטי הקופון מהטקסט הבא:\n\n${text}`
-        : 'חלץ את פרטי הקופון מהתמונה המצורפת.',
-    });
 
-    const anthropicResp = await fetch(ANTHROPIC_API_URL, {
+    const openaiResp = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${apiKey}`,
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        output_config: { format: { type: 'json_schema', schema: COUPON_SCHEMA } },
-        messages: [{ role: 'user', content }],
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: { name: 'coupon', strict: true, schema: COUPON_SCHEMA },
+        },
       }),
     });
 
-    if (!anthropicResp.ok) {
-      const errText = await anthropicResp.text();
-      return jsonResponse({ error: `Claude API error: ${errText}` }, 502);
+    if (!openaiResp.ok) {
+      const errText = await openaiResp.text();
+      return jsonResponse({ error: `OpenAI API error: ${errText}` }, 502);
     }
 
-    const data = await anthropicResp.json();
-    const textBlock = (data.content || []).find((b: any) => b.type === 'text');
-    if (!textBlock) return jsonResponse({ error: 'לא התקבל פלט מהמודל' }, 502);
+    const data = await openaiResp.json();
+    const outputText = data.choices?.[0]?.message?.content;
+    if (!outputText) return jsonResponse({ error: 'לא התקבל פלט מהמודל' }, 502);
 
     let coupon;
     try {
-      coupon = JSON.parse(textBlock.text);
+      coupon = JSON.parse(outputText);
     } catch {
       return jsonResponse({ error: 'פלט המודל אינו JSON תקין' }, 502);
     }
@@ -108,10 +113,10 @@ Deno.serve(async (req: Request) => {
         user_id: user_id ?? 0,
         created: new Date().toISOString(),
         model: MODEL,
-        prompt_tokens: usage.input_tokens ?? null,
-        completion_tokens: usage.output_tokens ?? null,
-        total_tokens: (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0),
-        response_text: textBlock.text,
+        prompt_tokens: usage.prompt_tokens ?? null,
+        completion_tokens: usage.completion_tokens ?? null,
+        total_tokens: usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
+        response_text: outputText,
       });
     } catch (_) {
       // ignore logging failures
