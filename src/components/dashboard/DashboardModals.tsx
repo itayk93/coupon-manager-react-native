@@ -11,9 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { DecryptedCoupon, useAddCoupon, useUpdateCoupon } from "@/hooks/useCoupons";
+import { useParseCoupon } from "@/hooks/useCouponAI";
 import { getCompanyLogo } from "@/lib/companyLogos";
 
 type DashboardModalType = "stats" | "usage" | "quick-add" | "company" | "whatsapp" | null;
@@ -63,7 +62,9 @@ function formatDate(value: string | null) {
 export function DashboardModals({ openModal, onOpenChange, coupons, selectedCompany }: DashboardModalsProps) {
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
-  const [quickStep, setQuickStep] = useState(1);
+  const parseCoupon = useParseCoupon();
+  const [quickText, setQuickText] = useState("");
+  const [quickDetected, setQuickDetected] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [detailsCoupon, setDetailsCoupon] = useState<DecryptedCoupon | null>(null);
   const [codeCoupon, setCodeCoupon] = useState<DecryptedCoupon | null>(null);
@@ -76,11 +77,6 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
   const activeCoupons = useMemo(
     () => coupons.filter((coupon) => !coupon.is_for_sale && coupon.status !== "נוצל"),
-    [coupons]
-  );
-
-  const companyOptions = useMemo(
-    () => Array.from(new Set(coupons.map((coupon) => coupon.company).filter(Boolean))).sort((a, b) => a.localeCompare(b, "he")),
     [coupons]
   );
 
@@ -152,9 +148,32 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
   const closeModal = () => {
     onOpenChange(null);
-    setQuickStep(1);
+    setQuickText("");
+    setQuickDetected(false);
     setUsageRows(null);
     setUsageReportError("");
+  };
+
+  const handleDetectCoupon = async () => {
+    const text = quickText.trim();
+    if (!text) return;
+    try {
+      const parsed = await parseCoupon.mutateAsync({ text });
+      quickForm.setValue("company", parsed.company || "", { shouldValidate: true });
+      quickForm.setValue("code", parsed.code || "", { shouldValidate: true });
+      quickForm.setValue("value", parsed.value || 0, { shouldValidate: true });
+      quickForm.setValue("cost", parsed.cost || 0, { shouldValidate: true });
+      quickForm.setValue("expiration", parsed.expiration || "");
+      quickForm.setValue("description", parsed.description || "");
+      if (parsed.cvv || parsed.card_exp) {
+        quickForm.setValue("include_card_info", true);
+        quickForm.setValue("cvv", parsed.cvv || "");
+        quickForm.setValue("card_exp", parsed.card_exp || "");
+      }
+      setQuickDetected(true);
+    } catch {
+      // errors are surfaced via the hook's toast
+    }
   };
 
   const submitQuickAdd = async (data: QuickAddValues) => {
@@ -718,107 +737,46 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
         <DialogContent className="legacy-modal-content quick-add-modal-react" dir="rtl">
           <DialogHeader>
             <DialogTitle>הוספת קופון מהירה</DialogTitle>
-            <DialogDescription>טופס רב-שלבי לפי הזרימה של האתר הישן.</DialogDescription>
+            <DialogDescription>הדבק את פרטי הקופון והמערכת תזהה אותם אוטומטית.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={quickForm.handleSubmit(submitQuickAdd)}>
-            <div className="quick-step-indicator">
-              <span>{quickStep}</span> / <span>5</span>
-              <div><i style={{ width: `${(quickStep / 5) * 100}%` }} /></div>
+            <div className="quick-step-card">
+              <div className="legacy-auto-detect-box">
+                <h4>זיהוי אוטומטי של קופון</h4>
+                <Textarea
+                  placeholder="הדבק כאן את פרטי הקופון"
+                  rows={5}
+                  value={quickText}
+                  onChange={(event) => setQuickText(event.target.value)}
+                />
+                <Button
+                  type="button"
+                  onClick={handleDetectCoupon}
+                  disabled={parseCoupon.isPending || !quickText.trim()}
+                >
+                  {parseCoupon.isPending ? "מזהה..." : "זיהוי אוטומטי"}
+                </Button>
+              </div>
+
+              {quickDetected && (
+                <div className="legacy-summary-list">
+                  <div className="form-group"><Label>חברה</Label><Input {...quickForm.register("company")} /></div>
+                  <div className="form-group"><Label>קוד קופון</Label><Input {...quickForm.register("code")} /></div>
+                  <div className="form-group"><Label>כמה שילמת על הקופון</Label><Input type="number" step="0.01" {...quickForm.register("cost")} /></div>
+                  <div className="form-group"><Label>כמה הקופון שווה בפועל</Label><Input type="number" step="0.01" {...quickForm.register("value")} /></div>
+                  <div className="form-group"><Label>תאריך תפוגה</Label><Input type="date" {...quickForm.register("expiration")} /></div>
+                  <div className="discount-display">אחוז הנחה: {Math.round(discount)}%</div>
+                </div>
+              )}
             </div>
 
-            {quickStep === 1 && (
-              <div className="quick-step-card">
-                <h4>באיזו חברה מדובר?</h4>
-                <div className="form-group">
-                  <Label>חברה</Label>
-                  <Select value={quickForm.watch("company")} onValueChange={(value) => quickForm.setValue("company", value, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="בחר חברה" /></SelectTrigger>
-                    <SelectContent dir="rtl">
-                      {companyOptions.map((company) => <SelectItem key={company} value={company}>{company}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="form-group">
-                  <Label htmlFor="quick_company">או הזן חברה חדשה</Label>
-                  <Input id="quick_company" {...quickForm.register("company")} />
-                </div>
-                <div className="legacy-auto-detect-box">
-                  <h4>זיהוי אוטומטי של קופון</h4>
-                  <Textarea placeholder="הדבק כאן את פרטי הקופון" rows={3} onBlur={(event) => {
-                    const text = event.target.value;
-                    const amount = text.match(/(?:₪|שח|ש\"ח)?\\s?(\\d+(?:\\.\\d+)?)/);
-                    if (amount && !quickForm.getValues("value")) quickForm.setValue("value", Number(amount[1]));
-                  }} />
-                </div>
-              </div>
-            )}
-
-            {quickStep === 2 && (
-              <div className="quick-step-card">
-                <h4>פרטי הקופון</h4>
-                <div className="form-group"><Label>קוד קופון</Label><Input {...quickForm.register("code")} /></div>
-                <div className="form-group"><Label>כמה שילמת על הקופון</Label><Input type="number" step="0.01" {...quickForm.register("cost")} /></div>
-                <div className="form-group"><Label>כמה הקופון שווה בפועל</Label><Input type="number" step="0.01" {...quickForm.register("value")} /></div>
-                <div className="discount-display">אחוז הנחה: {Math.round(discount)}%</div>
-              </div>
-            )}
-
-            {quickStep === 3 && (
-              <div className="quick-step-card">
-                <h4>תוקף ותיאור</h4>
-                <div className="form-group"><Label>תאריך תפוגה</Label><Input type="date" {...quickForm.register("expiration")} /></div>
-                <div className="form-group"><Label>תיאור הקופון</Label><Textarea rows={3} {...quickForm.register("description")} /></div>
-              </div>
-            )}
-
-            {quickStep === 4 && (
-              <div className="quick-step-card">
-                <h4>פרטים נוספים</h4>
-                <div className="form-group"><Label>מאיפה קיבלת את הקופון</Label><Input {...quickForm.register("source")} /></div>
-                <label className="legacy-checkbox-row">
-                  <Checkbox checked={quickForm.watch("include_card_info")} onCheckedChange={(checked) => quickForm.setValue("include_card_info", Boolean(checked))} />
-                  האם להכניס תוקף כרטיס ו-CVV?
-                </label>
-                {quickForm.watch("include_card_info") && (
-                  <div className="legacy-two-cols">
-                    <div className="form-group"><Label>CVV</Label><Input maxLength={4} {...quickForm.register("cvv")} /></div>
-                    <div className="form-group"><Label>תוקף כרטיס</Label><Input placeholder="MM/YY" maxLength={5} {...quickForm.register("card_exp")} /></div>
-                  </div>
-                )}
-                <label className="legacy-checkbox-row">
-                  <Checkbox checked={quickForm.watch("is_one_time")} onCheckedChange={(checked) => quickForm.setValue("is_one_time", Boolean(checked))} />
-                  קוד לשימוש חד פעמי
-                </label>
-                {quickForm.watch("is_one_time") && <div className="form-group"><Label>מטרת הקופון</Label><Input {...quickForm.register("purpose")} /></div>}
-              </div>
-            )}
-
-            {quickStep === 5 && (
-              <div className="quick-step-card">
-                <h4>סיכום הקופון</h4>
-                <div className="legacy-summary-list">
-                  <p><strong>חברה:</strong> {watchedQuick.company || "-"}</p>
-                  <p><strong>קוד:</strong> {watchedQuick.code || "-"}</p>
-                  <p><strong>עלות:</strong> {formatIls(Number(watchedQuick.cost || 0))}</p>
-                  <p><strong>שווי:</strong> {formatIls(Number(watchedQuick.value || 0))}</p>
-                  <p><strong>הנחה:</strong> {Math.round(discount)}%</p>
-                  {watchedQuick.expiration && <p><strong>תפוגה:</strong> {watchedQuick.expiration}</p>}
-                </div>
-              </div>
-            )}
-
-            {(quickForm.formState.errors.company || quickForm.formState.errors.code || quickForm.formState.errors.value || quickForm.formState.errors.cost) && (
+            {quickDetected && (quickForm.formState.errors.company || quickForm.formState.errors.code || quickForm.formState.errors.value || quickForm.formState.errors.cost) && (
               <p className="legacy-field-error">יש למלא את שדות החובה לפני שמירה.</p>
             )}
 
             <div className="legacy-modal-actions">
-              <Button type="button" variant="outline" onClick={() => setQuickStep((step) => Math.max(1, step - 1))} disabled={quickStep === 1 || isSubmitting}>
-                הקודם
-              </Button>
-              {quickStep < 5 ? (
-                <Button type="button" onClick={() => setQuickStep((step) => Math.min(5, step + 1))}>הבא</Button>
-              ) : (
+              {quickDetected && (
                 <Button type="submit" disabled={isSubmitting}>
                   <CheckCircle2 className="h-4 w-4" />
                   הוספת קופון
