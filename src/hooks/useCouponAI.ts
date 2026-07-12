@@ -52,6 +52,11 @@ export function useParseCoupon() {
       if (coupons.length === 0) throw new Error('לא זוהו קופונים בטקסט או בתמונה');
       return coupons as ParsedCoupon[];
     },
+    retry: (failureCount, error) => {
+      const isTemporaryNetworkError = /failed to send a request|fetch|network|connection/i.test(error.message);
+      return failureCount < 1 && isTemporaryNetworkError;
+    },
+    retryDelay: 750,
     onError: (error: any) => {
       toast.error(`שגיאה בפענוח הקופון: ${error.message}`);
     },
