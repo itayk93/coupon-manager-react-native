@@ -26,13 +26,22 @@ export function useCouponTags(couponId: number | undefined) {
     queryKey: ['coupon_tags', couponId],
     queryFn: async () => {
       if (!couponId) return [];
-      const { data, error } = await supabase
+      const { data: links, error: linksError } = await supabase
         .from('coupon_tags')
-        .select('tag_id, tag:tag_id (id, name, count)')
+        .select('tag_id')
         .eq('coupon_id', couponId);
 
-      if (error) throw error;
-      return (data as any[]).map((row) => row.tag as Tag);
+      if (linksError) throw linksError;
+      const tagIds = Array.from(new Set((links || []).map((row) => row.tag_id)));
+      if (tagIds.length === 0) return [];
+
+      const { data: tags, error: tagsError } = await supabase
+        .from('tag')
+        .select('*')
+        .in('id', tagIds);
+
+      if (tagsError) throw tagsError;
+      return tags as Tag[];
     },
     enabled: !!couponId,
   });
@@ -69,11 +78,17 @@ export function useSetCouponTags() {
       // Current links
       const { data: currentLinks, error: linksError } = await supabase
         .from('coupon_tags')
-        .select('tag_id, tag:tag_id (id, name)')
+        .select('tag_id')
         .eq('coupon_id', couponId);
       if (linksError) throw linksError;
 
-      const currentTags = (currentLinks as any[]).map((r) => ({ id: r.tag_id as number, name: r.tag?.name as string }));
+      const currentTagIds = Array.from(new Set((currentLinks || []).map((row) => row.tag_id)));
+      const { data: currentTagsData, error: currentTagsError } = currentTagIds.length > 0
+        ? await supabase.from('tag').select('id, name').in('id', currentTagIds)
+        : { data: [], error: null };
+      if (currentTagsError) throw currentTagsError;
+
+      const currentTags = currentTagsData || [];
       const currentNames = new Set(currentTags.map((t) => t.name));
       const desiredNames = new Set(names);
 
@@ -112,14 +127,24 @@ export function useCouponTagsMap() {
   return useQuery({
     queryKey: ['coupon_tags_map'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: links, error: linksError } = await supabase
         .from('coupon_tags')
-        .select('coupon_id, tag:tag_id (name)');
+        .select('coupon_id, tag_id');
 
-      if (error) throw error;
+      if (linksError) throw linksError;
+      if (!links?.length) return {};
+
+      const tagIds = Array.from(new Set(links.map((row) => row.tag_id)));
+      const { data: tags, error: tagsError } = await supabase
+        .from('tag')
+        .select('id, name')
+        .in('id', tagIds);
+
+      if (tagsError) throw tagsError;
+      const tagNamesById = new Map((tags || []).map((tag) => [tag.id, tag.name]));
       const map: Record<number, string[]> = {};
-      for (const row of data as any[]) {
-        const name = row.tag?.name;
+      for (const row of links) {
+        const name = tagNamesById.get(row.tag_id);
         if (!name) continue;
         (map[row.coupon_id] ||= []).push(name);
       }
