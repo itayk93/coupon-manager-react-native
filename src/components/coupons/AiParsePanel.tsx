@@ -6,7 +6,7 @@ import { Sparkles, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AiParsePanelProps {
-  onParsed: (coupon: ParsedCoupon) => void;
+  onParsed: (coupons: ParsedCoupon[]) => void;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -37,7 +37,11 @@ export function AiParsePanel({ onParsed }: AiParsePanelProps) {
   const handleParse = async () => {
     const result = await parse.mutateAsync({ text: text || undefined, imageBase64 });
     onParsed(result);
-    toast.success('הפרטים מולאו — בדוק ותקן לפי הצורך');
+    toast.success(
+      result.length === 1
+        ? 'הפרטים מולאו — בדוק ותקן לפי הצורך'
+        : `זוהו ${result.length} קופונים — אפשר לבדוק ולאשר כל אחד מהם`
+    );
   };
 
   return (
@@ -47,12 +51,12 @@ export function AiParsePanel({ onParsed }: AiParsePanelProps) {
         <span>מילוי אוטומטי עם AI</span>
       </div>
       <p className="text-xs text-muted-foreground">
-        הדבק את טקסט הודעת הקופון, או העלה צילום מסך, והמערכת תזהה את הפרטים אוטומטית.
+        הדבק טקסט של קופון אחד או כמה קופונים, או העלה צילום מסך, והמערכת תזהה את הפרטים אוטומטית.
       </p>
 
       <Textarea
         rows={3}
-        placeholder="הדבק כאן את הודעת הקופון..."
+        placeholder={'לדוגמה: 2 קופונים ל-Good Pharm, כל אחד עלה 80 ושווה 100\n150752345-6052\n150752371-2166'}
         value={text}
         onChange={(e) => setText(e.target.value)}
         className="resize-none bg-background"

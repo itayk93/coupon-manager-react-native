@@ -15,7 +15,7 @@ export type ParsedCoupon = {
 };
 
 // Calls the `parse-coupon` Supabase Edge Function which uses an LLM (OpenAI
-// gpt-4o-mini) to extract structured coupon fields from free text or an image.
+// gpt-4o-mini) to extract one or more coupons from free text or an image.
 export function useParseCoupon() {
   const { user } = useAuth();
 
@@ -27,9 +27,30 @@ export function useParseCoupon() {
         body: { text, imageBase64, user_id: user?.id },
       });
 
-      if (error) throw error;
+      if (error) {
+        const context = (error as { context?: unknown }).context;
+        if (context instanceof Response) {
+          try {
+            const body = await context.json();
+            if (typeof body?.error === 'string') throw new Error(body.error);
+          } catch (parseError) {
+            if (parseError instanceof Error && parseError.message) throw parseError;
+          }
+        }
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
-      return data.coupon as ParsedCoupon;
+
+      // `coupon` keeps older deployed function versions working while the new
+      // response contract returns `coupons`.
+      const coupons = Array.isArray(data?.coupons)
+        ? data.coupons
+        : data?.coupon
+          ? [data.coupon]
+          : [];
+
+      if (coupons.length === 0) throw new Error('לא זוהו קופונים בטקסט או בתמונה');
+      return coupons as ParsedCoupon[];
     },
     onError: (error: any) => {
       toast.error(`שגיאה בפענוח הקופון: ${error.message}`);
