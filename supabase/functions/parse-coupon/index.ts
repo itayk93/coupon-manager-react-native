@@ -3,7 +3,8 @@
 // text or an uploaded image, and logs token usage to the gpt_usage table.
 //
 // Env vars required (set with `supabase secrets set`):
-//   OPENAI_API_KEY            - OpenAI API key
+//   OPENAI_API_KEY_V2         - OpenAI API key (preferred)
+//   OPENAI_API_KEY            - OpenAI API key (fallback)
 //   SUPABASE_URL              - injected automatically
 //   SUPABASE_SERVICE_ROLE_KEY - injected automatically
 //
@@ -15,7 +16,7 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = 'gpt-4o-mini';
 
-const COUPON_SCHEMA = {
+const SINGLE_COUPON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
@@ -31,7 +32,25 @@ const COUPON_SCHEMA = {
   required: ['company', 'code', 'value', 'cost', 'expiration', 'description', 'cvv', 'card_exp'],
 };
 
-const SYSTEM_PROMPT = `אתה עוזר שמחלץ פרטי קופון מטקסט או מתמונה של קבלה/הודעה בעברית.
+const COUPONS_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    coupons: {
+      type: 'array',
+      minItems: 1,
+      description: 'כל הקופונים הנפרדים שזוהו בטקסט או בתמונה',
+      items: SINGLE_COUPON_SCHEMA,
+    },
+  },
+  required: ['coupons'],
+};
+
+const SYSTEM_PROMPT = `אתה עוזר שמחלץ קופון אחד או כמה קופונים מטקסט או מתמונה של קבלה/הודעה בעברית.
+החזר פריט נפרד במערך coupons עבור כל קופון שזוהה. קודי קופון שונים הם סימן חזק לכך שמדובר בקופונים נפרדים.
+כאשר הטקסט מציין כמות ויש כמה קודים, החזר קופון נפרד לכל קוד. שכפל לכל אחד מהם פרטים משותפים כמו חברה, שווי ועלות.
+כאשר לכל קופון מצוינים פרטים שונים, שייך לכל קוד רק את הפרטים המתאימים לו. אל תאחד כמה קודים בשדה code אחד.
+לדוגמה, טקסט שמציין שני קופונים לאותה חברה ואחריו שתי שורות קוד חייב להחזיר שני פריטים, אחד לכל קוד.
 חלץ את השדות הבאים במדויק. אם שדה לא קיים, החזר null עבורו.
 - company: שם החברה
 - code: קוד הקופון (בדיוק כפי שמופיע, כולל אותיות ומספרים)
@@ -48,8 +67,13 @@ Deno.serve(async (req: Request) => {
     const { text, imageBase64, user_id } = await req.json();
     if (!text && !imageBase64) return jsonResponse({ error: 'צריך טקסט או תמונה' }, 400);
 
-    const apiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey) return jsonResponse({ error: 'OPENAI_API_KEY לא מוגדר' }, 500);
+    const apiKey = Deno.env.get('OPENAI_API_KEY_V2') || Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      return jsonResponse(
+        { error: 'שירות פענוח הקופונים אינו מוגדר. חסר OPENAI_API_KEY ב-Supabase Secrets.' },
+        503
+      );
+    }
 
     const content: unknown[] = [
       {
@@ -74,32 +98,41 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content },
         ],
         response_format: {
           type: 'json_schema',
-          json_schema: { name: 'coupon', strict: true, schema: COUPON_SCHEMA },
+          json_schema: { name: 'coupons', strict: true, schema: COUPONS_SCHEMA },
         },
       }),
     });
 
     if (!openaiResp.ok) {
       const errText = await openaiResp.text();
-      return jsonResponse({ error: `OpenAI API error: ${errText}` }, 502);
+      console.error('OpenAI API error', openaiResp.status, errText);
+      const message = openaiResp.status === 401
+        ? 'שירות פענוח הקופונים אינו מחובר למפתח OpenAI תקין.'
+        : 'שירות פענוח הקופונים נכשל מול ספק ה-AI. נסה שוב מאוחר יותר.';
+      return jsonResponse({ error: message }, 502);
     }
 
     const data = await openaiResp.json();
     const outputText = data.choices?.[0]?.message?.content;
     if (!outputText) return jsonResponse({ error: 'לא התקבל פלט מהמודל' }, 502);
 
-    let coupon;
+    let coupons;
     try {
-      coupon = JSON.parse(outputText);
+      const parsed = JSON.parse(outputText);
+      coupons = parsed.coupons;
     } catch {
       return jsonResponse({ error: 'פלט המודל אינו JSON תקין' }, 502);
+    }
+
+    if (!Array.isArray(coupons) || coupons.length === 0) {
+      return jsonResponse({ error: 'לא זוהו קופונים בטקסט או בתמונה' }, 422);
     }
 
     // Log token usage (best-effort)
@@ -122,7 +155,8 @@ Deno.serve(async (req: Request) => {
       // ignore logging failures
     }
 
-    return jsonResponse({ coupon });
+    // Keep `coupon` temporarily for clients that still expect the old contract.
+    return jsonResponse({ coupons, coupon: coupons[0] });
   } catch (err) {
     return jsonResponse({ error: String(err) }, 500);
   }

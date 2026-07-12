@@ -5,6 +5,7 @@ import * as z from 'zod';
 import { useAddCoupon, useUpdateCoupon, DecryptedCoupon } from '@/hooks/useCoupons';
 import { useSetCouponTags, useCouponTags } from '@/hooks/useTags';
 import { AiParsePanel } from '@/components/coupons/AiParsePanel';
+import type { ParsedCoupon } from '@/hooks/useCouponAI';
 import { TagsInput } from '@/components/coupons/TagsInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,9 @@ interface CouponFormProps {
 export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [remainingParsedCoupons, setRemainingParsedCoupons] = useState<ParsedCoupon[]>([]);
+  const [detectedCouponCount, setDetectedCouponCount] = useState(0);
+  const [currentDetectedCoupon, setCurrentDetectedCoupon] = useState(0);
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
   const setCouponTags = useSetCouponTags();
@@ -79,6 +83,9 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
 
   useEffect(() => {
     if (!open) return;
+    setRemainingParsedCoupons([]);
+    setDetectedCouponCount(0);
+    setCurrentDetectedCoupon(0);
     form.reset({
       company: coupon?.company || '',
       code: coupon?.code || '',
@@ -100,15 +107,31 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
     if (open && !coupon) setTags([]);
   }, [existingTags, open, coupon]);
 
-  const handleParsed = (parsed: import('@/hooks/useCouponAI').ParsedCoupon) => {
-    if (parsed.company) form.setValue('company', parsed.company);
-    if (parsed.code) form.setValue('code', parsed.code);
-    if (parsed.value != null) form.setValue('value', parsed.value);
-    if (parsed.cost != null) form.setValue('cost', parsed.cost);
-    if (parsed.description) form.setValue('description', parsed.description);
-    if (parsed.cvv) form.setValue('cvv', parsed.cvv);
-    if (parsed.card_exp) form.setValue('card_exp', parsed.card_exp);
-    if (parsed.expiration) form.setValue('expiration', parsed.expiration.split('T')[0]);
+  const fillFormFromParsedCoupon = (parsed: ParsedCoupon) => {
+    form.reset({
+      company: parsed.company || '',
+      code: parsed.code || '',
+      value: parsed.value ?? 0,
+      cost: parsed.cost ?? 0,
+      used_value: 0,
+      description: parsed.description || '',
+      expiration: parsed.expiration?.split('T')[0] || '',
+      is_available: true,
+      is_one_time: false,
+      purpose: '',
+      cvv: parsed.cvv || '',
+      card_exp: parsed.card_exp || '',
+    });
+  };
+
+  const handleParsed = (parsedCoupons: ParsedCoupon[]) => {
+    const [firstCoupon, ...remainingCoupons] = parsedCoupons;
+    if (!firstCoupon) return;
+
+    setDetectedCouponCount(parsedCoupons.length);
+    setCurrentDetectedCoupon(1);
+    setRemainingParsedCoupons(remainingCoupons);
+    fillFormFromParsedCoupon(firstCoupon);
   };
 
   const onSubmit = async (data: CouponFormValues) => {
@@ -139,6 +162,14 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
         if (created?.id && tags.length) {
           await setCouponTags.mutateAsync({ couponId: created.id, tagNames: tags });
         }
+
+        const [nextCoupon, ...couponsAfterNext] = remainingParsedCoupons;
+        if (nextCoupon) {
+          setRemainingParsedCoupons(couponsAfterNext);
+          setCurrentDetectedCoupon((current) => current + 1);
+          fillFormFromParsedCoupon(nextCoupon);
+          return;
+        }
       }
       onOpenChange(false);
       form.reset();
@@ -161,6 +192,17 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
           {!isEditing && <AiParsePanel onParsed={handleParsed} />}
+
+          {!isEditing && detectedCouponCount > 1 && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm" role="status">
+              <p className="font-medium">
+                קופון {currentDetectedCoupon} מתוך {detectedCouponCount}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                בדוק את הפרטים ושמור. לאחר השמירה יוצג הקופון הבא שזוהה.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -273,7 +315,13 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
               ביטול
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'שומר...' : (isEditing ? 'שמור שינויים' : 'הוסף קופון')}
+              {isSubmitting
+                ? 'שומר...'
+                : isEditing
+                  ? 'שמור שינויים'
+                  : remainingParsedCoupons.length > 0
+                    ? 'שמור ועבור לקופון הבא'
+                    : 'הוסף קופון'}
             </Button>
           </div>
         </form>
