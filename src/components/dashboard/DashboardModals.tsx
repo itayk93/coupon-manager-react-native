@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DecryptedCoupon, useAddCoupon, useUpdateCoupon } from "@/hooks/useCoupons";
 import { useParseCoupon } from "@/hooks/useCouponAI";
+import type { ParsedCoupon } from "@/hooks/useCouponAI";
 import { getCompanyLogo } from "@/lib/companyLogos";
 
 type DashboardModalType = "stats" | "usage" | "quick-add" | "company" | "whatsapp" | null;
@@ -65,6 +66,9 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const parseCoupon = useParseCoupon();
   const [quickText, setQuickText] = useState("");
   const [quickDetected, setQuickDetected] = useState(false);
+  const [remainingQuickCoupons, setRemainingQuickCoupons] = useState<ParsedCoupon[]>([]);
+  const [quickCouponCount, setQuickCouponCount] = useState(0);
+  const [currentQuickCoupon, setCurrentQuickCoupon] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [detailsCoupon, setDetailsCoupon] = useState<DecryptedCoupon | null>(null);
   const [codeCoupon, setCodeCoupon] = useState<DecryptedCoupon | null>(null);
@@ -150,26 +154,43 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     onOpenChange(null);
     setQuickText("");
     setQuickDetected(false);
+    setRemainingQuickCoupons([]);
+    setQuickCouponCount(0);
+    setCurrentQuickCoupon(0);
     setUsageRows(null);
     setUsageReportError("");
+  };
+
+  const fillQuickForm = (coupon: ParsedCoupon) => {
+    quickForm.reset({
+      company: coupon.company || "",
+      code: coupon.code || "",
+      cost: coupon.cost ?? 0,
+      value: coupon.value ?? 0,
+      discount_percentage: 0,
+      expiration: coupon.expiration || "",
+      description: coupon.description || "",
+      source: "",
+      include_card_info: Boolean(coupon.cvv || coupon.card_exp),
+      cvv: coupon.cvv || "",
+      card_exp: coupon.card_exp || "",
+      is_one_time: false,
+      purpose: "",
+    });
   };
 
   const handleDetectCoupon = async () => {
     const text = quickText.trim();
     if (!text) return;
     try {
-      const parsed = await parseCoupon.mutateAsync({ text });
-      quickForm.setValue("company", parsed.company || "", { shouldValidate: true });
-      quickForm.setValue("code", parsed.code || "", { shouldValidate: true });
-      quickForm.setValue("value", parsed.value || 0, { shouldValidate: true });
-      quickForm.setValue("cost", parsed.cost || 0, { shouldValidate: true });
-      quickForm.setValue("expiration", parsed.expiration || "");
-      quickForm.setValue("description", parsed.description || "");
-      if (parsed.cvv || parsed.card_exp) {
-        quickForm.setValue("include_card_info", true);
-        quickForm.setValue("cvv", parsed.cvv || "");
-        quickForm.setValue("card_exp", parsed.card_exp || "");
-      }
+      const parsedCoupons = await parseCoupon.mutateAsync({ text });
+      const [firstCoupon, ...otherCoupons] = parsedCoupons;
+      if (!firstCoupon) return;
+
+      fillQuickForm(firstCoupon);
+      setRemainingQuickCoupons(otherCoupons);
+      setQuickCouponCount(parsedCoupons.length);
+      setCurrentQuickCoupon(1);
       setQuickDetected(true);
     } catch {
       // errors are surfaced via the hook's toast
@@ -195,6 +216,15 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
         status: "פעיל",
         date_added: new Date().toISOString(),
       });
+
+      const [nextCoupon, ...couponsAfterNext] = remainingQuickCoupons;
+      if (nextCoupon) {
+        fillQuickForm(nextCoupon);
+        setRemainingQuickCoupons(couponsAfterNext);
+        setCurrentQuickCoupon((current) => current + 1);
+        return;
+      }
+
       quickForm.reset();
       closeModal();
     } finally {
@@ -761,6 +791,11 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
               {quickDetected && (
                 <div className="legacy-summary-list">
+                  {quickCouponCount > 1 && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm" role="status">
+                      קופון {currentQuickCoupon} מתוך {quickCouponCount}
+                    </div>
+                  )}
                   <div className="form-group"><Label>חברה</Label><Input {...quickForm.register("company")} /></div>
                   <div className="form-group"><Label>קוד קופון</Label><Input {...quickForm.register("code")} /></div>
                   <div className="form-group"><Label>כמה שילמת על הקופון</Label><Input type="number" step="0.01" {...quickForm.register("cost")} /></div>
@@ -779,7 +814,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
               {quickDetected && (
                 <Button type="submit" disabled={isSubmitting}>
                   <CheckCircle2 className="h-4 w-4" />
-                  הוספת קופון
+                  {remainingQuickCoupons.length > 0 ? "שמירה ומעבר לקופון הבא" : "הוספת קופון"}
                 </Button>
               )}
               <Button type="button" variant="ghost" onClick={closeModal}>ביטול</Button>
