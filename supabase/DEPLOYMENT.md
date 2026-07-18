@@ -20,9 +20,10 @@ supabase db push
 # פענוח AI (חובה לפיצ'ר ה-AI) — OpenAI gpt-4o-mini
 supabase secrets set OPENAI_API_KEY=sk-...
 
-# דוא"ל (חובה למערכת הדוא"ל) — Resend
-supabase secrets set RESEND_API_KEY=re_...
-supabase secrets set MAIL_FROM="Coupon Master <noreply@yourdomain.com>"
+# דוא"ל (חובה למערכת הדוא"ל) — Brevo
+supabase secrets set BREVO_API_KEY=...
+supabase secrets set BREVO_SENDER_EMAIL=hello@itaykarkason.com
+supabase secrets set BREVO_SENDER_NAME="Coupon Master"
 
 # עדכון יתרה אוטומטי (אופציונלי — רק אם יש שירות סקרייפר חיצוני)
 supabase secrets set SCRAPER_SERVICE_URL=https://your-scraper.example.com
