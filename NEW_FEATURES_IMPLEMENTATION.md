@@ -23,7 +23,7 @@
 | פיצ'ר | function | שירות חיצוני |
 |-------|----------|---------------|
 | **פענוח קופון ב-AI** (טקסט/תמונה) | `parse-coupon` | Claude API (`ANTHROPIC_API_KEY`), מודל `claude-opus-4-8` |
-| **מערכת דוא"ל** (ניוזלטר/תזכורות/בדיקה) | `send-emails` | Resend (`RESEND_API_KEY`) |
+| **מערכת דוא"ל** (ניוזלטר/תזכורות/בדיקה) | `send-emails` | Brevo (`BREVO_API_KEY`) |
 | **עדכון יתרה אוטומטי** (אורקסטרטור) | `update-balance` | שירות סקרייפר חיצוני (`SCRAPER_SERVICE_URL`) |
 | **משימות מתוזמנות / cron + Realtime + אילוצים** | `migrations/0001_features.sql` | pg_cron + pg_net |
 

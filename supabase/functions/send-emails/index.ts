@@ -6,25 +6,36 @@
 //
 // Env vars:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY - injected automatically
-//   RESEND_API_KEY - Resend API key
-//   MAIL_FROM      - verified sender, e.g. "Coupon Master <noreply@yourdomain.com>"
+//   BREVO_API_KEY       - Brevo transactional email API key
+//   BREVO_SENDER_EMAIL  - authenticated sender address
+//   BREVO_SENDER_NAME   - sender display name
 //
 // Deploy: supabase functions deploy send-emails
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 
-const RESEND_API_URL = 'https://api.resend.com/emails';
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
-  const apiKey = Deno.env.get('RESEND_API_KEY');
-  const from = Deno.env.get('MAIL_FROM') || 'Coupon Master <onboarding@resend.dev>';
+  const apiKey = Deno.env.get('BREVO_API_KEY');
+  const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') || 'hello@itaykarkason.com';
+  const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'Coupon Master';
   if (!apiKey) return false;
   try {
-    const resp = await fetch(RESEND_API_URL, {
+    const resp = await fetch(BREVO_API_URL, {
       method: 'POST',
-      headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html }),
+      headers: {
+        'api-key': apiKey,
+        accept: 'application/json',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { email: senderEmail, name: senderName },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
     });
     return resp.ok;
   } catch {
@@ -138,8 +149,12 @@ Deno.serve(async (req: Request) => {
     if (mode === 'newsletter') return await handleNewsletter(body.newsletter_id);
     if (mode === 'expiration_reminders') return await handleExpirationReminders();
     if (mode === 'test') {
-      const ok = await sendEmail(body.to, 'מייל בדיקה - Coupon Master', '<div dir="rtl"><p>זהו מייל בדיקה. המערכת עובדת! ✅</p></div>');
-      return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחה נכשלה (בדוק RESEND_API_KEY)' }, 502);
+      const ok = await sendEmail(
+        body.to,
+        'מייל בדיקה - Coupon Master',
+        '<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.6"><h2>Coupon Master מחובר למייל</h2><p>זהו מייל בדיקה. שירות Brevo עובד בהצלחה.</p></div>',
+      );
+      return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחה נכשלה דרך Brevo' }, 502);
     }
     return jsonResponse({ error: 'mode לא חוקי' }, 400);
   } catch (err) {
