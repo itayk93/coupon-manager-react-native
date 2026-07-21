@@ -35,6 +35,7 @@ export function AppLayout() {
 
   return (
     <div className="coupon-master-app dashboard-shell" dir="rtl">
+      <a className="skip-link" href="#main-content">דלג לתוכן הראשי</a>
       <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
       
       <div className="dashboard-body">
@@ -66,7 +67,9 @@ export function AppLayout() {
 
         {isSidebarOpen && (
           <div className="mobile-sidebar-overlay lg:hidden">
-            <div 
+            <button
+              type="button"
+              aria-label="סגירת תפריט"
               className="fixed inset-0 bg-slate-950/35 backdrop-blur-sm" 
               onClick={() => setIsSidebarOpen(false)}
             />
@@ -103,7 +106,7 @@ export function AppLayout() {
         )}
 
         <div className="dashboard-main-wrap">
-          <main className="dashboard-main">
+            <main id="main-content" className="dashboard-main">
             <Outlet />
           </main>
         </div>

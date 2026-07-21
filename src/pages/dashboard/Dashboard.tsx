@@ -123,6 +123,7 @@ export default function Dashboard() {
               key={card.company}
               role="button"
               tabIndex={0}
+              aria-label={`פתיחת קופונים של ${card.company}`}
               onClick={() => {
                 setSelectedCompany(card.company);
                 setOpenModal("company");
