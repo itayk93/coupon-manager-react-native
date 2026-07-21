@@ -3075,6 +3075,247 @@ body {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Product UI system: quiet, practical, RTL-first surfaces
+   Keep modal variants consistent; content classes only control layout.
+   -------------------------------------------------------------------------- */
+:root {
+  --ui-green-900: #173d2b;
+  --ui-green-700: #286246;
+  --ui-green-600: #347b58;
+  --ui-green-100: #e6f0ea;
+  --ui-green-50: #f3f8f5;
+  --ui-ink: #1b2922;
+  --ui-muted: #66756c;
+  --ui-line: #dbe5df;
+  --ui-surface: #ffffff;
+  --ui-danger: #b42318;
+  --ui-radius-sm: 10px;
+  --ui-radius-md: 16px;
+  --ui-radius-lg: 22px;
+  --ui-shadow-panel: 0 18px 45px rgba(22, 47, 34, 0.16);
+  --ui-shadow-card: 0 4px 16px rgba(22, 47, 34, 0.07);
+}
+
+/* Shared Radix dialog layer */
+.modal-overlay {
+  background: rgba(20, 32, 26, 0.48) !important;
+  backdrop-filter: blur(3px) !important;
+}
+
+.legacy-modal-content,
+.legacy-modal-content.quick-add-modal-react {
+  box-sizing: border-box;
+  width: min(94vw, 680px) !important;
+  max-width: min(94vw, 680px) !important;
+  max-height: min(88dvh, 820px);
+  gap: 24px;
+  padding: 28px;
+  overflow: hidden auto;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  box-shadow: var(--ui-shadow-panel);
+  font-family: "Heebo", sans-serif;
+}
+
+.legacy-modal-content::before,
+.legacy-modal-content.quick-add-modal-react::before {
+  display: none;
+}
+
+.legacy-modal-content > button[aria-label],
+.legacy-modal-content > button:last-child {
+  top: 18px;
+  inset-inline-end: 18px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ui-muted);
+  opacity: 1;
+}
+
+.legacy-modal-content > button:last-child:hover {
+  background: var(--ui-green-50);
+  color: var(--ui-green-900);
+}
+
+.legacy-modal-content > .flex.flex-col,
+.legacy-modal-content > .dialog-header,
+.legacy-modal-content > [class*="Header"] {
+  min-width: 0;
+}
+
+.legacy-modal-content h2,
+.legacy-modal-content h3,
+.legacy-modal-content h4,
+.legacy-modal-content [data-radix-dialog-title] {
+  margin: 0;
+  color: var(--ui-green-900);
+  font-family: "Heebo", sans-serif;
+  letter-spacing: 0;
+}
+
+.legacy-modal-content [data-radix-dialog-title] {
+  padding-inline-end: 52px;
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.legacy-modal-content [data-radix-dialog-description] {
+  color: var(--ui-muted);
+  line-height: 1.55;
+}
+
+.legacy-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-line);
+}
+
+.legacy-modal-actions button,
+.legacy-modal-content button:not([aria-label]) {
+  min-height: 44px;
+  border-radius: var(--ui-radius-sm);
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.legacy-modal-content input,
+.legacy-modal-content textarea,
+.legacy-modal-content select {
+  min-height: 46px;
+  border-color: var(--ui-line);
+  border-radius: var(--ui-radius-sm);
+  background: #fbfdfb;
+  color: var(--ui-ink);
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.legacy-modal-content input:focus,
+.legacy-modal-content textarea:focus,
+.legacy-modal-content select:focus {
+  border-color: var(--ui-green-600);
+  box-shadow: 0 0 0 3px rgba(52, 123, 88, 0.16);
+}
+
+/* Coupon detail: one surface, with a calm information grid. */
+.coupon-detail-modal-react,
+.stats-modal-react { max-width: min(94vw, 760px) !important; }
+
+.coupon-detail-react-card { gap: 20px; }
+
+.coupon-detail-react-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--ui-line);
+}
+
+.coupon-detail-react-head img,
+.coupon-delete-content img,
+.company-usage-content img {
+  width: 64px;
+  height: 64px;
+  padding: 8px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-green-50);
+}
+
+.coupon-detail-react-head h3 { font-size: 1.25rem; }
+
+.coupon-detail-grid { gap: 10px; }
+
+.coupon-detail-grid div,
+.coupon-detail-description {
+  padding: 14px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-green-50);
+}
+
+.coupon-detail-grid span,
+.coupon-detail-description span { color: var(--ui-muted); }
+.coupon-detail-grid strong,
+.coupon-detail-description p { color: var(--ui-ink); }
+
+/* Code and usage dialogs are task-focused, not decorative. */
+.big-code-modal-react { max-width: min(94vw, 500px) !important; }
+
+.big-code-content { gap: 16px; }
+.big-code-content h1 {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0;
+  padding: 16px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-green-50);
+  color: var(--ui-green-900);
+  font-size: clamp(1.5rem, 7vw, 2rem);
+  line-height: 1.2;
+}
+
+.big-code-content img { width: 72px; height: 72px; border-radius: var(--ui-radius-md); box-shadow: none; }
+.big-code-extra { padding: 12px 16px; border: 1px solid var(--ui-line); border-radius: var(--ui-radius-sm); background: #fbfdfb; }
+.big-code-qr { width: 188px; height: 188px; margin-top: 4px; padding: 12px; border: 1px solid var(--ui-line); border-radius: var(--ui-radius-md); box-shadow: none; }
+
+.company-usage-modal-react { max-width: min(94vw, 520px) !important; }
+.company-usage-content { gap: 14px; }
+.company-usage-content h2 { font-size: 1rem; font-weight: 600; color: var(--ui-muted); }
+.company-usage-content p { margin: 0; }
+
+.coupon-delete-modal-react { max-width: min(94vw, 460px) !important; }
+.coupon-delete-content { gap: 12px; }
+.coupon-delete-content h3 { color: var(--ui-ink); }
+.coupon-delete-code { border-color: var(--ui-line); border-radius: var(--ui-radius-sm); background: var(--ui-green-50); }
+
+.dark .legacy-modal-content { background: #17231d; border-color: #30483a; color: #eef5ef; }
+.dark .legacy-modal-content [data-radix-dialog-title],
+.dark .legacy-modal-content h2,
+.dark .legacy-modal-content h3,
+.dark .legacy-modal-content h4 { color: #d9f1e1; }
+.dark .coupon-detail-grid div,
+.dark .coupon-detail-description,
+.dark .big-code-content h1,
+.dark .big-code-extra,
+.dark .coupon-delete-code { background: #20352a; border-color: #30483a; }
+
+@media (max-width: 640px) {
+  .legacy-modal-content,
+  .legacy-modal-content.quick-add-modal-react {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90dvh;
+    padding: 24px 16px 20px;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+  }
+
+  .legacy-modal-content > button:last-child { top: 12px; inset-inline-end: 12px; }
+  .legacy-modal-content [data-radix-dialog-title] { padding-inline-end: 48px; font-size: 1.25rem; }
+  .coupon-detail-grid { grid-template-columns: 1fr; }
+  .coupon-detail-react-head { justify-content: center; }
+  .legacy-modal-actions { flex-direction: column; align-items: stretch; }
+  .legacy-modal-actions button { width: 100%; }
+  .big-code-qr { width: 164px; height: 164px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-content, .modal-overlay { animation: none !important; transition: none !important; }
+}
+
 .notifications-container {
   max-width: 980px;
   margin: 0 auto;

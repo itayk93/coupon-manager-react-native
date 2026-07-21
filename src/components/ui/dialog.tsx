@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "modal-overlay fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -37,7 +37,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       dir="rtl"
       className={cn(
-        "fixed bottom-0 left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] gap-4 rounded-t-2xl border border-emerald-100 bg-background p-6 text-right shadow-2xl shadow-emerald-950/15 outline-none duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full sm:bottom-auto sm:top-[50%] sm:max-h-[90vh] sm:translate-y-[-50%] sm:rounded-2xl sm:data-[state=closed]:slide-out-to-bottom-12 sm:data-[state=open]:slide-in-from-bottom-12",
+        "modal-content fixed bottom-0 left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] gap-4 rounded-t-2xl border border-emerald-100 bg-background p-6 text-right shadow-2xl shadow-emerald-950/15 outline-none duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full sm:bottom-auto sm:top-[50%] sm:max-h-[90vh] sm:translate-y-[-50%] sm:rounded-2xl sm:data-[state=closed]:slide-out-to-bottom-12 sm:data-[state=open]:slide-in-from-bottom-12",
         className
       )}
       {...props}
