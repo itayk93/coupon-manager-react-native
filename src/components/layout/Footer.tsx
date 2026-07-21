@@ -17,7 +17,7 @@ export function Footer() {
             <h3 className="font-bold mb-4">ניווט מהיר</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/landing" className="hover:text-primary transition-colors">דף הבית</Link>
+                <Link to="/" className="hover:text-primary transition-colors">דף הבית</Link>
               </li>
               <li>
                 <Link to="/coupons" className="hover:text-primary transition-colors">הקופונים שלי</Link>
