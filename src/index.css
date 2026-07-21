@@ -3391,6 +3391,90 @@ body {
   .modal-content, .modal-overlay { animation: none !important; transition: none !important; }
 }
 
+/* Replace old glass quick-add skin with product UI surface. */
+.modal-content.quick-add-modal-react {
+  width: min(94vw, 560px) !important;
+  max-width: min(94vw, 560px) !important;
+  max-height: min(88dvh, 760px);
+  border: 1px solid var(--ui-line) !important;
+  border-radius: var(--ui-radius-lg) !important;
+  background: var(--ui-surface) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: var(--ui-shadow-panel) !important;
+  color: var(--ui-ink);
+}
+
+.modal-content.quick-add-modal-react::before { display: none !important; }
+.modal-content.quick-add-modal-react > * { position: static; z-index: auto; }
+.modal-content.quick-add-modal-react form { min-height: 0; }
+
+.modal-content.quick-add-modal-react .legacy-auto-detect-box {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-green-50);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.modal-content.quick-add-modal-react .legacy-auto-detect-box h4 {
+  margin: 0 0 12px;
+  color: var(--ui-green-900);
+  font-size: 1rem;
+}
+
+.modal-content.quick-add-modal-react textarea,
+.modal-content.quick-add-modal-react input {
+  border: 1px solid var(--ui-line) !important;
+  border-radius: var(--ui-radius-sm) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.modal-content.quick-add-modal-react .legacy-auto-detect-box > button,
+.modal-content.quick-add-modal-react .legacy-modal-actions button[type="submit"] {
+  border: 0 !important;
+  border-radius: var(--ui-radius-sm) !important;
+  background: var(--ui-green-700) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.modal-content.quick-add-modal-react .legacy-auto-detect-box > button:hover:not(:disabled),
+.modal-content.quick-add-modal-react .legacy-modal-actions button[type="submit"]:hover:not(:disabled) {
+  background: var(--ui-green-900) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.modal-content.quick-add-modal-react .legacy-summary-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.modal-content.quick-add-modal-react .legacy-summary-list .form-group {
+  display: grid;
+  gap: 6px;
+}
+
+.modal-content.quick-add-modal-react .legacy-modal-actions {
+  margin-top: 20px;
+  border-top: 1px solid var(--ui-line);
+}
+
+@media (max-width: 640px) {
+  .modal-content.quick-add-modal-react {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90dvh;
+    border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0 !important;
+  }
+}
+
 .notifications-container {
   max-width: 980px;
   margin: 0 auto;
