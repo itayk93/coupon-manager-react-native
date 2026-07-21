@@ -14,9 +14,9 @@ export function PrivateRoute({ requireAdmin = false }: { requireAdmin?: boolean 
   }
 
   if (!user) {
-    // Redirect them to the /landing page, but save the current location they were
+    // Redirect them to login, but save the current location they were
     // trying to go to when they were redirected.
-    return <Navigate to="/landing" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (requireAdmin && !isAdmin) {

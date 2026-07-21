@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { PrivateRoute } from "./components/layout/PrivateRoute";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -12,7 +12,6 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 
 // Public Pages
-import LandingPage from "./pages/landing/LandingPage";
 import About from "./pages/content/About";
 import Faq from "./pages/content/Faq";
 import Privacy from "./pages/content/Privacy";
@@ -48,7 +47,6 @@ function App() {
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}
-              <Route path="/landing" element={<LandingPage />} />
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/privacy" element={<Privacy />} />
