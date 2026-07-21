@@ -3103,6 +3103,45 @@ body {
   backdrop-filter: blur(3px) !important;
 }
 
+/* Keep modal entry vertical. Never animate shared X centering transform. */
+.modal-content[data-state="open"] {
+  animation: modal-enter-mobile 220ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.modal-content[data-state="closed"] {
+  animation: modal-exit-mobile 150ms ease-in both;
+}
+
+@keyframes modal-enter-mobile {
+  from { opacity: 0; transform: translate(-50%, 100%); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes modal-exit-mobile {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, 100%); }
+}
+
+@media (min-width: 640px) {
+  .modal-content[data-state="open"] {
+    animation-name: modal-enter-desktop;
+  }
+
+  .modal-content[data-state="closed"] {
+    animation-name: modal-exit-desktop;
+  }
+}
+
+@keyframes modal-enter-desktop {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 18px)); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes modal-exit-desktop {
+  from { opacity: 1; transform: translate(-50%, -50%); }
+  to { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
+}
+
 .legacy-modal-content,
 .legacy-modal-content.quick-add-modal-react {
   box-sizing: border-box;
