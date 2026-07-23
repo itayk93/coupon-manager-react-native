@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { BarChart3, CheckCircle2, Eye, MessageCircle, Pencil, PieChart as PieChartIcon, Share2 } from "lucide-react";
+import { BarChart3, CheckCircle2, ChevronDown, Eye, MessageCircle, Pencil, PieChart as PieChartIcon, Share2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
@@ -14,7 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { DecryptedCoupon, useAddCoupon, useUpdateCoupon } from "@/hooks/useCoupons";
 import { useParseCoupon } from "@/hooks/useCouponAI";
 import type { ParsedCoupon } from "@/hooks/useCouponAI";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { useCompanies } from "@/hooks/useAdminManagement";
+import { getCompanyLogo, hasStaticLogo, resolveCompanyLogo } from "@/lib/companyLogos";
+import { matchCompanyName } from "@/lib/companyMatch";
+import { CompanyPicker, type PickerCompany } from "@/components/dashboard/CompanyPicker";
 
 type DashboardModalType = "stats" | "usage" | "quick-add" | "company" | "whatsapp" | null;
 
@@ -64,8 +67,11 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
   const parseCoupon = useParseCoupon();
+  const { data: dbCompanies } = useCompanies();
   const [quickText, setQuickText] = useState("");
   const [quickDetected, setQuickDetected] = useState(false);
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
+  const [otherCompanyMode, setOtherCompanyMode] = useState(false);
   const [remainingQuickCoupons, setRemainingQuickCoupons] = useState<ParsedCoupon[]>([]);
   const [quickCouponCount, setQuickCouponCount] = useState(0);
   const [currentQuickCoupon, setCurrentQuickCoupon] = useState(0);
@@ -83,6 +89,29 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     () => coupons.filter((coupon) => !coupon.is_for_sale && coupon.status !== "נוצל"),
     [coupons]
   );
+
+  // Company list for the picker + AI matching: the admin-managed `companies` table
+  // (with official logos) merged with the distinct companies from the user's own
+  // coupons, so the list is never empty and always covers what the user actually uses.
+  const pickerCompanies = useMemo<PickerCompany[]>(() => {
+    const byName = new Map<string, PickerCompany>();
+    (dbCompanies || []).forEach((company) => {
+      const name = company.name?.trim();
+      // Prefer a bundled brand logo when we have one (consistent with the rest of
+      // the app); otherwise fall back to the admin-managed image_path / favicon.
+      if (name) {
+        const logo = hasStaticLogo(name) ? getCompanyLogo(name) : resolveCompanyLogo(name, company.image_path);
+        byName.set(name, { name, logo });
+      }
+    });
+    coupons.forEach((coupon) => {
+      const name = coupon.company?.trim();
+      if (name && !byName.has(name)) byName.set(name, { name, logo: getCompanyLogo(name) });
+    });
+    return Array.from(byName.values());
+  }, [dbCompanies, coupons]);
+
+  const companyNames = useMemo(() => pickerCompanies.map((company) => company.name), [pickerCompanies]);
 
   const quickForm = useForm<QuickAddValues>({
     resolver: zodResolver(quickAddSchema),
@@ -157,13 +186,23 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     setRemainingQuickCoupons([]);
     setQuickCouponCount(0);
     setCurrentQuickCoupon(0);
+    setCompanyPickerOpen(false);
+    setOtherCompanyMode(false);
     setUsageRows(null);
     setUsageReportError("");
   };
 
   const fillQuickForm = (coupon: ParsedCoupon) => {
+    // Snap the AI-detected company to an existing company name (exact →
+    // case-insensitive → fuzzy). When it matches, use the canonical name and the
+    // picker shows it as a known company; otherwise keep the detected name in
+    // "other" mode so the user can confirm or correct it.
+    const detectedCompany = coupon.company?.trim() || "";
+    const matchedCompany = detectedCompany ? matchCompanyName(detectedCompany, companyNames) : null;
+    setOtherCompanyMode(Boolean(detectedCompany) && !matchedCompany);
+
     quickForm.reset({
-      company: coupon.company || "",
+      company: matchedCompany || detectedCompany,
       code: coupon.code || "",
       cost: coupon.cost ?? 0,
       value: coupon.value ?? 0,
@@ -183,7 +222,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     const text = quickText.trim();
     if (!text) return;
     try {
-      const parsedCoupons = await parseCoupon.mutateAsync({ text });
+      const parsedCoupons = await parseCoupon.mutateAsync({ text, companyNames });
       const [firstCoupon, ...otherCoupons] = parsedCoupons;
       if (!firstCoupon) return;
 
@@ -595,7 +634,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                   <PieChart>
                     <Pie data={stats.companies.slice(0, 8)} dataKey="savings" nameKey="company" cx="50%" cy="50%" outerRadius={92} label>
                       {stats.companies.slice(0, 8).map((_, index) => (
-                        <Cell key={index} fill={["#3498db", "#27ae60", "#f5b041", "#e74c3c", "#8e44ad", "#16a085", "#2c3e50", "#95a5a6"][index % 8]} />
+                        <Cell key={index} fill={["#3498db", "#5b7cfa", "#f5b041", "#e74c3c", "#8e44ad", "#e84393", "#2c3e50", "#95a5a6"][index % 8]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number) => formatIls(value)} />
@@ -613,7 +652,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                     <XAxis dataKey="company" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="active" name="פעילים" fill="#27ae60" />
+                    <Bar dataKey="active" name="פעילים" fill="#2473cc" />
                     <Bar dataKey="used" name="מנוצלים" fill="#2c3e50" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -796,7 +835,38 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                       קופון {currentQuickCoupon} מתוך {quickCouponCount}
                     </div>
                   )}
-                  <div className="form-group"><Label>חברה</Label><Input {...quickForm.register("company")} /></div>
+                  <div className="form-group">
+                    <Label>חברה</Label>
+                    <button
+                      type="button"
+                      className="company-select-trigger"
+                      onClick={() => setCompanyPickerOpen(true)}
+                    >
+                      {watchedQuick.company && !otherCompanyMode ? (
+                        <span className="company-select-value">
+                          <img
+                            src={pickerCompanies.find((company) => company.name === watchedQuick.company)?.logo || getCompanyLogo(watchedQuick.company)}
+                            alt=""
+                            className="company-select-logo"
+                            onError={(event) => { (event.target as HTMLImageElement).src = "/legacy-images/default.png"; }}
+                          />
+                          <span>{watchedQuick.company}</span>
+                        </span>
+                      ) : otherCompanyMode ? (
+                        <span className="company-select-value">חברה חדשה (אחר)</span>
+                      ) : (
+                        <span className="company-select-placeholder">בחר חברה מהרשימה</span>
+                      )}
+                      <ChevronDown className="company-select-chevron" aria-hidden />
+                    </button>
+                    {otherCompanyMode && (
+                      <Input
+                        className="company-other-input"
+                        placeholder="הזן שם חברה חדשה"
+                        {...quickForm.register("company")}
+                      />
+                    )}
+                  </div>
                   <div className="form-group"><Label>קוד קופון</Label><Input {...quickForm.register("code")} /></div>
                   <div className="form-group"><Label>כמה שילמת על הקופון</Label><Input type="number" step="0.01" {...quickForm.register("cost")} /></div>
                   <div className="form-group"><Label>כמה הקופון שווה בפועל</Label><Input type="number" step="0.01" {...quickForm.register("value")} /></div>
@@ -820,6 +890,21 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
               <Button type="button" variant="ghost" onClick={closeModal}>ביטול</Button>
             </div>
           </form>
+
+          <CompanyPicker
+            open={companyPickerOpen}
+            onOpenChange={setCompanyPickerOpen}
+            companies={pickerCompanies}
+            value={otherCompanyMode ? "" : watchedQuick.company}
+            onSelect={(name) => {
+              setOtherCompanyMode(false);
+              quickForm.setValue("company", name, { shouldValidate: true });
+            }}
+            onSelectOther={() => {
+              setOtherCompanyMode(true);
+              quickForm.setValue("company", "", { shouldValidate: true });
+            }}
+          />
         </DialogContent>
       </Dialog>
     </>

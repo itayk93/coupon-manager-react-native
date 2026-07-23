@@ -37,7 +37,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       dir="rtl"
       className={cn(
-        "modal-content fixed bottom-0 left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] gap-4 rounded-t-2xl border border-emerald-100 bg-background p-6 text-right shadow-2xl shadow-emerald-950/15 outline-none sm:bottom-auto sm:top-[50%] sm:max-h-[90vh] sm:translate-y-[-50%] sm:rounded-2xl",
+        "modal-content fixed bottom-0 left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] gap-4 rounded-t-2xl border border-blue-100 bg-background p-6 text-right shadow-2xl shadow-blue-950/15 outline-none sm:bottom-auto sm:top-[50%] sm:max-h-[90vh] sm:translate-y-[-50%] sm:rounded-2xl",
         className
       )}
       {...props}

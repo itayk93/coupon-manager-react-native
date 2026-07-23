@@ -20,11 +20,11 @@ export function useParseCoupon() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ text, imageBase64 }: { text?: string; imageBase64?: string }) => {
+    mutationFn: async ({ text, imageBase64, companyNames }: { text?: string; imageBase64?: string; companyNames?: string[] }) => {
       if (!text && !imageBase64) throw new Error('צריך טקסט או תמונה');
 
       const { data, error } = await supabase.functions.invoke('parse-coupon', {
-        body: { text, imageBase64, user_id: user?.id },
+        body: { text, imageBase64, user_id: user?.id, companyNames },
       });
 
       if (error) {
