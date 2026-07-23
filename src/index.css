@@ -1527,7 +1527,7 @@ body {
   pointer-events: none;
   z-index: 0;
 }
-.quick-add-modal-react > * {
+.quick-add-modal-react > *:not([aria-label]) {
   position: relative;
   z-index: 1;
 }
@@ -3406,7 +3406,7 @@ body {
 }
 
 .modal-content.quick-add-modal-react::before { display: none !important; }
-.modal-content.quick-add-modal-react > * { position: static; z-index: auto; }
+.modal-content.quick-add-modal-react > *:not([aria-label]) { position: static; z-index: auto; }
 .modal-content.quick-add-modal-react form { min-height: 0; }
 
 .modal-content.quick-add-modal-react .legacy-auto-detect-box {
