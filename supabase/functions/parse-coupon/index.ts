@@ -64,8 +64,15 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { text, imageBase64, user_id } = await req.json();
+    const { text, imageBase64, user_id, companyNames } = await req.json();
     if (!text && !imageBase64) return jsonResponse({ error: 'צריך טקסט או תמונה' }, 400);
+
+    // Guidance so the model prefers an existing company name (matching the
+    // mechanism used in the Flask/iOS apps). Client-side matching still snaps the
+    // result to the exact stored name afterwards.
+    const companyGuidance = Array.isArray(companyNames) && companyNames.length
+      ? `\n\nאלו הן רשימת החברות הקיימות במאגר שלנו:\n${companyNames.join(', ')}\n\nאנא זהה את החברה מהטקסט:\n- בצע התאמה ללא תלות ברישיות (case-insensitive), לדוגמה WOLT / wolt / וולט הם אותה חברה.\n- אם שם החברה שזיהית דומה מאוד לאחת החברות ברשימה, החזר את שם החברה בדיוק כפי שהוא מופיע ברשימה.\n- אם אין התאמה מספקת, החזר את שם החברה המקורי שזיהית.`
+      : '';
 
     const apiKey = Deno.env.get('OPENAI_API_KEY_V2') || Deno.env.get('OPENAI_API_KEY');
     if (!apiKey) {
@@ -78,9 +85,9 @@ Deno.serve(async (req: Request) => {
     const content: unknown[] = [
       {
         type: 'text',
-        text: text
+        text: (text
           ? `חלץ את פרטי הקופון מהטקסט הבא:\n\n${text}`
-          : 'חלץ את פרטי הקופון מהתמונה המצורפת.',
+          : 'חלץ את פרטי הקופון מהתמונה המצורפת.') + companyGuidance,
       },
     ];
     if (imageBase64) {
