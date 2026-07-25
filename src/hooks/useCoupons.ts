@@ -90,12 +90,17 @@ export function useAddCoupon() {
     mutationFn: async (newCoupon: Partial<DecryptedCoupon>) => {
       if (!user) throw new Error("Not authenticated");
 
-      // Encrypt sensitive fields
+      // Encrypt sensitive fields using Fernet encryption (matching legacy Python EncryptedString)
       const code = newCoupon.code ? await encrypt(newCoupon.code) : '';
       const description = newCoupon.description ? await encrypt(newCoupon.description) : null;
       const cvv = newCoupon.cvv ? await encrypt(newCoupon.cvv) : null;
       const card_exp = newCoupon.card_exp ? await encrypt(newCoupon.card_exp) : null;
       const buyme_coupon_url = newCoupon.buyme_coupon_url ? await encrypt(newCoupon.buyme_coupon_url) : null;
+
+      // Ensure expiration format is YYYY-MM-DD (max 10 chars for VARCHAR(10) column)
+      const expiration = newCoupon.expiration
+        ? (newCoupon.expiration.includes('T') ? newCoupon.expiration.split('T')[0] : newCoupon.expiration).slice(0, 10)
+        : null;
 
       const couponToInsert: CouponInsert = {
         ...newCoupon as any, // Type casting to bypass strict type checking temporarily
@@ -105,6 +110,7 @@ export function useAddCoupon() {
         cvv,
         card_exp,
         buyme_coupon_url,
+        expiration,
         date_added: new Date().toISOString(),
         used_value: newCoupon.used_value || 0,
         status: newCoupon.status || 'פעיל',
@@ -154,6 +160,11 @@ export function useUpdateCoupon() {
       }
       if (updates.buyme_coupon_url !== undefined) {
         encryptedUpdates.buyme_coupon_url = updates.buyme_coupon_url ? await encrypt(updates.buyme_coupon_url) : null;
+      }
+      if (updates.expiration !== undefined) {
+        encryptedUpdates.expiration = updates.expiration
+          ? (updates.expiration.includes('T') ? updates.expiration.split('T')[0] : updates.expiration).slice(0, 10)
+          : null;
       }
 
       const { data, error } = await supabase

@@ -4,10 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BarChart3, CheckCircle2, ChevronDown, Eye, MessageCircle, Pencil, PieChart as PieChartIcon, Share2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +20,8 @@ import { useCompanies } from "@/hooks/useAdminManagement";
 import { getCompanyLogo, hasStaticLogo, resolveCompanyLogo } from "@/lib/companyLogos";
 import { matchCompanyName } from "@/lib/companyMatch";
 import { CompanyPicker, type PickerCompany } from "@/components/dashboard/CompanyPicker";
+import { CouponDetailModal } from "@/components/coupons/CouponDetailModal";
+
 
 type DashboardModalType = "stats" | "usage" | "quick-add" | "company" | "whatsapp" | null;
 
@@ -42,6 +46,8 @@ const quickAddSchema = z.object({
   card_exp: z.string().optional(),
   is_one_time: z.boolean().default(false),
   purpose: z.string().optional(),
+  auto_download_details: z.string().optional().nullable(),
+  auto_update: z.boolean().default(true),
 });
 
 type QuickAddValues = z.infer<typeof quickAddSchema>;
@@ -62,6 +68,46 @@ function formatDate(value: string | null) {
   if (!value) return "ללא תוקף";
   return new Date(value).toLocaleDateString("he-IL");
 }
+
+const CHART_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#64748b"];
+
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="bg-popover border border-border text-popover-foreground shadow-2xl rounded-xl p-3 text-xs text-right" dir="rtl">
+        <div className="font-semibold text-sm mb-1 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: data.color || data.fill }} />
+          {data.name}
+        </div>
+        <div className="text-muted-foreground">
+          חיסכון מצטבר: <span className="font-bold text-foreground">{formatIls(data.value)}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomBarTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover/95 border border-border/60 text-popover-foreground shadow-xl rounded-xl p-3 text-xs backdrop-blur-md text-right" dir="rtl">
+        <div className="font-semibold text-sm mb-2 border-b border-border/40 pb-1">{label}</div>
+        {payload.map((item: any, idx: number) => (
+          <div key={idx} className="flex items-center justify-between gap-4 py-0.5">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: item.color || item.fill }} />
+              {item.name}:
+            </span>
+            <span className="font-bold text-foreground">{item.value} קופונים</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 export function DashboardModals({ openModal, onOpenChange, coupons, selectedCompany }: DashboardModalsProps) {
   const addCoupon = useAddCoupon();
@@ -84,6 +130,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const [usageText, setUsageText] = useState("");
   const [usageRows, setUsageRows] = useState<ParsedUsageRow[] | null>(null);
   const [usageReportError, setUsageReportError] = useState("");
+  const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
 
   const activeCoupons = useMemo(
     () => coupons.filter((coupon) => !coupon.is_for_sale && coupon.status !== "נוצל"),
@@ -97,16 +144,14 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     const byName = new Map<string, PickerCompany>();
     (dbCompanies || []).forEach((company) => {
       const name = company.name?.trim();
-      // Prefer a bundled brand logo when we have one (consistent with the rest of
-      // the app); otherwise fall back to the admin-managed image_path / favicon.
       if (name) {
-        const logo = hasStaticLogo(name) ? getCompanyLogo(name) : resolveCompanyLogo(name, company.image_path);
+        const logo = resolveCompanyLogo(name, company.image_path);
         byName.set(name, { name, logo });
       }
     });
     coupons.forEach((coupon) => {
       const name = coupon.company?.trim();
-      if (name && !byName.has(name)) byName.set(name, { name, logo: getCompanyLogo(name) });
+      if (name && !byName.has(name)) byName.set(name, { name, logo: resolveCompanyLogo(name) });
     });
     return Array.from(byName.values());
   }, [dbCompanies, coupons]);
@@ -129,6 +174,8 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       card_exp: "",
       is_one_time: false,
       purpose: "",
+      auto_download_details: null,
+      auto_update: true,
     },
   });
 
@@ -174,6 +221,25 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     };
   }, [coupons]);
 
+  const topCompaniesForPie = useMemo(() => {
+    if (!stats.companies || stats.companies.length === 0) return [];
+    if (stats.companies.length <= 5) return stats.companies;
+    const top5 = stats.companies.slice(0, 5);
+    const othersSavings = stats.companies.slice(5).reduce((sum, c) => sum + c.savings, 0);
+    if (othersSavings > 0) {
+      return [
+        ...top5,
+        { company: "אחרים", savings: othersSavings, value: 0, remaining: 0, count: 0, active: 0, used: 0 },
+      ];
+    }
+    return top5;
+  }, [stats.companies]);
+
+  const topCompaniesForBar = useMemo(() => {
+    if (!stats.companies || stats.companies.length === 0) return [];
+    return stats.companies.slice(0, 6);
+  }, [stats.companies]);
+
   const selectedCompanyCoupons = activeCoupons.filter((coupon) => coupon.company === selectedCompany);
   const selectedCompanyRemaining = selectedCompanyCoupons.reduce((sum, coupon) => sum + Math.max(0, coupon.value - coupon.used_value), 0);
   const watchedQuick = quickForm.watch();
@@ -193,13 +259,16 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   };
 
   const fillQuickForm = (coupon: ParsedCoupon) => {
-    // Snap the AI-detected company to an existing company name (exact →
-    // case-insensitive → fuzzy). When it matches, use the canonical name and the
-    // picker shows it as a known company; otherwise keep the detected name in
-    // "other" mode so the user can confirm or correct it.
     const detectedCompany = coupon.company?.trim() || "";
     const matchedCompany = detectedCompany ? matchCompanyName(detectedCompany, companyNames) : null;
     setOtherCompanyMode(Boolean(detectedCompany) && !matchedCompany);
+
+    const compName = (matchedCompany || detectedCompany).toLowerCase();
+    let defaultAutoProvider: string | null = null;
+    if (compName.includes("buyme") || compName.includes("ביימי")) defaultAutoProvider = "BuyMe";
+    else if (compName.includes("multipass") || compName.includes("מולטיפאס")) defaultAutoProvider = "Multipass";
+    else if (compName.includes("max") || compName.includes("מקס")) defaultAutoProvider = "Max";
+    else if (compName.includes("xtra") || compName.includes("אקסטרה")) defaultAutoProvider = "Xtra";
 
     quickForm.reset({
       company: matchedCompany || detectedCompany,
@@ -215,6 +284,8 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       card_exp: coupon.card_exp || "",
       is_one_time: false,
       purpose: "",
+      auto_download_details: defaultAutoProvider,
+      auto_update: defaultAutoProvider !== null,
     });
   };
 
@@ -222,7 +293,16 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     const text = quickText.trim();
     if (!text) return;
     try {
-      const parsedCoupons = await parseCoupon.mutateAsync({ text, companyNames });
+      const rawCoupons = await parseCoupon.mutateAsync({ text, companyNames });
+      const seenCodes = new Set<string>();
+      const parsedCoupons = rawCoupons.filter((c) => {
+        const codeKey = c.code ? c.code.trim().toLowerCase() : null;
+        if (!codeKey) return true;
+        if (seenCodes.has(codeKey)) return false;
+        seenCodes.add(codeKey);
+        return true;
+      });
+
       const [firstCoupon, ...otherCoupons] = parsedCoupons;
       if (!firstCoupon) return;
 
@@ -232,7 +312,6 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       setCurrentQuickCoupon(1);
       setQuickDetected(true);
     } catch {
-      // errors are surfaced via the hook's toast
     }
   };
 
@@ -247,11 +326,13 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
         used_value: 0,
         description: data.description || null,
         source: data.source || null,
-        expiration: data.expiration ? new Date(data.expiration).toISOString() : null,
+        expiration: data.expiration ? new Date(data.expiration).toISOString().split('T')[0] : null,
         cvv: data.include_card_info ? data.cvv || null : null,
         card_exp: data.include_card_info ? data.card_exp || null : null,
         is_one_time: data.is_one_time,
         purpose: data.is_one_time ? data.purpose || null : null,
+        auto_download_details: data.auto_download_details || null,
+        auto_update: data.auto_update,
         status: "פעיל",
         date_added: new Date().toISOString(),
       });
@@ -503,43 +584,16 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!detailsCoupon} onOpenChange={(open) => !open && setDetailsCoupon(null)}>
-        <DialogContent className="legacy-modal-content coupon-detail-modal-react" dir="rtl">
-          {detailsCoupon && (
-            <>
-              <DialogHeader>
-                <DialogTitle>פרטי קופון</DialogTitle>
-              </DialogHeader>
-              <div className="coupon-detail-react-card">
-                <div className="coupon-detail-react-head">
-                  <img src={getCompanyLogo(detailsCoupon.company)} alt={detailsCoupon.company} />
-                  <h3>{detailsCoupon.company}</h3>
-                </div>
-                <div className="coupon-detail-grid">
-                  <div><span>קוד מוצר:</span><strong>{detailsCoupon.code}</strong></div>
-                  <div><span>חברה:</span><strong>{detailsCoupon.company}</strong></div>
-                  <div><span>יתרה:</span><strong>{formatIls(Math.max(0, detailsCoupon.value - detailsCoupon.used_value))}</strong></div>
-                  <div><span>שווי:</span><strong>{formatIls(detailsCoupon.value || 0)}</strong></div>
-                  <div><span>נוצל:</span><strong>{formatIls(detailsCoupon.used_value || 0)}</strong></div>
-                  <div><span>עלות:</span><strong>{formatIls(detailsCoupon.cost || 0)}</strong></div>
-                  <div><span>תוקף:</span><strong>{formatDate(detailsCoupon.expiration)}</strong></div>
-                  <div><span>סטטוס:</span><strong>{detailsCoupon.status}</strong></div>
-                  {detailsCoupon.card_exp && <div><span>תוקף כרטיס:</span><strong>{detailsCoupon.card_exp}</strong></div>}
-                  {detailsCoupon.cvv && <div><span>CVV:</span><strong>{detailsCoupon.cvv}</strong></div>}
-                  {detailsCoupon.is_one_time && <div><span>קוד חד פעמי:</span><strong>כן</strong></div>}
-                  {detailsCoupon.purpose && <div><span>מטרה:</span><strong>{detailsCoupon.purpose}</strong></div>}
-                </div>
-                {detailsCoupon.description && (
-                  <div className="coupon-detail-description">
-                    <span>תיאור:</span>
-                    <p>{detailsCoupon.description}</p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CouponDetailModal
+        coupon={detailsCoupon}
+        onClose={() => setDetailsCoupon(null)}
+        onOpenUsage={(coupon) => {
+          setUsageCoupon(coupon);
+          setCompanyUsageAmount("");
+          setCompanyUsageError("");
+        }}
+      />
+
 
       <Dialog open={!!codeCoupon} onOpenChange={(open) => !open && setCodeCoupon(null)}>
         <DialogContent className="legacy-modal-content big-code-modal-react" dir="rtl">
@@ -555,7 +609,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                 </div>
               )}
               <div className="big-code-qr" aria-label="QR code">
-                <QRCodeSVG value={codeCoupon.code || " "} size={200} level="H" includeMargin />
+                <QRCodeSVG value={codeCoupon.code || " "} size={180} level="H" includeMargin />
               </div>
             </div>
           )}
@@ -628,32 +682,79 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
           <div className="legacy-stats-charts">
             <section>
-              <h3><PieChartIcon size={18} /> התפלגות החיסכון לפי חברות</h3>
-              <div className="legacy-chart-box">
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={stats.companies.slice(0, 8)} dataKey="savings" nameKey="company" cx="50%" cy="50%" outerRadius={92} label>
-                      {stats.companies.slice(0, 8).map((_, index) => (
-                        <Cell key={index} fill={["#3498db", "#5b7cfa", "#f5b041", "#e74c3c", "#8e44ad", "#e84393", "#2c3e50", "#95a5a6"][index % 8]} />
+              <h3><PieChartIcon size={18} className="text-primary" /> התפלגות החיסכון לפי חברות</h3>
+              <div className="legacy-chart-box" dir="ltr">
+                <div className="donut-center-overlay">
+                  {activePieIndex !== null && topCompaniesForPie[activePieIndex] ? (
+                    <>
+                      <span className="donut-center-label" style={{ color: CHART_COLORS[activePieIndex % CHART_COLORS.length] }}>
+                        {topCompaniesForPie[activePieIndex].company}
+                      </span>
+                      <span className="donut-center-val">{formatIls(topCompaniesForPie[activePieIndex].savings)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="donut-center-label">סה"כ חיסכון</span>
+                      <span className="donut-center-val">{formatIls(stats.totalSavings)}</span>
+                    </>
+                  )}
+                </div>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                    <Pie
+                      data={topCompaniesForPie}
+                      dataKey="savings"
+                      nameKey="company"
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={55}
+                      outerRadius={82}
+                      paddingAngle={3}
+                      cornerRadius={4}
+                      stroke="none"
+                      onMouseEnter={(_, index) => setActivePieIndex(index)}
+                      onMouseLeave={() => setActivePieIndex(null)}
+                    >
+                      {topCompaniesForPie.map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={CHART_COLORS[index % CHART_COLORS.length]}
+                          opacity={activePieIndex === null || activePieIndex === index ? 1 : 0.45}
+                          style={{ transition: "opacity 0.2s ease" }}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => formatIls(value)} />
+                    <Tooltip content={<CustomPieTooltip />} wrapperStyle={{ zIndex: 100 }} />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => <span style={{ color: "var(--foreground, #1e293b)", fontSize: "12px", direction: "rtl" }}>{value}</span>}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </section>
 
             <section>
-              <h3><BarChart3 size={18} /> קופונים פעילים ומנוצלים לפי חברה</h3>
-              <div className="legacy-chart-box">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={stats.companies.slice(0, 8)}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="company" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="active" name="פעילים" fill="#2473cc" />
-                    <Bar dataKey="used" name="מנוצלים" fill="#2c3e50" />
+              <h3><BarChart3 size={18} className="text-primary" /> קופונים פעילים ומנוצלים לפי חברה</h3>
+              <div className="legacy-chart-box" dir="ltr">
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart
+                    layout="vertical"
+                    data={topCompaniesForBar}
+                    margin={{ top: 10, right: 20, left: 5, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(226, 232, 240, 0.6)" />
+                    <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fontSize: 11, fill: '#64748b' }} />
+                    <YAxis dataKey="company" type="category" width={85} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#334155', fontWeight: 500 }} />
+                    <Tooltip cursor={{ fill: 'rgba(241, 245, 249, 0.6)' }} content={<CustomBarTooltip />} />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => <span style={{ color: "var(--foreground, #1e293b)", fontSize: "12px" }}>{value}</span>}
+                    />
+                    <Bar dataKey="active" name="פעילים" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
+                    <Bar dataKey="used" name="מנוצלים" fill="#94a3b8" radius={[0, 4, 4, 0]} barSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -661,7 +762,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
           </div>
 
           <div className="legacy-table-wrapper">
-            <table>
+            <table className="legacy-stats-table">
               <thead>
                 <tr>
                   <th>חברה</th>
@@ -674,8 +775,8 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
               <tbody>
                 {stats.companies.map((company) => (
                   <tr key={company.company}>
-                    <td>{company.company}</td>
-                    <td>{formatIls(company.savings)}</td>
+                    <td className="font-medium">{company.company}</td>
+                    <td className="font-semibold text-primary">{formatIls(company.savings)}</td>
                     <td>{company.value > 0 ? Math.round((company.savings / company.value) * 100) : 0}%</td>
                     <td>{company.count}</td>
                     <td>{company.active}</td>
@@ -683,6 +784,25 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                 ))}
               </tbody>
             </table>
+
+            <div className="legacy-stats-mobile-cards">
+              {stats.companies.map((company) => {
+                const savingsPct = company.value > 0 ? Math.round((company.savings / company.value) * 100) : 0;
+                return (
+                  <div key={company.company} className="legacy-mobile-card">
+                    <div className="legacy-mobile-card-top">
+                      <span className="company-name">{company.company}</span>
+                      <span className="company-savings">{formatIls(company.savings)}</span>
+                    </div>
+                    <div className="legacy-mobile-card-bottom">
+                      <span className="card-badge badge-pct">{savingsPct}% חיסכון</span>
+                      <span className="card-badge badge-total">{company.count} קופונים</span>
+                      <span className="card-badge badge-active">{company.active} פעילים</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -871,7 +991,72 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                   <div className="form-group"><Label>כמה שילמת על הקופון</Label><Input type="number" step="0.01" {...quickForm.register("cost")} /></div>
                   <div className="form-group"><Label>כמה הקופון שווה בפועל</Label><Input type="number" step="0.01" {...quickForm.register("value")} /></div>
                   <div className="form-group"><Label>תאריך תפוגה</Label><Input type="date" {...quickForm.register("expiration")} /></div>
+                  <div className="form-group"><Label>תיאור / הערות</Label><Input placeholder="תיאור הקופון (אופציונלי)" {...quickForm.register("description")} /></div>
+                  <div className="form-group"><Label>מקור הקופון</Label><Input placeholder="למשל: BuyMe, הייטקזון, אשראי" {...quickForm.register("source")} /></div>
                   <div className="discount-display">אחוז הנחה: {Math.round(discount)}%</div>
+
+                  <div className="space-y-3 pt-2 border-t mt-2">
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="quick_include_card_info"
+                        checked={watchedQuick.include_card_info}
+                        onCheckedChange={(checked) => quickForm.setValue("include_card_info", Boolean(checked))}
+                      />
+                      <Label htmlFor="quick_include_card_info" className="cursor-pointer text-sm font-medium">כולל פרטי כרטיס נטען (CVV / תוקף כרטיס)</Label>
+                    </div>
+
+                    {watchedQuick.include_card_info && (
+                      <div className="grid grid-cols-2 gap-3 pr-6">
+                        <div className="form-group">
+                          <Label htmlFor="quick_cvv" className="text-xs">קוד CVV</Label>
+                          <Input id="quick_cvv" placeholder="123" {...quickForm.register("cvv")} />
+                        </div>
+                        <div className="form-group">
+                          <Label htmlFor="quick_card_exp" className="text-xs">תוקף כרטיס (MM/YY)</Label>
+                          <Input id="quick_card_exp" placeholder="07/31" {...quickForm.register("card_exp")} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-2 space-x-reverse pt-1">
+                      <Checkbox
+                        id="quick_is_one_time"
+                        checked={watchedQuick.is_one_time}
+                        onCheckedChange={(checked) => quickForm.setValue("is_one_time", Boolean(checked))}
+                      />
+                      <Label htmlFor="quick_is_one_time" className="cursor-pointer text-sm font-medium">קופון חד-פעמי (מטרה מוגדרת)</Label>
+                    </div>
+
+                    {watchedQuick.is_one_time && (
+                      <div className="pr-6 form-group">
+                        <Label htmlFor="quick_purpose" className="text-xs">מטרת השימוש</Label>
+                        <Input id="quick_purpose" placeholder="למשל: ארוחת ערב צוותית" {...quickForm.register("purpose")} />
+                      </div>
+                    )}
+
+                    <div className="form-group pt-2 border-t mt-2">
+                      <Label htmlFor="quick_auto_download_details" className="text-sm font-medium">הורדה אוטומטית / עדכון יתרה</Label>
+                      <Select
+                        value={watchedQuick.auto_download_details || "none"}
+                        onValueChange={(val) => {
+                          const selected = val === "none" ? null : val;
+                          quickForm.setValue("auto_download_details", selected);
+                          quickForm.setValue("auto_update", selected !== null);
+                        }}
+                      >
+                        <SelectTrigger id="quick_auto_download_details" className="w-full mt-1">
+                          <SelectValue placeholder="בחר ספק הורדה אוטומטית" />
+                        </SelectTrigger>
+                        <SelectContent dir="rtl">
+                          <SelectItem value="none">ללא (ביטול הורדה אוטומטית)</SelectItem>
+                          <SelectItem value="BuyMe">BuyMe</SelectItem>
+                          <SelectItem value="Multipass">Multipass</SelectItem>
+                          <SelectItem value="Max">Max</SelectItem>
+                          <SelectItem value="Xtra">Xtra</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

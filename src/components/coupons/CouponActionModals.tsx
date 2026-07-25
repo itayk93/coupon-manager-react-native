@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { DecryptedCoupon, useDeleteCoupon, useUpdateCoupon } from "@/hooks/useCoupons";
 import { useRecordUsage } from "@/hooks/useCouponUsage";
 import { getCompanyLogo } from "@/lib/companyLogos";
-import { CouponDetailExtras } from "@/components/coupons/CouponDetailExtras";
+import { CouponDetailModal } from "@/components/coupons/CouponDetailModal";
+
 
 type CouponActionModalsProps = {
   detailsCoupon: DecryptedCoupon | null;
@@ -130,44 +131,13 @@ export function CouponActionModals({
 
   return (
     <>
-      <Dialog open={!!detailsCoupon} onOpenChange={(open) => !open && onDetailsChange(null)}>
-        <DialogContent className="legacy-modal-content coupon-detail-modal-react" dir="rtl">
-          {detailsCoupon && (
-            <>
-              <DialogHeader>
-                <DialogTitle>פרטי קופון</DialogTitle>
-              </DialogHeader>
-              <div className="coupon-detail-react-card">
-                <div className="coupon-detail-react-head">
-                  <img src={getCompanyLogo(detailsCoupon.company)} alt={detailsCoupon.company} />
-                  <h3>{detailsCoupon.company}</h3>
-                </div>
-                <div className="coupon-detail-grid">
-                  <div><span>קוד מוצר:</span><strong>{detailsCoupon.code}</strong></div>
-                  <div><span>חברה:</span><strong>{detailsCoupon.company}</strong></div>
-                  <div><span>יתרה:</span><strong>{formatIls(Math.max(0, detailsCoupon.value - detailsCoupon.used_value))}</strong></div>
-                  <div><span>שווי:</span><strong>{formatIls(detailsCoupon.value || 0)}</strong></div>
-                  <div><span>נוצל:</span><strong>{formatIls(detailsCoupon.used_value || 0)}</strong></div>
-                  <div><span>עלות:</span><strong>{formatIls(detailsCoupon.cost || 0)}</strong></div>
-                  <div><span>תוקף:</span><strong>{formatDate(detailsCoupon.expiration)}</strong></div>
-                  <div><span>סטטוס:</span><strong>{detailsCoupon.status}</strong></div>
-                  {detailsCoupon.card_exp && <div><span>תוקף כרטיס:</span><strong>{detailsCoupon.card_exp}</strong></div>}
-                  {detailsCoupon.cvv && <div><span>CVV:</span><strong>{detailsCoupon.cvv}</strong></div>}
-                  {detailsCoupon.is_one_time && <div><span>קוד חד פעמי:</span><strong>כן</strong></div>}
-                  {detailsCoupon.purpose && <div><span>מטרה:</span><strong>{detailsCoupon.purpose}</strong></div>}
-                </div>
-                {detailsCoupon.description && (
-                  <div className="coupon-detail-description">
-                    <span>תיאור:</span>
-                    <p>{detailsCoupon.description}</p>
-                  </div>
-                )}
-              </div>
-              <CouponDetailExtras couponId={detailsCoupon.id} />
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CouponDetailModal
+        coupon={detailsCoupon}
+        onClose={() => onDetailsChange(null)}
+        onOpenUsage={onUsageChange}
+        onOpenDelete={onDeleteChange}
+        onMarkUsed={onMarkUsedChange}
+      />
 
       <Dialog open={!!codeCoupon} onOpenChange={(open) => !open && onCodeChange(null)}>
         <DialogContent className="legacy-modal-content big-code-modal-react" dir="rtl">
@@ -183,7 +153,7 @@ export function CouponActionModals({
                 </div>
               )}
               <div className="big-code-qr" aria-label="QR code">
-                <QRCodeSVG value={codeCoupon.code || " "} size={200} level="H" includeMargin />
+                <QRCodeSVG value={codeCoupon.code || " "} size={180} level="H" includeMargin />
               </div>
             </div>
           )}

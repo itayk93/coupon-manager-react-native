@@ -19,7 +19,10 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          <Link to="/" className="dashboard-brand">Coupon Master</Link>
+          <Link to="/" className="dashboard-brand flex items-center gap-2.5">
+            <img src="/logo-icon.png" alt="קופון מאסטר" className="h-8 w-8 rounded-lg shadow-sm object-cover" />
+            <span className="font-bold text-lg tracking-tight">קופון מאסטר</span>
+          </Link>
         </div>
 
         <div className="dashboard-topbar-actions">

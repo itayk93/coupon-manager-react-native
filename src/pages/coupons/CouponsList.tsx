@@ -67,7 +67,7 @@ export default function CouponsList() {
       </div>
 
       <div className="search-container">
-        <div className="relative">
+        <div className="search-input-wrapper relative">
           <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="סינון לפי חברה..."
@@ -77,24 +77,27 @@ export default function CouponsList() {
           />
         </div>
         {allTagNames.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <div className="category-tags-bar">
             <button
               type="button"
               onClick={() => setSelectedTag(null)}
-              className={`text-xs rounded-full border px-3 py-1 transition-colors ${selectedTag === null ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+              className={`tag-pill ${selectedTag === null ? 'active' : ''}`}
             >
               הכל
             </button>
-            {allTagNames.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setSelectedTag(selectedTag === name ? null : name)}
-                className={`text-xs rounded-full border px-3 py-1 transition-colors ${selectedTag === name ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
-              >
-                {name}
-              </button>
-            ))}
+            {allTagNames.map((name) => {
+              const displayName = name.replace(/^Tag for\s+/i, '');
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setSelectedTag(selectedTag === name ? null : name)}
+                  className={`tag-pill ${selectedTag === name ? 'active' : ''}`}
+                >
+                  {displayName}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -165,7 +168,7 @@ export default function CouponsList() {
                     {coupon.status !== 'פעיל' && <Badge variant="secondary">{coupon.status}</Badge>}
                   </CardContent>
 
-                  <CardFooter className="coupon-actions">
+                  <div className="coupon-actions">
                     <Button className="action-button view-details" variant="ghost" onClick={() => setDetailsCoupon(coupon)} aria-label="פרטים">
                       <Info className="h-4 w-4" />
                       <span>פרטים</span>
@@ -196,7 +199,7 @@ export default function CouponsList() {
                       <CircleX className="h-4 w-4" />
                       <span>סימון כנוצל</span>
                     </Button>
-                  </CardFooter>
+                  </div>
                 </Card>
               </div>
             );

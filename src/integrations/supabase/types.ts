@@ -32,6 +32,8 @@ export type Database = {
           newsletter_subscription: boolean
           telegram_monthly_summary: boolean
           show_whatsapp_banner: boolean
+          pwa_prompt_dismissed: boolean | null
+          pwa_installed: boolean | null
         }
         Insert: {
           id?: number
@@ -55,6 +57,8 @@ export type Database = {
           newsletter_subscription?: boolean
           telegram_monthly_summary?: boolean
           show_whatsapp_banner?: boolean
+          pwa_prompt_dismissed?: boolean | null
+          pwa_installed?: boolean | null
         }
         Update: {
           id?: number
@@ -78,6 +82,8 @@ export type Database = {
           newsletter_subscription?: boolean
           telegram_monthly_summary?: boolean
           show_whatsapp_banner?: boolean
+          pwa_prompt_dismissed?: boolean | null
+          pwa_installed?: boolean | null
         }
       }
       coupon: {

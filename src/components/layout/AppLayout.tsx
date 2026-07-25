@@ -13,6 +13,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -53,14 +54,14 @@ export function AppLayout() {
                     isActive && "active"
                   )}
                 >
-                  <span>{item.name}</span>
                   <item.icon className="h-6 w-6" />
+                  <span>{item.name}</span>
                 </Link>
               );
             })}
             <button className="dashboard-nav-link dashboard-logout" onClick={signOut}>
-              <span>יציאה מהחשבון</span>
               <LogOut className="h-6 w-6" />
+              <span>יציאה מהחשבון</span>
             </button>
           </nav>
         </aside>
@@ -74,8 +75,9 @@ export function AppLayout() {
               onClick={() => setIsSidebarOpen(false)}
             />
             <aside className="dashboard-sidebar mobile">
-              <div className="dashboard-sidebar-mobile-title">
-                Coupon Master
+              <div className="dashboard-sidebar-mobile-title flex items-center gap-2">
+                <img src="/logo-icon.png" alt="קופון מאסטר" className="h-7 w-7 rounded-lg object-cover" />
+                <span>קופון מאסטר</span>
               </div>
               <nav className="dashboard-nav">
                 {navigation.map((item) => {
@@ -91,14 +93,14 @@ export function AppLayout() {
                         isActive && "active"
                       )}
                     >
-                      <span>{item.name}</span>
                       <item.icon className="h-6 w-6" />
+                      <span>{item.name}</span>
                     </Link>
                   );
                 })}
                 <button className="dashboard-nav-link dashboard-logout" onClick={signOut}>
-                  <span>יציאה מהחשבון</span>
                   <LogOut className="h-6 w-6" />
+                  <span>יציאה מהחשבון</span>
                 </button>
               </nav>
             </aside>
@@ -112,7 +114,7 @@ export function AppLayout() {
         </div>
       </div>
 
-      <nav className="dashboard-bottom-nav lg:hidden" aria-label="ניווט ראשי">
+      <nav className="dashboard-bottom-nav" aria-label="ניווט ראשי">
         {mobileNavigation.map((item) => {
           const isActive = location.pathname === item.href || 
                            (item.href !== '/' && location.pathname.startsWith(item.href));
@@ -131,6 +133,9 @@ export function AppLayout() {
           );
         })}
       </nav>
+
+      <PwaInstallPrompt />
     </div>
   );
 }
+
