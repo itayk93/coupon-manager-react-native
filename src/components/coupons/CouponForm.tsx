@@ -40,6 +40,8 @@ const couponSchema = z.object({
   purpose: z.string().optional(),
   cvv: z.string().optional(),
   card_exp: z.string().optional(),
+  auto_download_details: z.string().optional().nullable(),
+  auto_update: z.boolean().default(true),
 });
 
 type CouponFormValues = z.infer<typeof couponSchema>;
@@ -78,6 +80,8 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
       purpose: coupon?.purpose || '',
       cvv: coupon?.cvv || '',
       card_exp: coupon?.card_exp || '',
+      auto_download_details: coupon?.auto_download_details || null,
+      auto_update: coupon?.auto_update ?? true,
     },
   });
 
@@ -99,6 +103,8 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
       purpose: coupon?.purpose || '',
       cvv: coupon?.cvv || '',
       card_exp: coupon?.card_exp || '',
+      auto_download_details: coupon?.auto_download_details || null,
+      auto_update: coupon?.auto_update ?? true,
     });
   }, [coupon, form, open]);
 
@@ -148,8 +154,7 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
           id: coupon.id,
           updates: {
             ...normalizedData,
-            // Only send these if they have value or if we want to clear them
-            expiration: data.expiration ? new Date(data.expiration).toISOString() : null,
+            expiration: data.expiration ? new Date(data.expiration).toISOString().split('T')[0] : null,
           }
         });
         await setCouponTags.mutateAsync({ couponId: coupon.id, tagNames: tags });
@@ -157,7 +162,7 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
         const created = await addCoupon.mutateAsync({
           ...normalizedData,
           date_added: new Date().toISOString(),
-          expiration: data.expiration ? new Date(data.expiration).toISOString() : null,
+          expiration: data.expiration ? new Date(data.expiration).toISOString().split('T')[0] : null,
         });
         if (created?.id && tags.length) {
           await setCouponTags.mutateAsync({ couponId: created.id, tagNames: tags });
@@ -308,6 +313,30 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
                 <Input id="purpose" {...form.register("purpose")} disabled={isSubmitting} />
               </div>
             )}
+
+            <div className="space-y-2 pt-2 border-t mt-2">
+              <Label htmlFor="auto_download_details" className="font-medium">הורדה אוטומטית / עדכון יתרה</Label>
+              <Select
+                value={form.watch("auto_download_details") || "none"}
+                onValueChange={(val) => {
+                  const selected = val === "none" ? null : val;
+                  form.setValue("auto_download_details", selected);
+                  form.setValue("auto_update", selected !== null);
+                }}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger id="auto_download_details" className="w-full">
+                  <SelectValue placeholder="בחר ספק הורדה אוטומטית" />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  <SelectItem value="none">ללא (ביטול הורדה אוטומטית)</SelectItem>
+                  <SelectItem value="BuyMe">BuyMe</SelectItem>
+                  <SelectItem value="Multipass">Multipass</SelectItem>
+                  <SelectItem value="Max">Max</SelectItem>
+                  <SelectItem value="Xtra">Xtra</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t">

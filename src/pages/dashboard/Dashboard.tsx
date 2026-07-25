@@ -72,10 +72,10 @@ export default function Dashboard() {
             <p>{visibleCoupons.length} קופונים פעילים לניצול</p>
           </div>
 
-          <div className="wallet-balance-card" aria-label="יתרה זמינה בארנק">
+          <div className="wallet-balance-card" aria-label="יתרה זמינה בארנק" dir="rtl">
             <span>יתרה זמינה</span>
-            <strong>{isLoading ? "טוען..." : formatIls(remainingValue)}</strong>
-            <small>מתוך {formatIls(totalValue)} בארנק</small>
+            <strong dir="rtl">{isLoading ? "טוען..." : formatIls(remainingValue)}</strong>
+            <small dir="rtl">מתוך {formatIls(totalValue)} בארנק</small>
           </div>
         </div>
 

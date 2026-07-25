@@ -55,8 +55,9 @@ export default function Login() {
   return (
     <main className="login-page">
       <div className="login-container">
-        <div className="login-header">
-          <h1 className="welcome-title">ברוכים הבאים ל-Coupon Master</h1>
+        <div className="login-header flex flex-col items-center">
+          <img src="/logo-icon.png" alt="קופון מאסטר" className="h-16 w-16 mb-3 rounded-2xl shadow-lg hover:scale-105 transition-transform object-cover" />
+          <h1 className="welcome-title">ברוכים הבאים ל-קופון מאסטר</h1>
           <div className="decorative-line" />
         </div>
 

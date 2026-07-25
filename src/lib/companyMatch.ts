@@ -32,5 +32,22 @@ export function matchCompanyName(detectedName: string, companyNames: string[]): 
   const fuzzy = companyNames.find((name) => clean(name) === cleanedDetected);
   if (fuzzy) return fuzzy;
 
+  // 4. Substring match: DB name is a leading word of the detected name, or vice versa.
+  // e.g. "Xtra Giftcard" → matches DB entry "Xtra"
+  //      "BuyMe Gift"    → matches DB entry "BuyMe"
+  const detectedWords = cleanedDetected.split(" ");
+  const substringMatch = companyNames.find((name) => {
+    const cleanedName = clean(name);
+    const nameWords = cleanedName.split(" ");
+    // DB name words all appear at the start of detected name words
+    if (nameWords.every((w, i) => detectedWords[i] === w)) return true;
+    // Detected name words all appear at the start of DB name words
+    if (detectedWords.every((w, i) => nameWords[i] === w)) return true;
+    // DB name is contained inside detected name (e.g. "Xtra" inside "Xtra Giftcard")
+    if (cleanedDetected.startsWith(cleanedName + " ") || cleanedDetected.endsWith(" " + cleanedName)) return true;
+    return false;
+  });
+  if (substringMatch) return substringMatch;
+
   return null;
 }

@@ -111,8 +111,13 @@ for (const profile of ['desktop', 'mobile'] as const) {
       await companyDialog.locator('.legacy-company-coupon-link').first().click();
       const detailsDialogFromCompany = page.getByRole('dialog').filter({ hasText: 'פרטי קופון' });
       await expect(detailsDialogFromCompany).toBeVisible();
-      await expect(detailsDialogFromCompany).toContainText('קוד מוצר:');
-      await expect(detailsDialogFromCompany).toContainText('יתרה:');
+      // Verify the new tabbed layout
+      await expect(detailsDialogFromCompany.locator('.cd-tabs')).toBeVisible();
+      await expect(detailsDialogFromCompany.locator('.cd-tab-btn').filter({ hasText: 'פרטי קופון' })).toBeVisible();
+      await expect(detailsDialogFromCompany.locator('.cd-tab-btn').filter({ hasText: 'ערכים כספיים' })).toBeVisible();
+      await expect(detailsDialogFromCompany.locator('.cd-tab-btn').filter({ hasText: 'נתונים נוספים' })).toBeVisible();
+      await expect(detailsDialogFromCompany.locator('.cd-info-box').first()).toBeVisible();
+      await expect(detailsDialogFromCompany.locator('.cd-history-title')).toContainText('היסטוריית טעינות');
       await page.getByRole('button', { name: 'Close' }).last().click();
 
       const actionColors = await companyDialog.locator('.coupon-info-buttons').first().evaluate((element) => {
@@ -152,7 +157,25 @@ for (const profile of ['desktop', 'mobile'] as const) {
       await expect.poll(async () => page.locator('.coupon-card-index-wrapper').count()).toBeGreaterThan(20);
 
       await page.locator('.view-details').first().click();
-      await expect(page.getByRole('dialog').filter({ hasText: 'פרטי קופון' })).toBeVisible();
+      const couponDetailDialog = page.getByRole('dialog').filter({ hasText: 'פרטי קופון' });
+      await expect(couponDetailDialog).toBeVisible();
+      // Verify full modal structure
+      await expect(couponDetailDialog.locator('.cd-logo')).toBeVisible();
+      await expect(couponDetailDialog.locator('.cd-company-name')).toBeVisible();
+      await expect(couponDetailDialog.locator('.cd-tabs')).toBeVisible();
+      // Tab 1 - info is default active
+      await expect(couponDetailDialog.locator('.cd-tab-active').filter({ hasText: 'פרטי קופון' })).toBeVisible();
+      await expect(couponDetailDialog.locator('.cd-info-grid')).toBeVisible();
+      // Click on 'ערכים כספיים' tab
+      await couponDetailDialog.locator('.cd-tab-btn').filter({ hasText: 'ערכים כספיים' }).click();
+      await expect(couponDetailDialog.locator('.cd-donut-wrap')).toBeVisible();
+      // Click on 'נתונים נוספים' tab
+      await couponDetailDialog.locator('.cd-tab-btn').filter({ hasText: 'נתונים נוספים' }).click();
+      await expect(couponDetailDialog.locator('.cd-info-grid')).toBeVisible();
+      // Verify usage history section
+      await expect(couponDetailDialog.locator('.cd-history-title')).toContainText('היסטוריית טעינות');
+      // Verify action buttons
+      await expect(couponDetailDialog.locator('.cd-action-row')).toBeVisible();
       await page.getByRole('button', { name: 'Close' }).last().click();
 
       await page.locator('.show-code').first().click();
