@@ -131,13 +131,22 @@ export function resolveCompanyLogo(company: string, dbImagePath?: string | null)
       return cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
     }
 
+    // Fix for db entries that have "images/" prefix
+    if (cleanPath.startsWith('images/')) {
+      return `/legacy-images/${cleanPath.replace('images/', '')}`;
+    }
+
     // Supabase Storage path with bucket (e.g. logos/xxx.png or company-logos/xxx.png)
+    // Only use Supabase if we know it's a supabase path or if we want to default to it.
+    // However, since many existing DB entries are plain filenames (e.g. carrefour.png) 
+    // that exist in legacy-images, we should assume plain filenames are local unless they
+    // contain a bucket prefix other than 'images/'.
     if (cleanPath.includes('/')) {
       return `${SUPABASE_STORAGE_URL}/${cleanPath}`;
     }
 
-    // Supabase Storage filename in default bucket
-    return `${SUPABASE_STORAGE_URL}/logos/${cleanPath}`;
+    // Default plain filenames to legacy-images
+    return `/legacy-images/${cleanPath}`;
   }
 
   // Fallback to static preset logo
