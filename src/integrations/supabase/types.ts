@@ -285,6 +285,64 @@ export type Database = {
           user_id?: number
         }
       }
+      push_system_config: {
+        Row: {
+          id: number
+          vapid_public_key: string
+          vapid_private_key: string
+          vapid_subject: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          vapid_public_key: string
+          vapid_private_key: string
+          vapid_subject?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          vapid_public_key?: string
+          vapid_private_key?: string
+          vapid_subject?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      push_subscriptions: {
+        Row: {
+          endpoint: string
+          subscription: Json
+          user_id: number
+          user_email: string
+          platform: string | null
+          user_agent: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          endpoint: string
+          subscription: Json
+          user_id: number
+          user_email: string
+          platform?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          endpoint?: string
+          subscription?: Json
+          user_id?: number
+          user_email?: string
+          platform?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       companies: {
         Row: {
           id: number

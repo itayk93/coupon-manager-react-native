@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bell, Mail, Shield, Smartphone, Lock, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOptOut, useSetOptOut, useDeleteAccount } from '@/hooks/useConsent';
+import { usePwaNotifications } from '@/hooks/usePwaNotifications';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -22,6 +23,17 @@ export default function Settings() {
   const { data: optOut } = useOptOut();
   const setOptOut = useSetOptOut();
   const deleteAccount = useDeleteAccount();
+  const {
+    isSupported,
+    notificationsEnabled,
+    permission,
+    reason,
+    isLoading: pushLoading,
+    isBusy: pushBusy,
+    enable,
+    disable,
+    sendTest,
+  } = usePwaNotifications();
 
   const [newsletter, setNewsletter] = useState(true);
   const [telegramSummary, setTelegramSummary] = useState(true);
@@ -81,6 +93,33 @@ export default function Settings() {
       navigate('/login', { replace: true });
     } catch (error) {
       // Error handled by hook
+    }
+  };
+
+  const handleEnablePwaNotifications = async () => {
+    try {
+      await enable();
+      toast.success('התראות Push הופעלו בהצלחה.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'לא ניתן היה להפעיל התראות Push.');
+    }
+  };
+
+  const handleDisablePwaNotifications = async () => {
+    try {
+      await disable();
+      toast.success('התראות Push כובו.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'לא ניתן היה לכבות התראות Push.');
+    }
+  };
+
+  const handleTestPush = async () => {
+    try {
+      await sendTest();
+      toast.success('התראת בדיקה נשלחה.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'שליחת התראת הבדיקה נכשלה.');
     }
   };
 
@@ -166,6 +205,44 @@ export default function Settings() {
                   checked={telegramSummary} 
                   onCheckedChange={setTelegramSummary} 
                 />
+              </div>
+
+              <div className="flex items-center justify-between space-x-4 space-x-reverse rounded-lg border p-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-bold">התראות PWA</Label>
+                    <p className="text-sm text-muted-foreground text-end">
+                      קבל התראות מערכת אמיתיות גם כשהאפליקציה סגורה, כולל עדכוני קופונים אוטומטיים.
+                    </p>
+                    <p className="text-xs text-muted-foreground text-end">
+                      מצב נוכחי: {pushLoading ? 'טוען...' : notificationsEnabled ? 'פעיל' : permission === 'denied' ? 'חסום בדפדפן' : 'לא הופעל'}
+                    </p>
+                    {!isSupported && reason && (
+                      <p className="text-xs text-destructive text-end">{reason}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleTestPush}
+                    disabled={!notificationsEnabled || pushBusy}
+                  >
+                    בדיקה
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={notificationsEnabled ? 'secondary' : 'default'}
+                    onClick={notificationsEnabled ? handleDisablePwaNotifications : handleEnablePwaNotifications}
+                    disabled={!isSupported || pushBusy || pushLoading}
+                  >
+                    {notificationsEnabled ? 'כבה' : 'הפעל'}
+                  </Button>
+                </div>
               </div>
 
             </CardContent>

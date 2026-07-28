@@ -79,3 +79,52 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+self.addEventListener('push', (event) => {
+  let data = {};
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = { body: event.data.text() };
+    }
+  }
+
+  const title = data.title || 'קופון מאסטר';
+  const options = {
+    body: data.body || 'יש עדכון חדש בקופונים שלך.',
+    icon: data.icon || '/pwa-192x192.png',
+    badge: data.badge || '/pwa-192x192.png',
+    tag: data.tag || 'coupon-master-update',
+    renotify: Boolean(data.renotify),
+    requireInteraction: Boolean(data.requireInteraction),
+    data: {
+      url: data.url || '/notifications',
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/notifications';
+  const destinationUrl = new URL(targetUrl, self.location.origin).toString();
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
+      for (const client of clientsArr) {
+        if (client.url === destinationUrl || client.url.startsWith(destinationUrl)) {
+          client.focus();
+          client.postMessage({ url: targetUrl });
+          return;
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(destinationUrl);
+      }
+    })
+  );
+});
