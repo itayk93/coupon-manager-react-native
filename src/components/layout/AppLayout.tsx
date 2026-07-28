@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { PwaNotificationManager } from '@/components/PwaNotificationManager';
 
 export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -135,7 +136,7 @@ export function AppLayout() {
       </nav>
 
       <PwaInstallPrompt />
+      <PwaNotificationManager />
     </div>
   );
 }
-

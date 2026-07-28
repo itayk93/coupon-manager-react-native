@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, Clock, List, Trash2, X } from 'lucide-react';
+import { Bell, BellOff, Clock, ExternalLink, List, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Notifications() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
@@ -27,6 +29,23 @@ export default function Notifications() {
       return data || [];
     },
     enabled: !!user,
+  });
+
+  const markViewed = useMutation({
+    mutationFn: async (id: number) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ viewed: true })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
   });
 
   const hideNotification = useMutation({
@@ -119,17 +138,34 @@ export default function Notifications() {
                         </div>
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="notification-close"
-                      title="מחק התראה"
-                      onClick={() => hideNotification.mutate(notification.id)}
-                      disabled={hideNotification.isPending}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {notification.link && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="notification-close"
+                          title="פתח התראה"
+                          onClick={() => {
+                            markViewed.mutate(notification.id);
+                            navigate(notification.link!);
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="notification-close"
+                        title="מחק התראה"
+                        onClick={() => hideNotification.mutate(notification.id)}
+                        disabled={hideNotification.isPending}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))

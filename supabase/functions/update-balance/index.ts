@@ -19,6 +19,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { createServiceClient, sendPushToRows } from '../_shared/push.ts';
 
 type Coupon = {
   id: number;
@@ -28,6 +29,12 @@ type Coupon = {
   buyme_coupon_url: string | null;
   auto_update: boolean;
   user_id: number;
+};
+
+type UpdatedCouponSummary = {
+  company: string;
+  oldRemaining: number;
+  newRemaining: number;
 };
 
 function providerFor(coupon: Coupon): 'multipass' | 'buyme' | null {
@@ -72,6 +79,7 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+    const serviceSupabase = createServiceClient();
 
     // Start a run record
     const { data: run } = await supabase
@@ -94,6 +102,7 @@ Deno.serve(async (req: Request) => {
     let updated = 0;
     let failed = 0;
     let skipped = 0;
+    const changedCoupons: UpdatedCouponSummary[] = [];
 
     for (const coupon of (coupons || []) as Coupon[]) {
       const provider = providerFor(coupon);
@@ -107,6 +116,8 @@ Deno.serve(async (req: Request) => {
         continue;
       }
       const newUsed = Math.max(0, Math.min(coupon.value, coupon.value - remaining));
+      const oldRemaining = Math.max(0, coupon.value - coupon.used_value);
+      const newRemaining = Math.max(0, coupon.value - newUsed);
       const { error: updateErr } = await supabase
         .from('coupon')
         .update({
@@ -116,7 +127,53 @@ Deno.serve(async (req: Request) => {
         })
         .eq('id', coupon.id);
       if (updateErr) failed++;
-      else updated++;
+      else {
+        updated++;
+        if (newUsed !== coupon.used_value) {
+          changedCoupons.push({
+            company: coupon.company,
+            oldRemaining,
+            newRemaining,
+          });
+        }
+      }
+    }
+
+    if (changedCoupons.length > 0) {
+      const topChanges = changedCoupons
+        .slice(0, 3)
+        .map((item) => `${item.company}: ${item.oldRemaining.toFixed(2)}₪ → ${item.newRemaining.toFixed(2)}₪`)
+        .join(' | ');
+
+      const extraCount = changedCoupons.length - 3;
+      const suffix = extraCount > 0 ? ` ועוד ${extraCount} קופונים` : '';
+      const message = `סיימנו לעדכן את הקופונים שלך. ${changedCoupons.length} קופונים השתנו: ${topChanges}${suffix}`;
+
+      await supabase.from('notifications').insert({
+        user_id,
+        message,
+        link: '/notifications',
+        shown: false,
+        viewed: false,
+        hide_from_view: false,
+      });
+
+      const { data: subscriptions } = await serviceSupabase
+        .from('push_subscriptions')
+        .select('endpoint, subscription')
+        .eq('user_id', user_id);
+
+      await sendPushToRows(
+        serviceSupabase,
+        (subscriptions || []) as Array<{ endpoint: string; subscription: Record<string, unknown> }>,
+        {
+          title: 'קופון מאסטר',
+          body: message,
+          url: '/notifications',
+          tag: `coupon-update-${user_id}`,
+          renotify: true,
+        }
+      );
     }
 
     if (run) {
