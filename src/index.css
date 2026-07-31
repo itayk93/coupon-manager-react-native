@@ -675,7 +675,8 @@ body {
 }
 
 .dashboard-topbar {
-  height: 50px;
+  height: calc(50px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   background: #15202e;
   color: #fff;
   border-bottom: 0;
@@ -3357,7 +3358,7 @@ body {
 
 @media (max-width: 1279px) {
   .dashboard-topbar {
-    height: 68px;
+    height: calc(68px + env(safe-area-inset-top, 0px));
   }
 
   .dashboard-topbar-inner {
@@ -3378,7 +3379,7 @@ body {
     width: min(340px, 86vw);
     flex: 0 0 min(340px, 86vw);
     min-height: 100vh;
-    padding: 24px 18px;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 18px calc(24px + env(safe-area-inset-bottom, 0px));
     box-shadow: -12px 0 28px rgba(15, 23, 42, 0.18);
   }
 
@@ -3443,7 +3444,7 @@ body {
   }
 
   .dashboard-topbar {
-    height: 50px;
+    height: calc(50px + env(safe-area-inset-top, 0px));
   }
 
   .dashboard-topbar-inner {
