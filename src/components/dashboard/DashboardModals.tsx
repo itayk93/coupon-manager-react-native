@@ -63,6 +63,11 @@ type ParsedUsageRow = {
   amount: string;
 };
 
+function normalizeAutoProvider(value: string | null | undefined, allowAutoUpdater: boolean) {
+  if (!allowAutoUpdater) return null;
+  return value === "BuyMe" || value === "Multipass" || value === "Max" ? value : null;
+}
+
 function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
 }
@@ -301,8 +306,8 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       card_exp: coupon.card_exp || "",
       is_one_time: false,
       purpose: "",
-      auto_download_details: defaultAutoProvider,
-      auto_update: defaultAutoProvider !== null,
+      auto_download_details: normalizeAutoProvider(defaultAutoProvider, showAutoUsageUpdater),
+      auto_update: Boolean(normalizeAutoProvider(defaultAutoProvider, showAutoUsageUpdater)),
     });
   };
 
@@ -348,8 +353,8 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
         card_exp: data.include_card_info ? data.card_exp || null : null,
         is_one_time: data.is_one_time,
         purpose: data.is_one_time ? data.purpose || null : null,
-        auto_download_details: data.auto_download_details || null,
-        auto_update: data.auto_update,
+        auto_download_details: normalizeAutoProvider(data.auto_download_details, showAutoUsageUpdater),
+        auto_update: Boolean(normalizeAutoProvider(data.auto_download_details, showAutoUsageUpdater)),
         status: "פעיל",
         date_added: new Date().toISOString(),
       });
@@ -362,7 +367,23 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
         return;
       }
 
-      quickForm.reset();
+      quickForm.reset({
+        company: "",
+        code: "",
+        cost: 0,
+        value: 0,
+        discount_percentage: 0,
+        expiration: "",
+        description: "",
+        source: "",
+        include_card_info: false,
+        cvv: "",
+        card_exp: "",
+        is_one_time: false,
+        purpose: "",
+        auto_download_details: null,
+        auto_update: false,
+      });
       closeModal();
     } finally {
       setIsSubmitting(false);
