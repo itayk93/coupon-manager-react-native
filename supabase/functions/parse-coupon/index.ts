@@ -52,6 +52,12 @@ const SYSTEM_PROMPT = `אתה עוזר שמחלץ קופון אחד או כמה 
 כאשר הטקסט מציין כמות ויש כמה קודים שונים, החזר קופון נפרד לכל קוד. שכפל לכל אחד מהם פרטים משותפים כמו חברה, שווי ועלות.
 כאשר לכל קופון מצוינים פרטים שונים, שייך לכל קוד רק את הפרטים המתאימים לו. אל תאחד כמה קודים בשדה code אחד.
 
+כלל קריטי לסינון רעש:
+- אל תחלץ "קופון" מטקסטים כלליים של אתר, אפליקציה או מערכת.
+- התעלם מניווט, כפתורים, כותרות כלליות, זכויות יוצרים, footer, שנים כמו 2026, טקסטי "צור קשר", "תקנון", "כל הזכויות שמורות", או כל טקסט משפטי/שיווקי שלא מתאר הטבה קונקרטית.
+- אם אין סימנים ממשיים לקופון כמו קוד, שווי, תוקף, CVV, מספר כרטיס, או מותג/רשת למימוש, אל תחזיר קופון.
+- צילום מסך של עמוד כללי בלי פרטי קופון ממשיים צריך להחזיר zero results, לא ניחוש.
+
 כלל קריטי לזיהוי קוד שובר:
 - code הוא מספר/מחרוזת השובר שאיתה מממשים את ההטבה.
 - חפש במיוחד מספרים בפורמט קבוע של 7–12 ספרות, מקף, ו-4 ספרות, למשל "155454040-8782". זהו code גם אם הוא מופיע בשורה נפרדת ללא המילים "קוד" או "קוד קופון".
@@ -64,6 +70,7 @@ const SYSTEM_PROMPT = `אתה עוזר שמחלץ קופון אחד או כמה 
 - אם מופיעים גם מנפיק וגם רשת, למשל "הטבה במועדון ישיר ... תו קנייה בשווי 100 ₪ לרשת חנויות גוד פארם", החזר company: "גוד פארם". את "מועדון ישיר" שמור בתוך description כמקור/מנפיק ההטבה, אם יש מקום מתאים.
 - אל תחזיר "מועדון ישיר" כחברה במקרה כזה. אל תחזיר "ביטוח ישיר" כחברה במקרה כזה.
 - אם יש כמה שמות של גופים, העדף את שם העסק שבו הקוד ימומש בפועל.
+- אם מופיע שם כללי עם סיומת כמו "Giftcard", "Gift Card", "Voucher", "תו", "שובר", החזר את שם המותג הבסיסי בלי הסיומת. לדוגמה: "Xtra Giftcard" צריך להפוך ל-"Xtra".
 
 דוגמה מחייבת:
 הטקסט: "הטבה במועדון ישיר מבית ביטוח ישיר... תו קנייה בשווי 100 ₪ לרשת חנויות גוד פארם... קוד: 9376-7601-8931-2784, קוד אימות: 359, תוקף: 08/31"
@@ -90,7 +97,7 @@ Deno.serve(async (req: Request) => {
     // mechanism used in the Flask/iOS apps). Client-side matching still snaps the
     // result to the exact stored name afterwards.
     const companyGuidance = Array.isArray(companyNames) && companyNames.length
-      ? `\n\nאלו הן רשימת החברות הקיימות במאגר שלנו:\n${companyNames.join(', ')}\n\nאנא זהה את החברה מהטקסט:\n- בצע התאמה ללא תלות ברישיות (case-insensitive), לדוגמה WOLT / wolt / וולט הם אותה חברה.\n- אם שם החברה שזיהית דומה מאוד לאחת החברות ברשימה, החזר את שם החברה בדיוק כפי שהוא מופיע ברשימה.\n- אם אין התאמה מספקת, החזר את שם החברה המקורי שזיהית.`
+      ? `\n\nאלו הן רשימת החברות הקיימות במאגר שלנו:\n${companyNames.join(', ')}\n\nאנא זהה את החברה מהטקסט:\n- בצע התאמה ללא תלות ברישיות (case-insensitive), לדוגמה WOLT / wolt / וולט הם אותה חברה.\n- אם שם החברה שזיהית דומה מאוד לאחת החברות ברשימה, החזר את שם החברה בדיוק כפי שהוא מופיע ברשימה.\n- אם זיהית צורה מורחבת של שם מותג קיים, החזר את שם המותג הקיים מהרשימה. לדוגמה: אם ברשימה יש "Xtra" ובטקסט מופיע "Xtra Giftcard", החזר "Xtra".\n- אם אין התאמה מספקת, החזר את שם החברה המקורי שזיהית.`
       : '';
 
     const apiKey = Deno.env.get('OPENAI_API_KEY_V2') || Deno.env.get('OPENAI_API_KEY');
@@ -170,6 +177,20 @@ Deno.serve(async (req: Request) => {
       seenCodes.add(code);
       return true;
     });
+
+    coupons = coupons.filter((coupon: any) => {
+      const hasCode = Boolean(coupon?.code && String(coupon.code).trim().length >= 4);
+      const hasValue = typeof coupon?.value === 'number' && Number.isFinite(coupon.value) && coupon.value > 0;
+      const hasExpiration = Boolean(coupon?.expiration || coupon?.card_exp);
+      const hasCvv = Boolean(coupon?.cvv && String(coupon.cvv).trim().length >= 3);
+      const hasCompany = Boolean(coupon?.company && String(coupon.company).trim().length >= 2);
+      const strongSignals = [hasCode, hasValue, hasExpiration, hasCvv].filter(Boolean).length;
+      return strongSignals >= 2 || (hasCompany && strongSignals >= 1);
+    });
+
+    if (coupons.length === 0) {
+      return jsonResponse({ error: 'לא זוהו פרטי קופון אמיתיים בתמונה או בטקסט' }, 422);
+    }
 
     // Log token usage (best-effort)
     try {

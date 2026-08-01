@@ -6,6 +6,8 @@ import { useAddCoupon, useUpdateCoupon, DecryptedCoupon } from '@/hooks/useCoupo
 import { useSetCouponTags, useCouponTags } from '@/hooks/useTags';
 import { AiParsePanel } from '@/components/coupons/AiParsePanel';
 import type { ParsedCoupon } from '@/hooks/useCouponAI';
+import { useCompanies } from '@/hooks/useAdminManagement';
+import { matchCompanyName } from '@/lib/companyMatch';
 import { TagsInput } from '@/components/coupons/TagsInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +65,7 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   const updateCoupon = useUpdateCoupon();
   const setCouponTags = useSetCouponTags();
   const { data: existingTags } = useCouponTags(coupon?.id);
+  const { data: dbCompanies } = useCompanies();
 
   const isEditing = !!coupon;
 
@@ -91,6 +94,8 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   const discountPercentage = watchedValue > 0
     ? Math.max(0, Math.min(100, ((watchedValue - watchedCost) / watchedValue) * 100))
     : 0;
+
+  const companyNames = (dbCompanies || []).map((company) => company.name).filter(Boolean);
 
   useEffect(() => {
     if (!open) return;
@@ -121,8 +126,9 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   }, [existingTags, open, coupon]);
 
   const fillFormFromParsedCoupon = (parsed: ParsedCoupon) => {
+    const matchedCompany = parsed.company ? matchCompanyName(parsed.company, companyNames) : null;
     form.reset({
-      company: parsed.company || '',
+      company: matchedCompany || parsed.company || '',
       code: parsed.code || '',
       value: parsed.value ?? 0,
       cost: parsed.cost ?? 0,
@@ -203,7 +209,7 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
-          {!isEditing && <AiParsePanel onParsed={handleParsed} />}
+          {!isEditing && <AiParsePanel onParsed={handleParsed} companyNames={companyNames} />}
 
           {!isEditing && detectedCouponCount > 1 && (
             <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm" role="status">

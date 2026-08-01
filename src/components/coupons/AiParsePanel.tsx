@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 interface AiParsePanelProps {
   onParsed: (coupons: ParsedCoupon[]) => void;
+  companyNames?: string[];
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -18,7 +19,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function AiParsePanel({ onParsed }: AiParsePanelProps) {
+export function AiParsePanel({ onParsed, companyNames }: AiParsePanelProps) {
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState('');
   const [imageBase64, setImageBase64] = useState<string | undefined>();
@@ -35,7 +36,7 @@ export function AiParsePanel({ onParsed }: AiParsePanelProps) {
   };
 
   const handleParse = async () => {
-    const result = await parse.mutateAsync({ text: text || undefined, imageBase64 });
+    const result = await parse.mutateAsync({ text: text || undefined, imageBase64, companyNames });
     onParsed(result);
     toast.success(
       result.length === 1
