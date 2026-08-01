@@ -62,6 +62,16 @@ export function OnboardingTour() {
   const handleCompleteStep = async () => {
     if (!currentStep) return;
     await markStepCompleted(currentStep.key);
+    const currentIndex = TOUR_STEPS.findIndex((step) => step.key === currentStep.key);
+    const nextStep = TOUR_STEPS.slice(currentIndex + 1).find((step) => !completedSteps[step.key]);
+
+    if (nextStep) {
+      navigate(nextStep.route);
+      return;
+    }
+
+    setOpen(false);
+    dismissTour();
   };
 
   if (!currentStep) return null;
@@ -95,7 +105,7 @@ export function OnboardingTour() {
             סגור לעכשיו
           </Button>
           <Button type="button" onClick={handleCompleteStep} disabled={isSaving}>
-            {pendingSteps.length === 1 ? 'סיום סיור' : 'הבנתי, המשך'}
+            {pendingSteps.length === 1 ? 'הבנתי, סיימתי' : 'הבנתי, בואו נמשיך'}
           </Button>
         </DialogFooter>
       </DialogContent>
