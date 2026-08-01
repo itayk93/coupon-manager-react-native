@@ -7,6 +7,7 @@ import { useSetCouponTags, useCouponTags } from '@/hooks/useTags';
 import { AiParsePanel } from '@/components/coupons/AiParsePanel';
 import type { ParsedCoupon } from '@/hooks/useCouponAI';
 import { useCompanies } from '@/hooks/useAdminManagement';
+import { useAuth } from '@/contexts/AuthContext';
 import { matchCompanyName } from '@/lib/companyMatch';
 import { TagsInput } from '@/components/coupons/TagsInput';
 import { Button } from '@/components/ui/button';
@@ -66,8 +67,10 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   const setCouponTags = useSetCouponTags();
   const { data: existingTags } = useCouponTags(coupon?.id);
   const { data: dbCompanies } = useCompanies();
+  const { user } = useAuth();
 
   const isEditing = !!coupon;
+  const showAutoUsageUpdater = user?.id === 1;
 
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(couponSchema),
@@ -339,29 +342,30 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
               </div>
             )}
 
-            <div className="space-y-2 pt-2 border-t mt-2">
-              <Label htmlFor="auto_download_details" className="font-medium">הורדה אוטומטית / עדכון יתרה</Label>
-              <Select
-                value={form.watch("auto_download_details") || "none"}
-                onValueChange={(val) => {
-                  const selected = val === "none" ? null : val;
-                  form.setValue("auto_download_details", selected);
-                  form.setValue("auto_update", selected !== null);
-                }}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger id="auto_download_details" className="w-full">
-                  <SelectValue placeholder="בחר ספק הורדה אוטומטית" />
-                </SelectTrigger>
-                <SelectContent dir="rtl">
-                  <SelectItem value="none">ללא (ביטול הורדה אוטומטית)</SelectItem>
-                  <SelectItem value="BuyMe">BuyMe</SelectItem>
-                  <SelectItem value="Multipass">Multipass</SelectItem>
-                  <SelectItem value="Max">Max</SelectItem>
-                  <SelectItem value="Xtra">Xtra</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {showAutoUsageUpdater && (
+              <div className="space-y-2 pt-2 border-t mt-2">
+                <Label htmlFor="auto_download_details" className="font-medium">עדכון שימוש אוטומטי</Label>
+                <Select
+                  value={form.watch("auto_download_details") || "none"}
+                  onValueChange={(val) => {
+                    const selected = val === "none" ? null : val;
+                    form.setValue("auto_download_details", selected);
+                    form.setValue("auto_update", selected !== null);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger id="auto_download_details" className="w-full">
+                    <SelectValue placeholder="בחר ספק לעדכון שימוש אוטומטי" />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl">
+                    <SelectItem value="none">ללא (ללא עדכון אוטומטי)</SelectItem>
+                    <SelectItem value="BuyMe">BuyMe</SelectItem>
+                    <SelectItem value="Multipass">Multipass</SelectItem>
+                    <SelectItem value="Max">Max</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t">
