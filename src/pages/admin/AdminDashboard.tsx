@@ -13,7 +13,7 @@ import { AdminCompanies } from '@/components/admin/AdminCompanies';
 import { AdminTags } from '@/components/admin/AdminTags';
 import { AdminTasks } from '@/components/admin/AdminTasks';
 import { AdminNewsletters } from '@/components/admin/AdminNewsletters';
-import { AdminMessages, AdminEmailTools } from '@/components/admin/AdminMessagesAndTools';
+import { AdminMessages, AdminEmailTools, AdminPrivacyTools } from '@/components/admin/AdminMessagesAndTools';
 
 function SystemSettings() {
   const { data: settings, isLoading } = useAdminSettings();
@@ -140,6 +140,7 @@ export default function AdminDashboard() {
         <TabsContent value="messages" className="mt-6 space-y-6">
           <AdminMessages />
           <AdminEmailTools />
+          <AdminPrivacyTools />
         </TabsContent>
         <TabsContent value="settings" className="mt-6"><SystemSettings /></TabsContent>
       </Tabs>

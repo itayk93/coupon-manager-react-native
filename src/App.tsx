@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import About from "./pages/content/About";
 import Faq from "./pages/content/Faq";
 import Privacy from "./pages/content/Privacy";
+import Unsubscribe from "./pages/content/Unsubscribe";
 import NotFound from "./pages/content/NotFound";
 
 // Protected Pages
@@ -25,6 +26,7 @@ import Statistics from "./pages/statistics/Statistics";
 import SharingPage from "./pages/sharing/SharingPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Notifications from "./pages/notifications/Notifications";
+import { FeatureGate } from "./components/layout/FeatureGate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +50,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -57,13 +60,13 @@ function App() {
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/dashboard" element={<Navigate to="/" replace />} />
-                  <Route path="/coupons" element={<CouponsList />} />
-                  <Route path="/statistics" element={<Statistics />} />
-                  <Route path="/sharing" element={<SharingPage />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/coupons" element={<FeatureGate featureKey="coupons" redirectTo="/"><CouponsList /></FeatureGate>} />
+                  <Route path="/statistics" element={<FeatureGate featureKey="statistics" redirectTo="/"><Statistics /></FeatureGate>} />
+                  <Route path="/sharing" element={<FeatureGate featureKey="sharing" redirectTo="/"><SharingPage /></FeatureGate>} />
+                  <Route path="/profile" element={<FeatureGate featureKey="profile" redirectTo="/"><Profile /></FeatureGate>} />
+                  <Route path="/settings" element={<FeatureGate featureKey="settings" redirectTo="/"><Settings /></FeatureGate>} />
+                  <Route path="/notifications" element={<FeatureGate featureKey="notifications" redirectTo="/"><Notifications /></FeatureGate>} />
+                  <Route path="/admin" element={<FeatureGate featureKey="admin" redirectTo="/"><AdminDashboard /></FeatureGate>} />
                 </Route>
               </Route>
               

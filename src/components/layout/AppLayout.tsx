@@ -15,11 +15,14 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { PwaNotificationManager } from '@/components/PwaNotificationManager';
+import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 
 export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const { isAdmin, signOut } = useAuth();
+  const { hasFeature } = useFeatureAccess();
 
   const navigation = [
     { name: 'דשבורד', href: '/', icon: LayoutDashboard },
@@ -27,9 +30,16 @@ export function AppLayout() {
     { name: 'סטטיסטיקות', href: '/statistics', icon: BarChart3 },
     { name: 'שיתופים', href: '/sharing', icon: Share2 },
     { name: 'חשבון', href: '/profile', icon: Settings },
-  ];
+  ].filter((item) => {
+    if (item.href === '/' && !hasFeature('dashboard')) return false;
+    if (item.href === '/coupons' && !hasFeature('coupons')) return false;
+    if (item.href === '/statistics' && !hasFeature('statistics')) return false;
+    if (item.href === '/sharing' && !hasFeature('sharing')) return false;
+    if (item.href === '/profile' && !hasFeature('profile')) return false;
+    return true;
+  });
 
-  if (isAdmin) {
+  if (isAdmin && hasFeature('admin')) {
     navigation.push({ name: 'פאנל ניהול', href: '/admin', icon: ShieldAlert });
   }
 
@@ -137,6 +147,7 @@ export function AppLayout() {
 
       <PwaInstallPrompt />
       <PwaNotificationManager />
+      {hasFeature('onboarding') && <OnboardingTour />}
     </div>
   );
 }

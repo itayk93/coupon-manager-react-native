@@ -16,6 +16,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const textEncoder = new TextEncoder();
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
@@ -50,6 +51,54 @@ function supa() {
   );
 }
 
+function toBase64Url(bytes: Uint8Array) {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+async function signPayload(payload: string, secret: string) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload));
+  return toBase64Url(new Uint8Array(signature));
+}
+
+async function createUnsubscribeToken(userId: number, email: string) {
+  const secret = Deno.env.get('UNSUBSCRIBE_SECRET');
+  if (!secret) return null;
+  const payload = JSON.stringify({ user_id: userId, email, type: 'unsubscribe' });
+  const payloadPart = toBase64Url(textEncoder.encode(payload));
+  const signaturePart = await signPayload(payload, secret);
+  return `${payloadPart}.${signaturePart}`;
+}
+
+async function buildUnsubscribeUrl(userId: number, email: string) {
+  const appBaseUrl = Deno.env.get('APP_BASE_URL');
+  if (!appBaseUrl) return null;
+  const token = await createUnsubscribeToken(userId, email);
+  if (!token) return null;
+  const normalizedBase = appBaseUrl.replace(/\/$/, '');
+  return `${normalizedBase}/unsubscribe?token=${encodeURIComponent(token)}`;
+}
+
+async function wrapMarketingEmail(html: string, userId: number, email: string) {
+  const unsubscribeUrl = await buildUnsubscribeUrl(userId, email);
+  if (!unsubscribeUrl) return html;
+
+  return `${html}
+  <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb" />
+  <div dir="rtl" style="font-family:Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.6">
+    <p>אם אינך רוצה לקבל דיוור שיווקי, אפשר <a href="${unsubscribeUrl}">להסיר את עצמך כאן</a>.</p>
+  </div>`;
+}
+
 async function handleNewsletter(newsletterId: number) {
   const supabase = supa();
   const { data: nl } = await supabase.from('newsletters').select('*').eq('id', newsletterId).single();
@@ -65,12 +114,15 @@ async function handleNewsletter(newsletterId: number) {
   const { data: optOuts } = await supabase.from('opt_outs').select('user_id').eq('opted_out', true);
   const optedOut = new Set((optOuts || []).map((o: any) => o.user_id));
 
-  const html = nl.custom_html || `<div dir="rtl"><h1>${nl.main_title || nl.title}</h1>${nl.content || ''}</div>`;
-
   let sent = 0;
   let failed = 0;
   for (const u of (users || []) as any[]) {
     if (optedOut.has(u.id)) continue;
+    const html = await wrapMarketingEmail(
+      nl.custom_html || `<div dir="rtl"><h1>${nl.main_title || nl.title}</h1>${nl.content || ''}</div>`,
+      u.id,
+      u.email,
+    );
     const ok = await sendEmail(u.email, nl.title, html);
     await supabase.from('newsletter_sendings').insert({
       newsletter_id: newsletterId,

@@ -6,10 +6,57 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FEATURE_KEYS, FeatureKey, useUpsertUserFeatureOverride, useUserFeatureOverrides } from '@/hooks/useFeatureAccess';
+
+function UserFeatureOverridesDialog({
+  userId,
+  open,
+  onOpenChange,
+}: {
+  userId: number | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { data: overrides = [] } = useUserFeatureOverrides(userId ?? undefined);
+  const upsertOverride = useUpsertUserFeatureOverride();
+
+  const overrideMap = new Map(overrides.map((row) => [row.feature_key, row.is_enabled]));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent dir="rtl" className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>הרשאות ופיצ׳רים למשתמש</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3">
+          {FEATURE_KEYS.map((featureKey) => (
+            <div key={featureKey} className="flex items-center justify-between rounded-lg border px-4 py-3">
+              <div className="font-medium">{featureKey}</div>
+              <Switch
+                checked={overrideMap.has(featureKey) ? Boolean(overrideMap.get(featureKey)) : true}
+                onCheckedChange={(checked) => {
+                  if (!userId) return;
+                  upsertOverride.mutate({
+                    userId,
+                    featureKey: featureKey as FeatureKey,
+                    isEnabled: checked,
+                  });
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function AdminUsers() {
   const [search, setSearch] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const { data: users, isLoading } = useManageUsers(search);
   const updateUser = useUpdateUser();
 
@@ -42,6 +89,7 @@ export function AdminUsers() {
                   <TableHead className="text-end">מאומת</TableHead>
                   <TableHead className="text-end">מנהל</TableHead>
                   <TableHead className="text-end">סלוטים</TableHead>
+                  <TableHead className="text-end">פיצ׳רים</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -77,17 +125,29 @@ export function AdminUsers() {
                         }}
                       />
                     </TableCell>
+                    <TableCell>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setSelectedUserId(u.id)}>
+                        <SlidersHorizontal className="h-4 w-4 me-2" />
+                        פיצ׳רים
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {!users?.length && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">לא נמצאו משתמשים</TableCell>
+                    <TableCell colSpan={6} className="text-center h-24">לא נמצאו משתמשים</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
         )}
+
+        <UserFeatureOverridesDialog
+          userId={selectedUserId}
+          open={selectedUserId !== null}
+          onOpenChange={(open) => !open && setSelectedUserId(null)}
+        />
       </CardContent>
     </Card>
   );

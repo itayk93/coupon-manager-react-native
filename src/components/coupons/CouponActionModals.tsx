@@ -21,6 +21,10 @@ type CouponActionModalsProps = {
   onUsageChange: (coupon: DecryptedCoupon | null) => void;
   onDeleteChange: (coupon: DecryptedCoupon | null) => void;
   onMarkUsedChange: (coupon: DecryptedCoupon | null) => void;
+  bulkDeleteCount?: number;
+  onBulkDeleteConfirm?: () => Promise<void> | void;
+  onBulkDeleteCancel?: () => void;
+  bulkDeleteOpen?: boolean;
 };
 
 function formatIls(value: number) {
@@ -43,6 +47,10 @@ export function CouponActionModals({
   onUsageChange,
   onDeleteChange,
   onMarkUsedChange,
+  bulkDeleteCount = 0,
+  onBulkDeleteConfirm,
+  onBulkDeleteCancel,
+  bulkDeleteOpen = false,
 }: CouponActionModalsProps) {
   const updateCoupon = useUpdateCoupon();
   const recordUsage = useRecordUsage();
@@ -211,6 +219,38 @@ export function CouponActionModals({
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkDeleteOpen} onOpenChange={(open) => !open && onBulkDeleteCancel?.()}>
+        <DialogContent className="legacy-modal-content coupon-delete-modal-react" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>אישור מחיקה מרובה</DialogTitle>
+          </DialogHeader>
+          <div className="coupon-delete-content">
+            <h3>מחיקת {bulkDeleteCount} קופונים</h3>
+            <p>הפעולה תמחק את כל הקופונים שסומנו כרגע.</p>
+            <div className="legacy-modal-actions">
+              <Button type="button" variant="outline" onClick={() => onBulkDeleteCancel?.()} disabled={isDeleting}>
+                ביטול
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await onBulkDeleteConfirm?.();
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting || bulkDeleteCount === 0}
+              >
+                {isDeleting ? "מוחק..." : "אשר מחיקה"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

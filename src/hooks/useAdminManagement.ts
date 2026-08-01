@@ -272,3 +272,68 @@ export function useAutoUpdateRuns() {
     enabled: !!user,
   });
 }
+
+export function useOptOutUsers() {
+  const isAdmin = useAdminGuard();
+  return useQuery({
+    queryKey: ['opt_out_users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('opt_outs')
+        .select('user_id, opted_out, timestamp')
+        .eq('opted_out', true)
+        .order('timestamp', { ascending: false });
+      if (error) throw error;
+
+      const userIds = (data || []).map((row) => row.user_id);
+      if (!userIds.length) return [];
+
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email, first_name, last_name')
+        .in('id', userIds);
+      if (usersError) throw usersError;
+
+      const userMap = new Map((users || []).map((row) => [row.id, row]));
+      return (data || []).map((row) => ({
+        ...row,
+        user: userMap.get(row.user_id) || null,
+      }));
+    },
+    enabled: isAdmin,
+  });
+}
+
+export function useAdminSetOptOut() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, optedOut }: { userId: number; optedOut: boolean }) => {
+      const { error } = await supabase
+        .from('opt_outs')
+        .upsert({ user_id: userId, opted_out: optedOut, timestamp: new Date().toISOString() }, { onConflict: 'user_id' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('סטטוס דיוור עודכן');
+      queryClient.invalidateQueries({ queryKey: ['opt_out_users'] });
+    },
+    onError: (e: any) => toast.error(`שגיאה: ${e.message}`),
+  });
+}
+
+export function useConsentEvents() {
+  const isAdmin = useAdminGuard();
+  return useQuery({
+    queryKey: ['consent_events'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_consents')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
+}

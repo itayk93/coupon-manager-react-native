@@ -24,6 +24,8 @@ import { createServiceClient, sendPushToRows } from '../_shared/push.ts';
 type Coupon = {
   id: number;
   company: string;
+  source: string | null;
+  auto_download_details: string | null;
   value: number;
   used_value: number;
   buyme_coupon_url: string | null;
@@ -38,9 +40,20 @@ type UpdatedCouponSummary = {
 };
 
 function providerFor(coupon: Coupon): 'multipass' | 'buyme' | null {
-  const c = coupon.company.toLowerCase();
-  if (c.includes('multipass') || c.includes('מולטיפס')) return 'multipass';
-  if (c.includes('buyme') || coupon.buyme_coupon_url) return 'buyme';
+  const lookup = [coupon.company, coupon.source, coupon.auto_download_details]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (
+    lookup.includes('multipass') ||
+    lookup.includes('מולטיפס') ||
+    lookup.includes('xgiftcard') ||
+    lookup.includes('x giftcard') ||
+    lookup.includes('gift card')
+  ) return 'multipass';
+
+  if (lookup.includes('buyme') || coupon.buyme_coupon_url) return 'buyme';
   return null;
 }
 
@@ -90,7 +103,7 @@ Deno.serve(async (req: Request) => {
 
     let query = supabase
       .from('coupon')
-      .select('id, company, value, used_value, buyme_coupon_url, auto_update, user_id')
+      .select('id, company, source, auto_download_details, value, used_value, buyme_coupon_url, auto_update, user_id')
       .eq('user_id', user_id)
       .eq('auto_update', true)
       .neq('status', 'נוצל');
@@ -103,11 +116,16 @@ Deno.serve(async (req: Request) => {
     let failed = 0;
     let skipped = 0;
     const changedCoupons: UpdatedCouponSummary[] = [];
+    const multipassCouponsToDispatch: Coupon[] = [];
 
     for (const coupon of (coupons || []) as Coupon[]) {
       const provider = providerFor(coupon);
       if (!provider) {
         skipped++;
+        continue;
+      }
+      if (provider === 'multipass' && !Deno.env.get('SCRAPER_SERVICE_URL')) {
+        multipassCouponsToDispatch.push(coupon);
         continue;
       }
       const remaining = await fetchRemaining(coupon, provider);
@@ -136,6 +154,42 @@ Deno.serve(async (req: Request) => {
             newRemaining,
           });
         }
+      }
+    }
+
+    let dispatchMessage: string | null = null;
+    if (multipassCouponsToDispatch.length > 0) {
+      const triggerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/trigger-multipass-update`;
+      const dispatchResponse = await fetch(triggerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!}`,
+        },
+        body: JSON.stringify({
+          user_id,
+          coupon_id: coupon_id ?? null,
+        }),
+      });
+      const dispatchResult = await dispatchResponse.json();
+
+      if (dispatchResponse.ok && dispatchResult?.success) {
+        dispatchMessage = dispatchResult.run_url
+          ? `Multipass/XGiftCard update dispatched: ${dispatchResult.run_url}`
+          : 'Multipass/XGiftCard update dispatched successfully';
+      } else {
+        failed += multipassCouponsToDispatch.length;
+        dispatchMessage = dispatchResult?.error || 'Multipass dispatch failed';
+      }
+
+      if (run) {
+        await supabase
+          .from('auto_update_runs')
+          .update({
+            job_id: dispatchResponse.ok && dispatchResult?.success ? dispatchResult.run_id : null,
+            message: dispatchMessage,
+          })
+          .eq('id', run.id);
       }
     }
 
@@ -182,12 +236,15 @@ Deno.serve(async (req: Request) => {
         .update({
           status: 'completed',
           finished_at: new Date().toISOString(),
+          status: multipassCouponsToDispatch.length > 0 && !Deno.env.get('SCRAPER_SERVICE_URL') ? 'dispatched' : 'completed',
           updated_count: updated,
           failed_count: failed,
           skipped_count: skipped,
-          message: Deno.env.get('SCRAPER_SERVICE_URL')
-            ? null
-            : 'SCRAPER_SERVICE_URL לא מוגדר — כל הקופונים דולגו',
+          message: dispatchMessage || (
+            Deno.env.get('SCRAPER_SERVICE_URL')
+              ? null
+              : 'SCRAPER_SERVICE_URL לא מוגדר — קופוני BuyMe דולגו, וקופוני Multipass/XGiftCard נשלחו ל-dispatch אם הוגדר GitHub token'
+          ),
         })
         .eq('id', run.id);
     }
