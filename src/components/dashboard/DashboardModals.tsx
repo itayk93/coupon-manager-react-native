@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ import { matchCompanyName } from "@/lib/companyMatch";
 import { CompanyPicker, type PickerCompany } from "@/components/dashboard/CompanyPicker";
 import { CouponDetailModal } from "@/components/coupons/CouponDetailModal";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 type DashboardModalType = "stats" | "usage" | "quick-add" | "company" | "whatsapp" | null;
@@ -116,6 +118,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const parseCoupon = useParseCoupon();
   const { markDetailViewed, markCodeViewed, markCompanyViewed } = useCouponViewTracking();
   const { data: dbCompanies } = useCompanies();
+  const { user } = useAuth();
   const [quickText, setQuickText] = useState("");
   const [quickDetected, setQuickDetected] = useState(false);
   const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
@@ -258,6 +261,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const selectedCompanyRemaining = selectedCompanyCoupons.reduce((sum, coupon) => sum + Math.max(0, coupon.value - coupon.used_value), 0);
   const watchedQuick = quickForm.watch();
   const discount = watchedQuick.value > 0 ? Math.max(0, ((watchedQuick.value - watchedQuick.cost) / watchedQuick.value) * 100) : 0;
+  const showAutoUsageUpdater = user?.id === 1;
 
   const closeModal = () => {
     onOpenChange(null);
@@ -282,7 +286,6 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     if (compName.includes("buyme") || compName.includes("ביימי")) defaultAutoProvider = "BuyMe";
     else if (compName.includes("multipass") || compName.includes("מולטיפאס")) defaultAutoProvider = "Multipass";
     else if (compName.includes("max") || compName.includes("מקס")) defaultAutoProvider = "Max";
-    else if (compName.includes("xtra") || compName.includes("אקסטרה")) defaultAutoProvider = "Xtra";
 
     quickForm.reset({
       company: matchedCompany || detectedCompany,
@@ -550,53 +553,105 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
   return (
     <>
-      <Dialog open={openModal === "company"} onOpenChange={(open) => (open ? onOpenChange("company") : closeModal())}>
-        <DialogContent className="legacy-modal-content company-modal-react" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>{selectedCompany ? `קופונים מחברת ${selectedCompany}` : "קופונים מחברה"}</DialogTitle>
-          </DialogHeader>
+      <Drawer open={openModal === "company"} onOpenChange={(open) => (open ? onOpenChange("company") : closeModal())}>
+        <DrawerContent dir="rtl" className="mx-auto w-full max-w-[560px] bg-background p-0 text-right">
+          <div className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden">
+            <div className="shrink-0 rounded-t-[30px] bg-gradient-to-b from-primary/85 via-primary/90 to-primary px-5 pb-6 pt-4 text-primary-foreground">
+              <DrawerHeader className="px-0 pb-0 pt-2 text-right">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <DrawerTitle className="text-right text-[30px] font-black leading-tight text-primary-foreground">
+                      {selectedCompany ? `קופונים מחברת ${selectedCompany}` : "קופונים מחברה"}
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-2 text-right text-sm text-primary-foreground/80">
+                      {selectedCompanyCoupons.length} קופונים זמינים לצפייה ולעדכון
+                    </DrawerDescription>
+                    <div className="mt-5 text-right">
+                      <div className="text-sm text-primary-foreground/75">סה״כ נותר</div>
+                      <div className="text-[44px] font-black tracking-tight">{formatIls(selectedCompanyRemaining)}</div>
+                    </div>
+                  </div>
 
-          {selectedCompany && (
-            <div className="legacy-company-modal-head">
-              <img src={getCompanyLogo(selectedCompany)} alt={selectedCompany} />
-              <strong>סה"כ נותר: {formatIls(selectedCompanyRemaining)}</strong>
+                  {selectedCompany && (
+                    <div className="shrink-0 rounded-[24px] bg-white/95 p-2 shadow-sm ring-1 ring-white/60">
+                      <img
+                        src={getCompanyLogo(selectedCompany)}
+                        alt={selectedCompany}
+                        className="h-20 w-20 rounded-[18px] object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+              </DrawerHeader>
             </div>
-          )}
 
-          <ul className="legacy-company-coupon-list">
-            {selectedCompanyCoupons.map((coupon) => {
-              const remaining = Math.max(0, coupon.value - coupon.used_value);
-              return (
-                <li key={coupon.id}>
-                  <button type="button" className="legacy-company-coupon-link" onClick={() => setDetailsCoupon(coupon)}>
-                    קוד: {coupon.code} - {coupon.is_one_time ? `מטרה: ${coupon.purpose || "-"}` : `נותר: ${formatIls(remaining)}`}
-                  </button>
-                  <div className="coupon-info-buttons">
-                    {!coupon.is_one_time && (
+            <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-4 pb-6 pt-4">
+              <ul className="space-y-4">
+                {selectedCompanyCoupons.map((coupon) => {
+                  const remaining = Math.max(0, coupon.value - coupon.used_value);
+                  return (
+                    <li
+                      key={coupon.id}
+                      className="rounded-[28px] border border-border/60 bg-background p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                    >
                       <button
                         type="button"
-                        className="update-usage-btn"
-                        onClick={() => {
-                          setUsageCoupon(coupon);
-                          setCompanyUsageAmount("");
-                          setCompanyUsageError("");
-                        }}
+                        className="w-full text-right"
+                        onClick={() => setDetailsCoupon(coupon)}
                       >
-                        <Pencil size={15} />
-                        עדכון שימוש
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-muted-foreground">קוד קופון</div>
+                            <div className="mt-1 break-all text-[28px] font-black leading-tight text-foreground">{coupon.code}</div>
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              {coupon.is_one_time ? `מטרה: ${coupon.purpose || "-"}` : `נותר: ${formatIls(remaining)}`}
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 rounded-2xl bg-muted/60 p-2">
+                            <img
+                              src={getCompanyLogo(coupon.company)}
+                              alt={coupon.company}
+                              className="h-14 w-14 rounded-xl object-contain"
+                            />
+                          </div>
+                        </div>
                       </button>
-                    )}
-                    <button type="button" className="show-big-btn" onClick={() => setCodeCoupon(coupon)}>
-                      <Eye size={15} />
-                      הצגת קוד הקופון
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </DialogContent>
-      </Dialog>
+
+                      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {!coupon.is_one_time && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-16 justify-between rounded-2xl border-border bg-background px-5 text-base font-extrabold text-foreground hover:bg-muted/40"
+                            onClick={() => {
+                              setUsageCoupon(coupon);
+                              setCompanyUsageAmount("");
+                              setCompanyUsageError("");
+                            }}
+                          >
+                            עדכון שימוש
+                            <Pencil size={20} />
+                          </Button>
+                        )}
+
+                        <Button
+                          type="button"
+                          className="h-16 justify-between rounded-2xl px-5 text-base font-extrabold"
+                          onClick={() => setCodeCoupon(coupon)}
+                        >
+                          הצגת קוד הקופון
+                          <Eye size={20} />
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <CouponDetailModal
         coupon={detailsCoupon}
@@ -1048,28 +1103,29 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                       </div>
                     )}
 
-                    <div className="form-group pt-2 border-t mt-2">
-                      <Label htmlFor="quick_auto_download_details" className="text-sm font-medium">הורדה אוטומטית / עדכון יתרה</Label>
-                      <Select
-                        value={watchedQuick.auto_download_details || "none"}
-                        onValueChange={(val) => {
-                          const selected = val === "none" ? null : val;
-                          quickForm.setValue("auto_download_details", selected);
-                          quickForm.setValue("auto_update", selected !== null);
-                        }}
-                      >
-                        <SelectTrigger id="quick_auto_download_details" className="w-full mt-1">
-                          <SelectValue placeholder="בחר ספק הורדה אוטומטית" />
-                        </SelectTrigger>
-                        <SelectContent dir="rtl">
-                          <SelectItem value="none">ללא (ביטול הורדה אוטומטית)</SelectItem>
-                          <SelectItem value="BuyMe">BuyMe</SelectItem>
-                          <SelectItem value="Multipass">Multipass</SelectItem>
-                          <SelectItem value="Max">Max</SelectItem>
-                          <SelectItem value="Xtra">Xtra</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {showAutoUsageUpdater && (
+                      <div className="form-group pt-2 border-t mt-2">
+                        <Label htmlFor="quick_auto_download_details" className="text-sm font-medium">עדכון שימוש אוטומטי</Label>
+                        <Select
+                          value={watchedQuick.auto_download_details || "none"}
+                          onValueChange={(val) => {
+                            const selected = val === "none" ? null : val;
+                            quickForm.setValue("auto_download_details", selected);
+                            quickForm.setValue("auto_update", selected !== null);
+                          }}
+                        >
+                          <SelectTrigger id="quick_auto_download_details" className="w-full mt-1">
+                            <SelectValue placeholder="בחר ספק לעדכון שימוש אוטומטי" />
+                          </SelectTrigger>
+                          <SelectContent dir="rtl">
+                            <SelectItem value="none">ללא (ללא עדכון אוטומטי)</SelectItem>
+                            <SelectItem value="BuyMe">BuyMe</SelectItem>
+                            <SelectItem value="Multipass">Multipass</SelectItem>
+                            <SelectItem value="Max">Max</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

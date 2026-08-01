@@ -86,6 +86,45 @@ const SYSTEM_PROMPT = `אתה עוזר שמחלץ קופון אחד או כמה 
 - cvv: חלץ קוד אימות/CVV כאשר הוא מופיע, למשל "קוד אימות: 359".
 - card_exp: תוקף הכרטיס בפורמט MM/YY כאשר מופיע ערך כמו "תוקף: 08/31" או "תוקף כרטיס: 08/31". במקרה כזה זהו card_exp, ולא expiration. אל תשאיר card_exp כ-null כאשר מופיע בטקסט תוקף בפורמט MM/YY.`;
 
+const FALLBACK_JSON_PROMPT = `${SYSTEM_PROMPT}
+
+החזר JSON בלבד, בלי הסברים, בפורמט המדויק הבא:
+{"coupons":[{"company":null,"code":null,"value":null,"cost":null,"expiration":null,"description":null,"cvv":null,"card_exp":null}]}`;
+
+async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: boolean) {
+  const body = useStrictSchema
+    ? {
+        model: MODEL,
+        max_completion_tokens: 2048,
+        messages,
+        response_format: {
+          type: 'json_schema',
+          json_schema: { name: 'coupons', strict: true, schema: COUPONS_SCHEMA },
+        },
+      }
+    : {
+        model: MODEL,
+        max_completion_tokens: 2048,
+        messages: [
+          { role: 'system', content: FALLBACK_JSON_PROMPT },
+          messages[1],
+        ],
+        response_format: { type: 'json_object' },
+      };
+
+  const response = await fetch(OPENAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const rawText = await response.text();
+  return { response, rawText };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -123,36 +162,43 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const openaiResp = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 2048,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: { name: 'coupons', strict: true, schema: COUPONS_SCHEMA },
-        },
-      }),
-    });
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content },
+    ];
+
+    let { response: openaiResp, rawText } = await callOpenAI(apiKey, messages, true);
+    let usedFallback = false;
 
     if (!openaiResp.ok) {
-      const errText = await openaiResp.text();
-      console.error('OpenAI API error', openaiResp.status, errText);
-      const message = openaiResp.status === 401
-        ? 'שירות פענוח הקופונים אינו מחובר למפתח OpenAI תקין.'
-        : 'שירות פענוח הקופונים נכשל מול ספק ה-AI. נסה שוב מאוחר יותר.';
-      return jsonResponse({ error: message }, 502);
+      console.error('OpenAI API strict-schema error', openaiResp.status, rawText);
+      const fallbackResult = await callOpenAI(apiKey, messages, false);
+      openaiResp = fallbackResult.response;
+      rawText = fallbackResult.rawText;
+      usedFallback = true;
     }
 
-    const data = await openaiResp.json();
+    if (!openaiResp.ok) {
+      console.error('OpenAI API fallback error', openaiResp.status, rawText);
+      let message = 'שירות פענוח הקופונים נכשל מול ספק ה-AI. נסה שוב מאוחר יותר.';
+      let providerError: string | null = null;
+      try {
+        const parsedError = JSON.parse(rawText);
+        providerError = parsedError?.error?.message ?? parsedError?.message ?? null;
+      } catch {
+        providerError = rawText?.slice(0, 500) || null;
+      }
+      if (openaiResp.status === 401) {
+        message = 'שירות פענוח הקופונים אינו מחובר למפתח OpenAI תקין.';
+      } else if (openaiResp.status === 429) {
+        message = 'שירות פענוח הקופונים עמוס כרגע. נסה שוב בעוד רגע.';
+      } else if (openaiResp.status === 400) {
+        message = 'בקשת פענוח הקופון נדחתה על ידי ספק ה-AI. עודכן מסלול גיבוי, נסה שוב.';
+      }
+      return jsonResponse({ error: message, provider_status: openaiResp.status, provider_error: providerError }, 502);
+    }
+
+    const data = JSON.parse(rawText);
     const outputText = data.choices?.[0]?.message?.content;
     if (!outputText) return jsonResponse({ error: 'לא התקבל פלט מהמודל' }, 502);
 
@@ -206,7 +252,7 @@ Deno.serve(async (req: Request) => {
         prompt_tokens: usage.prompt_tokens ?? null,
         completion_tokens: usage.completion_tokens ?? null,
         total_tokens: usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
-        response_text: outputText,
+        response_text: usedFallback ? `[fallback-json-object]\n${outputText}` : outputText,
       });
     } catch (_) {
       // ignore logging failures
