@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { 
   Select, 
   SelectContent, 
@@ -84,6 +85,12 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
       auto_update: coupon?.auto_update ?? true,
     },
   });
+
+  const watchedValue = form.watch('value');
+  const watchedCost = form.watch('cost');
+  const discountPercentage = watchedValue > 0
+    ? Math.max(0, Math.min(100, ((watchedValue - watchedCost) / watchedValue) * 100))
+    : 0;
 
   useEffect(() => {
     if (!open) return;
@@ -240,6 +247,18 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
               {form.formState.errors.cost && (
                 <p className="text-sm text-destructive">{form.formState.errors.cost.message}</p>
               )}
+            </div>
+
+            <div className="md:col-span-2 space-y-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3" aria-live="polite">
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>אחוז ההנחה</span>
+                <span>{discountPercentage.toFixed(0)}%</span>
+              </div>
+              <Progress
+                value={discountPercentage}
+                className="h-3 bg-muted"
+                aria-label={`אחוז ההנחה: ${discountPercentage.toFixed(0)}%`}
+              />
             </div>
 
             <div className="space-y-2">

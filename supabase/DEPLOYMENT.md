@@ -1,7 +1,7 @@
 # פריסת ה-Backend (Supabase) לפיצ'רים החדשים
 
-מסמך זה מסביר איך לפרוס את שלושת ה-Edge Functions, את מיגרציית ה-DB, ואת התזמון (cron)
-שמפעילים את הפיצ'רים: **פענוח קופון ב-AI**, **עדכון יתרה אוטומטי**, ו**מערכת דוא"ל**.
+מסמך זה מסביר איך לפרוס את ה-Edge Functions, את מיגרציות ה-DB, ואת ה-cron jobs
+שמפעילים את הפיצ'רים: **פענוח קופון ב-AI**, **עדכון יתרה אוטומטי**, **Multipass/XGiftCard דרך Supabase**, ו**מערכת דוא"ל**.
 
 ## דרישות מקדימות
 - Supabase CLI מותקן (`npm i -g supabase`)
@@ -17,7 +17,7 @@ supabase db push
 
 ## 2. סודות (Secrets)
 ```bash
-# פענוח AI (חובה לפיצ'ר ה-AI) — OpenAI gpt-4o-mini
+# פענוח AI (חובה לפיצ'ר ה-AI)
 supabase secrets set OPENAI_API_KEY=sk-...
 
 # דוא"ל (חובה למערכת הדוא"ל) — Brevo
@@ -28,6 +28,15 @@ supabase secrets set BREVO_SENDER_NAME="Coupon Master"
 # עדכון יתרה אוטומטי (אופציונלי — רק אם יש שירות סקרייפר חיצוני)
 supabase secrets set SCRAPER_SERVICE_URL=https://your-scraper.example.com
 supabase secrets set SCRAPER_SERVICE_TOKEN=...
+
+# Multipass / XGiftCard דרך GitHub Actions + Supabase Edge Function
+supabase secrets set GITHUB_TOKEN=...
+supabase secrets set MULTIPASS_GH_OWNER=itayk93
+supabase secrets set MULTIPASS_GH_REPO=scrape_multipass
+supabase secrets set MULTIPASS_GH_WORKFLOW=scrape.yml
+supabase secrets set MULTIPASS_GH_REF=main
+supabase secrets set MULTIPASS_GH_INPUT_KEY=card_number
+supabase secrets set MULTIPASS_GH_INPUT_SEPARATOR=,
 ```
 `SUPABASE_URL` ו-`SUPABASE_SERVICE_ROLE_KEY` מוזרקים אוטומטית לכל function.
 
@@ -35,27 +44,27 @@ supabase secrets set SCRAPER_SERVICE_TOKEN=...
 ```bash
 supabase functions deploy parse-coupon
 supabase functions deploy update-balance
+supabase functions deploy trigger-multipass-update
+supabase functions deploy manage-unsubscribe
 supabase functions deploy send-emails
 ```
 
 ## 4. תזמון (Cron)
-ראה את הבלוק המוער בסוף `migrations/0001_features.sql` — הרץ את פקודות `cron.schedule`
-אחרי החלפת `<PROJECT_REF>` ו-`<SERVICE_KEY>`. פעולות מומלצות:
+ראה את הבלוק המוער בסוף `migrations/0001_features.sql` ואת
+[`0006_schedule_hourly_multipass_update.sql`](/Users/itaykarkason/Python%20Projects/coupon_manager_project_new/supabase/migrations/0006_schedule_hourly_multipass_update.sql).
+פעולות מומלצות:
 - `send-emails` עם `{"mode":"expiration_reminders"}` — פעם ביום.
 - ניקוי `coupon_active_viewers` ישנים — פעם בשעה.
+- `trigger-multipass-update` — פעם בשעה דרך `pg_cron` + `vault`.
 
 ---
 
-## הערה חשובה על "עדכון יתרה אוטומטי"
-הסקרייפרים המקוריים (`scrape_buyme`, `scrape_multipass`) הם פרויקטי Node/Python כבדים עם
-דפדפן headless ופתרון-captcha — **לא ניתן להריץ אותם בתוך Edge Function של Deno**.
-
-הארכיטקטורה כאן:
-- `update-balance` הוא **אורקסטרטור**: הוא בוחר את הקופונים לעדכון, קורא לשירות סקרייפר
-  חיצוני (`SCRAPER_SERVICE_URL`) לכל קופון, מחיל את היתרה שחוזרת, ומתעד ב-`auto_update_runs`.
-- כדי להפעיל בפועל: יש לפרוס את הסקרייפרים הקיימים כ**מיקרו-שירות HTTP** שחושף
-  `POST /scrape/{provider}` ומחזיר `{ "remaining": <number> }`, ולהצביע אליו עם `SCRAPER_SERVICE_URL`.
-- ללא הגדרת `SCRAPER_SERVICE_URL`, כל הקופונים מסומנים כ"דולגו" (ולא נכשלים בשקט).
+## ארכיטקטורת auto-update
+- `BuyMe` נשאר דרך `SCRAPER_SERVICE_URL` חיצוני.
+- `Multipass` ו-`XGiftCard` רצים דרך Supabase בלבד:
+  `update-balance` → `trigger-multipass-update` → GitHub Actions `scrape_multipass`.
+- cron של Supabase יכול להזניק `trigger-multipass-update` ישירות, בלי תלות באפליקציה.
+- אין קריאה ישירה מתוך ה-frontend ל-`scrape_multipass`.
 
 ## בדיקה מהירה
 - **AI:** בטופס הוספת קופון, הדבק טקסט קופון ולחץ "פענח ומלא".

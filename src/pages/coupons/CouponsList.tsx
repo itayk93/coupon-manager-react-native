@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useCoupons } from '@/hooks/useCoupons';
+import { useEffect, useState } from 'react';
+import { useBulkDeleteCoupons, useCoupons } from '@/hooks/useCoupons';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -15,21 +15,37 @@ import { DecryptedCoupon } from '@/hooks/useCoupons';
 import { exportCouponsToExcel, exportCouponsToPDF } from '@/lib/exportCoupons';
 import { useCouponTagsMap } from '@/hooks/useTags';
 import { useTriggerAutoUpdate } from '@/hooks/useAutoUpdate';
+import { useCouponViewTracking } from '@/hooks/useCouponViewTracking';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 
 export default function CouponsList() {
   const { data: coupons, isLoading } = useCoupons();
+  const bulkDelete = useBulkDeleteCoupons();
   const { data: tagsMap } = useCouponTagsMap();
   const autoUpdate = useTriggerAutoUpdate();
+  const { markDetailViewed, markCodeViewed } = useCouponViewTracking();
+  const { hasFeature } = useFeatureAccess();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedCouponIds, setSelectedCouponIds] = useState<number[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [detailsCoupon, setDetailsCoupon] = useState<DecryptedCoupon | null>(null);
   const [codeCoupon, setCodeCoupon] = useState<DecryptedCoupon | null>(null);
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<DecryptedCoupon | null>(null);
   const [deleteCoupon, setDeleteCoupon] = useState<DecryptedCoupon | null>(null);
   const [markUsedCoupon, setMarkUsedCoupon] = useState<DecryptedCoupon | null>(null);
+
+  useEffect(() => {
+    if (detailsCoupon) void markDetailViewed(detailsCoupon.id);
+  }, [detailsCoupon, markDetailViewed]);
+
+  useEffect(() => {
+    if (codeCoupon) void markCodeViewed(codeCoupon.id);
+  }, [codeCoupon, markCodeViewed]);
 
   const allTagNames = Array.from(new Set(Object.values(tagsMap || {}).flat())).sort();
   const hasAutoUpdatable = (coupons || []).some((c) => c.auto_update);
@@ -47,19 +63,48 @@ export default function CouponsList() {
     toast.success('הקוד הועתק ללוח!');
   };
 
+  const allFilteredSelected = filteredCoupons.length > 0 && filteredCoupons.every((coupon) => selectedCouponIds.includes(coupon.id));
+
+  const toggleCouponSelection = (couponId: number, checked: boolean) => {
+    setSelectedCouponIds((current) => (
+      checked ? Array.from(new Set([...current, couponId])) : current.filter((id) => id !== couponId)
+    ));
+  };
+
+  const toggleSelectAllFiltered = (checked: boolean) => {
+    if (!checked) {
+      setSelectedCouponIds((current) => current.filter((id) => !filteredCoupons.some((coupon) => coupon.id === id)));
+      return;
+    }
+    setSelectedCouponIds((current) => Array.from(new Set([...current, ...filteredCoupons.map((coupon) => coupon.id)])));
+  };
+
+  const confirmBulkDelete = async () => {
+    await bulkDelete.mutateAsync(selectedCouponIds);
+    setSelectedCouponIds([]);
+    setIsBulkDeleteOpen(false);
+  };
+
   return (
     <section className="coupon-management">
       <div className="section-header">
         <h2>הקופונים שלך</h2>
         <div className="flex flex-wrap gap-2">
-          {hasAutoUpdatable && (
+          {hasAutoUpdatable && hasFeature('auto_update') && (
             <Button variant="outline" className="shrink-0 gap-2" onClick={() => autoUpdate.mutate(undefined)} disabled={autoUpdate.isPending}>
               <RefreshCw className={`h-4 w-4 ${autoUpdate.isPending ? 'animate-spin' : ''}`} /> עדכן יתרות
             </Button>
           )}
-          <Button variant="outline" className="shrink-0 gap-2" onClick={() => setIsImportOpen(true)}>
-            <Upload className="h-4 w-4" /> ייבוא בכמות
-          </Button>
+          {hasFeature('bulk_import') && (
+            <Button variant="outline" className="shrink-0 gap-2" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4" /> ייבוא בכמות
+            </Button>
+          )}
+          {hasFeature('bulk_delete') && selectedCouponIds.length > 0 && (
+            <Button variant="destructive" className="shrink-0 gap-2" onClick={() => setIsBulkDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" /> מחק {selectedCouponIds.length} מסומנים
+            </Button>
+          )}
           <Button className="shrink-0 gap-2 add-coupon-button" onClick={() => setIsFormOpen(true)}>
             <Plus className="h-4 w-4" /> הוסף קופון חדש
           </Button>
@@ -125,6 +170,15 @@ export default function CouponsList() {
       ) : (
         <>
         <h3 className="coupon-section-title">קופונים פעילים</h3>
+        {hasFeature('bulk_delete') && (
+          <div className="mb-4 flex items-center justify-between rounded-lg border bg-card px-4 py-3 text-sm">
+            <label className="flex items-center gap-3">
+              <Checkbox checked={allFilteredSelected} onCheckedChange={(checked) => toggleSelectAllFiltered(Boolean(checked))} />
+              <span>בחר הכל מתוצאות הסינון</span>
+            </label>
+            <span className="text-muted-foreground">{selectedCouponIds.length} קופונים מסומנים</span>
+          </div>
+        )}
         <div className="coupon-container-index">
           {filteredCoupons.map((coupon) => {
             const balance = coupon.value - coupon.used_value;
@@ -133,6 +187,17 @@ export default function CouponsList() {
             return (
               <div key={coupon.id} className="coupon-card-index-wrapper">
                 <Card className="coupon-card-index">
+                  {hasFeature('bulk_delete') && (
+                    <div className="px-4 pt-4">
+                      <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                        <Checkbox
+                          checked={selectedCouponIds.includes(coupon.id)}
+                          onCheckedChange={(checked) => toggleCouponSelection(coupon.id, Boolean(checked))}
+                        />
+                        <span>בחר למחיקה</span>
+                      </label>
+                    </div>
+                  )}
                   <div className="coupon-header">
                     <img src={getCompanyLogo(coupon.company)} alt={`${coupon.company} Logo`} className="company-logo" />
                     <h4>{coupon.company}</h4>
@@ -232,6 +297,10 @@ export default function CouponsList() {
         onUsageChange={setUsageCoupon}
         onDeleteChange={setDeleteCoupon}
         onMarkUsedChange={setMarkUsedCoupon}
+        bulkDeleteCount={selectedCouponIds.length}
+        bulkDeleteOpen={isBulkDeleteOpen}
+        onBulkDeleteCancel={() => setIsBulkDeleteOpen(false)}
+        onBulkDeleteConfirm={confirmBulkDelete}
       />
     </section>
   );

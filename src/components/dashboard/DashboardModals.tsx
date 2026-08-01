@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,6 +21,7 @@ import { getCompanyLogo, hasStaticLogo, resolveCompanyLogo } from "@/lib/company
 import { matchCompanyName } from "@/lib/companyMatch";
 import { CompanyPicker, type PickerCompany } from "@/components/dashboard/CompanyPicker";
 import { CouponDetailModal } from "@/components/coupons/CouponDetailModal";
+import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 
 
 type DashboardModalType = "stats" | "usage" | "quick-add" | "company" | "whatsapp" | null;
@@ -113,6 +114,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
   const parseCoupon = useParseCoupon();
+  const { markDetailViewed, markCodeViewed, markCompanyViewed } = useCouponViewTracking();
   const { data: dbCompanies } = useCompanies();
   const [quickText, setQuickText] = useState("");
   const [quickDetected, setQuickDetected] = useState(false);
@@ -131,6 +133,18 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const [usageRows, setUsageRows] = useState<ParsedUsageRow[] | null>(null);
   const [usageReportError, setUsageReportError] = useState("");
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (detailsCoupon) void markDetailViewed(detailsCoupon.id);
+  }, [detailsCoupon, markDetailViewed]);
+
+  useEffect(() => {
+    if (codeCoupon) void markCodeViewed(codeCoupon.id);
+  }, [codeCoupon, markCodeViewed]);
+
+  useEffect(() => {
+    if (openModal === "company" && selectedCompany) void markCompanyViewed(selectedCompany);
+  }, [markCompanyViewed, openModal, selectedCompany]);
 
   const activeCoupons = useMemo(
     () => coupons.filter((coupon) => !coupon.is_for_sale && coupon.status !== "נוצל"),

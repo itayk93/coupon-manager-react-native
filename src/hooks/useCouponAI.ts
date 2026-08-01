@@ -14,6 +14,20 @@ export type ParsedCoupon = {
   card_exp: string | null;
 };
 
+function extractCardExpiry(text: string): string | null {
+  // Card expiry is commonly written as "תוקף: 08/31" or "תוקף 08/31".
+  // Keep this deterministic fallback because an MM/YY value must not become
+  // the coupon's full expiration date (which is stored as YYYY-MM-DD).
+  const match = text.match(/(?:תוקף|תאריך\s+תוקף|expiry|exp(?:iration)?)\s*[:：-]?\s*(0[1-9]|1[0-2])\s*\/\s*(\d{2})\b/i);
+  return match ? `${match[1]}/${match[2]}` : null;
+}
+
+function extractVoucherCode(text: string): string | null {
+  // Common Israeli voucher format: a long numeric group followed by a
+  // four-digit group, e.g. 155454040-8782.
+  return text.match(/\b\d{7,12}-\d{4}\b/)?.[0] || null;
+}
+
 // Calls the `parse-coupon` Supabase Edge Function which uses an LLM (OpenAI
 // gpt-4o-mini) to extract one or more coupons from free text or an image.
 export function useParseCoupon() {
@@ -50,7 +64,13 @@ export function useParseCoupon() {
           : [];
 
       if (coupons.length === 0) throw new Error('לא זוהו קופונים בטקסט או בתמונה');
-      return coupons as ParsedCoupon[];
+      const textCardExpiry = text ? extractCardExpiry(text) : null;
+      const textVoucherCode = text ? extractVoucherCode(text) : null;
+      return coupons.map((coupon: ParsedCoupon) => ({
+        ...coupon,
+        code: coupon.code || textVoucherCode,
+        card_exp: coupon.card_exp || textCardExpiry,
+      }));
     },
     retry: (failureCount, error) => {
       const isTemporaryNetworkError = /failed to send a request|fetch|network|connection/i.test(error.message);

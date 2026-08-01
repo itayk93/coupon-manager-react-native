@@ -215,3 +215,31 @@ export function useDeleteCoupon() {
     }
   });
 }
+
+export function useBulkDeleteCoupons() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      if (!user) throw new Error("Not authenticated");
+      if (!ids.length) return 0;
+
+      const { error, count } = await supabase
+        .from('coupon')
+        .delete({ count: 'exact' })
+        .in('id', ids)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return count ?? ids.length;
+    },
+    onSuccess: (deletedCount) => {
+      toast.success(`נמחקו ${deletedCount} קופונים`);
+      queryClient.invalidateQueries({ queryKey: ['coupons'] });
+    },
+    onError: (error: any) => {
+      toast.error(`שגיאה במחיקה מרובה: ${error.message}`);
+    }
+  });
+}

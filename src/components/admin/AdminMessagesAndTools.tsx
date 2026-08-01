@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Megaphone, Mail, BellRing } from 'lucide-react';
+import { Trash2, Megaphone, Mail, BellRing, ShieldOff } from 'lucide-react';
+import { useAdminSetOptOut, useConsentEvents, useOptOutUsers } from '@/hooks/useAdminManagement';
+import { Badge } from '@/components/ui/badge';
 
 export function AdminMessages() {
   const { data: messages, isLoading } = useAdminMessages();
@@ -89,6 +91,76 @@ export function AdminEmailTools() {
             <Input placeholder="כתובת יעד" value={to} onChange={(e) => setTo(e.target.value)} className="direction-ltr text-start" />
             <Button variant="outline" onClick={() => testEmail.mutate(to)} disabled={!to || testEmail.isPending}>שלח בדיקה</Button>
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function AdminPrivacyTools() {
+  const { data: optOutUsers, isLoading: optOutLoading } = useOptOutUsers();
+  const { data: consentEvents, isLoading: consentLoading } = useConsentEvents();
+  const setOptOut = useAdminSetOptOut();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><ShieldOff className="h-5 w-5" /> פרטיות ו-GDPR</CardTitle>
+        <CardDescription>ניהול opt-out, מעקב consent ופעולות פרטיות אדמיניסטרטיביות.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <p className="font-medium">משתמשים שהוסרו מדיוור</p>
+          {optOutLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : optOutUsers?.length ? (
+            <div className="space-y-2">
+              {optOutUsers.map((row) => (
+                <div key={row.user_id} className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {row.user?.first_name || 'ללא שם'} {row.user?.last_name || ''}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{row.user?.email || `User #${row.user_id}`}</p>
+                    <p className="text-xs text-muted-foreground">הוסר: {new Date(row.timestamp).toLocaleString('he-IL')}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOptOut.mutate({ userId: row.user_id, optedOut: false })}
+                    disabled={setOptOut.isPending}
+                  >
+                    החזר דיוור
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">אין משתמשים שהוסרו מדיוור.</p>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <p className="font-medium">אירועי consent אחרונים</p>
+          {consentLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : consentEvents?.length ? (
+            <div className="space-y-2">
+              {consentEvents.map((event) => (
+                <div key={event.consent_id} className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                    <p className="text-sm">משתמש #{event.user_id ?? 'אנונימי'}</p>
+                    <p className="text-xs text-muted-foreground">גרסה {event.version} • {new Date(event.timestamp).toLocaleString('he-IL')}</p>
+                  </div>
+                  <Badge variant={event.consent_status ? 'secondary' : 'destructive'}>
+                    {event.consent_status ? 'הסכים' : 'לא הסכים'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">אין אירועי consent.</p>
+          )}
         </div>
       </CardContent>
     </Card>
