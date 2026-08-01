@@ -68,6 +68,15 @@ function normalizeAutoProvider(value: string | null | undefined, allowAutoUpdate
   return value === "BuyMe" || value === "Multipass" || value === "Max" ? value : null;
 }
 
+function getDefaultAutoProvider(company: string | null | undefined) {
+  const compName = company?.trim().toLowerCase() || "";
+  if (compName.includes("buyme") || compName.includes("ביימי")) return "BuyMe";
+  if (compName.includes("multipass") || compName.includes("מולטיפאס")) return "Multipass";
+  if (compName.includes("max") || compName.includes("מקס")) return "Max";
+  if (compName.includes("xtra") || compName.includes("אקסטרה")) return "Multipass";
+  return null;
+}
+
 function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
 }
@@ -286,11 +295,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     const matchedCompany = detectedCompany ? matchCompanyName(detectedCompany, companyNames) : null;
     setOtherCompanyMode(Boolean(detectedCompany) && !matchedCompany);
 
-    const compName = (matchedCompany || detectedCompany).toLowerCase();
-    let defaultAutoProvider: string | null = null;
-    if (compName.includes("buyme") || compName.includes("ביימי")) defaultAutoProvider = "BuyMe";
-    else if (compName.includes("multipass") || compName.includes("מולטיפאס")) defaultAutoProvider = "Multipass";
-    else if (compName.includes("max") || compName.includes("מקס")) defaultAutoProvider = "Max";
+    const defaultAutoProvider = getDefaultAutoProvider(matchedCompany || detectedCompany);
 
     quickForm.reset({
       company: matchedCompany || detectedCompany,
