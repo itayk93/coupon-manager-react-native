@@ -14,6 +14,17 @@ export type ParsedCoupon = {
   card_exp: string | null;
 };
 
+function isLikelyCoupon(candidate: ParsedCoupon): boolean {
+  const hasCode = Boolean(candidate.code && candidate.code.trim().length >= 4);
+  const hasValue = typeof candidate.value === 'number' && Number.isFinite(candidate.value) && candidate.value > 0;
+  const hasExpiration = Boolean(candidate.expiration || candidate.card_exp);
+  const hasCvv = Boolean(candidate.cvv && candidate.cvv.trim().length >= 3);
+  const hasCompany = Boolean(candidate.company && candidate.company.trim().length >= 2);
+
+  const strongSignals = [hasCode, hasValue, hasExpiration, hasCvv].filter(Boolean).length;
+  return strongSignals >= 2 || (hasCompany && strongSignals >= 1);
+}
+
 function extractCardExpiry(text: string): string | null {
   // Card expiry is commonly written as "תוקף: 08/31" or "תוקף 08/31".
   // Keep this deterministic fallback because an MM/YY value must not become
@@ -66,11 +77,18 @@ export function useParseCoupon() {
       if (coupons.length === 0) throw new Error('לא זוהו קופונים בטקסט או בתמונה');
       const textCardExpiry = text ? extractCardExpiry(text) : null;
       const textVoucherCode = text ? extractVoucherCode(text) : null;
-      return coupons.map((coupon: ParsedCoupon) => ({
+      const normalizedCoupons = coupons.map((coupon: ParsedCoupon) => ({
         ...coupon,
         code: coupon.code || textVoucherCode,
         card_exp: coupon.card_exp || textCardExpiry,
       }));
+
+      const filteredCoupons = normalizedCoupons.filter(isLikelyCoupon);
+      if (filteredCoupons.length === 0) {
+        throw new Error('לא זוהה קופון אמיתי בתמונה או בטקסט. נסה צילום ממוקד יותר של פרטי הקופון.');
+      }
+
+      return filteredCoupons;
     },
     retry: (failureCount, error) => {
       const isTemporaryNetworkError = /failed to send a request|fetch|network|connection/i.test(error.message);
