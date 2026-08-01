@@ -61,6 +61,15 @@ function normalizeAutoProvider(value: string | null | undefined, allowAutoUpdate
   return value === "BuyMe" || value === "Multipass" || value === "Max" ? value : null;
 }
 
+function getDefaultAutoProvider(company: string | null | undefined) {
+  const compName = company?.trim().toLowerCase() || "";
+  if (compName.includes("buyme") || compName.includes("ביימי")) return "BuyMe";
+  if (compName.includes("multipass") || compName.includes("מולטיפאס")) return "Multipass";
+  if (compName.includes("max") || compName.includes("מקס")) return "Max";
+  if (compName.includes("xtra") || compName.includes("אקסטרה")) return "Multipass";
+  return null;
+}
+
 export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -135,6 +144,7 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
 
   const fillFormFromParsedCoupon = (parsed: ParsedCoupon) => {
     const matchedCompany = parsed.company ? matchCompanyName(parsed.company, companyNames) : null;
+    const autoProvider = normalizeAutoProvider(getDefaultAutoProvider(matchedCompany || parsed.company), showAutoUsageUpdater);
     form.reset({
       company: matchedCompany || parsed.company || '',
       code: parsed.code || '',
@@ -148,6 +158,8 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
       purpose: '',
       cvv: parsed.cvv || '',
       card_exp: parsed.card_exp || '',
+      auto_download_details: autoProvider,
+      auto_update: Boolean(autoProvider),
     });
   };
 
