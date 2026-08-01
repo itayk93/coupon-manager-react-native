@@ -56,6 +56,11 @@ interface CouponFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function normalizeAutoProvider(value: string | null | undefined, allowAutoUpdater: boolean) {
+  if (!allowAutoUpdater) return null;
+  return value === "BuyMe" || value === "Multipass" || value === "Max" ? value : null;
+}
+
 export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -87,8 +92,8 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
       purpose: coupon?.purpose || '',
       cvv: coupon?.cvv || '',
       card_exp: coupon?.card_exp || '',
-      auto_download_details: coupon?.auto_download_details || null,
-      auto_update: coupon?.auto_update ?? true,
+      auto_download_details: normalizeAutoProvider(coupon?.auto_download_details, showAutoUsageUpdater),
+      auto_update: Boolean(normalizeAutoProvider(coupon?.auto_download_details, showAutoUsageUpdater)),
     },
   });
 
@@ -118,10 +123,10 @@ export function CouponForm({ coupon, open, onOpenChange }: CouponFormProps) {
       purpose: coupon?.purpose || '',
       cvv: coupon?.cvv || '',
       card_exp: coupon?.card_exp || '',
-      auto_download_details: coupon?.auto_download_details || null,
-      auto_update: coupon?.auto_update ?? true,
+      auto_download_details: normalizeAutoProvider(coupon?.auto_download_details, showAutoUsageUpdater),
+      auto_update: Boolean(normalizeAutoProvider(coupon?.auto_download_details, showAutoUsageUpdater)),
     });
-  }, [coupon, form, open]);
+  }, [coupon, form, open, showAutoUsageUpdater]);
 
   useEffect(() => {
     if (open && existingTags) setTags(existingTags.map((t) => t.name));
