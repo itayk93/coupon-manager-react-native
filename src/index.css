@@ -835,11 +835,14 @@ body {
   order: 2;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   background: var(--cm-surface-muted);
 }
 
 .dashboard-main {
+  width: 100%;
+  min-height: calc(100vh - 50px);
   max-width: 1200px;
   margin: 0 auto;
   padding: 14px 20px 64px;
@@ -3406,6 +3409,7 @@ body {
   }
 
   .dashboard-main {
+    min-height: 0;
     padding: 30px 18px 48px;
   }
 

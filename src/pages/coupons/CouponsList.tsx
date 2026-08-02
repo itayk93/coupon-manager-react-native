@@ -51,9 +51,10 @@ export default function CouponsList() {
   const hasAutoUpdatable = (coupons || []).some((c) => c.auto_update);
 
   const filteredCoupons = coupons?.filter(coupon => {
+    const normalizedSearch = searchTerm.toLowerCase();
     const matchesSearch =
-      coupon.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (coupon.description && coupon.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      (coupon.company || '').toLowerCase().includes(normalizedSearch) ||
+      (coupon.description || '').toLowerCase().includes(normalizedSearch);
     const matchesTag = !selectedTag || (tagsMap?.[coupon.id] || []).includes(selectedTag);
     return matchesSearch && matchesTag;
   }) || [];
