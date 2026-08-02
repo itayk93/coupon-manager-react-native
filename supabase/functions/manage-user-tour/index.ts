@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { requireSameUser, requireUser } from '../_shared/auth.ts';
 
 type TourStepKey = 'index' | 'add_coupon' | 'coupon_detail';
 
@@ -21,7 +22,9 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { action, user_id, step } = await req.json();
-    const userId = Number(user_id);
+    const authenticatedUser = await requireUser(req);
+    requireSameUser(user_id, authenticatedUser.id);
+    const userId = authenticatedUser.id;
 
     if (!Number.isFinite(userId) || userId <= 0) {
       return jsonResponse({ error: 'user_id חסר או לא תקין' }, 400);
@@ -61,6 +64,8 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({ error: 'action לא נתמך' }, 400);
   } catch (error) {
-    return jsonResponse({ error: String(error) }, 500);
+    const message = error instanceof Error ? error.message : String(error);
+    const status = message === 'UNAUTHENTICATED' ? 401 : message === 'FORBIDDEN' ? 403 : 500;
+    return jsonResponse({ error: status === 500 ? 'אירעה שגיאה' : status === 401 ? 'נדרשת התחברות' : 'אין הרשאה' }, status);
   }
 });

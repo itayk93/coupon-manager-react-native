@@ -61,7 +61,14 @@ self.addEventListener('fetch', (event) => {
     } catch {
       // Offline fallback only. Never prefer stale JS/CSS while online.
       if (cachedResponse) return cachedResponse;
-      if (event.request.mode === 'navigate') return caches.match('/index.html');
+      if (event.request.mode === 'navigate') {
+        const appShell = await caches.match('/index.html') || await caches.match('/');
+        if (appShell) return appShell;
+        return new Response(
+          '<!doctype html><meta charset="utf-8"><title>קופון מאסטר</title><body dir="rtl" style="font-family:system-ui;padding:2rem"><h1>אין חיבור כרגע</h1><p>לא ניתן לטעון את העמוד. נא לבדוק את החיבור ולנסות שוב.</p></body>',
+          { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
+      }
       return new Response('', { status: 504, statusText: 'Offline' });
     }
   })());

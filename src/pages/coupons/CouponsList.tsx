@@ -20,7 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 
 export default function CouponsList() {
-  const { data: coupons, isLoading } = useCoupons();
+  const { data: coupons, isLoading, isError, refetch } = useCoupons();
   const bulkDelete = useBulkDeleteCoupons();
   const { data: tagsMap } = useCouponTagsMap();
   const autoUpdate = useTriggerAutoUpdate();
@@ -160,6 +160,12 @@ export default function CouponsList() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      ) : isError ? (
+        <div className="no-data-message" role="alert">
+          <h3>לא ניתן לטעון את הקופונים</h3>
+          <p>ייתכן שהחיבור נותק זמנית. נסה לרענן את העמוד.</p>
+          <Button onClick={() => void refetch()}><RefreshCw className="h-4 w-4" /> נסה שוב</Button>
         </div>
       ) : filteredCoupons.length === 0 ? (
         <div className="no-data-message">
