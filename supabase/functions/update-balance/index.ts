@@ -20,6 +20,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { createServiceClient, sendPushToRows } from '../_shared/push.ts';
+import { requireSameUser, requireUser } from '../_shared/auth.ts';
 
 type Coupon = {
   id: number;
@@ -87,6 +88,9 @@ Deno.serve(async (req: Request) => {
   try {
     const { user_id, coupon_id } = await req.json();
     if (!user_id) return jsonResponse({ error: 'user_id חסר' }, 400);
+    const authenticatedUser = await requireUser(req);
+    requireSameUser(user_id, authenticatedUser.id);
+    const userId = authenticatedUser.id;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -104,7 +108,7 @@ Deno.serve(async (req: Request) => {
     let query = supabase
       .from('coupon')
       .select('id, company, source, auto_download_details, value, used_value, buyme_coupon_url, auto_update, user_id')
-      .eq('user_id', user_id)
+      .eq('user_id', userId)
       .eq('auto_update', true)
       .neq('status', 'נוצל');
     if (coupon_id) query = query.eq('id', coupon_id);
@@ -215,7 +219,7 @@ Deno.serve(async (req: Request) => {
       const { data: subscriptions } = await serviceSupabase
         .from('push_subscriptions')
         .select('endpoint, subscription')
-        .eq('user_id', user_id);
+        .eq('user_id', userId);
 
       await sendPushToRows(
         serviceSupabase,

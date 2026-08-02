@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { requireSameUser, requireUser } from '../_shared/auth.ts';
 
 type DispatchResult =
   | { success: true; runId: string | null; runUrl: string | null; workflow: string; ref: string }
@@ -82,6 +83,8 @@ Deno.serve(async (req: Request) => {
     if (!Number.isFinite(userId) || userId <= 0) {
       return jsonResponse({ error: 'user_id חסר או לא תקין' }, 400);
     }
+    const authenticatedUser = await requireUser(req);
+    requireSameUser(userId, authenticatedUser.id);
 
     const supabase = supa();
     let query = supabase
