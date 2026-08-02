@@ -19,6 +19,13 @@ export function PwaInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
 
+  // The install invitation is intentionally mobile-only. Desktop browsers can
+  // also fire beforeinstallprompt, but installing from the desktop is not part
+  // of this product flow.
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
+
   // Check if prompt was previously dismissed or installed
   const isDismissed = 
     localStorage.getItem(LOCAL_DISMISSED_KEY) === 'true' || 
@@ -29,9 +36,18 @@ export function PwaInstallPrompt() {
     Boolean(profile?.pwa_installed);
 
   useEffect(() => {
-    // If already dismissed or installed, do not register prompt listener
-    if (isDismissed || isInstalled) {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleViewportChange = () => setIsMobile(mediaQuery.matches);
+    handleViewportChange();
+    mediaQuery.addEventListener('change', handleViewportChange);
+    return () => mediaQuery.removeEventListener('change', handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    // If already dismissed, installed, or on desktop, do not register prompt listener.
+    if (!isMobile || isDismissed || isInstalled) {
       setShowPrompt(false);
+      setDeferredPrompt(null);
       return;
     }
 
@@ -64,7 +80,7 @@ export function PwaInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isDismissed, isInstalled, user?.email]);
+  }, [isMobile, isDismissed, isInstalled, user?.email]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -106,7 +122,7 @@ export function PwaInstallPrompt() {
     }
   };
 
-  if (!showPrompt || isDismissed || isInstalled) return null;
+  if (!isMobile || !showPrompt || isDismissed || isInstalled) return null;
 
   return (
     <div className="fixed bottom-5 left-5 right-5 md:left-auto md:right-5 md:max-w-md z-50 animate-in slide-in-from-bottom duration-300">
