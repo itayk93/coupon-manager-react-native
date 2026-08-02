@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInLegacy } from '@/lib/legacyAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +50,17 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    toast.info("התחברות Google לא הופעלה בהסבת ה-legacy. השתמש באימייל וסיסמה כמו באתר המקורי.");
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+      },
+    });
+    if (error) {
+      toast.error(error.message || "לא ניתן להתחבר עם Google כרגע.");
+      setIsLoading(false);
+    }
   };
 
   return (
