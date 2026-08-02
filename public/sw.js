@@ -1,5 +1,5 @@
 // Bump cache when deploying a new build. Old Vite asset hashes must never block startup.
-const CACHE_NAME = 'coupon-master-v2';
+const CACHE_NAME = 'coupon-master-v3';
 
 const ASSETS_TO_CACHE = [
   '/',

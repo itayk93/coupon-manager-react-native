@@ -16,6 +16,7 @@ import Faq from "./pages/content/Faq";
 import Privacy from "./pages/content/Privacy";
 import Unsubscribe from "./pages/content/Unsubscribe";
 import NotFound from "./pages/content/NotFound";
+import Issues from "./pages/content/Issues";
 
 // Protected Pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -51,6 +52,7 @@ function App() {
               <Route path="/faq" element={<Faq />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route path="/issues" element={<Issues />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
