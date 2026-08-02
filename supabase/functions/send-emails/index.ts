@@ -3,6 +3,7 @@
 //   mode: "newsletter"           -> send a newsletter to all subscribed users
 //   mode: "expiration_reminders" -> email users about coupons expiring in 30/7/1 days
 //   mode: "test"                 -> send a single test email
+//   mode: "issue_report"         -> send a support report to the admin
 //
 // Env vars:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY - injected automatically
@@ -42,6 +43,12 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   } catch {
     return false;
   }
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>'\"]/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
+  })[char] || char);
 }
 
 function supa() {
@@ -207,6 +214,27 @@ Deno.serve(async (req: Request) => {
         '<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.6"><h2>Coupon Master מחובר למייל</h2><p>זהו מייל בדיקה. שירות Brevo עובד בהצלחה.</p></div>',
       );
       return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחה נכשלה דרך Brevo' }, 502);
+    }
+    if (mode === 'issue_report') {
+      const subject = String(body.subject || '').trim().slice(0, 160);
+      const details = String(body.details || '').trim().slice(0, 8000);
+      const reporterEmail = String(body.email || '').trim().slice(0, 254);
+      if (!subject || !details) return jsonResponse({ error: 'חסרים נושא ופרטי תקלה' }, 400);
+
+      const html = `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.7">
+        <h2>דיווח תקלה חדש - Coupon Master</h2>
+        <p><strong>נושא:</strong> ${escapeHtml(subject)}</p>
+        <p><strong>פרטים:</strong></p>
+        <p style="white-space:pre-wrap">${escapeHtml(details)}</p>
+        <p><strong>אימייל לחזרה:</strong> ${escapeHtml(reporterEmail || 'לא צוין')}</p>
+        <p><strong>עמוד:</strong> ${escapeHtml(String(body.page_url || 'לא צוין'))}</p>
+      </div>`;
+      const ok = await sendEmail(
+        'itayk93@gmail.com',
+        `דיווח תקלה: ${subject}`,
+        html,
+      );
+      return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחת הדיווח נכשלה' }, 502);
     }
     return jsonResponse({ error: 'mode לא חוקי' }, 400);
   } catch (err) {
