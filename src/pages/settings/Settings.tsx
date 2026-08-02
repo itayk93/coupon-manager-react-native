@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Mail, Shield, Smartphone, Lock, ShieldOff } from 'lucide-react';
+import { Bell, Mail, Shield, Smartphone, Lock, ShieldOff, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
-import { useOptOut, useSetOptOut, useDeleteAccount } from '@/hooks/useConsent';
+import { useOptOut, useSetOptOut, useDeleteAccount, useRecordConsent } from '@/hooks/useConsent';
 import { usePwaNotifications } from '@/hooks/usePwaNotifications';
 
 export default function Settings() {
@@ -22,6 +22,7 @@ export default function Settings() {
   const updateProfile = useUpdateProfile();
   const { data: optOut } = useOptOut();
   const setOptOut = useSetOptOut();
+  const recordConsent = useRecordConsent();
   const deleteAccount = useDeleteAccount();
   const {
     isSupported,
@@ -42,6 +43,12 @@ export default function Settings() {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [gdprDialogOpen, setGdprDialogOpen] = useState(false);
   const [gdprConfirmation, setGdprConfirmation] = useState('');
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(true);
+
+  useEffect(() => {
+    setMarketingConsent(!Boolean(optOut?.opted_out));
+  }, [optOut?.opted_out]);
 
   useEffect(() => {
     if (profile) {
@@ -71,6 +78,17 @@ export default function Settings() {
     setGdprDialogOpen(false);
     setGdprConfirmation('');
     navigate('/login', { replace: true });
+  };
+
+  const handleSaveConsent = async () => {
+    try {
+      await setOptOut.mutateAsync(!marketingConsent);
+      await recordConsent.mutateAsync(marketingConsent);
+      setConsentDialogOpen(false);
+      toast.success('העדפות הפרטיות נשמרו');
+    } catch {
+      // The mutation surfaces the error to the user.
+    }
   };
 
   const handleResetPassword = () => {
@@ -295,6 +313,23 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex flex-col gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 text-primary">
+                    <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold">רוצה לשנות את הבחירה שלך?</h3>
+                    <p className="text-sm text-muted-foreground">
+                      אפשר לעדכן בכל עת אילו הודעות שיווקיות תרצה לקבל. שירותים חיוניים ימשיכו לפעול.
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" className="min-h-11 shrink-0" onClick={() => setConsentDialogOpen(true)}>
+                  ניהול העדפות פרטיות
+                </Button>
+              </div>
+
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="flex items-center gap-4">
                   <div className="bg-primary/10 p-2 rounded-full text-primary">
@@ -327,6 +362,33 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={consentDialogOpen} onOpenChange={setConsentDialogOpen}>
+        <DialogContent aria-describedby="consent-description">
+          <DialogHeader>
+            <DialogTitle>העדפות פרטיות</DialogTitle>
+            <DialogDescription id="consent-description">
+              הבחירה שלך נשמרת וניתן לשנות אותה בכל עת. מידע נוסף נמצא ב<Link to="/privacy" className="mx-1 underline underline-offset-4" onClick={() => setConsentDialogOpen(false)}>מדיניות הפרטיות</Link>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-medium">הודעות שיווקיות</p>
+                <p className="text-sm text-muted-foreground">עדכונים, הצעות ותוכן שעשוי לעניין אותך.</p>
+              </div>
+              <Switch checked={marketingConsent} onCheckedChange={setMarketingConsent} aria-label="הודעות שיווקיות" />
+            </div>
+            <p className="text-xs text-muted-foreground">הודעות תפעוליות הקשורות לחשבון ולשירות ימשיכו להישלח.</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveConsent} disabled={setOptOut.isPending || recordConsent.isPending} className="min-h-11">
+              {setOptOut.isPending || recordConsent.isPending ? 'שומר...' : 'שמירת העדפות'}
+            </Button>
+            <Button variant="outline" onClick={() => setConsentDialogOpen(false)} className="min-h-11">ביטול</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <DialogContent className="legacy-modal-content settings-security-modal" dir="rtl">
