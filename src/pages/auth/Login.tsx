@@ -91,14 +91,14 @@ export default function Login() {
       <div className="login-container">
         <div className="login-header flex flex-col items-center">
           <img src="/logo-icon.png" alt="קופון מאסטר" className="h-16 w-16 mb-3 rounded-2xl shadow-lg hover:scale-105 transition-transform object-cover" />
-          <h1 className="welcome-title">ברוכים הבאים ל-קופון מאסטר</h1>
-          <div className="decorative-line" />
+          <h1 className="welcome-title">הקופונים שלך. מסודרים.</h1>
+          <p className="welcome-subtitle">נכנסים וממשיכים בדיוק מאיפה שעצרתם.</p>
         </div>
 
         <section className="auth-card">
           <div className="auth-card-header">
             <h2>התחברות</h2>
-            <div className="decorative-dots"><span /><span /><span /></div>
+            <p className="auth-card-subtitle">כניסה מהירה ובטוחה לחשבון</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
