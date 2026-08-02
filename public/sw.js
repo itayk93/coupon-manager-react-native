@@ -1,4 +1,5 @@
-const CACHE_NAME = 'coupon-master-v1';
+// Bump cache when deploying a new build. Old Vite asset hashes must never block startup.
+const CACHE_NAME = 'coupon-master-v2';
 
 const ASSETS_TO_CACHE = [
   '/',
@@ -47,37 +48,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch background update to keep cache fresh
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-          }
-        }).catch(() => {/* Offline fallback */});
-        return cachedResponse;
+  event.respondWith((async () => {
+    const cachedResponse = await caches.match(event.request);
+
+    try {
+      const networkResponse = await fetch(event.request);
+      if (networkResponse?.ok && networkResponse.type === 'basic') {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, networkResponse.clone());
       }
-
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
-        }
-
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return networkResponse;
-      }).catch(() => {
-        // Return index.html for navigation requests when offline
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
-      });
-    })
-  );
+      return networkResponse;
+    } catch {
+      // Offline fallback only. Never prefer stale JS/CSS while online.
+      if (cachedResponse) return cachedResponse;
+      if (event.request.mode === 'navigate') return caches.match('/index.html');
+      return new Response('', { status: 504, statusText: 'Offline' });
+    }
+  })());
 });
 
 self.addEventListener('push', (event) => {
