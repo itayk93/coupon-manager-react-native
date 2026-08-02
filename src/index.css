@@ -3361,7 +3361,8 @@ body {
   }
 }
 
-@media (max-width: 1279px) {
+/* Keep the desktop flex layout until the desktop sidebar is hidden. */
+@media (max-width: 1023px) {
   .dashboard-topbar {
     height: calc(68px + env(safe-area-inset-top, 0px));
   }
