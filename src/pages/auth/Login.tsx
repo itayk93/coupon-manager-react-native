@@ -19,6 +19,14 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+declare global {
+  interface Window {
+    google?: { accounts: { oauth2: { initTokenClient: (options: { client_id: string; scope: string; callback: (response: { access_token?: string; error?: string }) => void }) => { requestAccessToken: () => void } } } };
+  }
+}
+
+const GOOGLE_CLIENT_ID = '100904281039-iplmrbh4ba1u41oest3bke34i3avsqj9.apps.googleusercontent.com';
+
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -51,16 +59,31 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/login`,
+    if (!window.google?.accounts?.oauth2) {
+      toast.error("Google עדיין נטען. נסה שוב בעוד רגע.");
+      setIsLoading(false);
+      return;
+    }
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'openid email profile',
+      callback: async (response) => {
+        try {
+          if (!response.access_token) throw new Error(response.error || 'Google authentication failed');
+          const { data, error } = await supabase.functions.invoke('google-auth', { body: { access_token: response.access_token } });
+          if (error) throw error;
+          if (!data?.user) throw new Error('Google user could not be created');
+          setLegacySession(data.user);
+          toast.success("התחברת בהצלחה!");
+          navigate(from, { replace: true });
+        } catch (error: any) {
+          toast.error(error.message || "לא ניתן להתחבר עם Google כרגע.");
+        } finally {
+          setIsLoading(false);
+        }
       },
     });
-    if (error) {
-      toast.error(error.message || "לא ניתן להתחבר עם Google כרגע.");
-      setIsLoading(false);
-    }
+    client.requestAccessToken();
   };
 
   return (
