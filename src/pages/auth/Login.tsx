@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-const GOOGLE_CLIENT_ID = '100904281039-iplmrbh4ba1u41oest3bke34i3avsqj9.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '100904281039-0ktffj6vde2uj2to3c814njss4fk34fj.apps.googleusercontent.com';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
