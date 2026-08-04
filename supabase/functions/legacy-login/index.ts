@@ -8,18 +8,14 @@
 // The matching auth.users row is created lazily on first successful login and
 // linked back to public.users.auth_user_id.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { pbkdf2Async } from 'https://esm.sh/@noble/hashes@1.5.0/pbkdf2';
 import { scryptAsync } from 'https://esm.sh/@noble/hashes@1.5.0/scrypt';
 import { sha256, sha512 } from 'https://esm.sh/@noble/hashes@1.5.0/sha2';
 import { utf8ToBytes } from 'https://esm.sh/@noble/hashes@1.5.0/utils';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { adminClient, issueSessionToken } from '../_shared/session.ts';
 
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  { auth: { persistSession: false } },
-);
+const supabaseAdmin = adminClient();
 
 function toHex(bytes: Uint8Array): string {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -77,51 +73,6 @@ async function checkWerkzeugPasswordHash(storedHash: string, password: string): 
 
 const INVALID_CREDENTIALS = 'אימייל או סיסמה שגויים.';
 
-/**
- * Ensures an auth.users row exists for this legacy user and returns a session.
- * The auth password is a server-generated random value that nobody ever sees;
- * the legacy Werkzeug hash stays the single source of truth for the check
- * above, so users keep their existing passwords.
- */
-async function issueSession(userId: number, email: string, authUserId: string | null) {
-  let authId = authUserId;
-
-  if (!authId) {
-    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      password: crypto.randomUUID() + crypto.randomUUID(),
-      user_metadata: { legacy_user_id: userId },
-    });
-
-    if (createError) {
-      // Another concurrent login (or the Google flow) may have created it first.
-      const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      const existing = list?.users.find((u) => u.email?.toLowerCase() === email);
-      if (!existing) throw createError;
-      authId = existing.id;
-    } else {
-      authId = created.user.id;
-    }
-
-    const { error: linkError } = await supabaseAdmin
-      .from('users')
-      .update({ auth_user_id: authId })
-      .eq('id', userId);
-    if (linkError) throw linkError;
-  }
-
-  // A magic-link token is the only way to mint a session for a user whose
-  // password we do not know. The client immediately exchanges it via verifyOtp.
-  const { data: link, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'magiclink',
-    email,
-  });
-  if (linkError) throw linkError;
-
-  return link.properties.hashed_token;
-}
-
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -153,7 +104,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'עליך לאשר את חשבונך לפני התחברות.' }, 403);
     }
 
-    const tokenHash = await issueSession(user.id, user.email, user.auth_user_id);
+    const tokenHash = await issueSessionToken(supabaseAdmin, user.id, user.email, user.auth_user_id);
 
     return jsonResponse({
       token_hash: tokenHash,
