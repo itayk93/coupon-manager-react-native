@@ -40,11 +40,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.parse-coupon]
-# needs client check — currently deployed open. Holds an OpenAI key and bills
-# per call, so an unauthenticated caller can spend money.
+# All callers are behind PrivateRoute, and the function calls requireUser()
+# itself so the OpenAI spend is always attributable to a real account.
 verify_jwt = true
 
 [functions.send-emails]
-# needs client check — currently deployed open. Can send to the whole user
-# list via Brevo and to arbitrary addresses in "test" mode.
-verify_jwt = true
+# Cannot be true: the issue_report mode is reached from /issues, a public
+# route. Authorisation is per-mode inside the function — newsletter,
+# expiration_reminders and test require requireAdmin() or the service role
+# (cron); issue_report is public but only ever mails the site owner.
+verify_jwt = false
