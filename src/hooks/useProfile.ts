@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { USER_COLUMNS } from '@/lib/userColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { User as UserRow } from '@/integrations/supabase';
@@ -17,7 +18,7 @@ export function useProfile() {
       // we match by email which is marked unique in the original models.
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(USER_COLUMNS)
         .eq('email', user.email)
         .single();
 
