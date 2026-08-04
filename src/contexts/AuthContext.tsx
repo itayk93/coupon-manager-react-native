@@ -23,15 +23,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const loadUser = async () => {
+      // localStorage is attacker-controlled, so it may seed the display fields
+      // but must never grant admin. is_admin is set only from a row read back
+      // under a real Supabase session below.
       const storedUser = getStoredLegacyUser();
       if (storedUser) {
         setSession(storedUser);
         setUser(storedUser);
-        setIsAdmin(Boolean(storedUser.is_admin));
       }
 
       const { data: { session: supabaseSession } } = await supabase.auth.getSession();
-      if (supabaseSession?.user?.email) {
+      if (!supabaseSession) {
+        if (mounted) {
+          setIsAdmin(false);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (supabaseSession.user?.email) {
         const { data: legacyUser } = await supabase
           .from('users')
           .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted')
@@ -66,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setLegacySession = (legacyUser: LegacyUser) => {
     setSession(legacyUser);
     setUser(legacyUser);
-    setIsAdmin(Boolean(legacyUser.is_admin));
+    // isAdmin intentionally not set here — loadUser() re-derives it from the
+    // database once onAuthStateChange fires for the new session.
   };
 
   const signOut = async () => {
