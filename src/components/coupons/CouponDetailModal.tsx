@@ -24,6 +24,7 @@ import {
   Calendar,
   Store,
   Trash2,
+  Pencil,
 } from "lucide-react";
 
 type Tab = "info" | "values" | "extra";
@@ -503,6 +504,7 @@ export function CouponDetailModal({
               className="cd-btn-edit"
               onClick={() => onOpenEdit(coupon)}
             >
+              <Pencil size={15} />
               עריכת קופון
             </Button>
           )}

@@ -646,19 +646,34 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
                       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {!coupon.is_one_time && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-16 justify-between rounded-2xl border-border bg-background px-5 text-base font-extrabold text-foreground hover:bg-muted/40"
-                            onClick={() => {
-                              setUsageCoupon(coupon);
-                              setCompanyUsageAmount("");
-                              setCompanyUsageError("");
-                            }}
-                          >
-                            עדכון שימוש
-                            <Pencil size={20} />
-                          </Button>
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-16 justify-between rounded-2xl border-border bg-background px-5 text-base font-extrabold text-foreground hover:bg-muted/40"
+                              onClick={() => {
+                                setUsageCoupon(coupon);
+                                setCompanyUsageAmount("");
+                                setCompanyUsageError("");
+                              }}
+                            >
+                              עדכון סכום שימוש
+                              <Pencil size={20} />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-16 justify-between rounded-2xl border-emerald-200 bg-emerald-50 px-5 text-base font-extrabold text-emerald-700 hover:bg-emerald-100"
+                              onClick={() => {
+                                setUsageCoupon(coupon);
+                                setCompanyUsageAmount("");
+                                setCompanyUsageError("");
+                              }}
+                            >
+                              סימון כנוצל
+                              <CheckCircle2 size={20} />
+                            </Button>
+                          </>
                         )}
 
                         <Button
