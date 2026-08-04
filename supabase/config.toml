@@ -1,0 +1,50 @@
+project_id = "dugjsiyenazpsoiyduuz"
+
+# Every Edge Function is listed explicitly, and verify_jwt is stated even where
+# it matches the default. The failure mode this prevents is a new function
+# being added, deployed with --no-verify-jwt "just to get it working", and
+# quietly becoming a public endpoint holding the service role key.
+#
+# Rule: verify_jwt = false requires a comment saying what authenticates the
+# caller instead. If there is no answer, it must be true.
+#
+# NOTE: deploying a function applies its setting here. The three marked
+# "needs client check" are currently deployed without JWT verification; flipping
+# them requires confirming the caller always has a session first.
+
+[functions.legacy-login]
+# Public by necessity: this is the endpoint that establishes a session.
+# Protected by the Werkzeug hash check and a uniform error for unknown emails.
+verify_jwt = false
+
+[functions.google-auth]
+# Public by necessity: authenticates against Google before a session exists.
+# The Google access token is validated server-side against Google's userinfo.
+verify_jwt = false
+
+[functions.manage-unsubscribe]
+# Public by necessity: reached from an email link, before login.
+# Authenticated by an HMAC token signed with UNSUBSCRIBE_SECRET.
+verify_jwt = false
+
+[functions.manage-user-tour]
+verify_jwt = true
+
+[functions.trigger-multipass-update]
+verify_jwt = true
+
+[functions.update-balance]
+verify_jwt = true
+
+[functions.push-notifications]
+verify_jwt = true
+
+[functions.parse-coupon]
+# needs client check — currently deployed open. Holds an OpenAI key and bills
+# per call, so an unauthenticated caller can spend money.
+verify_jwt = true
+
+[functions.send-emails]
+# needs client check — currently deployed open. Can send to the whole user
+# list via Brevo and to arbitrary addresses in "test" mode.
+verify_jwt = true
