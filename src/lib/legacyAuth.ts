@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { checkWerkzeugPasswordHash } from "@/lib/werkzeug";
 
 export type LegacyUser = {
   id: number;
@@ -8,11 +7,6 @@ export type LegacyUser = {
   last_name: string;
   is_admin: boolean;
   is_confirmed: boolean;
-};
-
-type LegacyUserRow = LegacyUser & {
-  password: string;
-  is_deleted?: boolean | null;
 };
 
 const SESSION_KEY = "coupon_master_legacy_session";
@@ -37,34 +31,36 @@ export function clearLegacyUser() {
   localStorage.removeItem(SESSION_KEY);
 }
 
+/**
+ * Verifies credentials on the server and establishes a real Supabase session.
+ *
+ * The password hash is never sent to the browser: the legacy-login Edge
+ * Function checks it with the service role and returns a one-time token, which
+ * we exchange for a session. Every subsequent PostgREST request then carries a
+ * signed JWT, which is what the RLS policies key off.
+ */
 export async function signInLegacy(email: string, password: string): Promise<LegacyUser> {
   const normalizedEmail = email.trim().toLowerCase();
-  const { data, error } = await supabase
-    .from("users")
-    .select("id,email,password,first_name,last_name,is_admin,is_confirmed,is_deleted")
-    .eq("email", normalizedEmail)
-    .maybeSingle();
 
-  if (error) throw error;
-  if (!data) throw new Error("אימייל או סיסמה שגויים.");
+  const { data, error } = await supabase.functions.invoke("legacy-login", {
+    body: { email: normalizedEmail, password },
+  });
 
-  const userRow = data as LegacyUserRow;
-  if (userRow.is_deleted) throw new Error("המשתמש הזה נמחק או נחסם.");
-  if (!userRow.is_confirmed) throw new Error("עליך לאשר את חשבונך לפני התחברות.");
-  if (!userRow.password) throw new Error("לחשבון הזה אין סיסמה מקומית. נסה להתחבר עם Google.");
+  if (error) {
+    // Edge Function errors arrive as a generic FunctionsHttpError; the useful
+    // message is in the response body.
+    const detail = await error.context?.json?.().catch(() => null);
+    throw new Error(detail?.error ?? "ההתחברות נכשלה. נסה שוב.");
+  }
+  if (data?.error) throw new Error(data.error);
+  if (!data?.token_hash) throw new Error("ההתחברות נכשלה. נסה שוב.");
 
-  const passwordMatches = await checkWerkzeugPasswordHash(userRow.password, password);
-  if (!passwordMatches) throw new Error("אימייל או סיסמה שגויים.");
+  const { error: otpError } = await supabase.auth.verifyOtp({
+    type: "email",
+    token_hash: data.token_hash,
+  });
+  if (otpError) throw new Error("ההתחברות נכשלה. נסה שוב.");
 
-  const legacyUser: LegacyUser = {
-    id: userRow.id,
-    email: userRow.email,
-    first_name: userRow.first_name,
-    last_name: userRow.last_name,
-    is_admin: Boolean(userRow.is_admin),
-    is_confirmed: Boolean(userRow.is_confirmed),
-  };
-
-  storeLegacyUser(legacyUser);
-  return legacyUser;
+  storeLegacyUser(data.user as LegacyUser);
+  return data.user as LegacyUser;
 }
