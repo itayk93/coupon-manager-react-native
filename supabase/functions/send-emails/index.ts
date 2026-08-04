@@ -15,6 +15,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { requireAdmin, isServiceRoleCall } from '../_shared/auth.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const textEncoder = new TextEncoder();
@@ -204,6 +205,19 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
     const mode = body.mode;
+
+    // This function cannot sit behind gateway JWT verification, because
+    // issue_report is reached from /issues, a public route. So authorisation is
+    // per-mode: everything that sends mail to anyone other than the site owner
+    // requires an admin, or the service role for the cron-driven run.
+    const ADMIN_MODES = ['newsletter', 'expiration_reminders', 'test'];
+    if (ADMIN_MODES.includes(mode) && !isServiceRoleCall(req)) {
+      try {
+        await requireAdmin(req);
+      } catch {
+        return jsonResponse({ error: 'אין הרשאה' }, 403);
+      }
+    }
 
     if (mode === 'newsletter') return await handleNewsletter(body.newsletter_id);
     if (mode === 'expiration_reminders') return await handleExpirationReminders();

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { USER_COLUMNS } from '@/lib/userColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -22,7 +23,7 @@ export function useManageUsers(search = '') {
   return useQuery({
     queryKey: ['manage_users', search],
     queryFn: async () => {
-      let query = supabase.from('users').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('users').select(USER_COLUMNS).order('created_at', { ascending: false });
       if (search) query = query.or(`email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
       const { data, error } = await query.limit(200);
       if (error) throw error;

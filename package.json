@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run src/lib/werkzeug.test.ts",
     "test:watch": "vitest src/lib/werkzeug.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "audit:rls": "./scripts/audit-rls-policies.sh",
+    "test:security": "playwright test tests/security"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

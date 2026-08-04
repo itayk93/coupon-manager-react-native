@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export type ParsedCoupon = {
@@ -42,14 +41,14 @@ function extractVoucherCode(text: string): string | null {
 // Calls the `parse-coupon` Supabase Edge Function which uses an LLM (OpenAI
 // gpt-4o-mini) to extract one or more coupons from free text or an image.
 export function useParseCoupon() {
-  const { user } = useAuth();
-
   return useMutation({
     mutationFn: async ({ text, imageBase64, companyNames }: { text?: string; imageBase64?: string; companyNames?: string[] }) => {
       if (!text && !imageBase64) throw new Error('צריך טקסט או תמונה');
 
       const { data, error } = await supabase.functions.invoke('parse-coupon', {
-        body: { text, imageBase64, user_id: user?.id, companyNames },
+        // No user_id: the function reads it from the verified JWT, so token
+        // usage cannot be logged against another account.
+        body: { text, imageBase64, companyNames },
       });
 
       if (error) {
