@@ -487,6 +487,16 @@ export function CouponDetailModal({
               עדכון שימוש בקופון
             </Button>
           )}
+          {onMarkUsed && coupon.is_one_time && coupon.status === "פעיל" && (
+            <Button
+              variant="destructive"
+              className="cd-btn-mark-used"
+              onClick={() => onMarkUsed(coupon)}
+            >
+              <Tag size={15} />
+              סימון כנוצל
+            </Button>
+          )}
           {onOpenEdit && (
             <Button
               variant="outline"
