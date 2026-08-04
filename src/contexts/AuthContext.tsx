@@ -34,7 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data: { session: supabaseSession } } = await supabase.auth.getSession();
       if (!supabaseSession) {
+        // A stored legacy user with no Supabase session is a session from
+        // before server-side auth. It carries no JWT, so every query would
+        // come back empty. Clear it and send them through login again rather
+        // than showing a logged-in shell with no data in it.
+        if (storedUser) clearLegacyUser();
         if (mounted) {
+          setSession(null);
+          setUser(null);
           setIsAdmin(false);
           setIsLoading(false);
         }
