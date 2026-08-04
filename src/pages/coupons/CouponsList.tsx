@@ -304,6 +304,10 @@ export default function CouponsList() {
         onUsageChange={setUsageCoupon}
         onDeleteChange={setDeleteCoupon}
         onMarkUsedChange={setMarkUsedCoupon}
+        onOpenEdit={(coupon) => {
+          setDetailsCoupon(null);
+          setEditingCoupon(coupon);
+        }}
         bulkDeleteCount={selectedCouponIds.length}
         bulkDeleteOpen={isBulkDeleteOpen}
         onBulkDeleteCancel={() => setIsBulkDeleteOpen(false)}

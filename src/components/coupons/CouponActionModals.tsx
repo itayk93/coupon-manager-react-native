@@ -21,6 +21,7 @@ type CouponActionModalsProps = {
   onUsageChange: (coupon: DecryptedCoupon | null) => void;
   onDeleteChange: (coupon: DecryptedCoupon | null) => void;
   onMarkUsedChange: (coupon: DecryptedCoupon | null) => void;
+  onOpenEdit?: (coupon: DecryptedCoupon) => void;
   bulkDeleteCount?: number;
   onBulkDeleteConfirm?: () => Promise<void> | void;
   onBulkDeleteCancel?: () => void;
@@ -47,6 +48,7 @@ export function CouponActionModals({
   onUsageChange,
   onDeleteChange,
   onMarkUsedChange,
+  onOpenEdit,
   bulkDeleteCount = 0,
   onBulkDeleteConfirm,
   onBulkDeleteCancel,
@@ -144,6 +146,7 @@ export function CouponActionModals({
         onClose={() => onDetailsChange(null)}
         onOpenUsage={onUsageChange}
         onOpenDelete={onDeleteChange}
+        onOpenEdit={onOpenEdit}
         onMarkUsed={onMarkUsedChange}
       />
 
