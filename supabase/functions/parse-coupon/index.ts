@@ -12,6 +12,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { requireUser } from '../_shared/auth.ts';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = 'gpt-5-mini';
@@ -129,7 +130,17 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { text, imageBase64, user_id, companyNames } = await req.json();
+    // Every call spends money on the OpenAI key held by this function, so the
+    // caller must be a real user. user_id is taken from the verified token,
+    // never from the request body, so usage cannot be billed to someone else.
+    let caller;
+    try {
+      caller = await requireUser(req);
+    } catch {
+      return jsonResponse({ error: 'נדרשת התחברות' }, 401);
+    }
+
+    const { text, imageBase64, companyNames } = await req.json();
     if (!text && !imageBase64) return jsonResponse({ error: 'צריך טקסט או תמונה' }, 400);
 
     // Guidance so the model prefers an existing company name (matching the
@@ -246,7 +257,7 @@ Deno.serve(async (req: Request) => {
       );
       const usage = data.usage || {};
       await supabase.from('gpt_usage').insert({
-        user_id: user_id ?? 0,
+        user_id: caller.id,
         created: new Date().toISOString(),
         model: MODEL,
         prompt_tokens: usage.prompt_tokens ?? null,

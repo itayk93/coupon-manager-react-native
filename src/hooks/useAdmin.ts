@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { USER_COLUMNS } from '@/lib/userColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -14,7 +15,7 @@ export function useAdminStats() {
       // Get user count
       const { count: userCount, error: userError } = await supabase
         .from('users')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
         
       if (userError) throw userError;
 
@@ -47,7 +48,7 @@ export function useAdminUsers() {
 
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(USER_COLUMNS)
         .order('created_at', { ascending: false })
         .limit(50); // Get latest 50 users for the dashboard
         

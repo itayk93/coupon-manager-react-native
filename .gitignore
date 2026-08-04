@@ -35,3 +35,7 @@ dist-ssr
 /playwright/.cache/
 /playwright/.auth/
 .vercel
+
+# local database dumps
+db_dump_*.sql
+supabase/.temp/

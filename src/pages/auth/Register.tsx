@@ -1,3 +1,4 @@
+import { storeLegacyUser } from '@/lib/legacyAuth';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -84,7 +85,12 @@ export default function Register() {
           if (!response.access_token) throw new Error(response.error || 'Google authentication failed');
           const { data, error } = await supabase.functions.invoke('google-auth', { body: { access_token: response.access_token } });
           if (error) throw error;
-          if (!data?.user) throw new Error('Google user could not be created');
+          if (!data?.user || !data?.token_hash) throw new Error('Google user could not be created');
+          // Exchange for a real Supabase session; without it auth.uid() is null
+          // and RLS hides the user's own data from them.
+          const { error: otpError } = await supabase.auth.verifyOtp({ type: 'email', token_hash: data.token_hash });
+          if (otpError) throw new Error('לא ניתן להתחבר עם Google כרגע.');
+          storeLegacyUser(data.user);
           setLegacySession(data.user);
           toast.success("החשבון נוצר בהצלחה!");
           navigate("/dashboard", { replace: true });

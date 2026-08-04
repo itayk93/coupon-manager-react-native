@@ -1,10 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { adminClient, issueSessionToken } from '../_shared/session.ts';
 
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-);
+const supabaseAdmin = adminClient();
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -26,7 +23,7 @@ Deno.serve(async (request) => {
 
     const { data: existing, error: lookupError } = await supabaseAdmin
       .from('users')
-      .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted')
+      .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted,auth_user_id')
       .eq('email', email)
       .maybeSingle();
     if (lookupError) throw lookupError;
@@ -40,7 +37,7 @@ Deno.serve(async (request) => {
       const { data: created, error: createError } = await supabaseAdmin
         .from('users')
         .insert({ email, password: null, first_name: firstName, last_name: lastName, is_confirmed: true, google_id: String(profile.sub || '') })
-        .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted')
+        .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted,auth_user_id')
         .single();
       if (createError) throw createError;
       user = created;
@@ -49,13 +46,19 @@ Deno.serve(async (request) => {
         .from('users')
         .update({ is_confirmed: true, google_id: String(profile.sub || '') })
         .eq('id', user.id)
-        .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted')
+        .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted,auth_user_id')
         .single();
       if (updateError) throw updateError;
       user = refreshed;
     }
 
+    // Without this the caller ends up with a legacy user object and no
+    // Supabase session, which means auth.uid() is null and RLS hides all of
+    // their own data from them.
+    const tokenHash = await issueSessionToken(supabaseAdmin, user.id, user.email, user.auth_user_id);
+
     return new Response(JSON.stringify({
+      token_hash: tokenHash,
       user: {
         id: user.id,
         email: user.email,

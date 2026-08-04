@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInLegacy } from '@/lib/legacyAuth';
+import { signInLegacy, storeLegacyUser } from '@/lib/legacyAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,12 @@ export default function Login() {
           if (!response.access_token) throw new Error(response.error || 'Google authentication failed');
           const { data, error } = await supabase.functions.invoke('google-auth', { body: { access_token: response.access_token } });
           if (error) throw error;
-          if (!data?.user) throw new Error('Google user could not be created');
+          if (!data?.user || !data?.token_hash) throw new Error('Google user could not be created');
+          // Exchange for a real Supabase session; without it auth.uid() is null
+          // and RLS hides the user's own data from them.
+          const { error: otpError } = await supabase.auth.verifyOtp({ type: 'email', token_hash: data.token_hash });
+          if (otpError) throw new Error('לא ניתן להתחבר עם Google כרגע.');
+          storeLegacyUser(data.user);
           setLegacySession(data.user);
           toast.success("התחברת בהצלחה!");
           navigate(from, { replace: true });
