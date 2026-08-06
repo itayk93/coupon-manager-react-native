@@ -550,6 +550,8 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       setDetailsCoupon(patchUsed);
       setCodeCoupon(patchUsed);
       setMarkUsedCoupon(null);
+      const remainingActive = selectedCompanyCoupons.filter(c => c.id !== markUsedCoupon.id).length;
+      if (remainingActive === 0) closeModal();
     } finally {
       setIsSubmitting(false);
     }
@@ -579,7 +581,12 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       setCodeCoupon(patchFull);
       setCompanyUsageAmount("");
       setCompanyUsageError("");
-      requestAnimationFrame(() => setUsageCoupon(null));
+      const remainingActive = selectedCompanyCoupons.filter(c => c.id !== usageCoupon.id).length;
+      if (remainingActive === 0) {
+        requestAnimationFrame(() => { setUsageCoupon(null); closeModal(); });
+      } else {
+        requestAnimationFrame(() => setUsageCoupon(null));
+      }
     } finally {
       setIsSubmitting(false);
     }
