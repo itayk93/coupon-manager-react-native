@@ -595,7 +595,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   return (
     <>
       <Drawer open={openModal === "company"} onOpenChange={(open) => (open ? onOpenChange("company") : closeModal())}>
-        <DrawerContent dir="rtl" className="mx-auto w-full max-w-[560px] bg-background p-0 text-right lg:max-w-[720px]">
+        <DrawerContent dir="rtl" className="mx-auto w-full max-w-[560px] max-h-[calc(100dvh-3rem)] bg-primary p-0 text-right duration-500 ease-out lg:max-w-[720px] lg:max-h-[calc(100dvh-1rem)]">
           <div className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden">
             <div className="shrink-0 rounded-t-[30px] bg-gradient-to-b from-primary/85 via-primary/90 to-primary px-5 pb-4 pt-3 text-primary-foreground lg:px-6 lg:pb-3">
               <DrawerHeader className="px-0 pb-0 pt-2 text-right">
