@@ -519,27 +519,15 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
           status: usageCoupon.value > 0 && nextUsedValue >= usageCoupon.value ? "נוצל" : usageCoupon.status,
         },
       });
-      toast.success("השימוש עודכן בהצלחה");
-      setDetailsCoupon((coupon) =>
-        coupon?.id === usageCoupon.id
-          ? {
-              ...coupon,
-              used_value: nextUsedValue,
-              status: usageCoupon.value > 0 && nextUsedValue >= usageCoupon.value ? "נוצל" : coupon.status,
-            }
-          : coupon
-      );
-      setCodeCoupon((coupon) =>
-        coupon?.id === usageCoupon.id
-          ? {
-              ...coupon,
-              used_value: nextUsedValue,
-              status: usageCoupon.value > 0 && nextUsedValue >= usageCoupon.value ? "נוצל" : coupon.status,
-            }
-          : coupon
-      );
-      setUsageCoupon(null);
+      const updatedStatus = usageCoupon.value > 0 && nextUsedValue >= usageCoupon.value ? "נוצל" : usageCoupon.status;
+      const patchLocal = (prev: DecryptedCoupon | null) =>
+        prev?.id === usageCoupon.id ? { ...prev, used_value: nextUsedValue, status: updatedStatus } : prev;
+      setDetailsCoupon(patchLocal);
+      setCodeCoupon(patchLocal);
       setCompanyUsageAmount("");
+      setCompanyUsageError("");
+      // Close the usage dialog after a short delay so the drawer underneath re-layouts cleanly
+      requestAnimationFrame(() => setUsageCoupon(null));
     } finally {
       setIsSubmitting(false);
     }
@@ -563,15 +551,13 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
           status: "נוצל",
         },
       });
-      toast.success("השימוש עודכן בהצלחה");
-      setDetailsCoupon((coupon) =>
-        coupon?.id === usageCoupon.id ? { ...coupon, used_value: usageCoupon.value || 0, status: "נוצל" } : coupon
-      );
-      setCodeCoupon((coupon) =>
-        coupon?.id === usageCoupon.id ? { ...coupon, used_value: usageCoupon.value || 0, status: "נוצל" } : coupon
-      );
-      setUsageCoupon(null);
+      const patchFull = (prev: DecryptedCoupon | null) =>
+        prev?.id === usageCoupon.id ? { ...prev, used_value: usageCoupon.value || 0, status: "נוצל" as const } : prev;
+      setDetailsCoupon(patchFull);
+      setCodeCoupon(patchFull);
       setCompanyUsageAmount("");
+      setCompanyUsageError("");
+      requestAnimationFrame(() => setUsageCoupon(null));
     } finally {
       setIsSubmitting(false);
     }
