@@ -15,7 +15,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { requireAdmin, isServiceRoleCall } from '../_shared/auth.ts';
+import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall } from '../_shared/auth.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const textEncoder = new TextEncoder();
@@ -199,6 +199,26 @@ async function handleExpirationReminders() {
   return jsonResponse({ sent });
 }
 
+async function handleUpdateSummary(userId: number, updated: number, failed: number, skipped: number) {
+  const supabase = supa();
+  const { data: user } = await supabase.from('users').select('email, first_name').eq('id', userId).single();
+  if (!user?.email) return jsonResponse({ error: 'כתובת אימייל לא נמצאה' }, 404);
+
+  const ok = await sendEmail(
+    user.email,
+    'עדכון יתרות הקופונים הסתיים',
+    `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.7">
+      <h2>עדכון יתרות הסתיים</h2>
+      <p>שלום ${escapeHtml(user.first_name || '')},</p>
+      <p>עודכנו: <strong>${updated}</strong></p>
+      <p>נכשלו: <strong>${failed}</strong></p>
+      <p>דולגו: <strong>${skipped}</strong></p>
+      <p><a href="https://coupons.itaykarkason.com/coupons">לצפייה בקופונים</a></p>
+    </div>`,
+  );
+  return ok ? jsonResponse({ sent: 1 }) : jsonResponse({ error: 'שליחת המייל נכשלה' }, 502);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -221,6 +241,20 @@ Deno.serve(async (req: Request) => {
 
     if (mode === 'newsletter') return await handleNewsletter(body.newsletter_id);
     if (mode === 'expiration_reminders') return await handleExpirationReminders();
+    if (mode === 'multipass_update_summary') {
+      if (isServiceRoleCall(req)) {
+        return await handleUpdateSummary(
+          Number(body.user_id),
+          Number(body.updated || 0),
+          Number(body.failed || 0),
+          Number(body.skipped || 0),
+        );
+      }
+
+      const user = await requireUser(req);
+      requireSameUser(body.user_id, user.id);
+      return await handleUpdateSummary(user.id, Number(body.updated || 0), Number(body.failed || 0), Number(body.skipped || 0));
+    }
     if (mode === 'test') {
       const ok = await sendEmail(
         body.to,

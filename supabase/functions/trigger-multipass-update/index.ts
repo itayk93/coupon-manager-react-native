@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { requireSameUser, requireUser } from '../_shared/auth.ts';
+import { decryptCouponCodes } from '../_shared/encryption.ts';
 
 type DispatchResult =
   | { success: true; runId: string | null; runUrl: string | null; workflow: string; ref: string }
@@ -89,7 +90,7 @@ Deno.serve(async (req: Request) => {
     const supabase = supa();
     let query = supabase
       .from('coupon')
-      .select('id, code')
+      .select('id, code, last_scraped, last_detail_view, last_company_view, last_code_view')
       .eq('user_id', userId)
       .eq('auto_update', true)
       .eq('auto_download_details', 'Multipass')
@@ -100,7 +101,15 @@ Deno.serve(async (req: Request) => {
     const { data: coupons, error } = await query;
     if (error) throw error;
 
-    const couponCodes = (coupons || []).map((coupon) => coupon.code).filter(Boolean);
+    const eligibleCoupons = (coupons || []).filter((coupon) => {
+      if (!coupon.last_scraped) return true;
+      const views = [coupon.last_detail_view, coupon.last_company_view, coupon.last_code_view]
+        .filter(Boolean)
+        .map((value) => Date.parse(value));
+      return views.length > 0 && Math.max(...views) > Date.parse(coupon.last_scraped);
+    });
+    const encryptedCodes = eligibleCoupons.map((coupon) => coupon.code).filter(Boolean);
+    const couponCodes = await decryptCouponCodes(encryptedCodes);
     if (!couponCodes.length) {
       return jsonResponse({ success: true, dispatched: false, message: 'No active Multipass coupons found' });
     }

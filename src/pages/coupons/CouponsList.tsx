@@ -261,16 +261,18 @@ export default function CouponsList() {
                       <Trash2 className="h-4 w-4" />
                       <span>מחיקה</span>
                     </Button>
-                    <Button
-                      className="action-button mark-used-coupon"
-                      variant="ghost"
-                      onClick={() => setMarkUsedCoupon(coupon)}
-                      disabled={coupon.status === 'נוצל'}
-                      aria-label="סימון כנוצל"
-                    >
-                      <CircleX className="h-4 w-4" />
-                      <span>סימון כנוצל</span>
-                    </Button>
+                    {coupon.is_one_time && (
+                      <Button
+                        className="action-button mark-used-coupon"
+                        variant="ghost"
+                        onClick={() => setMarkUsedCoupon(coupon)}
+                        disabled={coupon.status === 'נוצל'}
+                        aria-label="סימון כנוצל"
+                      >
+                        <CircleX className="h-4 w-4" />
+                        <span>סימון כנוצל</span>
+                      </Button>
+                    )}
                   </div>
                 </Card>
               </div>
