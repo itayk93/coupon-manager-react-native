@@ -17,6 +17,16 @@ export function useTriggerAutoUpdate() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      const { error: emailError } = await supabase.functions.invoke('send-emails', {
+        body: {
+          mode: 'multipass_update_summary',
+          user_id: user.id,
+          updated: data?.updated ?? 0,
+          failed: data?.failed ?? 0,
+          skipped: data?.skipped ?? 0,
+        },
+      });
+      if (emailError) console.warn('Update summary email failed:', emailError.message);
       return data as { updated: number; failed: number; skipped: number };
     },
     onSuccess: (result) => {

@@ -32,6 +32,10 @@ type Coupon = {
   buyme_coupon_url: string | null;
   auto_update: boolean;
   user_id: number;
+  last_scraped: string | null;
+  last_detail_view: string | null;
+  last_company_view: string | null;
+  last_code_view: string | null;
 };
 
 type UpdatedCouponSummary = {
@@ -56,6 +60,15 @@ function providerFor(coupon: Coupon): 'multipass' | 'buyme' | null {
 
   if (lookup.includes('buyme') || coupon.buyme_coupon_url) return 'buyme';
   return null;
+}
+
+// Mirror the legacy app: a coupon is eligible only after a new user view.
+function shouldUpdateCoupon(coupon: Coupon): boolean {
+  if (!coupon.last_scraped) return true;
+  const views = [coupon.last_detail_view, coupon.last_company_view, coupon.last_code_view]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => Date.parse(value));
+  return views.length > 0 && Math.max(...views) > Date.parse(coupon.last_scraped);
 }
 
 // Calls the external scraper microservice. Returns the current remaining balance,
@@ -107,7 +120,7 @@ Deno.serve(async (req: Request) => {
 
     let query = supabase
       .from('coupon')
-      .select('id, company, source, auto_download_details, value, used_value, buyme_coupon_url, auto_update, user_id')
+      .select('id, company, source, auto_download_details, value, used_value, buyme_coupon_url, auto_update, user_id, last_scraped, last_detail_view, last_company_view, last_code_view')
       .eq('user_id', userId)
       .eq('auto_update', true)
       .neq('status', 'נוצל');
@@ -123,6 +136,10 @@ Deno.serve(async (req: Request) => {
     const multipassCouponsToDispatch: Coupon[] = [];
 
     for (const coupon of (coupons || []) as Coupon[]) {
+      if (!shouldUpdateCoupon(coupon)) {
+        skipped++;
+        continue;
+      }
       const provider = providerFor(coupon);
       if (!provider) {
         skipped++;
