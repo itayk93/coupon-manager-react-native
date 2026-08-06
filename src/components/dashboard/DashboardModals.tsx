@@ -597,28 +597,28 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       <Drawer open={openModal === "company"} onOpenChange={(open) => (open ? onOpenChange("company") : closeModal())}>
         <DrawerContent dir="rtl" className="mx-auto w-full max-w-[560px] bg-background p-0 text-right lg:max-w-[720px]">
           <div className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden">
-            <div className="shrink-0 rounded-t-[30px] bg-gradient-to-b from-primary/85 via-primary/90 to-primary px-5 pb-5 pt-4 text-primary-foreground lg:px-6 lg:pb-3">
+            <div className="shrink-0 rounded-t-[30px] bg-gradient-to-b from-primary/85 via-primary/90 to-primary px-5 pb-4 pt-3 text-primary-foreground lg:px-6 lg:pb-3">
               <DrawerHeader className="px-0 pb-0 pt-2 text-right">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <DrawerTitle className="text-right text-[30px] font-black leading-tight text-primary-foreground lg:text-[24px]">
+                    <DrawerTitle className="text-right text-[23px] font-black leading-tight text-primary-foreground lg:text-[24px]">
                       {selectedCompany ? `קופונים מחברת ${selectedCompany}` : "קופונים מחברה"}
                     </DrawerTitle>
                     <DrawerDescription className="mt-2 text-right text-sm text-primary-foreground/80 lg:mt-1 lg:text-xs">
                       {selectedCompanyCoupons.length} קופונים זמינים לצפייה ולעדכון
                     </DrawerDescription>
-                    <div className="mt-5 text-right lg:mt-3">
+                    <div className="mt-3 text-right lg:mt-3">
                       <div className="text-sm text-primary-foreground/75 lg:text-xs">סה״כ נותר</div>
-                      <div className="text-[44px] font-black tracking-tight lg:text-[28px]">{formatIls(selectedCompanyRemaining)}</div>
+                      <div className="text-[32px] font-black tracking-tight lg:text-[28px]">{formatIls(selectedCompanyRemaining)}</div>
                     </div>
                   </div>
 
                   {selectedCompany && (
-                    <div className="shrink-0 rounded-[24px] bg-white/95 p-2 shadow-sm ring-1 ring-white/60">
+                    <div className="shrink-0 rounded-[18px] bg-white/95 p-1.5 shadow-sm ring-1 ring-white/60">
                       <img
                         src={getCompanyLogo(selectedCompany)}
                         alt={selectedCompany}
-                        className="h-20 w-20 rounded-[18px] object-contain lg:h-14 lg:w-14 lg:rounded-xl"
+                        className="h-14 w-14 rounded-[14px] object-contain lg:h-14 lg:w-14 lg:rounded-xl"
                       />
                     </div>
                   )}
@@ -627,13 +627,13 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-4 pb-6 pt-4 lg:px-5 lg:pt-3">
-              <ul className="space-y-4">
+              <ul className="space-y-3">
                 {selectedCompanyCoupons.map((coupon) => {
                   const remaining = Math.max(0, coupon.value - coupon.used_value);
                   return (
                     <li
                       key={coupon.id}
-                      className="rounded-[28px] border border-border/60 bg-background p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                      className="rounded-[22px] border border-border/60 bg-background p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
                     >
                       <button
                         type="button"
@@ -643,7 +643,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="text-xs font-medium text-muted-foreground">קוד קופון</div>
-                            <div className="mt-1 break-all text-[28px] font-black leading-tight text-foreground">{coupon.code}</div>
+                            <div className="mt-1 break-all text-[19px] font-black leading-tight text-foreground">{coupon.code}</div>
                             <div className="mt-2 text-sm text-muted-foreground">
                               {coupon.is_one_time ? `מטרה: ${coupon.purpose || "-"}` : `נותר: ${formatIls(remaining)}`}
                             </div>
@@ -653,18 +653,18 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                             <img
                               src={getCompanyLogo(coupon.company)}
                               alt={coupon.company}
-                              className="h-14 w-14 rounded-xl object-contain"
+                              className="h-12 w-12 rounded-xl object-contain"
                             />
                           </div>
                         </div>
                       </button>
 
-                      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {!coupon.is_one_time && (
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-16 justify-between rounded-2xl border-border bg-background px-5 text-base font-extrabold text-foreground hover:bg-muted/40"
+                            className="h-12 justify-between rounded-2xl border-border bg-background px-4 text-sm font-extrabold text-foreground hover:bg-muted/40"
                             onClick={() => {
                               setUsageCoupon(coupon);
                               setCompanyUsageAmount("");
@@ -689,7 +689,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
 
                         <Button
                           type="button"
-                          className="h-16 justify-between rounded-2xl px-5 text-base font-extrabold"
+                          className="h-12 justify-between rounded-2xl px-4 text-sm font-extrabold"
                           onClick={() => setCodeCoupon(coupon)}
                         >
                           הצגת קוד הקופון
