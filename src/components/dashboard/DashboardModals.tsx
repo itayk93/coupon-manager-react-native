@@ -149,6 +149,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   const [usageText, setUsageText] = useState("");
   const [usageRows, setUsageRows] = useState<ParsedUsageRow[] | null>(null);
   const [usageReportError, setUsageReportError] = useState("");
+  const [markUsedCoupon, setMarkUsedCoupon] = useState<DecryptedCoupon | null>(null);
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -533,6 +534,27 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
     }
   };
 
+  const submitMarkUsed = async () => {
+    if (!markUsedCoupon) return;
+    setIsSubmitting(true);
+    try {
+      await updateCoupon.mutateAsync({
+        id: markUsedCoupon.id,
+        updates: {
+          used_value: markUsedCoupon.value || 0,
+          status: "נוצל",
+        },
+      });
+      const patchUsed = (prev: DecryptedCoupon | null) =>
+        prev?.id === markUsedCoupon.id ? { ...prev, used_value: markUsedCoupon.value || 0, status: "נוצל" as const } : prev;
+      setDetailsCoupon(patchUsed);
+      setCodeCoupon(patchUsed);
+      setMarkUsedCoupon(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const submitCompanyFullUsage = async () => {
     if (!usageCoupon) return;
     const remaining = Math.max(0, usageCoupon.value - usageCoupon.used_value);
@@ -684,6 +706,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
           setCompanyUsageAmount("");
           setCompanyUsageError("");
         }}
+        onMarkUsed={(coupon) => setMarkUsedCoupon(coupon)}
       />
 
 
@@ -735,6 +758,31 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                   disabled={isSubmitting}
                 >
                   עדכון כל היתרה
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!markUsedCoupon} onOpenChange={(open) => !open && setMarkUsedCoupon(null)}>
+        <DialogContent className="legacy-modal-content company-usage-modal-react" dir="rtl">
+          {markUsedCoupon && (
+            <div className="company-usage-content">
+              <h3>סימון קופון כנוצל</h3>
+              <h2>חברה: {markUsedCoupon.company}</h2>
+              <img src={getCompanyLogo(markUsedCoupon.company)} alt={markUsedCoupon.company} />
+              <p><strong>קוד קופון: {markUsedCoupon.code}</strong></p>
+              {markUsedCoupon.purpose && <p>מטרה: {markUsedCoupon.purpose}</p>}
+              <p className="text-sm text-muted-foreground mt-2">
+                האם אתה בטוח שברצונך לסמן את הקופון כנוצל? פעולה זו תסמן שהשתמשת בכל הקופון.
+              </p>
+              <div className="legacy-modal-actions">
+                <Button type="button" onClick={submitMarkUsed} disabled={isSubmitting}>
+                  {isSubmitting ? "מעדכן..." : "אישור - סמן כנוצל"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setMarkUsedCoupon(null)} disabled={isSubmitting}>
+                  ביטול
                 </Button>
               </div>
             </div>
