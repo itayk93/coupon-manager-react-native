@@ -273,7 +273,6 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   }, [stats.companies]);
 
   const selectedCompanyCoupons = activeCoupons.filter((coupon) => coupon.company === selectedCompany);
-  const selectedCompanyRemaining = selectedCompanyCoupons.reduce((sum, coupon) => sum + Math.max(0, coupon.value - coupon.used_value), 0);
   const watchedQuick = quickForm.watch();
   const discount = watchedQuick.value > 0 ? Math.max(0, ((watchedQuick.value - watchedQuick.cost) / watchedQuick.value) * 100) : 0;
   const showAutoUsageUpdater = user?.id === 1;
@@ -595,7 +594,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
   return (
     <>
       <Drawer open={openModal === "company"} onOpenChange={(open) => (open ? onOpenChange("company") : closeModal())}>
-        <DrawerContent dir="rtl" className="mx-auto w-full max-w-[560px] max-h-[calc(100dvh-3rem)] bg-primary p-0 text-right duration-500 ease-out lg:max-w-[720px] lg:max-h-[calc(100dvh-1rem)]">
+        <DrawerContent dir="rtl" className="mx-auto w-full max-w-[560px] max-h-[calc(100dvh-5rem)] bg-primary p-0 text-right duration-500 ease-out lg:max-w-[720px] lg:max-h-[calc(100dvh-1rem)]">
           <div className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden">
             <div className="shrink-0 rounded-t-[30px] bg-gradient-to-b from-primary/85 via-primary/90 to-primary px-5 pb-4 pt-3 text-primary-foreground lg:px-6 lg:pb-3">
               <DrawerHeader className="px-0 pb-0 pt-2 text-right">
@@ -607,10 +606,6 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                     <DrawerDescription className="mt-2 text-right text-sm text-primary-foreground/80 lg:mt-1 lg:text-xs">
                       {selectedCompanyCoupons.length} קופונים זמינים לצפייה ולעדכון
                     </DrawerDescription>
-                    <div className="mt-3 text-right lg:mt-3">
-                      <div className="text-sm text-primary-foreground/75 lg:text-xs">סה״כ נותר</div>
-                      <div className="text-[32px] font-black tracking-tight lg:text-[28px]">{formatIls(selectedCompanyRemaining)}</div>
-                    </div>
                   </div>
 
                   {selectedCompany && (
@@ -626,7 +621,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
               </DrawerHeader>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-4 pb-6 pt-4 lg:px-5 lg:pt-3">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-white px-4 pb-6 pt-4 lg:px-5 lg:pt-3">
               <ul className="space-y-3">
                 {selectedCompanyCoupons.map((coupon) => {
                   const remaining = Math.max(0, coupon.value - coupon.used_value);
