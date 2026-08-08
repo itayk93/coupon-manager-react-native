@@ -736,7 +736,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       </Dialog>
 
       <Dialog open={!!usageCoupon} onOpenChange={(open) => !open && setUsageCoupon(null)}>
-        <DialogContent className="legacy-modal-content company-usage-modal-react" dir="rtl">
+        <DialogContent className="legacy-modal-content company-usage-modal-react" dir="rtl" onOpenAutoFocus={(e) => e.preventDefault()}>
           {usageCoupon && (
             <div className="company-usage-content">
               <h3>עדכון סכום שימוש</h3>
@@ -952,7 +952,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
       </Dialog>
 
       <Dialog open={openModal === "usage"} onOpenChange={(open) => (open ? onOpenChange("usage") : closeModal())}>
-        <DialogContent className={`legacy-modal-content usage-modal-react ${usageRows ? "review-mode" : ""}`} dir="rtl">
+        <DialogContent className={`legacy-modal-content usage-modal-react ${usageRows ? "review-mode" : ""}`} dir="rtl" onOpenAutoFocus={(e) => e.preventDefault()}>
           {!usageRows ? (
             <>
               <DialogHeader>
