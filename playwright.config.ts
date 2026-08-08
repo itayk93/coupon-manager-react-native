@@ -1,4 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
+  const separator = line.indexOf('=');
+  if (separator > 0) {
+    const key = line.slice(0, separator);
+    if (!process.env[key]) process.env[key] = line.slice(separator + 1);
+  }
+}
 
 /**
  * Read environment variables from file.
@@ -12,6 +21,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  globalSetup: './tests/global-setup.ts',
   testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -26,7 +36,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:8080',
+    baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:8080',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
