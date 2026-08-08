@@ -26,10 +26,7 @@ export function AppLayout() {
   const drawerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-    menuButtonRef.current?.focus();
-  };
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   // The drawer is modal: keyboard users must not be able to tab behind the
   // overlay, and Escape must return them to the button that opened it.
@@ -60,7 +57,13 @@ export function AppLayout() {
     };
 
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      // Runs after the drawer is torn down. Removing a subtree that holds
+      // focus resets it to <body>, so the restore has to happen here rather
+      // than synchronously inside the close handler.
+      menuButtonRef.current?.focus();
+    };
   }, [isSidebarOpen]);
 
   const navigation = [

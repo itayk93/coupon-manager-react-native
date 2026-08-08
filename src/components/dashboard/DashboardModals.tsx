@@ -1077,7 +1077,11 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
             <div className="quick-step-card">
               <div className="legacy-auto-detect-box">
                 <h4>זיהוי אוטומטי של קופון</h4>
+                {/* The heading labels the box, not the field; a placeholder is
+                    not an accessible name and disappears once typing starts. */}
+                <Label htmlFor="quick-add-text" className="sr-only">פרטי הקופון להדבקה</Label>
                 <Textarea
+                  id="quick-add-text"
                   placeholder="הדבק כאן את פרטי הקופון"
                   rows={5}
                   value={quickText}

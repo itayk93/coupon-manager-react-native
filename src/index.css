@@ -4757,10 +4757,13 @@ body {
 .skip-link:focus { transform: translateY(0); }
 
 /* WCAG 2.2 2.4.11 Focus Not Obscured: keep scrolled-to focus clear of the
-   sticky topbar (50px + safe area) and the fixed bottom nav. */
+   sticky topbar and the fixed bottom nav. The topbar measures 50px at the
+   narrow and wide ends and 68px between them, and the bottom nav 65px;
+   sizing to the tallest case is deliberate, since over-scrolling can never
+   obscure the target while under-scrolling can. */
 :root {
-  scroll-padding-top: calc(50px + env(safe-area-inset-top, 0px) + 8px);
-  scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  scroll-padding-top: calc(68px + env(safe-area-inset-top, 0px) + 8px);
+  scroll-padding-bottom: calc(73px + env(safe-area-inset-bottom, 0px));
 }
 
 :where(button, a, input, select, textarea):focus-visible {
