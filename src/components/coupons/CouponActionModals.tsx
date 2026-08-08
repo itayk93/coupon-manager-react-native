@@ -8,6 +8,7 @@ import { DecryptedCoupon, useDeleteCoupon, useUpdateCoupon } from "@/hooks/useCo
 import { useRecordUsage } from "@/hooks/useCouponUsage";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { CouponDetailModal } from "@/components/coupons/CouponDetailModal";
+import { CopyCodeButton } from "@/components/coupons/CopyCodeButton";
 
 
 type CouponActionModalsProps = {
@@ -163,6 +164,7 @@ export function CouponActionModals({
                   {codeCoupon.card_exp && <h2>תוקף: {codeCoupon.card_exp}</h2>}
                 </div>
               )}
+              {codeCoupon.code && <CopyCodeButton code={codeCoupon.code} />}
               <div className="big-code-qr" aria-label="QR code">
                 <QRCodeSVG value={codeCoupon.code || " "} size={180} level="H" includeMargin />
               </div>

@@ -4201,6 +4201,14 @@ body {
 }
 
 .big-code-content img { width: 72px; height: 72px; border-radius: var(--ui-radius-md); box-shadow: none; }
+.big-code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  font-weight: 600;
+}
+
 .big-code-qr {
   width: 210px;
   height: 210px;

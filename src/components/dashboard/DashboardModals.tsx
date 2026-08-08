@@ -22,6 +22,7 @@ import { getCompanyLogo, hasStaticLogo, resolveCompanyLogo } from "@/lib/company
 import { matchCompanyName } from "@/lib/companyMatch";
 import { CompanyPicker, type PickerCompany } from "@/components/dashboard/CompanyPicker";
 import { CouponDetailModal } from "@/components/coupons/CouponDetailModal";
+import { CopyCodeButton } from "@/components/coupons/CopyCodeButton";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -725,6 +726,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                   {codeCoupon.card_exp && <h2>תוקף: {codeCoupon.card_exp}</h2>}
                 </div>
               )}
+              {codeCoupon.code && <CopyCodeButton code={codeCoupon.code} />}
               <div className="big-code-qr" aria-label="QR code">
                 <QRCodeSVG value={codeCoupon.code || " "} size={180} level="H" includeMargin />
               </div>
