@@ -94,11 +94,11 @@ export default function Login() {
   return (
     <main className="login-page">
       <div className="login-container">
-        <div className="login-header flex flex-col items-center">
+        <header className="login-header flex flex-col items-center">
           <img src="/logo-icon.png" alt="קופון מאסטר" className="h-16 w-16 mb-3 rounded-2xl shadow-lg hover:scale-105 transition-transform object-cover" />
           <h1 className="welcome-title">הקופונים שלך. מסודרים.</h1>
           <p className="welcome-subtitle">נכנסים וממשיכים בדיוק מאיפה שעצרתם.</p>
-        </div>
+        </header>
 
         <section className="auth-card">
           <div className="auth-card-header">
@@ -110,30 +110,36 @@ export default function Login() {
             <div className="form-group">
               <Label htmlFor="email" className="form-label">אימייל</Label>
               <div className="input-wrapper">
-                <Mail className="input-icon h-4 w-4" />
+                <Mail className="input-icon h-4 w-4" aria-hidden="true" />
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="הזן כתובת אימייל"
                 className="input-field"
+                aria-invalid={errors.email ? true : undefined}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
                 disabled={isLoading}
               />
               </div>
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" role="alert" className="text-sm text-destructive">{errors.email.message}</p>
               )}
             </div>
 
             <div className="form-group">
               <Label htmlFor="password" className="form-label">סיסמה</Label>
               <div className="input-wrapper password-wrapper">
-                <Lock className="input-icon h-4 w-4" />
+                <Lock className="input-icon h-4 w-4" aria-hidden="true" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 placeholder="הזן סיסמה"
                 className="input-field"
+                aria-invalid={errors.password ? true : undefined}
+                aria-describedby={errors.password ? "password-error" : undefined}
                 {...register("password")}
                 disabled={isLoading}
               />
@@ -143,11 +149,11 @@ export default function Login() {
                   aria-label={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
                   onClick={() => setShowPassword((value) => !value)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" role="alert" className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
 
@@ -163,7 +169,7 @@ export default function Login() {
           </div>
 
           <Button variant="outline" className="google-button" onClick={handleGoogleLogin} disabled={isLoading}>
-            <svg className="me-2 h-4 w-4" viewBox="0 0 24 24">
+            <svg className="me-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"

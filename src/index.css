@@ -505,7 +505,8 @@ body {
 }
 
 .welcome-subtitle,
-.auth-card-subtitle { color: #718096; margin: 0; font-size: 0.98rem; }
+/* #718096 measured 3.77:1 on the page background — below 1.4.3 AA. */
+.auth-card-subtitle { color: #5a6779; margin: 0; font-size: 0.98rem; }
 
 .decorative-line {
   display: none;
@@ -591,7 +592,8 @@ body {
 .login-page .input-field {
   width: 100%;
   padding: 12px 42px;
-  border: 1px solid #e1e5ee;
+  /* #e1e5ee measured 1.21:1 against the field fill — below 1.4.11 AA (3:1). */
+  border: 1px solid #8a93a6;
   border-radius: 12px;
   font-size: 1rem;
   transition: var(--transition);
@@ -4754,9 +4756,33 @@ body {
 
 .skip-link:focus { transform: translateY(0); }
 
+/* WCAG 2.2 2.4.11 Focus Not Obscured: keep scrolled-to focus clear of the
+   sticky topbar (50px + safe area) and the fixed bottom nav. */
+:root {
+  scroll-padding-top: calc(50px + env(safe-area-inset-top, 0px) + 8px);
+  scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
 :where(button, a, input, select, textarea):focus-visible {
   outline: 3px solid rgba(36, 115, 204, 0.42);
   outline-offset: 2px;
+}
+
+/* 1.4.3: the default placeholder grey measured 2.43:1 on the field fill. */
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  color: #6b7280;
+}
+
+/* 1.4.1 Use of Color: current page must not rely on colour alone. */
+.dashboard-nav-link[aria-current="page"],
+.dashboard-bottom-nav-link[aria-current="page"] {
+  font-weight: 700;
+}
+
+.dashboard-nav-link[aria-current="page"] {
+  border-inline-end: 3px solid currentColor;
 }
 
 :where(button, a) { touch-action: manipulation; }

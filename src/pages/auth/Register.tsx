@@ -122,66 +122,78 @@ export default function Register() {
             <div className="form-group">
               <Label htmlFor="firstName" className="form-label">שם פרטי</Label>
               <div className="input-wrapper">
-                <User className="input-icon h-4 w-4" />
+                <User className="input-icon h-4 w-4" aria-hidden="true" />
                 <Input
                   id="firstName"
                   type="text"
+                  autoComplete="given-name"
                   placeholder="הזן שם פרטי"
                   className="input-field"
+                  aria-invalid={errors.firstName ? true : undefined}
+                  aria-describedby={errors.firstName ? "firstName-error" : undefined}
                   {...register("firstName")}
                   disabled={isLoading}
                 />
               </div>
               {errors.firstName && (
-                <p className="text-sm text-destructive">{errors.firstName.message}</p>
+                <p id="firstName-error" role="alert" className="text-sm text-destructive">{errors.firstName.message}</p>
               )}
             </div>
 
             <div className="form-group">
               <Label htmlFor="lastName" className="form-label">שם משפחה</Label>
               <div className="input-wrapper">
-                <User className="input-icon h-4 w-4" />
+                <User className="input-icon h-4 w-4" aria-hidden="true" />
                 <Input
                   id="lastName"
                   type="text"
+                  autoComplete="family-name"
                   placeholder="הזן שם משפחה"
                   className="input-field"
+                  aria-invalid={errors.lastName ? true : undefined}
+                  aria-describedby={errors.lastName ? "lastName-error" : undefined}
                   {...register("lastName")}
                   disabled={isLoading}
                 />
               </div>
               {errors.lastName && (
-                <p className="text-sm text-destructive">{errors.lastName.message}</p>
+                <p id="lastName-error" role="alert" className="text-sm text-destructive">{errors.lastName.message}</p>
               )}
             </div>
 
             <div className="form-group">
               <Label htmlFor="email" className="form-label">אימייל</Label>
               <div className="input-wrapper">
-                <Mail className="input-icon h-4 w-4" />
+                <Mail className="input-icon h-4 w-4" aria-hidden="true" />
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="הזן כתובת אימייל"
                   className="input-field"
+                  aria-invalid={errors.email ? true : undefined}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   {...register("email")}
                   disabled={isLoading}
                 />
               </div>
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" role="alert" className="text-sm text-destructive">{errors.email.message}</p>
               )}
             </div>
 
             <div className="form-group">
               <Label htmlFor="password" className="form-label">סיסמה</Label>
               <div className="input-wrapper password-wrapper">
-                <Lock className="input-icon h-4 w-4" />
+                <Lock className="input-icon h-4 w-4" aria-hidden="true" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="הזן סיסמה"
                   className="input-field"
+                  aria-invalid={errors.password ? true : undefined}
+                  aria-describedby={errors.password ? "password-error" : undefined}
                   {...register("password")}
                   disabled={isLoading}
                 />
@@ -191,23 +203,26 @@ export default function Register() {
                   aria-label={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
                   onClick={() => setShowPassword((v) => !v)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" role="alert" className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
 
             <div className="form-group">
               <Label htmlFor="confirmPassword" className="form-label">אימות סיסמה</Label>
               <div className="input-wrapper password-wrapper">
-                <Lock className="input-icon h-4 w-4" />
+                <Lock className="input-icon h-4 w-4" aria-hidden="true" />
                 <Input
                   id="confirmPassword"
                   type={showConfirm ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="הזן שוב את הסיסמה"
                   className="input-field"
+                  aria-invalid={errors.confirmPassword ? true : undefined}
+                  aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
                   {...register("confirmPassword")}
                   disabled={isLoading}
                 />
@@ -217,11 +232,11 @@ export default function Register() {
                   aria-label={showConfirm ? "הסתר סיסמה" : "הצג סיסמה"}
                   onClick={() => setShowConfirm((v) => !v)}
                 >
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showConfirm ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                <p id="confirmPassword-error" role="alert" className="text-sm text-destructive">{errors.confirmPassword.message}</p>
               )}
             </div>
 

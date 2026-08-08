@@ -3,18 +3,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Menu, Bell } from 'lucide-react';
 
-export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
+export function Navbar({
+  onMenuClick,
+  menuButtonRef,
+  isSidebarOpen,
+}: {
+  onMenuClick?: () => void;
+  menuButtonRef?: React.Ref<HTMLButtonElement>;
+  isSidebarOpen?: boolean;
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const initial = (user?.first_name || user?.email || 'I').charAt(0).toUpperCase();
+  const accountName = user?.first_name || user?.email || '';
 
   return (
     <header className="dashboard-topbar sticky top-0 z-50 w-full">
       <div className="dashboard-topbar-inner">
         <div className="dashboard-brand-area">
           {onMenuClick && (
-            <Button variant="ghost" size="icon" className="dashboard-menu-button lg:hidden" onClick={onMenuClick} aria-label="פתח תפריט">
-              <Menu className="h-5 w-5" />
+            <Button
+              ref={menuButtonRef}
+              variant="ghost"
+              size="icon"
+              className="dashboard-menu-button lg:hidden"
+              onClick={onMenuClick}
+              aria-label="פתח תפריט"
+              aria-expanded={isSidebarOpen ?? false}
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
             </Button>
           )}
           <Link to="/" className="dashboard-brand flex items-center gap-2.5">
@@ -25,11 +42,15 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
         <div className="dashboard-topbar-actions">
           <button className="dashboard-icon-button dashboard-bell" aria-label="התראות" onClick={() => navigate('/notifications')}>
-            <Bell className="h-5 w-5" />
-            <span />
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            <span aria-hidden="true" />
           </button>
 
-          <div className="dashboard-avatar" aria-label="משתמש מחובר">{initial}</div>
+          {/* The initial is decorative; the account name carries the meaning. */}
+          <div className="dashboard-avatar">
+            <span aria-hidden="true">{initial}</span>
+            <span className="sr-only">{`מחובר כ${accountName}`}</span>
+          </div>
         </div>
       </div>
     </header>
