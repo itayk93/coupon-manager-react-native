@@ -3402,7 +3402,7 @@ body {
 
   .dashboard-body {
     display: block;
-    overflow: auto;
+    overflow: visible;
   }
 
   .dashboard-main-wrap {

@@ -112,24 +112,27 @@ export default function Profile() {
 
       <div className="grid gap-6 md:grid-cols-12">
         <Card className="md:col-span-4 flex flex-col items-center p-6 space-y-4">
-          <Avatar className="h-32 w-32 border-4 border-background shadow-md">
-            <AvatarImage src={profile?.profile_image || ''} alt={profile?.first_name || ''} />
-            <AvatarFallback className="text-4xl bg-primary/10 text-primary font-display">
-              {profile?.first_name?.charAt(0) || profile?.email?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <button
+            type="button"
+            className="group relative cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage || updateProfile.isPending}
+            aria-label="החלף תמונת פרופיל"
+          >
+            <Avatar className="h-32 w-32 border-4 border-background shadow-md transition-opacity group-hover:opacity-75">
+              <AvatarImage src={profile?.profile_image || ''} alt={profile?.first_name || ''} />
+              <AvatarFallback className="text-4xl bg-primary/10 text-primary font-display">
+                {profile?.first_name?.charAt(0) || profile?.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+              {isUploadingImage ? 'מעלה...' : 'החלף תמונה'}
+            </div>
+          </button>
           <div className="text-center">
             <h2 className="text-xl font-bold font-display">{profile?.first_name} {profile?.last_name}</h2>
             <p className="text-sm text-muted-foreground">{profile?.email}</p>
           </div>
-          <Button
-            variant="outline"
-            className="w-full mt-4"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploadingImage || updateProfile.isPending}
-          >
-            {isUploadingImage ? 'מעלה תמונה...' : 'החלף תמונה'}
-          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -172,15 +175,16 @@ export default function Profile() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="gender">מגדר (אופציונלי)</Label>
-                  <Select 
-                    value={form.watch("gender") || ""} 
+                  <Select
+                    value={form.watch("gender") || ""}
                     onValueChange={(val) => form.setValue("gender", val)}
                     disabled={isSubmitting}
+                    dir="rtl"
                   >
                     <SelectTrigger id="gender">
                       <SelectValue placeholder="בחר מגדר" />
                     </SelectTrigger>
-                    <SelectContent dir="rtl">
+                    <SelectContent>
                       <SelectItem value="זכר">זכר</SelectItem>
                       <SelectItem value="נקבה">נקבה</SelectItem>
                       <SelectItem value="אחר">אחר</SelectItem>

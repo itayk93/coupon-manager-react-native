@@ -174,7 +174,7 @@ export function CouponActionModals({
       </Dialog>
 
       <Dialog open={!!usageCoupon} onOpenChange={(open) => !open && closeUsage()}>
-        <DialogContent className="legacy-modal-content company-usage-modal-react" dir="rtl">
+        <DialogContent className="legacy-modal-content company-usage-modal-react" dir="rtl" onOpenAutoFocus={(e) => e.preventDefault()}>
           {usageCoupon && (
             <div className="company-usage-content">
               <h3>עדכון סכום שימוש</h3>
