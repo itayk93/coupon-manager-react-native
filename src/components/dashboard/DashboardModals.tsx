@@ -872,7 +872,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                     <Legend
                       verticalAlign="bottom"
                       height={36}
-                      formatter={(value) => <span style={{ color: "var(--foreground, #1e293b)", fontSize: "12px", direction: "rtl" }}>{value}</span>}
+                      formatter={(value) => <span style={{ color: "var(--foreground, #1e293b)", fontSize: "0.75rem", direction: "rtl" }}>{value}</span>}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -895,7 +895,7 @@ export function DashboardModals({ openModal, onOpenChange, coupons, selectedComp
                     <Legend
                       verticalAlign="bottom"
                       height={36}
-                      formatter={(value) => <span style={{ color: "var(--foreground, #1e293b)", fontSize: "12px" }}>{value}</span>}
+                      formatter={(value) => <span style={{ color: "var(--foreground, #1e293b)", fontSize: "0.75rem" }}>{value}</span>}
                     />
                     <Bar dataKey="active" name="פעילים" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
                     <Bar dataKey="used" name="מנוצלים" fill="#94a3b8" radius={[0, 4, 4, 0]} barSize={12} />

@@ -2,8 +2,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useProfile } from "@/hooks/useProfile";
 import { getCompanyLogo } from "@/lib/companyLogos";
-import { BarChart3, CirclePlus, ListChecks, ReceiptText, Sparkles, WalletCards } from "lucide-react";
-import { useState } from "react";
+import { BarChart3, CirclePlus, ListChecks, ReceiptText, RotateCcw, Sparkles, WalletCards, WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
 import { DashboardModalType, DashboardModals } from "@/components/dashboard/DashboardModals";
 
 function formatIls(value: number) {
@@ -12,10 +12,23 @@ function formatIls(value: number) {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { data: coupons, isLoading } = useCoupons();
+  const { data: coupons, isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: profile } = useProfile();
   const [openModal, setOpenModal] = useState<DashboardModalType>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  // A failed load and a lost connection read the same to the query layer, but
+  // they need different copy: one is ours to retry, the other is the user's to fix.
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
+
+  useEffect(() => {
+    const sync = () => setIsOffline(!navigator.onLine);
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
 
   const visibleCoupons = (coupons || []).filter((coupon) => !coupon.is_for_sale && coupon.status !== "נוצל");
   const totalValue = visibleCoupons.reduce((sum, coupon) => sum + (coupon.value || 0), 0);
@@ -69,31 +82,33 @@ export default function Dashboard() {
               הארנק שלך
             </div>
             <h2>{greeting}, {displayName}</h2>
-            <p>{visibleCoupons.length} קופונים פעילים לניצול</p>
+            <p>{isError ? "לא הצלחנו לטעון את הקופונים" : `${visibleCoupons.length} קופונים פעילים לניצול`}</p>
           </div>
 
           <div className="wallet-balance-card" aria-label="יתרה זמינה בארנק" dir="rtl">
             <span>יתרה זמינה</span>
-            <strong dir="rtl">{isLoading ? "טוען..." : formatIls(remainingValue)}</strong>
-            <small dir="rtl">מתוך {formatIls(totalValue)} בארנק</small>
+            {/* On error the sums are all zero. Showing "0.00 ₪" would report a
+                network failure as an empty wallet — say nothing instead. */}
+            <strong dir="rtl">{isError ? "—" : isLoading ? "טוען..." : formatIls(remainingValue)}</strong>
+            <small dir="rtl">{isError ? "היתרה תוצג לאחר טעינה מחדש" : `מתוך ${formatIls(totalValue)} בארנק`}</small>
           </div>
         </div>
 
         <div className="wallet-kpi-grid" aria-label="סיכום ארנק">
           <article>
             <Sparkles size={18} />
-            <span>חיסכון פוטנציאלי</span>
-            <strong>{isLoading ? "-" : formatIls(totalSavings)}</strong>
+            <span>חסכת עד היום</span>
+            <strong>{isLoading || isError ? "—" : formatIls(totalSavings)}</strong>
           </article>
           <article>
             <ReceiptText size={18} />
             <span>כבר נוצל</span>
-            <strong>{isLoading ? "-" : formatIls(usedValue)}</strong>
+            <strong>{isLoading || isError ? "—" : formatIls(usedValue)}</strong>
           </article>
           <article>
             <BarChart3 size={18} />
-            <span>פגים בקרוב</span>
-            <strong>{isLoading ? "-" : expiringSoonCount}</strong>
+            <span>פגים ב-14 יום</span>
+            <strong>{isLoading || isError ? "—" : expiringSoonCount}</strong>
           </article>
         </div>
 
@@ -116,6 +131,27 @@ export default function Dashboard() {
       <section className="company-cards-row" aria-label="חברות עם קופונים פעילים">
         {isLoading ? (
           Array.from({ length: 8 }).map((_, index) => <div className="company-card-box skeleton-card" key={index} />)
+        ) : isError ? (
+          /* Without this branch a failed fetch fell through to the empty state,
+             telling the user their wallet was empty when the network was down. */
+          <div className="legacy-empty-state" role="alert">
+            {isOffline ? <WifiOff size={34} aria-hidden="true" /> : <BarChart3 size={34} aria-hidden="true" />}
+            <h3>{isOffline ? "אין חיבור לאינטרנט." : "לא הצלחנו לטעון את הקופונים."}</h3>
+            <p>
+              {isOffline
+                ? "הקופונים שלך שמורים. הם יוצגו כאן ברגע שהחיבור יחזור."
+                : "הקופונים שלך שמורים ולא אבדו — רק הטעינה נכשלה."}
+            </p>
+            <button
+              type="button"
+              className="legacy-stats-button legacy-quick-add-button"
+              onClick={() => refetch()}
+              disabled={isRefetching}
+            >
+              <RotateCcw size={19} aria-hidden="true" />
+              {isRefetching ? "טוען מחדש..." : "נסה שוב"}
+            </button>
+          </div>
         ) : companyCards.length > 0 ? (
           companyCards.map((card) => (
             <article

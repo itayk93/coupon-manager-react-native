@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ביקורת UI/UX ובדיקת QA עיצובית — קופון מאסטר · 09.08.2026</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --ink:#12181f; --ink2:#42505f; --ink3:#6b7a8c;
+    --line:#e3e8ee; --blue:#2473cc; --blue-soft:#eaf2fc;
+    --p1:#c02626; --p1-bg:#fdecec; --p2:#b4620a; --p2-bg:#fdf3e6; --p3:#4c6b8a; --p3-bg:#eef3f8;
+    --ok:#12724a; --ok-bg:#e8f5ee;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0f1419;--card:#171e26;--ink:#eef2f6;--ink2:#b4c0cc;--ink3:#8695a5;
+      --line:#28323d;--blue:#5b9bd8;--blue-soft:#16283d;
+      --p1:#f2837f;--p1-bg:#2e1a1a;--p2:#e0a45c;--p2-bg:#2c2213;--p3:#9bb4cc;--p3-bg:#1a2530;
+      --ok:#6fce9f;--ok-bg:#142a20;}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Rubik','Heebo',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size:16px;line-height:1.75;text-wrap:pretty}
+  .wrap{max-width:64rem;margin:0 auto;padding:2.5rem 1.25rem 5rem}
+  header.top{border-bottom:3px solid var(--blue);padding-bottom:1.25rem;margin-bottom:2rem}
+  h1{font-size:clamp(1.5rem,1.1rem+2vw,2.15rem);line-height:1.2;margin:0 0 .4rem;letter-spacing:-.02em}
+  .sub{color:var(--ink3);font-size:.95rem;margin:0}
+  h2{font-size:clamp(1.2rem,1rem+1vw,1.5rem);margin:2.75rem 0 .5rem;letter-spacing:-.015em;
+     padding-bottom:.4rem;border-bottom:1px solid var(--line)}
+  h3{font-size:1.06rem;margin:1.75rem 0 .5rem;letter-spacing:-.01em}
+  p{margin:.6rem 0}
+  .lead{font-size:1.05rem;color:var(--ink2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.25rem;margin:1rem 0}
+  .biz{border-right:4px solid var(--blue);background:var(--blue-soft)}
+  .biz b{color:var(--blue)}
+  .tech{border-right:4px solid var(--ink3)}
+  .tech b{color:var(--ink2)}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:1rem 0;
+    border:1px solid var(--line);border-radius:10px;background:var(--card)}
+  table{border-collapse:collapse;width:100%;min-width:44rem;font-size:.9rem}
+  th,td{text-align:right;padding:.6rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--bg);font-weight:700;font-size:.8rem;color:var(--ink2);
+     letter-spacing:.03em;position:sticky;top:0}
+  tr:last-child td{border-bottom:0}
+  code,.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;
+    background:var(--bg);padding:.1em .35em;border-radius:4px;direction:ltr;display:inline-block}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;padding:.15em .5em;border-radius:4px;white-space:nowrap}
+  .t-p1{background:var(--p1-bg);color:var(--p1)} .t-p2{background:var(--p2-bg);color:var(--p2)}
+  .t-p3{background:var(--p3-bg);color:var(--p3)} .t-ok{background:var(--ok-bg);color:var(--ok)}
+  pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.9rem 1rem;
+    overflow-x:auto;direction:ltr;text-align:left;font-size:.84rem;line-height:1.6;margin:.75rem 0}
+  pre .add{color:var(--ok)} pre .del{color:var(--p1)} pre .ctx{color:var(--ink3)}
+  ul,ol{padding-inline-start:1.3rem;margin:.5rem 0} li{margin:.35rem 0}
+  .num{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1rem;font-size:.9rem;margin:.5rem 0}
+  .kv dt{color:var(--ink3)} .kv dd{margin:0;font-weight:600}
+  .win{border-right:4px solid var(--ok);background:var(--ok-bg)}
+  footer{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--line);
+    color:var(--ink3);font-size:.85rem}
+  @media (max-width:30rem){ .wrap{padding:1.5rem 1rem 3rem} table{min-width:38rem} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>ביקורת UI/UX ובדיקת QA עיצובית</h1>
+  <p class="sub">קופון מאסטר · הדשבורד ומעטפת האפליקציה · <span class="num">09.08.2026</span> · ענף <span class="mono">a11y/wcag22-aa-remediation</span></p>
+</header>
+
+<p class="lead">
+  המסמך בנוי בשתי שכבות לאורך כל הדרך: <b>הסבר עסקי</b> — מה זה אומר למשתמש ולעסק, בשפה פשוטה;
+  ו<b>הסבר טכני</b> — מה בדיוק נמדד, איפה בקוד, ומה שונה. כל מספר כאן נמדד בדפדפן חי,
+  לא הוערך בעין.
+</p>
+
+<div class="card">
+  <h3 style="margin-top:0">מה נבדק ומה לא</h3>
+  <dl class="kv">
+    <dt>נבדק</dt><dd>הדשבורד (<span class="mono">/</span>) — מעטפת האפליקציה כולה: סרגל עליון, ניווט תחתון בנייד, סרגל צד בדסקטופ, כרטיס הארנק, שורת ה-KPI, שורת הפעולות, ורשת החברות.</dd>
+    <dt>רוחבים</dt><dd><span class="num">375</span> · <span class="num">768</span> · <span class="num">1280</span> · <span class="num">1920</span> פיקסלים</dd>
+    <dt>לא נבדק</dt><dd>מסכי קופונים, סטטיסטיקות, שיתופים והגדרות — נגישים רק דרך ניווט נוסף, ולא נכללו בסבב הזה.</dd>
+    <dt>לא הורץ</dt><dd>חבילת ה-e2e. <span class="mono">tests/global-setup.ts</span> דורש <span class="mono">E2E_EMAIL</span> ו-<span class="mono">E2E_PASSWORD</span>, שלא קיימים ב-<span class="mono">.env</span> המקומי. השינויים הם CSS בלבד ואינם נוגעים בסלקטורים או ב-<span class="mono">data-testid</span>, אבל <b>זו הצהרה על מה שלא אומת, לא הבטחה שהכול עובר.</b></dd>
+  </dl>
+</div>
+
+<!-- ══════════════════ חלק א ══════════════════ -->
+<h2>חלק א׳ · ביקורת בשלוש עדשות (מסך נייד, <span class="num">375</span>px)</h2>
+
+<h3>עדשה 1 — מעצב</h3>
+
+<div class="card biz">
+  <p><b>בשפה עסקית:</b> העין של המשתמש לא נוחתת קודם על הפעולה שאתה הכי רוצה שיעשה.
+  היא נוחתת על הסכום הגדול <span class="num">4215.21 ₪</span>, שהוא מידע ולא פעולה. הכפתור הכחול
+  "הוספת קופון מהירה" — הדבר שמזין את המערכת בתוכן — יושב נמוך יותר, בשורה של שלושה כפתורים
+  שנראים כמעט זהים במשקל.</p>
+</div>
+<div class="card tech">
+  <p><b>טכנית:</b> היררכיה. <span class="mono">.wallet-hero</span> נותן ליתרה
+  <span class="mono">font-size</span> ענק בצבע <span class="mono">--cm-primary</span>, בעוד
+  <span class="mono">.legacy-quick-add-button</span> מקבל את אותו כחול כרקע ב-
+  <span class="mono">14px / min-height:44px</span>. שני האלמנטים מתחרים על אותו צבע-מותג:
+  הכחול מסמן גם "מספר חשוב" וגם "פעולה ראשית". צבע שמסמן שני דברים לא מסמן אף אחד מהם.</p>
+</div>
+
+<p><b>ממצאים ספציפיים — מי דוחק את מי:</b></p>
+<ul>
+  <li><b>שורת שלושת הכפתורים דוחקת את עצמה.</b> "דיווח מהיר על שימוש" נשבר ל-<span class="num">3</span> שורות
+    ו"על מה חסכת?" ל-<span class="num">2</span>, בעוד הראשי נשאר בשורה אחת. שלוש קופסאות בגובה זהה
+    עם כמות טקסט שונה — הריווח הפנימי נראה אקראי.</li>
+  <li><b>שורת ה-KPI הייתה שבורה ממש</b> (תוקן — ראה חלק ב׳): התווית בימין, הערך בשמאל, במרחק
+    של עד <span class="num">299</span>px בכרטיס של <span class="num">323</span>px.</li>
+  <li><b>שתי שפות אייקונים.</b> הסרגל העליון והתחתון משתמשים ב-<span class="mono">lucide-react</span>
+    בקו אחיד, אבל לוגו המותג הוא PNG מרובע עם גרדיאנט וזוהר — חומר אחר לגמרי, צמוד לאייקוני הקו.</li>
+  <li><b>שני משטחי ניווט בשני צבעים.</b> הסרגל העליון כמעט שחור, התחתון לבן. שניהם ניווט, שתי שפות.
+    זו החלטה שאפשר להגן עליה (העליון = זהות, התחתון = פעולה), אבל היא לא נאכפת בשום מקום אחר במסך.</li>
+</ul>
+
+<h3>עדשה 2 — מהנדס</h3>
+
+<div class="card biz">
+  <p><b>בשפה עסקית:</b> המבנה עומד יפה. אין שבירות, אין גלילה אופקית, והמעבר בין טלפון למחשב
+  אמיתי — לא "אותו דבר קטן יותר". החוב הטכני היחיד שאני רואה הוא כפילות ניווט, שתעלה כסף
+  בכל פיצ'ר עתידי.</p>
+</div>
+<div class="card tech">
+  <ul>
+    <li><b>כפילות ניווט.</b> בנייד קיימים גם <span class="mono">.dashboard-bottom-nav</span> (5 פריטים)
+      וגם כפתור המבורגר שפותח <span class="mono">.mobile-sidebar-overlay</span>. כל פריט ניווט חדש
+      צריך להתווסף בשני מקומות ולהישאר מסונכרן. זו עלות תחזוקה קבועה.</li>
+    <li><b>התאמה לפלטפורמה.</b> ניווט תחתון קבוע = קונבנציית iOS; המבורגר = קונבנציית Android.
+      האפליקציה מריצה את שתיהן במקביל. <span class="mono">env(safe-area-inset-bottom)</span>
+      כן מטופל ב-<span class="mono">.dashboard-main</span> — נקודה לזכות.</li>
+    <li><b>מחרוזות ארוכות.</b> נבדק בפועל: "דיווח מהיר על שימוש" כבר נשבר ל-<span class="num">3</span>
+      שורות בעברית. תרגום לרוסית או ערבית יאריך אותן בעוד <span class="num">15–30%</span> —
+      <span class="mono">min-width:205px</span> על הכפתורים לא ישרוד את זה.</li>
+    <li><b>טקסט מוגדל.</b> נמדד: הגדלת <span class="mono">font-size</span> של השורש ל-<span class="num">200%</span>
+      מגדילה את <span class="mono">.wallet-hero h2</span> מ-<span class="num">36px</span> ל-<span class="num">72px</span>,
+      אבל <span class="mono">.wallet-kpi-grid span</span> נשאר <span class="num">12px</span> — הוא מוגדר ב-px קשיח.
+      ערבוב יחידות: חלק מהמסך מגיב להגדרת גודל הגופן של המשתמש וחלק מתעלם ממנה.</li>
+  </ul>
+</div>
+
+<h3>עדשה 3 — משתמש</h3>
+
+<div class="card biz">
+  <p><b>בשפה עסקית:</b> משתמש חדש שרוצה להוסיף קופון מגיע ליעד בלחיצה אחת — זה מצוין.
+  אבל שתי תוויות יגרמו לו לעצור ולחשוב, ומצב ריק אחד עלול לגרום לו לחשוב שהמערכת מקולקלת.</p>
+</div>
+<ul>
+  <li><b>מה שנראה לחיץ ולא ברור שהוא לחיץ:</b> כרטיסי החברות. אין להם אף סימן ויזואלי של פעולה —
+    אין חץ, אין שינוי בהעברת עכבר בנייד. טכנית הם <span class="mono">role="button"</span> עם
+    <span class="mono">tabIndex=0</span> ו-<span class="mono">aria-label</span> תקין, אז לקורא מסך
+    הם ברורים — לעין הם לא.</li>
+  <li><b>תוויות מעורפלות:</b> "חיסכון פוטנציאלי" — פוטנציאלי למה? זה ההפרש בין השווי למה ששולם,
+    כלומר חיסכון שכבר הושג. "פגים בקרוב <span class="num">0</span>" — בקרוב זה מתי? הקוד אומר
+    <span class="num">14</span> יום, המסך לא אומר.</li>
+  <li><b>מצבים חסרים:</b> יש טעינה (<span class="mono">skeleton-card</span>) ויש מצב ריק
+    (<span class="mono">.legacy-empty-state</span>) — טוב. <b>אין מצב שגיאה ואין מצב לא-מקוון.</b>
+    אם <span class="mono">useCoupons</span> נכשל, המשתמש רואה מסך ריק שאומר "אין קופונים פעילים" —
+    כלומר האפליקציה מדווחת על תקלת רשת כאילו הארנק שלו התרוקן. זו הבעיה החמורה ביותר במסמך הזה
+    מבחינת אמון המשתמש.</li>
+  <li><b>סיכון ללחיצה שגויה:</b> הכפתור הראשי צמוד לשני כפתורים משניים במרווח
+    <span class="mono">gap:7px</span>. באגודל, <span class="num">7</span>px בין יעדים סמוכים זה מעט.</li>
+</ul>
+
+<h3>בדיקת נגישות</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>קריטריון</th><th>נמדד</th><th>סטטוס</th></tr></thead>
+  <tbody>
+    <tr><td>ניגודיות טקסט (1.4.3)</td><td>"יציאה מהחשבון" <span class="num">3.76:1</span>, נדרש <span class="num">4.5:1</span></td><td><span class="tag t-p1">נכשל → תוקן</span></td></tr>
+    <tr><td>ניגודיות סימון מיקוד (1.4.11)</td><td>טבעת <span class="mono">rgba(36,115,204,.42)</span> = <span class="num">1.80:1</span>, נדרש <span class="num">3:1</span></td><td><span class="tag t-p1">נכשל → תוקן</span></td></tr>
+    <tr><td>גודל יעד מגע (2.5.8)</td><td>פעמון <span class="num">28×44</span>, תפריט <span class="num">30×44</span>, כפתורי פעולה <span class="num">205×42</span></td><td><span class="tag t-p2">נכשל → תוקן</span></td></tr>
+    <tr><td>תוויות לטכנולוגיה מסייעת</td><td><span class="mono">aria-label</span> על כל כפתורי האייקון; <span class="mono">sr-only</span> לשם המשתמש ולכותרת H1</td><td><span class="tag t-ok">עובר</span></td></tr>
+    <tr><td>סימון מיקוד גלוי (2.4.7)</td><td><span class="mono">:focus-visible</span> מוגדר גלובלית, אומת במקלדת אמיתית</td><td><span class="tag t-ok">עובר</span></td></tr>
+    <tr><td>טקסט חלופי לתמונות</td><td><span class="num">0</span> תמונות ללא <span class="mono">alt</span></td><td><span class="tag t-ok">עובר</span></td></tr>
+    <tr><td>שינוי גודל טקסט (1.4.4)</td><td>גדלים ב-px קשיח לא מגיבים להגדרת הגופן של הדפדפן</td><td><span class="tag t-p2">חלקי — לא תוקן</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>חמשת התיקונים המובילים — השפעה מול מאמץ</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>#</th><th>מה לשנות</th><th>למה מה</th><th>השפעה / מאמץ</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>מצב שגיאה ומצב לא-מקוון לטעינת הקופונים</td>
+      <td>מ"אין קופונים פעילים" ל"לא הצלחנו לטעון את הקופונים" + כפתור "נסה שוב", מותנה ב-<span class="mono">isError</span> של <span class="mono">useCoupons</span></td>
+      <td>גבוהה מאוד / בינוני</td></tr>
+    <tr><td>2</td><td>ניגודיות ויעדי מגע</td>
+      <td>בוצע — ארבעה תיקוני CSS, פירוט מלא בחלק ב׳</td>
+      <td>גבוהה / נמוך <span class="tag t-ok">בוצע</span></td></tr>
+    <tr><td>3</td><td>סימן פעולה על כרטיסי החברה</td>
+      <td>להוסיף חץ <span class="mono">‹</span> בפינה ומצב <span class="mono">:active</span> עם <span class="mono">transform:scale(.98)</span> — אותה שפה שכבר קיימת ב-<span class="mono">.legacy-stats-button</span></td>
+      <td>בינונית-גבוהה / נמוך</td></tr>
+    <tr><td>4</td><td>לפרק את תחרות הכחול בבאנר</td>
+      <td>להשאיר את הכחול המלא רק לכפתור הראשי; להוריד את סכום היתרה ל-<span class="mono">--cm-text</span> ולהשאיר את גודלו. הכחול חוזר לסמן פעולה בלבד</td>
+      <td>בינונית / נמוך</td></tr>
+    <tr><td>5</td><td>לחדד את שתי התוויות</td>
+      <td>"חיסכון פוטנציאלי" ← "חסכת עד היום"; "פגים בקרוב" ← "פגים ב-14 יום"</td>
+      <td>בינונית / זניח</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card win">
+  <h3 style="margin-top:0">מה המסך עושה טוב — ושווה לשמר</h3>
+  <p><b>ה-RTL כאן אמיתי, לא הפוך.</b> זה נדיר. הכפתור הראשי יושב בימין השורה — נקודת ההתחלה של
+  קריאה בעברית. הניווט התחתון מסודר מימין לשמאל עם "דשבורד" ראשון. הסכומים עטופים ב-
+  <span class="mono">direction:ltr; unicode-bidi:isolate</span> כדי ש-<span class="num">4026.00 ₪</span>
+  לא יתהפך. רוב האפליקציות הישראליות שנבנות על ספריות LTR נכשלות בדיוק בזה.</p>
+  <p>בנוסף: <span class="mono">skip-link</span> קיים, <span class="mono">aria-expanded</span> מסונכרן
+  על כפתור התפריט, <span class="mono">inert</span> מוחל על הסרגל כשהמגירה פתוחה, ו-
+  <span class="mono">env(safe-area-inset-*)</span> מטופל. <b>תשתית הנגישות כאן טובה מהממוצע בשוק</b> —
+  התיקונים שלהלן הם ליטוש שלה, לא בנייה מאפס.</p>
+</div>
+
+<!-- ══════════════════ חלק ב ══════════════════ -->
+<h2>חלק ב׳ · QA עיצובי בארבעה רוחבים — ממצאים ותיקונים</h2>
+
+<h3>טבלת ממצאים</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>#</th><th>רוחב</th><th>קטגוריה</th><th>תיאור</th><th>עדיפות</th><th>קובץ מקור</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>הכול</td><td>נגישות</td>
+      <td>טבעת המיקוד בשקיפות <span class="num">42%</span> = <span class="num">1.80:1</span> מול לבן. WCAG דורש <span class="num">3:1</span>. משתמשי מקלדת מאבדים את מקומם</td>
+      <td><span class="tag t-p1">P1</span></td><td><span class="mono">index.css:4769</span></td></tr>
+    <tr><td>2</td><td><span class="num">1280</span>, <span class="num">1920</span></td><td>נגישות</td>
+      <td>"יציאה מהחשבון" ב-<span class="mono">#ef4444</span> = <span class="num">3.76:1</span>. נדרש <span class="num">4.5:1</span></td>
+      <td><span class="tag t-p1">P1</span></td><td><span class="mono">index.css:831</span></td></tr>
+    <tr><td>3</td><td>הכול</td><td>פריסה</td>
+      <td>ערכי ה-KPI מיושרים לשמאל בעוד התווית בימין. פער נמדד: <span class="num">213</span>, <span class="num">228</span>, <span class="num">299</span>px בכרטיס <span class="num">323</span>px. הקורא לא יודע איזה מספר שייך לאיזו תווית</td>
+      <td><span class="tag t-p1">P1</span></td><td><span class="mono">index.css:1048</span></td></tr>
+    <tr><td>4</td><td><span class="num">375</span>–<span class="num">1920</span></td><td>רספונסיביות</td>
+      <td>פעמון <span class="num">28–30</span>px רוחב, כפתור תפריט <span class="num">30</span>px. הגובה הועלה ל-<span class="num">44</span> בסבב קודם, הרוחב לא</td>
+      <td><span class="tag t-p2">P2</span></td><td><span class="mono">index.css:4795</span></td></tr>
+    <tr><td>5</td><td>הכול</td><td>רספונסיביות</td>
+      <td>שלושת כפתורי הפעולה בגובה <span class="num">42</span>px — <span class="num">2</span>px מתחת לסף</td>
+      <td><span class="tag t-p2">P2</span></td><td><span class="mono">index.css:1136</span></td></tr>
+    <tr><td>6</td><td>הכול</td><td>נגישות</td>
+      <td>גדלי גופן ב-px קשיח לא מגיבים להגדרת גודל הטקסט בדפדפן (1.4.4)</td>
+      <td><span class="tag t-p2">P2</span></td><td>רוחבי — <span class="mono">index.css</span></td></tr>
+    <tr><td>7</td><td>הכול</td><td>עקביות</td>
+      <td>קישור המותג בסרגל: <span class="num">135.7×32</span>px. עובר את סף ה-AA (<span class="num">24×24</span>) אך לא את הנחיית ה-<span class="num">44</span></td>
+      <td><span class="tag t-p3">P3</span></td><td><span class="mono">Navbar.tsx:40</span></td></tr>
+    <tr><td>8</td><td><span class="num">1920</span></td><td>פריסה</td>
+      <td>אזור התוכן ננעל על <span class="num">1200</span>px ומשאיר <span class="num">488</span>px ריקים בצד שמאל. לא שבור — לא מאוזן</td>
+      <td><span class="tag t-p3">P3</span></td><td><span class="mono">.dashboard-main</span></td></tr>
+    <tr><td>9</td><td>הכול</td><td>—</td>
+      <td><b>אין</b> גלילה אופקית, <b>אין</b> חפיפות, <b>אין</b> טקסט חתוך, <b>אין</b> תמונות ללא <span class="mono">alt</span>, <b>אין</b> גופנים מחוץ ל-Rubik/Outfit</td>
+      <td><span class="tag t-ok">נקי</span></td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>הערה על ממצא שנפסל</h3>
+<div class="card tech">
+  <p>הסקריפט האוטומטי דיווח על <span class="num">12</span> אלמנטים "ללא סימון מיקוד". <b>זה היה שגוי.</b>
+  הבדיקה השתמשה ב-<span class="mono">element.focus()</span> תכנותי, שלפי הגדרה אינו מפעיל
+  <span class="mono">:focus-visible</span>. בדיקה חוזרת עם לחיצת <kbd>Tab</kbd> אמיתית החזירה
+  <span class="mono">outline: 3px solid</span> ו-<span class="mono">matches(':focus-visible') === true</span>.
+  הממצא נמחק. מה שנשאר ממנו הוא ממצא #1 — לא היעדר הטבעת, אלא <b>הניגודיות שלה</b>.</p>
+</div>
+
+<h3>התיקונים שהוחלו</h3>
+<p>ארבעה שינויים, כולם ב-<span class="mono">src/index.css</span>, סה"כ <span class="num">16</span> שורות נוספו ו-<span class="num">3</span> הוסרו.
+כולם משתמשים בטוקנים שכבר קיימים בפרויקט. לא הוכנס אף דפוס חדש.</p>
+
+<h4>תיקון 1 — ניגודיות טבעת המיקוד <span class="tag t-p1">P1</span></h4>
+<div class="card biz"><b>עסקית:</b> מי שמנווט במקלדת ראה סימון תכלת חיוור שכמעט נבלע ברקע הלבן. עכשיו הוא רואה בבירור איפה הוא נמצא.</div>
+<pre><span class="ctx"> :where(button, a, input, select, textarea):focus-visible {</span>
+<span class="del">-  outline: 3px solid rgba(36, 115, 204, 0.42);</span>
+<span class="add">+  /* 1.4.11: the 42% tint measured 1.80:1 on white — below the 3:1 floor for</span>
+<span class="add">+     a focus indicator. Solid --cm-primary measures 4.77:1 on white and</span>
+<span class="add">+     3.67:1 on the dark topbar. */</span>
+<span class="add">+  outline: 3px solid var(--cm-primary);</span>
+<span class="ctx">   outline-offset: 2px;</span></pre>
+<p class="sub"><b>לפני:</b> <span class="num">1.80:1</span> · <b>אחרי:</b> <span class="num">4.77:1</span> על לבן, <span class="num">3.67:1</span> על הסרגל הכהה. שניהם עוברים את סף ה-<span class="num">3:1</span>.</p>
+
+<h4>תיקון 2 — צבע "יציאה מהחשבון" <span class="tag t-p1">P1</span></h4>
+<div class="card biz"><b>עסקית:</b> האדום היה בהיר מדי מכדי להיקרא בנוחות. הוחלף באדום של המערכת, שגם מתנהג נכון במצב כהה.</div>
+<pre><span class="ctx"> .dashboard-logout {</span>
+<span class="ctx">   margin-top: 18px;</span>
+<span class="del">-  color: #ef4444;</span>
+<span class="add">+  /* #ef4444 measured 3.76:1 on the sidebar — below AA for 16px text.</span>
+<span class="add">+     --cm-danger is 4.83:1 and already carries a dark-mode value. */</span>
+<span class="add">+  color: var(--cm-danger);</span>
+<span class="ctx"> }</span></pre>
+<p class="sub"><b>לפני:</b> <span class="num">3.76:1</span>, צבע קשיח · <b>אחרי:</b> <span class="num">4.83:1</span>, טוקן עם ערך נפרד למצב כהה (<span class="mono">#f87171</span>).</p>
+
+<h4>תיקון 3 — יישור ערכי ה-KPI <span class="tag t-p1">P1</span></h4>
+<div class="card biz"><b>עסקית:</b> המספרים ישבו בקצה הנגדי של הכרטיס מהכותרת שלהם. עכשיו כל מספר יושב ישירות מתחת לתווית שלו.</div>
+<div class="card tech"><b>טכנית — למה זה קרה:</b> <span class="mono">direction:ltr</span> נוסף במכוון, כדי ש-<span class="mono">4026.00 ₪</span> לא יעבור סידור מחדש של ה-bidi. תופעת לוואי: בקופסה LTR, <span class="mono">text-align:start</span> מתורגם ל<b>שמאל</b>. התווית נשארה RTL בימין; הערך קפץ לשמאל. התיקון מקבע יישור מפורש בלי לוותר על בידוד ה-bidi.</div>
+<pre><span class="ctx">   direction: ltr;</span>
+<span class="ctx">   unicode-bidi: isolate;</span>
+<span class="add">+  /* direction:ltr keeps "4026.00 ₪" from bidi-reordering, but it also flips</span>
+<span class="add">+     text-align:start to the left — parking the value up to 299px from its</span>
+<span class="add">+     right-aligned label. Pin it back to the label's edge. */</span>
+<span class="add">+  text-align: right;</span>
+<span class="ctx">   white-space: nowrap;</span></pre>
+<p class="sub"><b>לפני:</b> מרחק <span class="num">213</span> / <span class="num">228</span> / <span class="num">299</span>px בין תווית לערך · <b>אחרי:</b> <span class="num">11</span>px בשלושתם, זהה לתווית.</p>
+
+<h4>תיקון 4 — יעדי מגע <span class="tag t-p2">P2</span></h4>
+<div class="card biz"><b>עסקית:</b> הפעמון וכפתור התפריט היו צרים מדי לאגודל. הוחלו רוחב מינימלי ותוקן פער של <span class="num">2</span>px בכפתורי הפעולה.</div>
+<div class="card tech"><b>טכנית:</b> סבב הנגישות הקודם הוסיף <span class="mono">min-height:44px</span> אבל לא <span class="mono">min-width</span> — לכן היעדים היו <span class="num">28×44</span> במקום <span class="num">44×44</span>. השורה הקיימת הורחבה במקום ליצור כלל חדש.</div>
+<pre><span class="ctx"> .dashboard-icon-button,</span>
+<span class="ctx"> .dashboard-menu-button {</span>
+<span class="ctx">   min-height: 44px;</span>
+<span class="add">+  /* 2.5.8: height alone was raised here; the 28-30px width left the bell and</span>
+<span class="add">+     the menu button below the 44x44 target on every viewport. */</span>
+<span class="add">+  min-width: 44px;</span>
+<span class="ctx"> }</span>
+
+<span class="ctx"> .legacy-stats-button {</span>
+<span class="ctx">   min-width: 205px;</span>
+<span class="del">-  min-height: 42px;</span>
+<span class="add">+  /* 2px short of the 44px touch target — the only value on the row that was. */</span>
+<span class="add">+  min-height: 44px;</span></pre>
+<p class="sub"><b>לפני:</b> <span class="num">6</span> יעדים מתחת ל-<span class="num">44</span>px · <b>אחרי:</b> <span class="num">0</span> (למעט קישור המותג, P3 — ראה להלן).</p>
+
+<h3>אימות — כל רוחב, אחרי כל תיקון</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>רוחב</th><th>גלילה אופקית</th><th>יעדים &lt;44px</th><th>כשלי ניגודיות</th><th>יישור KPI</th></tr></thead>
+  <tbody>
+    <tr><td><span class="num">375</span></td><td>אין (<span class="num">scrollWidth=375</span>)</td><td><span class="num">1</span> — קישור המותג בלבד</td><td><span class="num">0</span></td><td><span class="num">11</span>px</td></tr>
+    <tr><td><span class="num">768</span></td><td>אין</td><td><span class="num">1</span> — קישור המותג בלבד</td><td><span class="num">0</span></td><td><span class="num">11</span>px</td></tr>
+    <tr><td><span class="num">1280</span></td><td>אין</td><td><span class="num">1</span> — קישור המותג בלבד</td><td><span class="num">0</span></td><td><span class="num">11</span>px</td></tr>
+    <tr><td><span class="num">1920</span></td><td>אין</td><td><span class="num">1</span> — קישור המותג בלבד</td><td><span class="num">0</span></td><td><span class="num">11</span>px</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="sub">לפני התיקונים: <span class="num">6</span> יעדים חורגים ב-<span class="num">768</span>px, <span class="num">5</span> ב-<span class="num">1280</span>, ושני כשלי ניגודיות. אין רגרסיה באף רוחב.</p>
+
+<h3>מה בחרתי לא לתקן — ולמה</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>ממצא</th><th>הסיבה</th></tr></thead>
+  <tbody>
+    <tr><td>#6 — גדלי גופן ב-px קשיח</td>
+      <td>תיקון אמיתי דורש המרה של מאות הצהרות ל-<span class="mono">rem</span> על פני <span class="num">4800</span> שורות CSS. זו כתיבה מחדש של מערכת הטיפוגרפיה, לא תיקון QA — והכלל שקבעת אוסר לערבב שכתוב סגנוני לתוך סבב QA. דורש החלטה ותכנון נפרדים.</td></tr>
+    <tr><td>#7 — קישור המותג <span class="num">32</span>px</td>
+      <td>זהו קישור טקסט מוטבע בכותרת. WCAG 2.5.8 פוטר מפורשות קישורים מוטבעים מסף גודל היעד, והוא כן עובר את סף ה-AA של <span class="num">24×24</span>. הגדלה תדחוף את גובה הסרגל. <b>קונבנציה שנשברה במכוון ועובדת.</b></td></tr>
+    <tr><td>#8 — <span class="num">488</span>px ריקים ב-<span class="num">1920</span></td>
+      <td>הגבלת רוחב שורה היא החלטת קריאוּת לגיטימית, לא באג. שינוי מרכוז התוכן הוא החלטת עיצוב שדורשת אישור שלך, לא תיקון QA.</td></tr>
+    <tr><td>כפילות הניווט, מצב שגיאה, תחרות הכחול, ניסוח התוויות</td>
+      <td>אלה שינויי מוצר ועיצוב — הם שייכים לרשימת ההמלצות בחלק א׳, לא לסבב QA. <b>מצב השגיאה (המלצה #1) הוא הפער החשוב ביותר שנותר פתוח.</b></td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>
+  <p>כל המדידות בוצעו על שרת פיתוח חי ב-<span class="mono">localhost:8080</span>, בדפדפן, ב-<span class="num">09.08.2026</span>.
+  יחסי ניגודיות חושבו לפי נוסחת הלומיננסיות היחסית של WCAG 2.x מול צבע הרקע האטום הקרוב ביותר בעץ ה-DOM.
+  קובץ שהשתנה: <span class="mono">src/index.css</span> בלבד. חבילת ה-e2e לא הורצה — חסרים אישורי גישה מקומיים.</p>
+</footer>
+
+</div>
+</body>
+</html>

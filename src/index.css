@@ -279,7 +279,7 @@ body {
 .tag-pill {
   flex: 0 0 auto;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   padding: 6px 14px;
   border-radius: 9999px;
@@ -433,7 +433,7 @@ body {
   background: var(--cm-surface-muted);
   color: var(--cm-text);
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 0.7188rem;
   line-height: 1.1;
   touch-action: manipulation;
   box-sizing: border-box;
@@ -707,12 +707,15 @@ body {
 .dashboard-brand,
 .dashboard-brand:hover {
   color: #fff;
-  font-size: 28px;
+  font-size: 1.75rem;
   line-height: 1;
   font-weight: 800;
   letter-spacing: 0;
   white-space: nowrap;
   font-family: "Rubik", Arial, sans-serif;
+  /* The link measured 32px tall. It fits inside the 68px topbar, so raising it
+     to the 44px target costs no layout — the row is already taller. */
+  min-height: 44px;
 }
 
 .dashboard-topbar-actions {
@@ -756,7 +759,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -811,7 +814,7 @@ body {
   border-radius: var(--cm-radius);
   background: transparent;
   color: var(--cm-text);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   text-align: start;
   cursor: pointer;
@@ -830,7 +833,9 @@ body {
 
 .dashboard-logout {
   margin-top: 18px;
-  color: #ef4444;
+  /* #ef4444 measured 3.76:1 on the sidebar — below AA for 16px text.
+     --cm-danger is 4.83:1 and already carries a dark-mode value. */
+  color: var(--cm-danger);
 }
 
 .dashboard-main-wrap {
@@ -895,7 +900,7 @@ body {
   gap: 4px;
   border-radius: var(--cm-radius);
   color: var(--cm-text-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 800;
   line-height: 1.1;
   text-align: center;
@@ -958,7 +963,7 @@ body {
   border-radius: 999px;
   background: var(--cm-primary-soft);
   color: var(--cm-primary-strong);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 800;
 }
 
@@ -974,7 +979,7 @@ body {
 .wallet-hero p {
   margin: 0;
   color: var(--cm-text-muted);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.45;
   text-align: right;
 }
@@ -1041,16 +1046,20 @@ body {
 
 .wallet-kpi-grid span {
   color: var(--cm-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 800;
 }
 
 .wallet-kpi-grid strong {
   color: var(--cm-text);
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.15;
   direction: ltr;
   unicode-bidi: isolate;
+  /* direction:ltr keeps "4026.00 ₪" from bidi-reordering, but it also flips
+     text-align:start to the left — parking the value up to 299px from its
+     right-aligned label. Pin it back to the label's edge. */
+  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1127,14 +1136,15 @@ body {
   border: 0;
   color: #fff;
   min-width: 205px;
-  min-height: 42px;
+  /* 2px short of the 44px touch target — the only value on the row that was. */
+  min-height: 44px;
   border-radius: var(--cm-radius);
   padding: 9px 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: var(--cm-shadow-soft);
@@ -1223,7 +1233,14 @@ body {
 }
 
 .legacy-empty-state {
+  /* The parent is a 2-column grid on mobile and a direction:ltr flex row above
+     it — both were squeezing this panel into one column and flipping its
+     Hebrew punctuation to the wrong edge. */
+  grid-column: 1 / -1;
+  flex-basis: 100%;
+  direction: rtl;
   width: min(100%, 520px);
+  margin-inline: auto;
   background: white;
   border: 1px solid #eee;
   border-radius: 8px;
@@ -1233,7 +1250,14 @@ body {
   color: #2c3e50;
 }
 
-.legacy-empty-state svg {
+/* The panel's own illustration is centred on its own line; an icon inside a
+   button in the panel must stay inline with its label. */
+.legacy-empty-state .legacy-stats-button svg {
+  margin: 0;
+  color: inherit;
+}
+
+.legacy-empty-state > svg {
   color: #3498db;
   margin: 0 auto 10px;
 }
@@ -2026,7 +2050,7 @@ body {
 
 .banner-text h3 {
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.45;
   margin: 0;
   text-align: center;
@@ -2085,7 +2109,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
   color: #fff;
@@ -2108,7 +2132,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   color: #25d366;
   margin: 0 0 12px;
@@ -2135,13 +2159,13 @@ body {
   font-weight: 600;
   border-radius: 12px;
   transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, filter 0.3s ease;
-  font-size: 14px;
+  font-size: 0.875rem;
   text-align: center;
 }
 
 .link-button.compact {
   gap: 6px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .link-button:hover {
@@ -2466,7 +2490,7 @@ body {
   }
 
   .banner-text h3 {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   .whatsapp-btn {
@@ -2485,7 +2509,7 @@ body {
   }
 
   .whatsapp-modal-header h3 {
-    font-size: 16px;
+    font-size: 1rem;
   }
 
   .whatsapp-modal-body {
@@ -2498,7 +2522,7 @@ body {
 
   .link-button {
     padding: 10px 6px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 }
 
@@ -2543,7 +2567,7 @@ body {
   }
 
   .whatsapp-modal-header h3 {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .whatsapp-modal-body {
@@ -2556,7 +2580,7 @@ body {
 
   .link-button {
     padding: 8px 4px;
-    font-size: 12px;
+    font-size: 0.75rem;
     gap: 4px;
   }
 }
@@ -3162,7 +3186,7 @@ body {
 
 .dashboard-welcome h1 {
   color: #1f2d3d;
-  font-size: 42px;
+  font-size: 2.625rem;
   line-height: 1.12;
   font-weight: 900;
   margin: 0 0 8px;
@@ -3172,7 +3196,7 @@ body {
 .dashboard-welcome p {
   margin: 0;
   color: #708094;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 600;
 }
 
@@ -3216,7 +3240,7 @@ body {
 
 .dashboard-stat-card h2 {
   color: #0f172a;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 900;
   text-align: start;
   margin: 0 0 20px;
@@ -3225,7 +3249,7 @@ body {
 .dashboard-stat-card strong {
   display: block;
   color: #030712;
-  font-size: 34px;
+  font-size: 2.125rem;
   line-height: 1;
   font-weight: 900;
   letter-spacing: 0;
@@ -3237,7 +3261,7 @@ body {
   display: block;
   color: #708094;
   margin-top: 12px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -3252,7 +3276,7 @@ body {
 .dashboard-recent-card h2 {
   color: #030712;
   text-align: start;
-  font-size: 34px;
+  font-size: 2.125rem;
   line-height: 1.15;
   font-weight: 900;
   margin: 0 0 34px;
@@ -3285,7 +3309,7 @@ body {
 .dashboard-recent-date strong {
   display: block;
   color: #030712;
-  font-size: 21px;
+  font-size: 1.3125rem;
   font-weight: 900;
   line-height: 1.25;
 }
@@ -3293,7 +3317,7 @@ body {
 .dashboard-recent-date span {
   display: block;
   color: #708094;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   margin-top: 4px;
 }
@@ -3308,7 +3332,7 @@ body {
 .dashboard-recent-company strong {
   display: block;
   color: #030712;
-  font-size: 23px;
+  font-size: 1.4375rem;
   font-weight: 900;
   line-height: 1.25;
 }
@@ -3316,7 +3340,7 @@ body {
 .dashboard-recent-company span {
   display: block;
   color: #708094;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 700;
   margin-top: 6px;
   direction: ltr;
@@ -3331,7 +3355,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 900;
 }
 
@@ -3374,7 +3398,7 @@ body {
   }
 
   .dashboard-brand {
-    font-size: 23px;
+    font-size: 1.4375rem;
   }
 
   .dashboard-sidebar.mobile {
@@ -3393,7 +3417,7 @@ body {
 
   .dashboard-sidebar-mobile-title {
     color: #2d4054;
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: 900;
     margin: 0 0 22px;
   }
@@ -3421,11 +3445,11 @@ body {
   }
 
   .dashboard-welcome h1 {
-    font-size: 32px;
+    font-size: 2rem;
   }
 
   .dashboard-welcome p {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 
   .dashboard-stats-grid {
@@ -3467,7 +3491,7 @@ body {
   }
 
   .dashboard-brand {
-    font-size: 18px;
+    font-size: 1.125rem;
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3485,7 +3509,7 @@ body {
   .dashboard-avatar {
     width: 30px;
     height: 30px;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .dashboard-menu-button {
@@ -3538,7 +3562,7 @@ body {
   }
 
   .wallet-kpi-grid span {
-    font-size: 11px;
+    font-size: 0.6875rem;
     line-height: 1.2;
   }
 
@@ -3580,7 +3604,7 @@ body {
     width: 100%;
     min-width: 0;
     min-height: 44px;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.15;
     flex-direction: column;
     gap: 4px;
@@ -3765,7 +3789,7 @@ body {
     min-width: 0;
     min-height: 36px;
     padding: 4px 2px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .dashboard-stats-grid {
@@ -3784,7 +3808,7 @@ body {
   }
 
   .dashboard-stat-card strong {
-    font-size: 31px;
+    font-size: 1.9375rem;
   }
 
   .dashboard-recent-card {
@@ -3792,7 +3816,7 @@ body {
   }
 
   .dashboard-recent-card h2 {
-    font-size: 28px;
+    font-size: 1.75rem;
     margin-bottom: 22px;
   }
 
@@ -3986,7 +4010,7 @@ body {
   background: #fbfdfb;
   color: var(--ui-ink);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .legacy-modal-content input:focus,
@@ -4576,7 +4600,7 @@ body {
   align-items: center;
   gap: 10px;
   color: #2c3e50;
-  font-size: 42px;
+  font-size: 2.625rem;
   font-weight: 800;
   margin: 0;
 }
@@ -4584,7 +4608,7 @@ body {
 .notifications-subtitle {
   color: #6b7280;
   margin-top: 8px;
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 .notifications-controls {
@@ -4647,7 +4671,7 @@ body {
 .notification-text {
   margin: 0 0 10px;
   color: #2c3e50;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -4658,7 +4682,7 @@ body {
   align-items: center;
   gap: 6px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .notification-close {
@@ -4730,13 +4754,13 @@ body {
 
 .empty-state-title {
   color: #2c3e50;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 800;
   margin-bottom: 8px;
 }
 
 .empty-state-description {
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 /* Shared interaction contract: quiet states, clear focus, no visual noise. */
@@ -4767,7 +4791,10 @@ body {
 }
 
 :where(button, a, input, select, textarea):focus-visible {
-  outline: 3px solid rgba(36, 115, 204, 0.42);
+  /* 1.4.11: the 42% tint measured 1.80:1 on white — below the 3:1 floor for
+     a focus indicator. Solid --cm-primary measures 4.77:1 on white and
+     3.67:1 on the dark topbar. */
+  outline: 3px solid var(--cm-primary);
   outline-offset: 2px;
 }
 
@@ -4795,6 +4822,9 @@ textarea::placeholder {
 .dashboard-icon-button,
 .dashboard-menu-button {
   min-height: 44px;
+  /* 2.5.8: height alone was raised here; the 28-30px width left the bell and
+     the menu button below the 44x44 target on every viewport. */
+  min-width: 44px;
 }
 
 .mobile-sidebar-overlay > button {
@@ -4818,7 +4848,7 @@ textarea::placeholder {
   }
 
   .notifications-title {
-    font-size: 32px;
+    font-size: 2rem;
   }
 
   .notifications-controls,
