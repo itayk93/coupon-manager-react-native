@@ -2,13 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.use({ storageState: "playwright/.auth/user.json" });
 
-const email = process.env.E2E_EMAIL || "itayk93@gmail.com";
-const password = process.env.E2E_PASSWORD || "REDACTED_TEST_PASSWORD";
-
 test.describe("dashboard layout", () => {
-  test.beforeEach(async ({ page }) => {
-  });
-
   test("desktop dashboard renders the copied shell", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard");

@@ -1,21 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
-for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
+/**
+ * Merge .env into process.env without overriding anything already set, so a CI
+ * runner that has no .env can supply the same keys as secrets. Reading an
+ * absent file here would throw at import time, before Playwright can report
+ * anything useful — hence the existsSync guard.
+ */
+const envLines = existsSync('.env') ? readFileSync('.env', 'utf8').split(/\r?\n/) : [];
+for (const line of envLines) {
   const separator = line.indexOf('=');
   if (separator > 0) {
     const key = line.slice(0, separator);
     if (!process.env[key]) process.env[key] = line.slice(separator + 1);
   }
 }
-
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
  * See https://playwright.dev/docs/test-configuration.

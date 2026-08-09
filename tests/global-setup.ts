@@ -1,23 +1,17 @@
 import fs from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { FullConfig } from '@playwright/test';
 
-function loadEnv() {
-  const text = readFileSync('.env', 'utf8');
-  return Object.fromEntries(text.split(/\r?\n/).filter(Boolean).map((line: string) => {
-    const index = line.indexOf('=');
-    return [line.slice(0, index), line.slice(index + 1)];
-  }));
-}
-
 export default async function globalSetup(config: FullConfig) {
-  const env = loadEnv();
-  const url = env.VITE_SUPABASE_URL;
-  const anonKey = env.VITE_SUPABASE_ANON_KEY;
-  const email = process.env.E2E_EMAIL || 'itayk93@gmail.com';
-  const password = process.env.E2E_PASSWORD || 'REDACTED_TEST_PASSWORD';
-  if (!url || !anonKey) throw new Error('Missing Supabase E2E config');
+  // playwright.config.ts has already merged .env into process.env (when the
+  // file exists), so a CI runner can supply the same values as secrets.
+  const url = process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  const email = process.env.E2E_EMAIL;
+  const password = process.env.E2E_PASSWORD;
+  if (!url || !anonKey) throw new Error('Missing Supabase E2E config: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+  // Never fall back to a literal: a default here is a credential in the repo.
+  if (!email || !password) throw new Error('E2E_EMAIL and E2E_PASSWORD must be set (see .env.example)');
 
   const login = await fetch(`${url}/functions/v1/legacy-login`, {
     method: 'POST',

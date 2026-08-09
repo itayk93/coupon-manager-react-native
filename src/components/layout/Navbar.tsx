@@ -7,10 +7,13 @@ export function Navbar({
   onMenuClick,
   menuButtonRef,
   isSidebarOpen,
+  inert,
 }: {
   onMenuClick?: () => void;
   menuButtonRef?: React.Ref<HTMLButtonElement>;
   isSidebarOpen?: boolean;
+  /** Set while the mobile drawer is open so the topbar leaves the a11y tree. */
+  inert?: '';
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -18,7 +21,7 @@ export function Navbar({
   const accountName = user?.first_name || user?.email || '';
 
   return (
-    <header className="dashboard-topbar sticky top-0 z-50 w-full">
+    <header className="dashboard-topbar sticky top-0 z-50 w-full" {...(inert === '' ? { inert: '' } : {})}>
       <div className="dashboard-topbar-inner">
         <div className="dashboard-brand-area">
           {onMenuClick && (

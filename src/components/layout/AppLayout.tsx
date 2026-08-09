@@ -87,6 +87,13 @@ export function AppLayout() {
 
   const mobileNavigation = navigation.slice(0, 5);
 
+  // aria-modal alone does not stop a screen reader's virtual cursor from
+  // browsing the page behind the drawer, and the Tab trap does not cover
+  // pointer or rotor navigation. inert removes the background from both the
+  // tab order and the accessibility tree. React 18 has no typing for it and
+  // forwards an empty-string attribute as-is.
+  const backgroundInert = (isSidebarOpen ? { inert: '' } : {}) as { inert?: '' };
+
   return (
     <div className="coupon-master-app dashboard-shell" dir="rtl">
       <a className="skip-link" href="#main-content">דלג לתוכן הראשי</a>
@@ -94,10 +101,11 @@ export function AppLayout() {
         onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
         menuButtonRef={menuButtonRef}
         isSidebarOpen={isSidebarOpen}
+        {...backgroundInert}
       />
 
       <div className="dashboard-body">
-        <aside className="dashboard-sidebar hidden lg:flex">
+        <aside className="dashboard-sidebar hidden lg:flex" {...backgroundInert}>
           <nav className="dashboard-nav" aria-label="ניווט צדדי">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href ||
@@ -174,14 +182,14 @@ export function AppLayout() {
           </div>
         )}
 
-        <div className="dashboard-main-wrap">
+        <div className="dashboard-main-wrap" {...backgroundInert}>
             <main id="main-content" tabIndex={-1} className="dashboard-main">
             <Outlet />
           </main>
         </div>
       </div>
 
-      <nav className="dashboard-bottom-nav" aria-label="ניווט תחתון">
+      <nav className="dashboard-bottom-nav" aria-label="ניווט תחתון" {...backgroundInert}>
         {mobileNavigation.map((item) => {
           const isActive = location.pathname === item.href ||
                            (item.href !== '/' && location.pathname.startsWith(item.href));
