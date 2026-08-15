@@ -13,15 +13,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-.expo/
-ios/Pods/
-ios/build/
-android/.gradle/
-android/app/build/
-android/build/
 dist
-web-dist/
-web/.claude/
 dist-ssr
 *.local
 
