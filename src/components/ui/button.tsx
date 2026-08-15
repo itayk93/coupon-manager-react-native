@@ -1,56 +1,156 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+  Platform,
+} from "react-native";
+import * as Haptics from "expo-haptics";
+import { useAppTheme } from "@/contexts/ThemeContext";
 
-import { cn } from "@/lib/utils"
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "warning";
+type ButtonSize = "sm" | "md" | "lg";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
+type ButtonProps = {
+  title: string;
+  onPress: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
+  loading?: boolean;
+  icon?: React.ReactNode;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
+};
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+export function Button({
+  title,
+  onPress,
+  variant = "primary",
+  size = "md",
+  disabled = false,
+  loading = false,
+  icon,
+  style,
+  textStyle,
+}: ButtonProps) {
+  const { theme } = useAppTheme();
+
+  const handlePress = () => {
+    if (disabled || loading) return;
+    if (Platform.OS !== "web") {
+      Haptics.selectionAsync().catch(() => {});
+    }
+    onPress();
+  };
+
+  const getBackgroundColor = () => {
+    if (disabled) return theme.isDark ? "#334155" : "#e2e8f0";
+    switch (variant) {
+      case "primary":
+        return theme.primary;
+      case "secondary":
+        return theme.secondary;
+      case "danger":
+        return theme.danger;
+      case "warning":
+        return theme.warning;
+      case "outline":
+      case "ghost":
+        return "transparent";
+    }
+  };
+
+  const getTextColor = () => {
+    if (disabled) return theme.isDark ? "#64748b" : "#94a3b8";
+    switch (variant) {
+      case "primary":
+      case "secondary":
+      case "danger":
+      case "warning":
+        return "#ffffff";
+      case "outline":
+        return theme.isDark ? theme.text : theme.text;
+      case "ghost":
+        return theme.textMuted;
+    }
+  };
+
+  const getPadding = () => {
+    switch (size) {
+      case "sm":
+        return { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 };
+      case "lg":
+        return { paddingVertical: 16, paddingHorizontal: 24, borderRadius: 16 };
+      case "md":
+      default:
+        return { paddingVertical: 12, paddingHorizontal: 18, borderRadius: 12 };
+    }
+  };
+
+  const getFontSize = () => {
+    switch (size) {
+      case "sm":
+        return 13;
+      case "lg":
+        return 16;
+      case "md":
+      default:
+        return 14;
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={handlePress}
+      disabled={disabled || loading}
+      style={[
+        styles.base,
+        getPadding(),
+        {
+          backgroundColor: getBackgroundColor(),
+          borderColor: variant === "outline" ? theme.border : "transparent",
+          borderWidth: variant === "outline" ? 1.5 : 0,
+        },
+        style,
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator color={getTextColor()} size="small" />
+      ) : (
+        <>
+          <Text
+            style={[
+              styles.text,
+              {
+                color: getTextColor(),
+                fontSize: getFontSize(),
+              },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
+          {icon ? <>{icon}</> : null}
+        </>
+      )}
+    </TouchableOpacity>
+  );
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Button.displayName = "Button"
-
-export { Button, buttonVariants }
+const styles = StyleSheet.create({
+  base: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  text: {
+    fontWeight: "700",
+    textAlign: "center",
+  },
+});

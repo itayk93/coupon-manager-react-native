@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/integrations/supabase/client";
 
 export type LegacyUser = {
@@ -11,33 +12,35 @@ export type LegacyUser = {
 
 const SESSION_KEY = "coupon_master_legacy_session";
 
-export function getStoredLegacyUser(): LegacyUser | null {
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
-
+export async function getStoredLegacyUser(): Promise<LegacyUser | null> {
   try {
+    const raw = await AsyncStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
     return JSON.parse(raw) as LegacyUser;
   } catch {
-    localStorage.removeItem(SESSION_KEY);
+    await AsyncStorage.removeItem(SESSION_KEY);
     return null;
   }
 }
 
-export function storeLegacyUser(user: LegacyUser) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+export async function storeLegacyUser(user: LegacyUser): Promise<void> {
+  try {
+    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  } catch (error) {
+    console.error("Error saving user session:", error);
+  }
 }
 
-export function clearLegacyUser() {
-  localStorage.removeItem(SESSION_KEY);
+export async function clearLegacyUser(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(SESSION_KEY);
+  } catch (error) {
+    console.error("Error clearing user session:", error);
+  }
 }
 
 /**
  * Verifies credentials on the server and establishes a real Supabase session.
- *
- * The password hash is never sent to the browser: the legacy-login Edge
- * Function checks it with the service role and returns a one-time token, which
- * we exchange for a session. Every subsequent PostgREST request then carries a
- * signed JWT, which is what the RLS policies key off.
  */
 export async function signInLegacy(email: string, password: string): Promise<LegacyUser> {
   const normalizedEmail = email.trim().toLowerCase();
@@ -47,10 +50,8 @@ export async function signInLegacy(email: string, password: string): Promise<Leg
   });
 
   if (error) {
-    // Edge Function errors arrive as a generic FunctionsHttpError; the useful
-    // message is in the response body.
-    const detail = await error.context?.json?.().catch(() => null);
-    throw new Error(detail?.error ?? "ההתחברות נכשלה. נסה שוב.");
+    const detail = (error as any).context?.json ? await (error as any).context.json().catch(() => null) : null;
+    throw new Error(detail?.error ?? error.message ?? "ההתחברות נכשלה. נסה שוב.");
   }
   if (data?.error) throw new Error(data.error);
   if (!data?.token_hash) throw new Error("ההתחברות נכשלה. נסה שוב.");
@@ -61,6 +62,6 @@ export async function signInLegacy(email: string, password: string): Promise<Leg
   });
   if (otpError) throw new Error("ההתחברות נכשלה. נסה שוב.");
 
-  storeLegacyUser(data.user as LegacyUser);
+  await storeLegacyUser(data.user as LegacyUser);
   return data.user as LegacyUser;
 }

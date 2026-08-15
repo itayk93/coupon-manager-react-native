@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Coupon Master",
+    "slug": "coupon-master",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "couponmaster",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.itaykarkason.couponmaster",
+      "infoPlist": {
+        "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים."
+      },
+      "runtimeVersion": "1.0.0"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.itaykarkason.couponmaster",
+      "permissions": [
+        "CAMERA",
+        "NOTIFICATIONS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "CAMERA",
+        "NOTIFICATIONS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים."
+        }
+      ],
+      "expo-asset"
+    ],
+    "extra": {
+      "supabaseUrl": "https://dugjsiyenazpsoiyduuz.supabase.co",
+      "supabaseAnonKey": "REMOVED_PUBLIC_SUPABASE_ANON_KEY",
+      "encryptionKey": "REMOVED_PUBLIC_ENCRYPTION_KEY=",
+      "eas": {
+        "projectId": "864f975d-b0a6-4e41-888a-bb60b26ae1fe"
+      }
+    },
+    "owner": "itaykar",
+    "updates": {
+      "url": "https://u.expo.dev/864f975d-b0a6-4e41-888a-bb60b26ae1fe"
+    }
+  }
+}

@@ -1,18 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tag } from '@/integrations/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Tag } from "@/integrations/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { notify } from "@/lib/notify";
 
-// All tags in the system (shared across users, like the original design)
+// All tags in the system
 export function useTags() {
   return useQuery({
-    queryKey: ['tags'],
+    queryKey: ["tags"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('tag')
-        .select('*')
-        .order('count', { ascending: false });
+        .from("tag")
+        .select("*")
+        .order("count", { ascending: false });
 
       if (error) throw error;
       return data as Tag[];
@@ -23,22 +23,22 @@ export function useTags() {
 // Tag ids attached to a specific coupon
 export function useCouponTags(couponId: number | undefined) {
   return useQuery({
-    queryKey: ['coupon_tags', couponId],
+    queryKey: ["coupon_tags", couponId],
     queryFn: async () => {
       if (!couponId) return [];
       const { data: links, error: linksError } = await supabase
-        .from('coupon_tags')
-        .select('tag_id')
-        .eq('coupon_id', couponId);
+        .from("coupon_tags")
+        .select("tag_id")
+        .eq("coupon_id", couponId);
 
       if (linksError) throw linksError;
       const tagIds = Array.from(new Set((links || []).map((row) => row.tag_id)));
       if (tagIds.length === 0) return [];
 
       const { data: tags, error: tagsError } = await supabase
-        .from('tag')
-        .select('*')
-        .in('id', tagIds);
+        .from("tag")
+        .select("*")
+        .in("id", tagIds);
 
       if (tagsError) throw tagsError;
       return tags as Tag[];
@@ -50,15 +50,15 @@ export function useCouponTags(couponId: number | undefined) {
 async function getOrCreateTag(name: string): Promise<Tag> {
   const trimmed = name.trim();
   const { data: existing } = await supabase
-    .from('tag')
-    .select('*')
-    .eq('name', trimmed)
+    .from("tag")
+    .select("*")
+    .eq("name", trimmed)
     .maybeSingle();
 
   if (existing) return existing as Tag;
 
   const { data, error } = await supabase
-    .from('tag')
+    .from("tag")
     .insert({ name: trimmed, count: 0 })
     .select()
     .single();
@@ -67,7 +67,6 @@ async function getOrCreateTag(name: string): Promise<Tag> {
   return data as Tag;
 }
 
-// Replace the full set of tags on a coupon (add missing, remove dropped) and keep counts in sync
 export function useSetCouponTags() {
   const queryClient = useQueryClient();
 
@@ -75,17 +74,17 @@ export function useSetCouponTags() {
     mutationFn: async ({ couponId, tagNames }: { couponId: number; tagNames: string[] }) => {
       const names = Array.from(new Set(tagNames.map((n) => n.trim()).filter(Boolean)));
 
-      // Current links
       const { data: currentLinks, error: linksError } = await supabase
-        .from('coupon_tags')
-        .select('tag_id')
-        .eq('coupon_id', couponId);
+        .from("coupon_tags")
+        .select("tag_id")
+        .eq("coupon_id", couponId);
       if (linksError) throw linksError;
 
       const currentTagIds = Array.from(new Set((currentLinks || []).map((row) => row.tag_id)));
-      const { data: currentTagsData, error: currentTagsError } = currentTagIds.length > 0
-        ? await supabase.from('tag').select('id, name').in('id', currentTagIds)
-        : { data: [], error: null };
+      const { data: currentTagsData, error: currentTagsError } =
+        currentTagIds.length > 0
+          ? await supabase.from("tag").select("id, name").in("id", currentTagIds)
+          : { data: [], error: null };
       if (currentTagsError) throw currentTagsError;
 
       const currentTags = currentTagsData || [];
@@ -96,49 +95,48 @@ export function useSetCouponTags() {
       for (const name of names) {
         if (currentNames.has(name)) continue;
         const tag = await getOrCreateTag(name);
-        await supabase.from('coupon_tags').insert({ coupon_id: couponId, tag_id: tag.id });
-        await supabase.from('tag').update({ count: (tag.count || 0) + 1 }).eq('id', tag.id);
+        await supabase.from("coupon_tags").insert({ coupon_id: couponId, tag_id: tag.id });
+        await supabase.from("tag").update({ count: (tag.count || 0) + 1 }).eq("id", tag.id);
       }
 
       // Remove dropped tags
       for (const t of currentTags) {
         if (desiredNames.has(t.name)) continue;
-        await supabase.from('coupon_tags').delete().eq('coupon_id', couponId).eq('tag_id', t.id);
-        const { data: tagRow } = await supabase.from('tag').select('count').eq('id', t.id).single();
+        await supabase.from("coupon_tags").delete().eq("coupon_id", couponId).eq("tag_id", t.id);
+        const { data: tagRow } = await supabase.from("tag").select("count").eq("id", t.id).single();
         const newCount = Math.max(0, (tagRow?.count || 1) - 1);
-        await supabase.from('tag').update({ count: newCount }).eq('id', t.id);
+        await supabase.from("tag").update({ count: newCount }).eq("id", t.id);
       }
 
       return true;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      queryClient.invalidateQueries({ queryKey: ['coupon_tags', variables.couponId] });
-      queryClient.invalidateQueries({ queryKey: ['coupon_tags_map'] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      queryClient.invalidateQueries({ queryKey: ["coupon_tags", variables.couponId] });
+      queryClient.invalidateQueries({ queryKey: ["coupon_tags_map"] });
     },
     onError: (error: any) => {
-      toast.error(`שגיאה בעדכון התגיות: ${error.message}`);
+      notify.error("שגיאה בעדכון התגיות", error.message);
     },
   });
 }
 
-// Map of coupon_id -> tag names, for filtering the whole list at once
 export function useCouponTagsMap() {
   return useQuery({
-    queryKey: ['coupon_tags_map'],
+    queryKey: ["coupon_tags_map"],
     queryFn: async () => {
       const { data: links, error: linksError } = await supabase
-        .from('coupon_tags')
-        .select('coupon_id, tag_id');
+        .from("coupon_tags")
+        .select("coupon_id, tag_id");
 
       if (linksError) throw linksError;
       if (!links?.length) return {};
 
       const tagIds = Array.from(new Set(links.map((row) => row.tag_id)));
       const { data: tags, error: tagsError } = await supabase
-        .from('tag')
-        .select('id, name')
-        .in('id', tagIds);
+        .from("tag")
+        .select("id, name")
+        .in("id", tagIds);
 
       if (tagsError) throw tagsError;
       const tagNamesById = new Map((tags || []).map((tag) => [tag.id, tag.name]));
@@ -157,9 +155,9 @@ export function useCouponTagsMap() {
 export function useAdminTags() {
   const { isAdmin } = useAuth();
   return useQuery({
-    queryKey: ['admin_tags'],
+    queryKey: ["admin_tags"],
     queryFn: async () => {
-      const { data, error } = await supabase.from('tag').select('*').order('name');
+      const { data, error } = await supabase.from("tag").select("*").order("name");
       if (error) throw error;
       return data as Tag[];
     },
@@ -171,15 +169,15 @@ export function useRenameTag() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      const { error } = await supabase.from('tag').update({ name: name.trim() }).eq('id', id);
+      const { error } = await supabase.from("tag").update({ name: name.trim() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('התגית עודכנה');
-      queryClient.invalidateQueries({ queryKey: ['admin_tags'] });
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      notify.success("התגית עודכנה בהצלחה!");
+      queryClient.invalidateQueries({ queryKey: ["admin_tags"] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
-    onError: (e: any) => toast.error(`שגיאה: ${e.message}`),
+    onError: (e: any) => notify.error("שגיאה", e.message),
   });
 }
 
@@ -187,16 +185,16 @@ export function useDeleteTag() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      await supabase.from('coupon_tags').delete().eq('tag_id', id);
-      const { error } = await supabase.from('tag').delete().eq('id', id);
+      await supabase.from("coupon_tags").delete().eq("tag_id", id);
+      const { error } = await supabase.from("tag").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('התגית נמחקה');
-      queryClient.invalidateQueries({ queryKey: ['admin_tags'] });
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      queryClient.invalidateQueries({ queryKey: ['coupon_tags_map'] });
+      notify.success("התגית נמחקה בהצלחה!");
+      queryClient.invalidateQueries({ queryKey: ["admin_tags"] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      queryClient.invalidateQueries({ queryKey: ["coupon_tags_map"] });
     },
-    onError: (e: any) => toast.error(`שגיאה: ${e.message}`),
+    onError: (e: any) => notify.error("שגיאה", e.message),
   });
 }
