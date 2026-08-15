@@ -11,6 +11,8 @@
     "ios": "expo run:ios",
     "ios:device": "expo run:ios --device",
     "web": "expo start --web",
+    "web:build": "npm --prefix web run build",
+    "web:deploy": "npm run web:build && npx eas-cli deploy --prod --non-interactive --export-dir web/dist",
     "prebuild": "expo prebuild",
     "prebuild:clean": "expo prebuild --clean",
     "build:dev:ios": "eas build --profile development --platform ios",
