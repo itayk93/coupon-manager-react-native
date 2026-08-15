@@ -1,14 +1,16 @@
 const SUPABASE_STORAGE_URL = "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public";
 
 const logoByCompany: Record<string, string> = {
-  // Brand mappings
   carrefour: "carrefour.png",
   "קרפור": "carrefour.png",
   "מגה ספורט": "mega_sport.jpg",
   megasport: "mega_sport.jpg",
   goodpharm: "goodpharm.png",
+  "גוד פארם": "goodpharm.png",
   xtra: "xtra.png",
+  "אקסטרה": "xtra.png",
   buyme: "BuyMe.png",
+  "ביימי": "BuyMe.png",
   "dream card": "dream_card.jpg",
   "power gift": "power_gift.jpeg",
   "פולגת": "polgat.png",
@@ -26,11 +28,13 @@ const logoByCompany: Record<string, string> = {
   roladin: "roladin.png",
   "רולדין": "roladin.png",
   wolt: "Wolt.png",
+  "וולט": "Wolt.png",
   golda: "golda.png",
   "גולדה": "golda.png",
   "רמי לוי": "rami_levi.jpg",
   "קפה קפה": "cafe_cafe.png",
   laline: "Laline.png",
+  "ללין": "Laline.png",
   "א.ל.מ.": "alm.jpg",
   "אלמ": "alm.jpg",
   alm: "alm.jpg",
@@ -103,69 +107,41 @@ export function hasStaticLogo(company: string) {
 }
 
 export function getCompanyLogo(company: string) {
-  if (!company) return "/legacy-images/default.png";
-  const trimmed = company.trim();
-  const normalized = trimmed.toLowerCase();
-  const file = logoByCompany[normalized] || logoByCompany[trimmed];
-  if (file) return `/legacy-images/${file}`;
   return resolveCompanyLogo(company);
 }
 
-// Resolve the best available logo for a company:
-// 1. Admin-managed DB image_path (full URL or Supabase Storage bucket path)
-// 2. Bundled static preset map
-// 3. Google favicon service fallback
-export function resolveCompanyLogo(company: string, dbImagePath?: string | null) {
-  const trimmed = (company || '').trim();
+export function resolveCompanyLogo(company: string, dbImagePath?: string | null): string {
+  const trimmed = (company || "").trim();
 
-  if (dbImagePath && dbImagePath.trim() !== '' && dbImagePath !== 'default.png' && dbImagePath !== 'default_logo.png') {
+  if (dbImagePath && dbImagePath.trim() !== "" && dbImagePath !== "default.png" && dbImagePath !== "default_logo.png") {
     const cleanPath = dbImagePath.trim();
 
-    // Full URL (Supabase Storage public URL or external HTTPS)
     if (/^https?:\/\//i.test(cleanPath)) {
       return cleanPath;
     }
 
-    // Absolute or local legacy path
-    if (cleanPath.startsWith('/') || cleanPath.startsWith('legacy-images/')) {
-      return cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-    }
-
-    // Fix for db entries that have "images/" prefix
-    if (cleanPath.startsWith('images/')) {
-      return `/legacy-images/${cleanPath.replace('images/', '')}`;
-    }
-
-    // Supabase Storage path with bucket (e.g. logos/xxx.png or company-logos/xxx.png)
-    // Only use Supabase if we know it's a supabase path or if we want to default to it.
-    // However, since many existing DB entries are plain filenames (e.g. carrefour.png) 
-    // that exist in legacy-images, we should assume plain filenames are local unless they
-    // contain a bucket prefix other than 'images/'.
-    if (cleanPath.includes('/')) {
+    if (cleanPath.includes("/")) {
       return `${SUPABASE_STORAGE_URL}/${cleanPath}`;
     }
 
-    // Default plain filenames to legacy-images
-    return `/legacy-images/${cleanPath}`;
+    return `${SUPABASE_STORAGE_URL}/company-logos/${cleanPath}`;
   }
 
-  // Fallback to static preset logo
+  // Preset logo from database/storage
   if (hasStaticLogo(trimmed)) {
     const file = logoByCompany[trimmed.toLowerCase()] || logoByCompany[trimmed];
-    if (file && file !== 'default.png') {
-      return `/legacy-images/${file}`;
+    if (file && file !== "default.png") {
+      return `${SUPABASE_STORAGE_URL}/company-logos/${file}`;
     }
   }
 
-  // Fallback: Google favicon service only if an ASCII domain can be derived
+  // Fallback to Google Favicon service
   if (trimmed) {
-    const cleanDomain = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const cleanDomain = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "");
     if (cleanDomain.length >= 2) {
-      const guessDomain = `${cleanDomain}.co.il`;
-      return `https://www.google.com/s2/favicons?domain=${guessDomain}&sz=64`;
+      return `https://www.google.com/s2/favicons?domain=${cleanDomain}.co.il&sz=128`;
     }
   }
 
-  return "/legacy-images/default.png";
+  return "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public/company-logos/default.png";
 }
-

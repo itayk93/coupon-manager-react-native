@@ -8,6 +8,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+/** Legacy notifications were stored in English by the previous app. Translate on display. */
+const LEGACY_MESSAGES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
+  [/^You now have access to (.+) coupon$/, (m) => `קיבלת גישה לקופון ${m[1]}`],
+  [/^Access to (.+) coupon was revoked$/, (m) => `הגישה לקופון ${m[1]} בוטלה`],
+  [/^You revoked access to (.+) coupon$/, (m) => `ביטלת את הגישה לקופון ${m[1]}`],
+  [/^(.+) accepted your shared coupon$/, (m) => `${m[1]} אישר/ה את הקופון ששיתפת`],
+];
+
+function translateMessage(message: string) {
+  for (const [pattern, format] of LEGACY_MESSAGES) {
+    const match = message.match(pattern);
+    if (match) return format(match);
+  }
+  return message;
+}
+
 export default function Notifications() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -130,7 +146,7 @@ export default function Notifications() {
                 <Card key={notification.id} className="notification-card">
                   <CardContent className="notification-content">
                     <div className="notification-message">
-                      <p className="notification-text">{notification.message}</p>
+                      <p className="notification-text">{translateMessage(notification.message)}</p>
                       <div className="notification-meta">
                         <div className="notification-timestamp">
                           <Clock className="h-4 w-4" />

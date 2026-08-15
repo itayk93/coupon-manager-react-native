@@ -1,27 +1,27 @@
-import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { notify } from "@/lib/notify";
 
 export const FEATURE_KEYS = [
-  'dashboard',
-  'coupons',
-  'bulk_import',
-  'bulk_delete',
-  'auto_update',
-  'statistics',
-  'sharing',
-  'notifications',
-  'profile',
-  'settings',
-  'onboarding',
-  'ai_parse',
-  'admin',
+  "dashboard",
+  "coupons",
+  "bulk_import",
+  "bulk_delete",
+  "auto_update",
+  "statistics",
+  "sharing",
+  "notifications",
+  "profile",
+  "settings",
+  "onboarding",
+  "ai_parse",
+  "admin",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
-type AccessMode = 'all' | 'admin' | 'disabled';
+type AccessMode = "all" | "admin" | "disabled";
 
 type FeatureOverrideRow = {
   id: number;
@@ -35,20 +35,20 @@ function isFeatureKey(value: string): value is FeatureKey {
 }
 
 function resolveGlobalAccess(accessMode: string | null | undefined, isAdmin: boolean) {
-  const mode = (accessMode ?? 'all') as AccessMode;
-  if (mode === 'disabled') return false;
-  if (mode === 'admin') return isAdmin;
+  const mode = (accessMode ?? "all") as AccessMode;
+  if (mode === "disabled") return false;
+  if (mode === "admin") return isAdmin;
   return true;
 }
 
 export function useFeatureCatalog() {
   return useQuery({
-    queryKey: ['feature_catalog'],
+    queryKey: ["feature_catalog"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('feature_access')
-        .select('*')
-        .order('feature_name', { ascending: true });
+        .from("feature_access")
+        .select("*")
+        .order("feature_name", { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -57,14 +57,14 @@ export function useFeatureCatalog() {
 
 export function useUserFeatureOverrides(targetUserId?: number) {
   return useQuery({
-    queryKey: ['user_feature_overrides', targetUserId],
+    queryKey: ["user_feature_overrides", targetUserId],
     queryFn: async () => {
       if (!targetUserId) return [];
       const { data, error } = await supabase
-        .from('user_feature_overrides' as any)
-        .select('*')
-        .eq('user_id', targetUserId)
-        .order('feature_key', { ascending: true });
+        .from("user_feature_overrides" as any)
+        .select("*")
+        .eq("user_id", targetUserId)
+        .order("feature_key", { ascending: true });
       if (error) throw error;
       return (data ?? []) as FeatureOverrideRow[];
     },
@@ -113,19 +113,19 @@ export function useUpsertFeatureAccess() {
   return useMutation({
     mutationFn: async ({ featureName, accessMode }: { featureName: FeatureKey; accessMode: AccessMode }) => {
       const { error } = await supabase
-        .from('feature_access')
+        .from("feature_access")
         .upsert(
           { feature_name: featureName, access_mode: accessMode },
-          { onConflict: 'feature_name' }
+          { onConflict: "feature_name" }
         );
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('ברירת המחדל לפיצ׳ר נשמרה');
-      queryClient.invalidateQueries({ queryKey: ['feature_catalog'] });
+      notify.success("ברירת המחדל לפיצ׳ר נשמרה");
+      queryClient.invalidateQueries({ queryKey: ["feature_catalog"] });
     },
     onError: (error: any) => {
-      toast.error(`שגיאה בשמירת פיצ׳ר: ${error.message}`);
+      notify.error("שגיאה בשמירת פיצ׳ר", error.message);
     },
   });
 }
@@ -144,7 +144,7 @@ export function useUpsertUserFeatureOverride() {
       isEnabled: boolean;
     }) => {
       const { error } = await supabase
-        .from('user_feature_overrides' as any)
+        .from("user_feature_overrides" as any)
         .upsert(
           {
             user_id: userId,
@@ -152,16 +152,16 @@ export function useUpsertUserFeatureOverride() {
             is_enabled: isEnabled,
             updated_at: new Date().toISOString(),
           },
-          { onConflict: 'user_id,feature_key' }
+          { onConflict: "user_id,feature_key" }
         );
       if (error) throw error;
     },
     onSuccess: (_data, variables) => {
-      toast.success('הרשאת הפיצ׳ר נשמרה');
-      queryClient.invalidateQueries({ queryKey: ['user_feature_overrides', variables.userId] });
+      notify.success("הרשאת הפיצ׳ר נשמרה");
+      queryClient.invalidateQueries({ queryKey: ["user_feature_overrides", variables.userId] });
     },
     onError: (error: any) => {
-      toast.error(`שגיאה בשמירת הרשאה: ${error.message}`);
+      notify.error("שגיאה בשמירת הרשאה", error.message);
     },
   });
 }

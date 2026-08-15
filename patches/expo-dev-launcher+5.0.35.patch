@@ -1,0 +1,26 @@
+diff --git a/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m b/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m
+index 03a78a1..1d4739a 100644
+--- a/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m
++++ b/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m
+@@ -788,7 +788,10 @@
+   // the `u.expo.dev` determines that it is the modern manifest protocol
+   NSString *projectUrl = @"";
+   if (_updatesInterface) {
+-    projectUrl = [constants valueForKeyPath:@"manifest.updates.url"];
++    id projectUrlValue = [constants valueForKeyPath:@"manifest.updates.url"];
++    if ([projectUrlValue isKindOfClass:[NSString class]]) {
++      projectUrl = projectUrlValue;
++    }
+   }
+ 
+   NSURL *url = [NSURL URLWithString:projectUrl];
+@@ -796,7 +799,8 @@
+   BOOL isModernManifestProtocol = [[url host] isEqualToString:@"u.expo.dev"] || [[url host] isEqualToString:@"staging-u.expo.dev"];
+   BOOL expoUpdatesInstalled = EXDevLauncherController.sharedInstance.updatesInterface != nil;
+ 
+-  NSString *appId = [constants valueForKeyPath:@"manifest.extra.eas.projectId"] ?: @"";
++  id appIdValue = [constants valueForKeyPath:@"manifest.extra.eas.projectId"];
++  NSString *appId = [appIdValue isKindOfClass:[NSString class]] ? appIdValue : @"";
+   BOOL hasAppId = appId.length > 0;
+ 
+   BOOL usesEASUpdates = isModernManifestProtocol && expoUpdatesInstalled && hasAppId;

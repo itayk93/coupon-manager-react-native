@@ -1,16 +1,42 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
     "allowJs": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "paths": { "@/*": ["./src/*"] },
     "skipLibCheck": true,
-    "strictNullChecks": false
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "include": [
+    "App.tsx",
+    "index.ts",
+    "src/declarations.d.ts",
+    "src/components/**/*",
+    "src/contexts/**/*",
+    "src/hooks/**/*",
+    "src/integrations/**/*",
+    "src/lib/**/*",
+    "src/navigation/**/*",
+    "src/screens/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "supabase",
+    "tests",
+    "playwright",
+    "src/pages"
+  ],
+  "extends": "expo/tsconfig.base"
 }

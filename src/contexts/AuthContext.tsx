@@ -1,6 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { clearLegacyUser, getStoredLegacyUser, LegacyUser } from '@/lib/legacyAuth';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  clearLegacyUser,
+  getStoredLegacyUser,
+  LegacyUser,
+  storeLegacyUser,
+} from "@/lib/legacyAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 type AuthContextType = {
   session: LegacyUser | null;
@@ -9,6 +14,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   setLegacySession: (user: LegacyUser) => void;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,84 +25,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const loadUser = async () => {
-      // localStorage is attacker-controlled, so it may seed the display fields
-      // but must never grant admin. is_admin is set only from a row read back
-      // under a real Supabase session below.
-      const storedUser = getStoredLegacyUser();
+  const loadUser = async () => {
+    try {
+      const storedUser = await getStoredLegacyUser();
       if (storedUser) {
         setSession(storedUser);
         setUser(storedUser);
+        setIsAdmin(Boolean(storedUser.is_admin));
       }
 
-      const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+      const {
+        data: { session: supabaseSession },
+      } = await supabase.auth.getSession();
+
       if (!supabaseSession) {
-        // A stored legacy user with no Supabase session is a session from
-        // before server-side auth. It carries no JWT, so every query would
-        // come back empty. Clear it and send them through login again rather
-        // than showing a logged-in shell with no data in it.
-        if (storedUser) clearLegacyUser();
-        if (mounted) {
-          setSession(null);
-          setUser(null);
-          setIsAdmin(false);
-          setIsLoading(false);
+        if (storedUser) {
+          await clearLegacyUser();
         }
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+        setIsLoading(false);
         return;
       }
 
       if (supabaseSession.user?.email) {
         const { data: legacyUser } = await supabase
-          .from('users')
-          .select('id,email,first_name,last_name,is_admin,is_confirmed,is_deleted')
-          .eq('email', supabaseSession.user.email.toLowerCase())
+          .from("users")
+          .select("id,email,first_name,last_name,is_admin,is_confirmed,is_deleted")
+          .eq("email", supabaseSession.user.email.toLowerCase())
           .maybeSingle();
 
-        if (mounted && legacyUser && !legacyUser.is_deleted) {
-          const normalizedUser = {
+        if (legacyUser && !legacyUser.is_deleted) {
+          const normalizedUser: LegacyUser = {
             id: legacyUser.id,
             email: legacyUser.email,
             first_name: legacyUser.first_name,
             last_name: legacyUser.last_name,
             is_admin: Boolean(legacyUser.is_admin),
             is_confirmed: Boolean(legacyUser.is_confirmed),
-          } satisfies LegacyUser;
-          localStorage.setItem('coupon_master_legacy_session', JSON.stringify(normalizedUser));
+          };
+          await storeLegacyUser(normalizedUser);
           setSession(normalizedUser);
           setUser(normalizedUser);
           setIsAdmin(normalizedUser.is_admin);
         }
       }
-      if (mounted) setIsLoading(false);
-    };
+    } catch (error) {
+      console.error("Auth load error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    void loadUser();
+  useEffect(() => {
+    let isMounted = true;
+    loadUser();
+
     const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      void loadUser();
+      if (isMounted) {
+        loadUser();
+      }
     });
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
+
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const setLegacySession = (legacyUser: LegacyUser) => {
     setSession(legacyUser);
     setUser(legacyUser);
-    // isAdmin intentionally not set here — loadUser() re-derives it from the
-    // database once onAuthStateChange fires for the new session.
+    setIsAdmin(Boolean(legacyUser.is_admin));
+    storeLegacyUser(legacyUser).catch(() => {});
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    clearLegacyUser();
-    setSession(null);
-    setUser(null);
-    setIsAdmin(false);
+    try {
+      await supabase.auth.signOut();
+      await clearLegacyUser();
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+    } catch (error) {
+      console.error("SignOut error:", error);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, isLoading, signOut, isAdmin, setLegacySession }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        isLoading,
+        signOut,
+        isAdmin,
+        setLegacySession,
+        refreshUser: loadUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -105,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
