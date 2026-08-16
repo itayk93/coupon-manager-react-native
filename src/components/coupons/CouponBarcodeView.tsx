@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     width: "100%",
     borderWidth: 1,
-    borderColor: palette.darkInputBorder,
+    borderColor: "rgba(255,255,255,0.12)",
   },
   codeDigits: {
     color: palette.success,
