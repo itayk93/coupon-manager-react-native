@@ -472,19 +472,24 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   chipRow: {
+    // An explicit height is required: inside a flex:1 column with the coupon
+    // list as a sibling, an auto-height horizontal ScrollView gets squashed to
+    // a few pixels and the chips render clipped on top of each other.
+    height: 38,
     flexGrow: 0,
-    marginBottom: 14,
+    flexShrink: 0,
+    marginBottom: 12,
   },
   chipRowContent: {
     // row-reverse puts the first chip on the right, as Hebrew expects, while
     // the ScrollView still pans both ways.
     flexDirection: "row-reverse",
+    alignItems: "center",
     gap: 8,
     paddingHorizontal: 2,
-    alignItems: "center",
   },
   tagChip: {
-    height: 36,
+    height: 34,
     justifyContent: "center",
     paddingHorizontal: 16,
     borderRadius: radii.pill,
