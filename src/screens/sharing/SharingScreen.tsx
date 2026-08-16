@@ -421,6 +421,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   companyTitle: {
+    fontFamily: fonts.display,
     fontSize: 15,
     fontWeight: "800",
   },

@@ -26,6 +26,7 @@ import {
 import { Header } from "@/components/ui/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function SettingsScreen() {
@@ -324,6 +325,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
+    fontFamily: fonts.display,
     fontSize: 13,
     fontWeight: "700",
     textAlign: "right",

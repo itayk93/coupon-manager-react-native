@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 
 type StatsModalProps = {
   visible: boolean;
@@ -227,10 +228,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   kpiValue: {
+    fontFamily: fonts.display,
     fontSize: 18,
     fontWeight: "900",
   },
   breakdownTitle: {
+    fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",
     textAlign: "right",
@@ -261,6 +264,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   companyTitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -272,6 +276,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   companyCount: {
+    fontFamily: fonts.bodyBold,
     fontSize: 11,
     marginTop: 2,
   },

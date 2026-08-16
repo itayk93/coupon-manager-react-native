@@ -179,11 +179,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   brandTitle: {
+    fontFamily: fonts.display,
     fontSize: 24,
     fontWeight: "900",
     textAlign: "center",
   },
   brandSubtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     textAlign: "center",
     marginTop: 4,
@@ -204,6 +206,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   sentTitle: {
+    fontFamily: fonts.display,
     fontSize: 18,
     fontWeight: "800",
     marginBottom: 8,

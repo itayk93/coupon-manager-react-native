@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function IssuesScreen() {
@@ -133,11 +134,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
   },
   subtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     textAlign: "center",
   },

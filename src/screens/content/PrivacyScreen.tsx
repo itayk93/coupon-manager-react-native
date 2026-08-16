@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { Lock, Shield } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 
 export function PrivacyScreen() {
   const router = useRouter();
@@ -86,11 +87,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
   },
   sectionHeading: {
+    fontFamily: fonts.display,
     fontSize: 15,
     fontWeight: "700",
     textAlign: "right",

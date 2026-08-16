@@ -24,6 +24,7 @@ import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { useParseCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function BarcodeScannerScreen() {
@@ -308,12 +309,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   permissionTitle: {
+    fontFamily: fonts.display,
     fontSize: 18,
     fontWeight: "800",
     marginTop: 16,
     marginBottom: 6,
   },
   permissionSubtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     textAlign: "center",
     maxWidth: 240,
@@ -405,10 +408,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   aiTitle: {
+    fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",
   },
   aiSubtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     marginBottom: 14,
     textAlign: "right",

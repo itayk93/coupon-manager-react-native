@@ -41,6 +41,7 @@ import {
 } from "@/hooks/useCouponUsage";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 function formatIls(value: number) {
@@ -483,6 +484,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   companyMainTitle: {
+    fontFamily: fonts.display,
     fontSize: 19,
     fontWeight: "900",
   },
@@ -521,10 +523,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   gaugeVal: {
+    fontFamily: fonts.display,
     fontSize: 15,
     fontWeight: "800",
   },
   gaugeValHighlight: {
+    fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "900",
   },
@@ -578,6 +582,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
+    fontFamily: fonts.display,
     fontSize: 15,
     fontWeight: "800",
   },
@@ -603,6 +608,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   historyAmount: {
+    fontFamily: fonts.display,
     fontSize: 14,
     fontWeight: "800",
   },
