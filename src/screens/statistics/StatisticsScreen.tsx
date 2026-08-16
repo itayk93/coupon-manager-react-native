@@ -452,6 +452,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 99,
     overflow: "hidden",
+    flexDirection: "row-reverse",
   },
   catFill: {
     height: "100%",

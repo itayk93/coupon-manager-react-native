@@ -479,15 +479,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   tagsSlider: {
-    marginBottom: 10,
+    flexGrow: 0,
+    height: 40,
+    marginBottom: 14,
   },
   tagsContent: {
-    gap: 6,
+    gap: 8,
     paddingHorizontal: 2,
+    alignItems: "center",
   },
   tagChip: {
+    height: 36,
+    justifyContent: "center",
     paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: radii.pill,
     borderWidth: 1,
   },

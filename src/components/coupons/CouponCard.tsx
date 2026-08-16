@@ -282,6 +282,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: radii.pill,
     overflow: "hidden",
+    flexDirection: "row-reverse",
   },
   fill: {
     height: "100%",

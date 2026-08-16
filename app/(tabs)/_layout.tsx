@@ -26,8 +26,8 @@ export default function TabsLayout() {
           backgroundColor: theme.card,
           borderTopColor: theme.cardBorder,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 88 : 72,
-          paddingBottom: Platform.OS === "ios" ? 26 : 12,
+          height: Platform.OS === "ios" ? 92 : 84,
+          paddingBottom: Platform.OS === "ios" ? 28 : 18,
           paddingTop: 10,
           elevation: 0,
         },
@@ -83,7 +83,8 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: "800",
     // Hebrew descenders were being clipped at the default line height.
-    lineHeight: 14,
-    marginTop: 2,
+    lineHeight: 15,
+    marginTop: 3,
+    paddingBottom: 2,
   },
 });

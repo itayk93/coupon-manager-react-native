@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Bell } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,20 +46,16 @@ export function AppHeader() {
           activeOpacity={0.8}
           style={styles.brand}
         >
-          <View style={styles.mark} />
+          <LinearGradient
+            colors={[palette.primary, palette.primaryLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.mark}
+          />
           <Text style={styles.brandText}>קופון מאסטר</Text>
         </TouchableOpacity>
 
         <View style={styles.actions}>
-          <TouchableOpacity
-            onPress={() => router.push("/profile")}
-            activeOpacity={0.8}
-            style={styles.avatar}
-            accessibilityLabel="פרופיל"
-          >
-            <Text style={styles.avatarText}>{initials}</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => router.push("/notifications")}
             activeOpacity={0.8}
@@ -68,6 +65,15 @@ export function AppHeader() {
             <Bell size={21} color="#ffffff" strokeWidth={1.8} />
             {hasUnread ? <View style={styles.dot} /> : null}
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/profile")}
+            activeOpacity={0.8}
+            style={styles.avatar}
+            accessibilityLabel="פרופיל"
+          >
+            <Text style={styles.avatarText}>{initials}</Text>
+          </TouchableOpacity>
+
         </View>
       </View>
     </View>
@@ -94,7 +100,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 9,
-    backgroundColor: palette.primary,
   },
   brandText: {
     fontFamily: fonts.display,
