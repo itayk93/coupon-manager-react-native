@@ -54,21 +54,6 @@ export const palette = {
   // The app chrome is intentionally dark in both modes
   headerBg: "#15202e",
 
-  // Dark surfaces, re-derived from the brand blue
-  darkBg: "#0d1520",
-  darkCard: "#15202e",
-  darkCardBorder: "#22303f",
-  darkSurface: "#1b2836",
-  darkTrack: "#22303f",
-  darkDivider: "#22303f",
-  darkInput: "#1b2836",
-  darkInputBorder: "#2b3a4b",
-  darkText: "#f5f7fa",
-  darkTextSecondary: "#c2cbd6",
-  darkTextMuted: "#94a3b8",
-  darkTextSubtle: "#6b7c8f",
-  darkLabel: "#dbe2ea",
-
   white: "#ffffff",
   black: "#000000",
   transparent: "transparent",
@@ -97,37 +82,38 @@ export const radii = {
 
 export type ThemeMode = "dark" | "light";
 
-export function getTheme(mode: ThemeMode) {
-  const isDark = mode === "dark";
+export function getTheme(_mode: ThemeMode) {
+  // "Coupon Master - Redesign" defines a single light system. `isDark` is kept
+  // (always false) so consumers that read it keep compiling.
   return {
-    isDark,
+    isDark: false,
 
     // Surfaces
-    background: isDark ? palette.darkBg : palette.lightBg,
-    shell: isDark ? palette.darkBg : palette.lightShell,
-    card: isDark ? palette.darkCard : palette.lightCard,
-    cardBorder: isDark ? palette.darkCardBorder : palette.lightCardBorder,
-    surface: isDark ? palette.darkSurface : palette.lightSurface,
-    surfaceAlt: isDark ? palette.darkSurface : palette.lightSurfaceAlt,
-    track: isDark ? palette.darkTrack : palette.lightTrack,
-    divider: isDark ? palette.darkDivider : palette.lightDivider,
-    inputBg: isDark ? palette.darkInput : palette.lightInput,
-    inputBorder: isDark ? palette.darkInputBorder : palette.lightInputBorder,
+    background: palette.lightBg,
+    shell: palette.lightShell,
+    card: palette.lightCard,
+    cardBorder: palette.lightCardBorder,
+    surface: palette.lightSurface,
+    surfaceAlt: palette.lightSurfaceAlt,
+    track: palette.lightTrack,
+    divider: palette.lightDivider,
+    inputBg: palette.lightInput,
+    inputBorder: palette.lightInputBorder,
     headerBg: palette.headerBg,
 
     // Type
-    text: isDark ? palette.darkText : palette.lightText,
-    textSecondary: isDark ? palette.darkTextSecondary : palette.lightTextSecondary,
-    textMuted: isDark ? palette.darkTextMuted : palette.lightTextMuted,
-    textSubtle: isDark ? palette.darkTextSubtle : palette.lightTextSubtle,
-    label: isDark ? palette.darkLabel : palette.lightLabel,
+    text: palette.lightText,
+    textSecondary: palette.lightTextSecondary,
+    textMuted: palette.lightTextMuted,
+    textSubtle: palette.lightTextSubtle,
+    label: palette.lightLabel,
 
     // Brand
     primary: palette.primary,
     primaryDark: palette.primaryDark,
     primaryDeep: palette.primaryDeep,
     primaryLight: palette.primaryLight,
-    primaryTint: isDark ? "rgba(31, 111, 209, 0.18)" : palette.primaryTint,
+    primaryTint: palette.primaryTint,
     primaryMuted: palette.primaryMuted,
     secondary: palette.secondary,
     accent: palette.accent,
@@ -135,19 +121,19 @@ export function getTheme(mode: ThemeMode) {
 
     // Status
     success: palette.success,
-    successBg: isDark ? "rgba(22, 163, 74, 0.18)" : palette.successBg,
-    successText: isDark ? "#4ade80" : palette.successText,
+    successBg: palette.successBg,
+    successText: palette.successText,
     warning: palette.warning,
-    warningBg: isDark ? "rgba(245, 158, 11, 0.18)" : palette.warningBg,
-    warningText: isDark ? "#fbbf24" : palette.warningText,
+    warningBg: palette.warningBg,
+    warningText: palette.warningText,
     danger: palette.danger,
-    dangerBg: isDark ? "rgba(220, 38, 38, 0.18)" : palette.dangerBg,
-    dangerBorder: isDark ? "rgba(220, 38, 38, 0.35)" : palette.dangerBorder,
-    dangerText: isDark ? "#f87171" : palette.dangerText,
-    neutralBg: isDark ? palette.darkSurface : palette.neutralBg,
-    neutralText: isDark ? palette.darkTextMuted : palette.neutralText,
+    dangerBg: palette.dangerBg,
+    dangerBorder: palette.dangerBorder,
+    dangerText: palette.dangerText,
+    neutralBg: palette.neutralBg,
+    neutralText: palette.neutralText,
 
-    border: isDark ? palette.darkCardBorder : palette.lightCardBorder,
+    border: palette.lightCardBorder,
   };
 }
 

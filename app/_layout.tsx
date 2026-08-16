@@ -3,7 +3,6 @@ import { ActivityIndicator, I18nManager, Platform, StyleSheet, View } from "reac
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import {
-  DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
   Stack,
   ThemeProvider,
@@ -90,7 +89,7 @@ function useAuthGuard() {
 }
 
 function RootLayoutNav() {
-  const { isDark, theme } = useAppTheme();
+  const { theme } = useAppTheme();
   const { isReady: authReady } = useAuthGuard();
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
@@ -113,13 +112,13 @@ function RootLayoutNav() {
     }
   }, [isReady]);
 
-  const navigationBaseTheme = isDark ? NavigationDarkTheme : NavigationDefaultTheme;
+  const navigationBaseTheme = NavigationDefaultTheme;
 
   return (
     <ThemeProvider
       value={{
         ...navigationBaseTheme,
-        dark: isDark,
+        dark: false,
         fonts: navigationBaseTheme.fonts ?? navigationFonts,
         colors: {
           primary: theme.primary,
@@ -131,7 +130,7 @@ function RootLayoutNav() {
         },
       }}
     >
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerShown: false,
