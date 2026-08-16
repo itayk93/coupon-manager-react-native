@@ -22,7 +22,6 @@ import {
   Lock,
   Share2,
 } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
@@ -51,7 +50,7 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="הגדרות וחשבון" />
+      <Text style={[styles.pageTitle, { color: theme.text }]}>חשבון</Text>
 
       <ScrollView
         style={styles.container}
@@ -251,6 +250,15 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  pageTitle: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "right",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 4,
+  },
   safeArea: {
     flex: 1,
   },

@@ -20,11 +20,11 @@ import {
   Sparkles,
   QrCode,
 } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponTagsMap } from "@/hooks/useTags";
+import { getCompanyCategory } from "@/lib/companyLogos";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
@@ -46,8 +46,17 @@ export function CouponsListScreen() {
     params.initialFilterTag || null
   );
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("active");
+  const [category, setCategory] = useState<string>("all");
+  const [showStatusRow, setShowStatusRow] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
+
+  // Category chips, from the redesign. Only categories actually present show up.
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    coupons.forEach((c) => set.add(getCompanyCategory(c.company || "")));
+    return ["all", ...Array.from(set).sort()];
+  }, [coupons]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -66,6 +75,10 @@ export function CouponsListScreen() {
         (coupon.code || "").toLowerCase().includes(term);
 
       if (!matchSearch) return false;
+
+      if (category !== "all" && getCompanyCategory(coupon.company || "") !== category) {
+        return false;
+      }
 
       // Tag filter
       if (selectedTag) {
@@ -90,7 +103,7 @@ export function CouponsListScreen() {
       }
       return true; // "all"
     });
-  }, [coupons, search, selectedTag, statusFilter, tagsMap]);
+  }, [coupons, search, selectedTag, statusFilter, tagsMap, category]);
 
   const toggleSelect = (id: number) => {
     if (selectedIds.includes(id)) {
@@ -118,43 +131,51 @@ export function CouponsListScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header
-        title="הקופונים שלי"
-        rightAction={
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={() => triggerAutoUpdate.mutate(undefined)}
-              disabled={triggerAutoUpdate.isPending}
-              style={[
-                styles.iconBtn,
-                { backgroundColor: theme.surfaceAlt },
-              ]}
-            >
-              <RefreshCw
-                size={18}
-                color={theme.text}
-                style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
-              />
-            </TouchableOpacity>
+      <View style={styles.titleRow}>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>הקופונים שלי</Text>
 
-            <TouchableOpacity
-              onPress={() => router.push("/scanner")}
-              accessibilityLabel="סריקת קוד קופון"
-              style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <QrCode size={18} color={theme.text} />
-            </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => triggerAutoUpdate.mutate(undefined)}
+            disabled={triggerAutoUpdate.isPending}
+            style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
+            accessibilityLabel="עדכון יתרות"
+          >
+            <RefreshCw
+              size={18}
+              color={theme.text}
+              style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
+            />
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push("/coupons/add")}
-              style={[styles.addBtn, { backgroundColor: theme.primary }]}
-            >
-              <Plus size={18} color="#ffffff" />
-              <Text style={styles.addBtnText}>קופון חדש</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+          <TouchableOpacity
+            onPress={() => setShowStatusRow((v) => !v)}
+            accessibilityLabel="סינון לפי סטטוס"
+            style={[
+              styles.iconBtn,
+              { backgroundColor: showStatusRow ? theme.primaryTint : theme.surfaceAlt },
+            ]}
+          >
+            <SlidersHorizontal size={18} color={showStatusRow ? theme.primary : theme.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/scanner")}
+            accessibilityLabel="סריקת קוד קופון"
+            style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
+          >
+            <QrCode size={18} color={theme.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/coupons/add")}
+            style={[styles.addBtn, { backgroundColor: theme.primary }]}
+          >
+            <Plus size={16} color="#ffffff" />
+            <Text style={styles.addBtnText}>קופון חדש</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <View style={styles.container}>
         {/* Search Bar */}
@@ -183,23 +204,22 @@ export function CouponsListScreen() {
           />
         </View>
 
-        {/* Status Filter Tabs */}
-        <View style={styles.statusTabsRow}>
-          {(
-            [
-              { key: "active", label: "פעילים" },
-              { key: "used", label: "נוצלו" },
-              { key: "expired", label: "פגי תוקף" },
-              { key: "all", label: "הכל" },
-            ] as const
-          ).map((tab) => {
-            const isCurrent = statusFilter === tab.key;
+        {/* Category chips */}
+        <FlatList
+          data={categories}
+          horizontal
+          inverted
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item: string) => item}
+          style={styles.tagsSlider}
+          contentContainerStyle={styles.tagsContent}
+          renderItem={({ item }: { item: string }) => {
+            const isCurrent = category === item;
             return (
               <TouchableOpacity
-                key={tab.key}
-                onPress={() => setStatusFilter(tab.key)}
+                onPress={() => setCategory(item)}
                 style={[
-                  styles.statusTab,
+                  styles.tagChip,
                   {
                     backgroundColor: isCurrent ? theme.primary : theme.card,
                     borderColor: isCurrent ? theme.primary : theme.inputBorder,
@@ -208,16 +228,54 @@ export function CouponsListScreen() {
               >
                 <Text
                   style={[
-                    styles.statusTabText,
+                    styles.tagChipText,
                     { color: isCurrent ? "#ffffff" : theme.label },
                   ]}
                 >
-                  {tab.label}
+                  {item === "all" ? "הכל" : item}
                 </Text>
               </TouchableOpacity>
             );
-          })}
-        </View>
+          }}
+        />
+
+        {/* Status filter, revealed from the header's filter button */}
+        {showStatusRow ? (
+          <View style={styles.statusTabsRow}>
+            {(
+              [
+                { key: "active", label: "פעילים" },
+                { key: "used", label: "נוצלו" },
+                { key: "expired", label: "פגי תוקף" },
+                { key: "all", label: "הכל" },
+              ] as const
+            ).map((tab) => {
+              const isCurrent = statusFilter === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setStatusFilter(tab.key)}
+                  style={[
+                    styles.statusTab,
+                    {
+                      backgroundColor: isCurrent ? theme.primary : theme.card,
+                      borderColor: isCurrent ? theme.primary : theme.inputBorder,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusTabText,
+                      { color: isCurrent ? "#ffffff" : theme.label },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
 
         {/* Tag Filter Chips (if tags exist) */}
         {allTags.length > 0 ? (
@@ -338,6 +396,22 @@ export function CouponsListScreen() {
 }
 
 const styles = StyleSheet.create({
+  titleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 12,
+  },
+  pageTitle: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "right",
+  },
   safeArea: {
     flex: 1,
   },

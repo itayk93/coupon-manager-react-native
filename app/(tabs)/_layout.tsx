@@ -1,6 +1,7 @@
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router/js-tabs";
 import { BarChart3, Home, Share2, Ticket, User } from "lucide-react-native";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -14,7 +15,9 @@ export default function TabsLayout() {
   const { theme } = useAppTheme();
 
   return (
-    <Tabs
+    <View style={[styles.shell, { backgroundColor: theme.background }]}>
+      <AppHeader />
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
@@ -66,11 +69,15 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <User color={color} size={20} strokeWidth={1.8} />,
         }}
       />
-    </Tabs>
+      </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+  },
   label: {
     fontFamily: fonts.bodyBold,
     fontSize: 10.5,
