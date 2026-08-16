@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function ForgotPasswordScreen() {
@@ -189,10 +190,10 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: radii.sheet,
     padding: 22,
     borderWidth: 1,
-    shadowColor: "#000",
+    shadowColor: "#101828",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

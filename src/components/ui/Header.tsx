@@ -61,7 +61,7 @@ export function Header({
                 ]}
               >
                 {isDark ? (
-                  <Sun size={18} color="#fbbf24" />
+                  <Sun size={18} color={theme.warningText} />
                 ) : (
                   <Moon size={18} color={theme.textMuted} />
                 )}

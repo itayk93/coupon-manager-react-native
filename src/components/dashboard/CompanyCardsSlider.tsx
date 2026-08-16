@@ -1,14 +1,8 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  FlatList,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 
 type CompanyCardItem = {
   company: string;
@@ -21,6 +15,10 @@ type CompanyCardsSliderProps = {
   onSelectCompany: (company: string) => void;
 };
 
+/**
+ * "חברות עם קופונים פעילים" — a wrapping grid of company tiles, per the
+ * redesign (the previous version was a horizontal slider).
+ */
 export function CompanyCardsSlider({
   companyCards,
   selectedCompany,
@@ -32,128 +30,97 @@ export function CompanyCardsSlider({
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>
-          קופונים לפי חברה
-        </Text>
-        <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
-          לחץ לצפייה בקופוני החברה
-        </Text>
-      </View>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>
+        חברות עם קופונים פעילים
+      </Text>
 
-      <FlatList
-        data={companyCards}
-        horizontal
-        inverted // RTL scrolling
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.company}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
+      <View style={styles.grid}>
+        {companyCards.map((item) => {
           const isSelected = selectedCompany === item.company;
           const logoUri = getCompanyLogo(item.company);
 
           return (
             <TouchableOpacity
+              key={item.company}
               activeOpacity={0.8}
               onPress={() => onSelectCompany(item.company)}
               style={[
                 styles.card,
+                shadows.card,
                 {
                   backgroundColor: theme.card,
                   borderColor: isSelected ? theme.primary : theme.cardBorder,
                   borderWidth: isSelected ? 2 : 1,
-                  shadowColor: theme.text,
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.logoWrapper,
-                  { backgroundColor: theme.surfaceAlt },
-                ]}
-              >
-                <Image
-                  source={{ uri: logoUri }}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
+              <View style={[styles.logoWrapper, { borderColor: theme.surfaceAlt }]}>
+                <Image source={{ uri: logoUri }} style={styles.logo} resizeMode="contain" />
               </View>
 
-              <Text
-                numberOfLines={1}
-                style={[styles.companyName, { color: theme.text }]}
-              >
+              <Text numberOfLines={1} style={[styles.companyName, { color: theme.text }]}>
                 {item.company}
               </Text>
 
-              <Text
-                style={[styles.couponCount, { color: theme.primary }]}
-              >
+              <Text style={[styles.couponCount, { color: theme.textSubtle }]}>
                 {item.count} קופונים
               </Text>
             </TouchableOpacity>
           );
-        }}
-      />
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 28,
     marginBottom: 24,
   },
-  headerRow: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
   sectionTitle: {
+    fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "800",
+    textAlign: "right",
+    marginBottom: 12,
   },
-  sectionSubtitle: {
-    fontSize: 12,
-  },
-  listContent: {
-    paddingHorizontal: 4,
+  grid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
     gap: 12,
   },
   card: {
-    width: 125,
-    borderRadius: 20,
-    padding: 12,
+    // Two per row on a phone, matching the design's minmax(140px, 1fr) grid.
+    width: "48%",
+    borderRadius: radii.card,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     alignItems: "center",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    gap: 8,
   },
   logoWrapper: {
-    width: 58,
-    height: 58,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: radii.xl,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
-    padding: 6,
     overflow: "hidden",
   },
   logo: {
-    width: "100%",
-    height: "100%",
+    width: "78%",
+    height: "78%",
   },
   companyName: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 2,
     maxWidth: "100%",
   },
   couponCount: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontFamily: fonts.body,
+    fontSize: 12,
   },
 });

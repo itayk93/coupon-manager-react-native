@@ -39,6 +39,7 @@ import {
 import { useAdminTags, useRenameTag, useDeleteTag } from "@/hooks/useTags";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type AdminTab = "users" | "companies" | "tags" | "messages";
@@ -122,8 +123,8 @@ export function AdminDashboardScreen() {
                     backgroundColor: isCurrent
                       ? theme.primary
                       : theme.isDark
-                      ? "#1e293b"
-                      : "#f1f5f9",
+                      ? theme.surfaceAlt
+                      : theme.surfaceAlt,
                   },
                 ]}
               >
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   userRoleText: {
-    color: "#10b981",
+    
     fontSize: 11,
     fontWeight: "700",
   },
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
   },
   broadcastBox: {
     padding: 16,
-    borderRadius: 18,
+    borderRadius: radii.cardLg,
     borderWidth: 1,
     marginBottom: 14,
   },

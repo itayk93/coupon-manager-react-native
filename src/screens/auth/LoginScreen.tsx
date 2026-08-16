@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { signInLegacy } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function LoginScreen() {
@@ -176,34 +177,37 @@ const styles = StyleSheet.create({
   logoCircle: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: radii.card,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
   brandTitle: {
-    fontSize: 26,
+    fontFamily: fonts.display,
+    fontSize: 22,
     fontWeight: "900",
     textAlign: "center",
   },
   brandSubtitle: {
+    fontFamily: fonts.body,
     fontSize: 14,
     textAlign: "center",
     marginTop: 4,
     maxWidth: 260,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: radii.sheet,
     padding: 22,
     borderWidth: 1,
-    shadowColor: "#000",
+    shadowColor: "#101828",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
   formTitle: {
-    fontSize: 20,
+    fontFamily: fonts.display,
+    fontSize: 24,
     fontWeight: "800",
     textAlign: "right",
     marginBottom: 20,

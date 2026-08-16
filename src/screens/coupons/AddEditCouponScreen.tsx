@@ -363,7 +363,7 @@ function CouponForm({
             <Switch
               value={includeCardInfo}
               onValueChange={setIncludeCardInfo}
-              trackColor={{ false: "#767577", true: theme.primary }}
+              trackColor={{ false: theme.inputBorder, true: theme.primary }}
               thumbColor="#ffffff"
             />
             <View style={styles.switchLabelContainer}>
@@ -411,7 +411,7 @@ function CouponForm({
             <Switch
               value={autoUpdate}
               onValueChange={setAutoUpdate}
-              trackColor={{ false: "#767577", true: theme.primary }}
+              trackColor={{ false: theme.inputBorder, true: theme.primary }}
               thumbColor="#ffffff"
             />
             <View style={styles.switchLabelContainer}>

@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { storeLegacyUser, LegacyUser } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function RegisterScreen() {
@@ -214,7 +215,7 @@ export function RegisterScreen() {
               <Switch
                 value={agreeTerms}
                 onValueChange={setAgreeTerms}
-                trackColor={{ false: "#767577", true: theme.primary }}
+                trackColor={{ false: theme.inputBorder, true: theme.primary }}
                 thumbColor="#ffffff"
               />
               <Text style={[styles.termsText, { color: theme.textMuted }]}>
@@ -289,10 +290,10 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: radii.sheet,
     padding: 20,
     borderWidth: 1,
-    shadowColor: "#000",
+    shadowColor: "#101828",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

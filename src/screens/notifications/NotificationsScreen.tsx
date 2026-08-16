@@ -14,6 +14,7 @@ import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 
 export function NotificationsScreen() {
   const router = useRouter();
@@ -78,10 +79,10 @@ export function NotificationsScreen() {
               <View
                 style={[
                   styles.iconBox,
-                  { backgroundColor: "rgba(245, 158, 11, 0.15)" },
+                  { backgroundColor: theme.warningBg },
                 ]}
               >
-                <AlertTriangle size={20} color="#f59e0b" />
+                <AlertTriangle size={20} color={theme.warning} />
               </View>
 
               <View style={styles.contentCol}>
@@ -126,16 +127,17 @@ const styles = StyleSheet.create({
   notifCard: {
     flexDirection: "row-reverse",
     alignItems: "flex-start",
-    padding: 16,
-    borderRadius: 18,
+    padding: 14,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 8,
     gap: 12,
+    ...shadows.card,
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -144,7 +146,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   notifTitle: {
-    fontSize: 15,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
     fontWeight: "700",
     marginBottom: 4,
   },
@@ -155,6 +158,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   notifDate: {
-    fontSize: 11,
+    fontSize: 12,
   },
 });

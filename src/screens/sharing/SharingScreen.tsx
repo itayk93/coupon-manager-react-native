@@ -25,6 +25,7 @@ import {
 import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 function formatIls(value: number) {
@@ -111,8 +112,8 @@ export function SharingScreen() {
                   activeTab === "shared_with_me"
                     ? theme.primary
                     : theme.isDark
-                    ? "#1e293b"
-                    : "#f1f5f9",
+                    ? theme.surfaceAlt
+                    : theme.surfaceAlt,
               },
             ]}
           >
@@ -138,8 +139,8 @@ export function SharingScreen() {
                   activeTab === "my_shares"
                     ? theme.primary
                     : theme.isDark
-                    ? "#1e293b"
-                    : "#f1f5f9",
+                    ? theme.surfaceAlt
+                    : theme.surfaceAlt,
               },
             ]}
           >
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   shareCard: {
-    borderRadius: 18,
+    borderRadius: radii.xl,
     padding: 16,
     borderWidth: 1,
     marginBottom: 10,
@@ -434,7 +435,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   shareBadgeText: {
-    color: "#60a5fa",
+    
     fontSize: 11,
     fontWeight: "700",
   },

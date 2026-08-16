@@ -150,7 +150,7 @@ export function SettingsScreen() {
               <Switch
                 value={isDark}
                 onValueChange={toggleTheme}
-                trackColor={{ false: "#767577", true: theme.primary }}
+                trackColor={{ false: theme.inputBorder, true: theme.primary }}
                 thumbColor="#ffffff"
               />
               <View style={styles.menuItemLabelGroup}>
