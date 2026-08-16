@@ -35,6 +35,7 @@ import {
   DecryptedCoupon,
 } from "@/hooks/useCoupons";
 import { useCouponTags, useSetCouponTags } from "@/hooks/useTags";
+import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import {
   useCouponUsageHistory,
   useDeleteTransactionRecord,
@@ -76,6 +77,12 @@ export function CouponDetailScreen() {
   const deleteTx = useDeleteTransactionRecord();
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
+
+  // Feeds the automatic balance updater, same as the legacy app.
+  const { markDetailViewed } = useCouponViewTracking();
+  React.useEffect(() => {
+    if (couponId !== undefined) void markDetailViewed(couponId);
+  }, [couponId, markDetailViewed]);
 
   if (isLoading || !coupon) {
     return (

@@ -1,18 +1,26 @@
 import React from "react";
 import {
+  Animated,
+  Easing,
   Image,
   Modal,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { X } from "lucide-react-native";
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
+import { Check, Copy, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
+import { notify } from "@/lib/notify";
 
 type CompanySheetProps = {
   company: string | null;
@@ -33,11 +41,43 @@ function daysUntil(expiration: string | null) {
 
 /**
  * Bottom sheet listing one company's coupons — the `companyModal` in the
- * redesign: brand-coloured head with drag handle, logo and totals, then a
- * scrollable list of code / expiry / remaining rows.
+ * redesign.
+ *
+ * The scrim and the sheet animate separately: `animationType="slide"` would
+ * translate the whole modal, dragging the dim backdrop up from the bottom with
+ * it. Here the backdrop only fades its opacity while the sheet translates,
+ * which is how a native sheet behaves.
  */
 export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   const { theme } = useAppTheme();
+  const { markCompanyViewed, markCodeViewed } = useCouponViewTracking();
+
+  const visible = company !== null;
+  const [mounted, setMounted] = React.useState(visible);
+  const [openCode, setOpenCode] = React.useState<DecryptedCoupon | null>(null);
+  const [copied, setCopied] = React.useState(false);
+
+  const progress = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) setMounted(true);
+    Animated.timing(progress, {
+      toValue: visible ? 1 : 0,
+      duration: visible ? 280 : 220,
+      easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished && !visible) {
+        setMounted(false);
+        setOpenCode(null);
+      }
+    });
+  }, [visible, progress]);
+
+  // Opening a company is a tracked view — it feeds the automatic balance updater.
+  React.useEffect(() => {
+    if (company) void markCompanyViewed(company);
+  }, [company, markCompanyViewed]);
 
   const rows = React.useMemo(
     () => coupons.filter((c) => c.company === company),
@@ -51,17 +91,38 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
 
   const brand = getCompanyColor(company || "");
 
-  return (
-    <Modal
-      visible={company !== null}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.scrim}>
-        <TouchableOpacity style={styles.scrimTouch} activeOpacity={1} onPress={onClose} />
+  const handleOpenCode = (coupon: DecryptedCoupon) => {
+    setOpenCode(coupon);
+    setCopied(false);
+    void markCodeViewed(coupon.id);
+  };
 
-        <View style={[styles.sheet, { backgroundColor: theme.card }]}>
+  const handleCopy = async () => {
+    if (!openCode?.code) return;
+    await Clipboard.setStringAsync(openCode.code);
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
+    setCopied(true);
+    notify.success("הקוד הועתק ללוח!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const translateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [600, 0],
+  });
+
+  return (
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
+      <View style={styles.root}>
+        <Animated.View style={[styles.scrim, { opacity: progress }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+
+        <Animated.View
+          style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}
+        >
           <View style={[styles.head, { backgroundColor: brand }]}>
             <View style={styles.handle} />
 
@@ -93,11 +154,13 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               const expired = days !== null && days < 0;
               const soon = days !== null && days >= 0 && days <= 14;
               return (
-                <View key={c.id} style={[styles.row, { borderBottomColor: theme.divider }]}>
-                  <Text style={[styles.remaining, { color: theme.text }]}>
-                    {formatIls(Math.max(0, (c.value || 0) - (c.used_value || 0)))}
-                  </Text>
-
+                <TouchableOpacity
+                  key={c.id}
+                  activeOpacity={0.7}
+                  onPress={() => handleOpenCode(c)}
+                  style={[styles.row, { borderBottomColor: theme.divider }]}
+                >
+                  {/* Hebrew reads right-to-left: the code leads, the amount trails. */}
                   <View style={styles.rowStart}>
                     <Text style={[styles.code, { color: theme.text }]}>{c.code || "—"}</Text>
                     <Text
@@ -112,31 +175,64 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                         },
                       ]}
                     >
-                      {expired
-                        ? "פג תוקף"
-                        : soon
-                          ? `נותרו ${days} ימים`
-                          : "בתוקף"}
+                      {expired ? "פג תוקף" : soon ? `נותרו ${days} ימים` : "בתוקף"}
                     </Text>
                   </View>
-                </View>
+
+                  <Text style={[styles.remaining, { color: theme.text }]}>
+                    {formatIls(Math.max(0, (c.value || 0) - (c.used_value || 0)))}
+                  </Text>
+                </TouchableOpacity>
               );
             })}
           </ScrollView>
-        </View>
+        </Animated.View>
+
+        {/* Enlarged code, opened by tapping a row */}
+        {openCode ? (
+          <View style={styles.codeOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenCode(null)} />
+
+            <View style={[styles.codeCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.codeCompany, { color: theme.textMuted }]}>
+                {openCode.company}
+              </Text>
+
+              <Text selectable style={[styles.codeBig, { color: theme.text }]}>
+                {openCode.code || "—"}
+              </Text>
+
+              <Text style={[styles.codeAmount, { color: theme.textMuted }]}>
+                יתרה {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
+              </Text>
+
+              <TouchableOpacity
+                onPress={handleCopy}
+                style={[styles.copyBtn, { backgroundColor: theme.primary }]}
+              >
+                {copied ? <Check size={16} color="#ffffff" /> : <Copy size={16} color="#ffffff" />}
+                <Text style={styles.copyText}>{copied ? "הועתק" : "העתקת קוד"}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
+                <Text style={[styles.codeCloseText, { color: theme.textMuted }]}>סגירה</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: {
+  root: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
   },
-  scrimTouch: {
+  scrim: {
     ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
   },
   sheet: {
     maxHeight: "80%",
@@ -210,7 +306,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   rowStart: {
-    alignItems: "flex-start",
+    alignItems: "flex-end",
   },
   code: {
     fontFamily: fonts.display,
@@ -228,5 +324,61 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",
+  },
+  codeOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.55)",
+    padding: 24,
+  },
+  codeCard: {
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: radii.sheet,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    gap: 10,
+  },
+  codeCompany: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  codeBig: {
+    fontFamily: fonts.display,
+    fontSize: 30,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textAlign: "center",
+    writingDirection: "ltr",
+  },
+  codeAmount: {
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+  },
+  copyBtn: {
+    marginTop: 8,
+    height: 46,
+    alignSelf: "stretch",
+    borderRadius: radii.lg,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  copyText: {
+    fontFamily: fonts.bodyBold,
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  codeClose: {
+    paddingVertical: 6,
+  },
+  codeCloseText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
   },
 });
