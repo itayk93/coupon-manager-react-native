@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, shadows } from "@/lib/theme";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "warning";
 type ButtonSize = "sm" | "md" | "lg";
@@ -48,7 +49,7 @@ export function Button({
   };
 
   const getBackgroundColor = () => {
-    if (disabled) return theme.isDark ? "#334155" : "#e2e8f0";
+    if (disabled) return theme.surfaceAlt;
     switch (variant) {
       case "primary":
         return theme.primary;
@@ -59,13 +60,14 @@ export function Button({
       case "warning":
         return theme.warning;
       case "outline":
+        return theme.card;
       case "ghost":
         return "transparent";
     }
   };
 
   const getTextColor = () => {
-    if (disabled) return theme.isDark ? "#64748b" : "#94a3b8";
+    if (disabled) return theme.textSubtle;
     switch (variant) {
       case "primary":
       case "secondary":
@@ -73,7 +75,7 @@ export function Button({
       case "warning":
         return "#ffffff";
       case "outline":
-        return theme.isDark ? theme.text : theme.text;
+        return theme.label;
       case "ghost":
         return theme.textMuted;
     }
@@ -82,21 +84,21 @@ export function Button({
   const getPadding = () => {
     switch (size) {
       case "sm":
-        return { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 };
+        return { height: 40, paddingHorizontal: 16, borderRadius: 11 };
       case "lg":
-        return { paddingVertical: 16, paddingHorizontal: 24, borderRadius: 16 };
+        return { height: 48, paddingHorizontal: 24, borderRadius: 12 };
       case "md":
       default:
-        return { paddingVertical: 12, paddingHorizontal: 18, borderRadius: 12 };
+        return { height: 46, paddingHorizontal: 18, borderRadius: 12 };
     }
   };
 
   const getFontSize = () => {
     switch (size) {
       case "sm":
-        return 13;
+        return 12.5;
       case "lg":
-        return 16;
+        return 15;
       case "md":
       default:
         return 14;
@@ -113,9 +115,10 @@ export function Button({
         getPadding(),
         {
           backgroundColor: getBackgroundColor(),
-          borderColor: variant === "outline" ? theme.border : "transparent",
-          borderWidth: variant === "outline" ? 1.5 : 0,
+          borderColor: variant === "outline" ? theme.inputBorder : "transparent",
+          borderWidth: variant === "outline" ? 1 : 0,
         },
+        variant === "primary" && !disabled ? shadows.brand : null,
         style,
       ]}
     >
@@ -150,6 +153,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   text: {
+    fontFamily: fonts.bodyBold,
     fontWeight: "700",
     textAlign: "center",
   },

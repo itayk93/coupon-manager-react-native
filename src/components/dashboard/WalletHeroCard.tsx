@@ -9,6 +9,7 @@ import {
   ListChecks,
 } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 
@@ -70,22 +71,22 @@ export function WalletHeroCard({
         style={[
           styles.mainCard,
           {
-            backgroundColor: theme.isDark ? "#0f172a" : "#1e293b",
-            borderColor: theme.isDark ? "#1e293b" : "#334155",
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
           },
         ]}
       >
         <View style={styles.topRow}>
-          <View style={styles.eyebrowBadge}>
-            <Text style={styles.eyebrowText}>הארנק שלך</Text>
-            <WalletCards size={16} color="#34d399" />
+          <View style={[styles.eyebrowBadge, { backgroundColor: theme.primaryTint }]}>
+            <Text style={[styles.eyebrowText, { color: theme.primaryDark }]}>הארנק שלך</Text>
+            <WalletCards size={15} color={theme.primaryDark} />
           </View>
         </View>
 
-        <Text style={styles.greetingText}>
+        <Text style={[styles.greetingText, { color: theme.text }]}>
           {greeting}, {displayName} 👋
         </Text>
-        <Text style={styles.subGreetingText}>
+        <Text style={[styles.subGreetingText, { color: theme.textMuted }]}>
           {isError
             ? "לא הצלחנו לטעון את הקופונים"
             : `${visibleCoupons.length} קופונים פעילים לניצול`}
@@ -95,14 +96,14 @@ export function WalletHeroCard({
         <View
           style={[
             styles.balanceBox,
-            { backgroundColor: theme.isDark ? "#1e293b" : "#0f172a" },
+            { backgroundColor: theme.surface, borderColor: theme.cardBorder },
           ]}
         >
-          <Text style={styles.balanceLabel}>יתרה זמינה בארנק</Text>
-          <Text style={styles.balanceValue}>
+          <Text style={[styles.balanceLabel, { color: theme.textMuted }]}>יתרה זמינה בארנק</Text>
+          <Text style={[styles.balanceValue, { color: theme.text }]}>
             {isError ? "—" : isLoading ? "טוען..." : formatIls(remainingValue)}
           </Text>
-          <Text style={styles.balanceSub}>
+          <Text style={[styles.balanceSub, { color: theme.textSubtle }]}>
             {isError
               ? "היתרה תוצג לאחר טעינה מחדש"
               : `מתוך ${formatIls(totalValue)} בארנק`}
@@ -111,29 +112,29 @@ export function WalletHeroCard({
 
         {/* KPI Mini Grid */}
         <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
+          <View style={[styles.kpiCard, { backgroundColor: theme.surfaceAlt }]}>
             <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>פגים ב-14 יום</Text>
-              <BarChart3 size={15} color="#f59e0b" />
+              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>פגים ב-14 יום</Text>
+              <BarChart3 size={15} color={theme.warning} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#fbbf24" }]}>
+            <Text style={[styles.kpiValue, { color: theme.warningText }]}>
               {isLoading || isError ? "—" : expiringSoonCount}
             </Text>
           </View>
 
-          <View style={styles.kpiCard}>
+          <View style={[styles.kpiCard, { backgroundColor: theme.surfaceAlt }]}>
             <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>כבר נוצל</Text>
-              <ReceiptText size={15} color="#60a5fa" />
+              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>כבר נוצל</Text>
+              <ReceiptText size={15} color={theme.primary} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#93c5fd" }]}>
+            <Text style={[styles.kpiValue, { color: theme.primary }]}>
               {isLoading || isError ? "—" : formatIls(usedValue)}
             </Text>
           </View>
 
-          <View style={styles.kpiCard}>
+          <View style={[styles.kpiCard, { backgroundColor: theme.surfaceAlt }]}>
             <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>חסכת עד היום</Text>
+              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>חסכת עד היום</Text>
               <Sparkles size={15} color="#34d399" />
             </View>
             <Text style={[styles.kpiValue, { color: "#6ee7b7" }]}>
@@ -199,14 +200,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   mainCard: {
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: radii.hero,
+    padding: 22,
     borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
+    ...shadows.card,
   },
   topRow: {
     flexDirection: "row-reverse",
@@ -217,53 +214,50 @@ const styles = StyleSheet.create({
   eyebrowBadge: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    backgroundColor: "rgba(52, 211, 153, 0.15)",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 12,
+    borderRadius: radii.pill,
     gap: 6,
   },
   eyebrowText: {
-    color: "#34d399",
-    fontSize: 12,
-    fontWeight: "700",
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    fontWeight: "800",
   },
   greetingText: {
-    color: "#f8fafc",
-    fontSize: 22,
+    fontFamily: fonts.display,
+    fontSize: 26,
     fontWeight: "800",
+    letterSpacing: -0.4,
     textAlign: "right",
     marginTop: 4,
   },
   subGreetingText: {
-    color: "#94a3b8",
-    fontSize: 13,
+    fontFamily: fonts.body,
+    fontSize: 14.5,
     textAlign: "right",
     marginTop: 2,
     marginBottom: 16,
   },
   balanceBox: {
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: radii.card,
+    padding: 18,
     alignItems: "flex-end",
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   balanceLabel: {
-    color: "#94a3b8",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     marginBottom: 4,
   },
   balanceValue: {
-    color: "#34d399",
-    fontSize: 32,
-    fontWeight: "900",
+    fontFamily: fonts.display,
+    fontSize: 30,
+    fontWeight: "800",
   },
   balanceSub: {
-    color: "#64748b",
-    fontSize: 12,
+    fontSize: 12.5,
     marginTop: 2,
   },
   kpiRow: {
@@ -272,8 +266,7 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 14,
+    borderRadius: radii.xl,
     padding: 10,
     alignItems: "flex-end",
   },
@@ -284,12 +277,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   kpiLabel: {
-    color: "#94a3b8",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600",
   },
   kpiValue: {
-    fontSize: 13,
+    fontFamily: fonts.display,
+    fontSize: 15,
     fontWeight: "800",
   },
   actionButtonsRow: {

@@ -74,7 +74,7 @@ export function LoginScreen() {
             <View
               style={[
                 styles.logoCircle,
-                { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
               <LogIn size={36} color={theme.primary} />

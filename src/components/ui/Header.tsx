@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, Statu
 import { ChevronRight, Bell, Moon, Sun } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { fonts, radii } from "@/lib/theme";
 
 type HeaderProps = {
   title: string;
@@ -33,7 +34,7 @@ export function Header({
       style={[
         styles.safeArea,
         {
-          backgroundColor: theme.background,
+          backgroundColor: theme.card,
           paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
         },
       ]}
@@ -42,8 +43,8 @@ export function Header({
         style={[
           styles.container,
           {
-            backgroundColor: theme.background,
-            borderBottomColor: theme.border,
+            backgroundColor: theme.card,
+            borderBottomColor: theme.cardBorder,
           },
         ]}
       >
@@ -56,13 +57,13 @@ export function Header({
                 onPress={toggleTheme}
                 style={[
                   styles.iconButton,
-                  { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                  { backgroundColor: theme.surfaceAlt },
                 ]}
               >
                 {isDark ? (
                   <Sun size={18} color="#fbbf24" />
                 ) : (
-                  <Moon size={18} color="#64748b" />
+                  <Moon size={18} color={theme.textMuted} />
                 )}
               </TouchableOpacity>
 
@@ -71,7 +72,7 @@ export function Header({
                   onPress={onNotificationsPress}
                   style={[
                     styles.iconButton,
-                    { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                    { backgroundColor: theme.surfaceAlt },
                   ]}
                 >
                   <Bell size={18} color={theme.text} />
@@ -109,7 +110,7 @@ export function Header({
             onPress={onBack}
             style={[
               styles.backButton,
-              { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+              { backgroundColor: theme.surfaceAlt },
             ]}
           >
             <ChevronRight size={22} color={theme.text} />
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   titleContainer: {
     flex: 1,
@@ -140,11 +141,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   title: {
-    fontSize: 20,
+    fontFamily: fonts.display,
+    fontSize: 22,
     fontWeight: "800",
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 12,
+    fontFamily: fonts.body,
+    fontSize: 12.5,
     marginTop: 2,
   },
   actionsGroup: {
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -171,7 +175,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
   },

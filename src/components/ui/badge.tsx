@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii } from "@/lib/theme";
 
 type BadgeVariant = "default" | "success" | "warning" | "danger" | "secondary" | "outline";
 
@@ -24,42 +25,18 @@ export function Badge({
   const getColors = () => {
     switch (variant) {
       case "success":
-        return {
-          bg: theme.isDark ? "rgba(16, 185, 129, 0.2)" : "#d1fae5",
-          text: theme.isDark ? "#34d399" : "#065f46",
-          border: theme.isDark ? "#059669" : "#a7f3d0",
-        };
+        return { bg: theme.successBg, text: theme.successText, border: "transparent" };
       case "warning":
-        return {
-          bg: theme.isDark ? "rgba(245, 158, 11, 0.2)" : "#fef3c7",
-          text: theme.isDark ? "#fbbf24" : "#92400e",
-          border: theme.isDark ? "#d97706" : "#fde68a",
-        };
+        return { bg: theme.warningBg, text: theme.warningText, border: "transparent" };
       case "danger":
-        return {
-          bg: theme.isDark ? "rgba(239, 68, 68, 0.2)" : "#fee2e2",
-          text: theme.isDark ? "#f87171" : "#991b1b",
-          border: theme.isDark ? "#dc2626" : "#fecaca",
-        };
+        return { bg: theme.dangerBg, text: theme.dangerText, border: "transparent" };
       case "secondary":
-        return {
-          bg: theme.isDark ? "rgba(59, 130, 246, 0.2)" : "#dbeafe",
-          text: theme.isDark ? "#60a5fa" : "#1e40af",
-          border: theme.isDark ? "#2563eb" : "#bfdbfe",
-        };
+        return { bg: theme.primaryTint, text: theme.primaryDark, border: "transparent" };
       case "outline":
-        return {
-          bg: "transparent",
-          text: theme.textMuted,
-          border: theme.border,
-        };
+        return { bg: "transparent", text: theme.textMuted, border: theme.inputBorder };
       case "default":
       default:
-        return {
-          bg: theme.isDark ? "#1e293b" : "#f1f5f9",
-          text: theme.text,
-          border: theme.border,
-        };
+        return { bg: theme.neutralBg, text: theme.neutralText, border: "transparent" };
     }
   };
 
@@ -96,14 +73,15 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 11,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: radii.pill,
     borderWidth: 1,
     alignSelf: "flex-start",
   },
   text: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bodyBold,
+    fontSize: 11.5,
+    fontWeight: "800",
   },
 });

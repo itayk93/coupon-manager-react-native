@@ -62,14 +62,14 @@ export function CompanyCardsSlider({
                   backgroundColor: theme.card,
                   borderColor: isSelected ? theme.primary : theme.cardBorder,
                   borderWidth: isSelected ? 2 : 1,
-                  shadowColor: theme.isDark ? "#000" : "#64748b",
+                  shadowColor: theme.text,
                 },
               ]}
             >
               <View
                 style={[
                   styles.logoWrapper,
-                  { backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc" },
+                  { backgroundColor: theme.surfaceAlt },
                 ]}
               >
                 <Image

@@ -69,7 +69,7 @@ export function Modal({
                 onPress={onClose}
                 style={[
                   styles.closeButton,
-                  { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                  { backgroundColor: theme.surfaceAlt },
                 ]}
               >
                 <X size={18} color={theme.text} />

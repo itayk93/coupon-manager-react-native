@@ -1,8 +1,15 @@
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { Tabs } from "expo-router/js-tabs";
-import { BarChart3, QrCode, Settings, Tag, WalletCards } from "lucide-react-native";
+import { BarChart3, Home, Share2, Ticket, User } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 
+/**
+ * Bottom navigation from the redesign: דשבורד / קופונים / סטטיסטיקה / שיתופים / חשבון.
+ *
+ * The scanner is no longer a tab (the design does not give it one); it stays
+ * reachable as a pushed route from the coupons list so the feature is kept.
+ */
 export default function TabsLayout() {
   const { theme } = useAppTheme();
 
@@ -11,63 +18,52 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textMuted,
+        tabBarInactiveTintColor: theme.textSubtle,
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopColor: theme.cardBorder,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 88 : 68,
-          paddingBottom: Platform.OS === "ios" ? 28 : 10,
+          height: Platform.OS === "ios" ? 86 : 66,
+          paddingBottom: Platform.OS === "ios" ? 26 : 10,
           paddingTop: 8,
-          elevation: 8,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
+          elevation: 0,
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "700",
-        },
+        tabBarLabelStyle: styles.label,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarLabel: "ארנק",
-          tabBarIcon: ({ color, size }) => <WalletCards color={color} size={size || 22} />,
+          tabBarLabel: "דשבורד",
+          tabBarIcon: ({ color }) => <Home color={color} size={20} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen
         name="coupons"
         options={{
           tabBarLabel: "קופונים",
-          tabBarIcon: ({ color, size }) => <Tag color={color} size={size || 22} />,
-        }}
-      />
-      <Tabs.Screen
-        name="scanner"
-        options={{
-          tabBarLabel: "סריקה",
-          tabBarIcon: () => (
-            <View style={[styles.scannerTabIcon, { backgroundColor: theme.primaryMuted }]}>
-              <QrCode color={theme.primary} size={22} />
-            </View>
-          ),
+          tabBarIcon: ({ color }) => <Ticket color={color} size={20} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen
         name="statistics"
         options={{
-          tabBarLabel: "דוחות",
-          tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={size || 22} />,
+          tabBarLabel: "סטטיסטיקה",
+          tabBarIcon: ({ color }) => <BarChart3 color={color} size={20} strokeWidth={1.8} />,
+        }}
+      />
+      <Tabs.Screen
+        name="sharing"
+        options={{
+          tabBarLabel: "שיתופים",
+          tabBarIcon: ({ color }) => <Share2 color={color} size={20} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          tabBarLabel: "הגדרות",
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size || 22} />,
+          tabBarLabel: "חשבון",
+          tabBarIcon: ({ color }) => <User color={color} size={20} strokeWidth={1.8} />,
         }}
       />
     </Tabs>
@@ -75,11 +71,9 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  scannerTabIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
+  label: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 10.5,
+    fontWeight: "800",
   },
 });

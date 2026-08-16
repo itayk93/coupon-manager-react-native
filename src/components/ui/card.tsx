@@ -1,6 +1,7 @@
 import React from "react";
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, ViewStyle, TouchableOpacity } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { radii, shadows } from "@/lib/theme";
 
 type CardProps = {
   children: React.ReactNode;
@@ -13,10 +14,10 @@ export function Card({ children, style, onPress }: CardProps) {
 
   const cardStyle = [
     styles.card,
+    shadows.card,
     {
       backgroundColor: theme.card,
       borderColor: theme.cardBorder,
-      shadowColor: theme.isDark ? "#000000" : "#64748b",
     },
     style,
   ];
@@ -40,12 +41,8 @@ export const CardFooter = View;
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
+    borderRadius: radii.card,
     borderWidth: 1,
     padding: 16,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
   },
 });

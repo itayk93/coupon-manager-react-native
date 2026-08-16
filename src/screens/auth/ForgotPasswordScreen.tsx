@@ -64,7 +64,7 @@ export function ForgotPasswordScreen() {
             onPress={() => router.back()}
             style={[
               styles.backButton,
-              { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+              { backgroundColor: theme.surfaceAlt },
             ]}
           >
             <ArrowRight size={20} color={theme.text} />
@@ -75,7 +75,7 @@ export function ForgotPasswordScreen() {
             <View
               style={[
                 styles.logoCircle,
-                { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
               <KeyRound size={32} color={theme.primary} />

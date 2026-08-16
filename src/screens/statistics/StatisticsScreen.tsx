@@ -139,7 +139,7 @@ export function StatisticsScreen() {
         rightAction={
           <TouchableOpacity
             onPress={handleExportCSV}
-            style={[styles.exportBtn, { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" }]}
+            style={[styles.exportBtn, { backgroundColor: theme.surfaceAlt }]}
           >
             <Download size={16} color={theme.primary} />
             <Text style={[styles.exportBtnText, { color: theme.primary }]}>ייצוא CSV</Text>

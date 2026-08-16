@@ -110,7 +110,7 @@ export function CouponCard({
             : theme.cardBorder,
           borderWidth: selected ? 2 : 1,
           opacity: isFullyUsed || isExpired ? 0.75 : 1,
-          shadowColor: theme.isDark ? "#000" : "#64748b",
+          shadowColor: theme.text,
         },
       ]}
     >
@@ -161,7 +161,7 @@ export function CouponCard({
           <View
             style={[
               styles.logoBox,
-              { backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc" },
+              { backgroundColor: theme.surfaceAlt },
             ]}
           >
             <Image
@@ -188,7 +188,7 @@ export function CouponCard({
         <View
           style={[
             styles.progressTrack,
-            { backgroundColor: theme.isDark ? "#1e293b" : "#e2e8f0" },
+            { backgroundColor: theme.surfaceAlt },
           ]}
         >
           <View
@@ -212,7 +212,7 @@ export function CouponCard({
         style={[
           styles.codeRow,
           {
-            backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9",
+            backgroundColor: theme.surfaceAlt,
             borderColor: theme.border,
           },
         ]}
@@ -255,7 +255,7 @@ export function CouponCard({
               key={tag}
               style={[
                 styles.tagChip,
-                { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
               <Text style={[styles.tagText, { color: theme.textMuted }]}>
