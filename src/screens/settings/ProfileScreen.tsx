@@ -109,19 +109,20 @@ export function ProfileScreen() {
             icon={<Mail size={16} color={theme.textMuted} />}
           />
 
+          {/* row-reverse puts the first child on the right, where Hebrew starts. */}
           <View style={styles.row}>
-            <View style={styles.halfCol}>
-              <Input
-                label="שם משפחה"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
             <View style={styles.halfCol}>
               <Input
                 label="שם פרטי"
                 value={firstName}
                 onChangeText={setFirstName}
+              />
+            </View>
+            <View style={styles.halfCol}>
+              <Input
+                label="שם משפחה"
+                value={lastName}
+                onChangeText={setLastName}
               />
             </View>
           </View>
@@ -233,6 +234,8 @@ const styles = StyleSheet.create({
   },
   halfCol: {
     flex: 1,
+    // Without this a long value escapes the flex child instead of being clipped.
+    minWidth: 0,
   },
   adminBox: {
     flexDirection: "row-reverse",

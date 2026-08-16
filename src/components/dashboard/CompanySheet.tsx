@@ -5,7 +5,7 @@ import {
   Image,
   Modal,
   Platform,
-  Pressable,
+  TouchableWithoutFeedback,
   ScrollView,
   StyleSheet,
   Text,
@@ -117,7 +117,10 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.root}>
         <Animated.View style={[styles.scrim, { opacity: progress }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          {/* No press feedback: Pressable flashed a blue highlight before closing. */}
+          <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="סגירה">
+            <View style={StyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
         </Animated.View>
 
         <Animated.View
@@ -148,7 +151,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             </Text>
           </View>
 
-          <ScrollView contentContainerStyle={styles.body}>
+          <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body}>
             {rows.map((c) => {
               const days = daysUntil(c.expiration);
               const expired = days !== null && days < 0;
@@ -191,7 +194,9 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
         {/* Enlarged code, opened by tapping a row */}
         {openCode ? (
           <View style={styles.codeOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenCode(null)} />
+            <TouchableWithoutFeedback onPress={() => setOpenCode(null)}>
+              <View style={StyleSheet.absoluteFill} />
+            </TouchableWithoutFeedback>
 
             <View style={[styles.codeCard, { backgroundColor: theme.card }]}>
               <Text style={[styles.codeCompany, { color: theme.textMuted }]}>
@@ -292,6 +297,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
     textAlign: "right",
+  },
+  bodyScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
   },
   body: {
     paddingHorizontal: 20,

@@ -1,4 +1,4 @@
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { pushToast } from "@/components/ui/Toast";
 
 /**
@@ -22,6 +22,17 @@ export const notify = {
   },
 
   confirm: (title: string, message: string, onConfirm: () => void, confirmText = "אישור") => {
+    // react-native-web's Alert.alert is a no-op, which silently swallowed every
+    // confirmed action on web (revoking a share, deleting a coupon).
+    if (Platform.OS === "web") {
+      const ok =
+        typeof globalThis.confirm === "function"
+          ? globalThis.confirm(`${title}\n\n${message}`)
+          : true;
+      if (ok) onConfirm();
+      return;
+    }
+
     Alert.alert(title, message, [
       { text: "ביטול", style: "cancel" },
       { text: confirmText, style: "destructive", onPress: onConfirm },

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -204,19 +205,18 @@ export function CouponsListScreen() {
           />
         </View>
 
-        {/* Category chips */}
-        <FlatList
-          data={categories}
+        {/* Category chips — one scrollable row */}
+        <ScrollView
           horizontal
-          inverted
           showsHorizontalScrollIndicator={false}
-          keyExtractor={(item: string) => item}
-          style={styles.tagsSlider}
-          contentContainerStyle={styles.tagsContent}
-          renderItem={({ item }: { item: string }) => {
+          style={styles.chipRow}
+          contentContainerStyle={styles.chipRowContent}
+        >
+          {categories.map((item) => {
             const isCurrent = category === item;
             return (
               <TouchableOpacity
+                key={item}
                 onPress={() => setCategory(item)}
                 style={[
                   styles.tagChip,
@@ -227,17 +227,14 @@ export function CouponsListScreen() {
                 ]}
               >
                 <Text
-                  style={[
-                    styles.tagChipText,
-                    { color: isCurrent ? "#ffffff" : theme.label },
-                  ]}
+                  style={[styles.tagChipText, { color: isCurrent ? "#ffffff" : theme.label }]}
                 >
                   {item === "all" ? "הכל" : item}
                 </Text>
               </TouchableOpacity>
             );
-          }}
-        />
+          })}
+        </ScrollView>
 
         {/* Status filter, revealed from the header's filter button */}
         {showStatusRow ? (
@@ -279,18 +276,17 @@ export function CouponsListScreen() {
 
         {/* Tag Filter Chips (if tags exist) */}
         {allTags.length > 0 ? (
-          <FlatList
-            data={allTags}
+          <ScrollView
             horizontal
-            inverted
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item: string) => item}
-            style={styles.tagsSlider}
-            contentContainerStyle={styles.tagsContent}
-            renderItem={({ item }: { item: string }) => {
+            style={styles.chipRow}
+            contentContainerStyle={styles.chipRowContent}
+          >
+            {allTags.map((item) => {
               const isSelected = selectedTag === item;
               return (
                 <TouchableOpacity
+                  key={item}
                   onPress={() => setSelectedTag(isSelected ? null : item)}
                   style={[
                     styles.tagChip,
@@ -301,17 +297,14 @@ export function CouponsListScreen() {
                   ]}
                 >
                   <Text
-                    style={[
-                      styles.tagChipText,
-                      { color: isSelected ? "#ffffff" : theme.label },
-                    ]}
+                    style={[styles.tagChipText, { color: isSelected ? "#ffffff" : theme.label }]}
                   >
                     #{item}
                   </Text>
                 </TouchableOpacity>
               );
-            }}
-          />
+            })}
+          </ScrollView>
         ) : null}
 
         {/* Multi-Select Action Bar */}
@@ -478,12 +471,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  tagsSlider: {
+  chipRow: {
     flexGrow: 0,
-    height: 40,
     marginBottom: 14,
   },
-  tagsContent: {
+  chipRowContent: {
+    // row-reverse puts the first chip on the right, as Hebrew expects, while
+    // the ScrollView still pans both ways.
+    flexDirection: "row-reverse",
     gap: 8,
     paddingHorizontal: 2,
     alignItems: "center",

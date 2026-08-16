@@ -30,6 +30,8 @@ export default function TabsLayout() {
           paddingBottom: Platform.OS === "ios" ? 28 : 18,
           paddingTop: 10,
           elevation: 0,
+          // RTL: first tab (דשבורד) sits on the right.
+          flexDirection: "row-reverse",
         },
         tabBarLabelStyle: styles.label,
       }}

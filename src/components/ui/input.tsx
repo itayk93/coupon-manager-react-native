@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
+    overflow: "hidden",
     borderRadius: radii.lg,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -121,6 +122,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     fontSize: 15,
     height: "100%",
   },
