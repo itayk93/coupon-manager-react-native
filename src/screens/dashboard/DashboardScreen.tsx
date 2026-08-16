@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 
 export function DashboardScreen() {
   const router = useRouter();
@@ -216,6 +217,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: {
+    fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "800",
   },
@@ -236,6 +238,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   filterTitle: {
+    fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",
   },

@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 import { Button } from "./button";
 
 type EmptyStateProps = {
@@ -78,12 +79,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
+    fontFamily: fonts.bodyBold,
     fontSize: 17,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 6,
   },
   subtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     textAlign: "center",
     lineHeight: 18,

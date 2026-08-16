@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { Sparkles, ShieldCheck, Zap, Heart } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 
 export function AboutScreen() {
   const router = useRouter();
@@ -95,11 +96,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: 24,
     fontWeight: "900",
     textAlign: "center",
   },
   subtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
     textAlign: "center",
     marginTop: 6,

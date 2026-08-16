@@ -403,6 +403,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionTitle: {
+    fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",
   },
@@ -415,6 +416,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statusNum: {
+    fontFamily: fonts.display,
     fontSize: 22,
     fontWeight: "900",
     marginBottom: 2,
@@ -446,10 +448,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   companyStatName: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
     fontWeight: "700",
   },
   companyStatCount: {
+    fontFamily: fonts.bodyBold,
     fontSize: 11,
     marginTop: 2,
   },
@@ -457,10 +461,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   companyRemVal: {
+    fontFamily: fonts.display,
     fontSize: 14,
     fontWeight: "800",
   },
   companyTotalVal: {
+    fontFamily: fonts.bodyBold,
     fontSize: 11,
     marginTop: 2,
   },

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { X } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 
 type ModalProps = {
   visible: boolean;
@@ -160,10 +161,12 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   title: {
+    fontFamily: fonts.bodyBold,
     fontSize: 18,
     fontWeight: "700",
   },
   subtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     marginTop: 2,
   },

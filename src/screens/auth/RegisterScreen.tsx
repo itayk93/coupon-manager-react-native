@@ -279,11 +279,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   brandTitle: {
+    fontFamily: fonts.display,
     fontSize: 24,
     fontWeight: "900",
     textAlign: "center",
   },
   brandSubtitle: {
+    fontFamily: fonts.bodyBold,
     fontSize: 13,
     textAlign: "center",
     marginTop: 4,

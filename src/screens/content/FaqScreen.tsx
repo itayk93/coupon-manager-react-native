@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { ChevronDown, ChevronUp, HelpCircle } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 
 const FAQ_ITEMS = [
   {
@@ -107,6 +108,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   itemCard: {
+    ...shadows.card,
     borderRadius: 18,
     borderWidth: 1,
     marginBottom: 12,
@@ -119,6 +121,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   questionText: {
+    fontFamily: fonts.bodyBold,
     fontSize: 15,
     fontWeight: "700",
     flex: 1,

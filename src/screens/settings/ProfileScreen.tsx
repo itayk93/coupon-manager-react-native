@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function ProfileScreen() {
@@ -222,6 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   cardTitle: {
+    fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",
   },

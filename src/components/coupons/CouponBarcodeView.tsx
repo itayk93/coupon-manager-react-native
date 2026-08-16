@@ -12,7 +12,7 @@ import * as Haptics from "expo-haptics";
 import { Copy, Check, Eye, EyeOff, QrCode } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { palette } from "@/lib/theme";
+import { fonts, palette } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type CouponBarcodeViewProps = {
@@ -232,6 +232,7 @@ const styles = StyleSheet.create({
     color: palette.lightTextSubtle,
   },
   fieldVal: {
+    fontFamily: fonts.display,
     fontSize: 14,
     fontWeight: "800",
     color: palette.primary,
