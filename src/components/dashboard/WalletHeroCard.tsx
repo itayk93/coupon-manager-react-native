@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   WalletCards,
   Sparkles,
-  ReceiptText,
   BarChart3,
   CirclePlus,
   ListChecks,
@@ -19,7 +18,6 @@ type WalletHeroCardProps = {
   isError?: boolean;
   onQuickAdd: () => void;
   onViewStats: () => void;
-  onReportUsage: () => void;
 };
 
 function formatIls(value: number) {
@@ -32,7 +30,6 @@ export function WalletHeroCard({
   isError,
   onQuickAdd,
   onViewStats,
-  onReportUsage,
 }: WalletHeroCardProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
@@ -160,23 +157,6 @@ export function WalletHeroCard({
           <ListChecks size={18} color={theme.text} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onReportUsage}
-          style={[
-            styles.actionBtn,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.inputBorder,
-              borderWidth: 1,
-            },
-          ]}
-        >
-          <Text style={[styles.actionBtnText, { color: theme.text }]}>
-            דיווח שימוש
-          </Text>
-          <ReceiptText size={18} color={theme.text} />
-        </TouchableOpacity>
       </View>
     </View>
   );

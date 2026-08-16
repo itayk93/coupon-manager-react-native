@@ -104,7 +104,6 @@ export function DashboardScreen() {
           isError={isError}
           onQuickAdd={() => setIsQuickAddOpen(true)}
           onViewStats={() => setIsStatsOpen(true)}
-          onReportUsage={() => setIsUsageOpen(true)}
         />
 
         {/* Company Cards Slider */}
