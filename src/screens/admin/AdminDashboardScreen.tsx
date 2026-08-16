@@ -375,8 +375,8 @@ const styles = StyleSheet.create({
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    height: 36,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
   },

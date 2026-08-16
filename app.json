@@ -14,7 +14,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.itaykarkason.couponmaster",
       "infoPlist": {
-        "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים."
+        "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.",
+        "NSFaceIDUsageDescription": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
       }
     },
     "android": {
@@ -49,6 +50,12 @@
         "expo-camera",
         {
           "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
         }
       ],
       "expo-asset"

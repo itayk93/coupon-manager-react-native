@@ -10,12 +10,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Mail, KeyRound, ArrowRight } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { ArrowRight, ChevronRight, KeyRound, Mail, WalletCards } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { fonts, radii, shadows } from "@/lib/theme";
+import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function ForgotPasswordScreen() {
@@ -50,7 +51,13 @@ export function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={["#e8f2fd", "#f5f6fd", "#f5f6fd"]}
+        locations={[0, 0.45, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -60,83 +67,78 @@ export function ForgotPasswordScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Back Button */}
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={[
-              styles.backButton,
-              { backgroundColor: theme.surfaceAlt },
-            ]}
-          >
-            <ArrowRight size={20} color={theme.text} />
-          </TouchableOpacity>
-
-          {/* Brand Header */}
-          <View style={styles.brandHeader}>
-            <View
-              style={[
-                styles.logoCircle,
-                { backgroundColor: theme.surfaceAlt },
-              ]}
+          <View style={styles.brand}>
+            <LinearGradient
+              colors={[palette.primary, palette.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.brandMark}
             >
-              <KeyRound size={32} color={theme.primary} />
-            </View>
-            <Text style={[styles.brandTitle, { color: theme.text }]}>
-              איפוס סיסמה
-            </Text>
-            <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
-              הזן את כתובת האימייל ונשלח אליך קישור לאיפוס הסיסמה
-            </Text>
+              <WalletCards size={26} color="#ffffff" strokeWidth={1.8} />
+            </LinearGradient>
+            <Text style={[styles.brandName, { color: theme.text }]}>קופון מאסטר</Text>
           </View>
 
-          {/* Card */}
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <LinearGradient
+              colors={[palette.primary, palette.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.cardRule}
+            />
+
+            <Text style={[styles.title, { color: theme.text }]}>שחזור סיסמה</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              {sent
+                ? "שלחנו לכם קישור לאיפוס הסיסמה"
+                : "הזינו את האימייל ונשלח קישור לאיפוס"}
+            </Text>
+
             {sent ? (
-              <View style={styles.sentContainer}>
-                <Text style={[styles.sentTitle, { color: theme.primary }]}>
-                  הקישור נשלח בהצלחה! ✉️
-                </Text>
-                <Text style={[styles.sentDesc, { color: theme.textMuted }]}>
-                  בדוק את תיבת הדואר הנכנס שלך (כולל ספאם) לקבלת הוראות איפוס.
-                </Text>
-                <Button
-                  title="חזרה להתחברות"
-                  onPress={() => router.push("/(auth)/login")}
-                  style={{ marginTop: 20 }}
-                />
-              </View>
+              <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/(auth)/login")}>
+                <LinearGradient
+                  colors={[palette.primary, palette.primaryDeep]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.submit}
+                >
+                  <Text style={styles.submitText}>חזרה להתחברות</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             ) : (
               <>
                 <Input
-                  label="כתובת אימייל"
-                  placeholder="your@email.com"
+                  label="אימייל"
+                  placeholder="you@example.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={email}
-                  onChangeText={(val: string) => {
-                    setEmail(val);
-                    setError("");
-                  }}
+                  onChangeText={setEmail}
                   error={error}
-                  icon={<Mail size={16} color={theme.textMuted} />}
+                  icon={<Mail size={18} color={theme.textSubtle} />}
                 />
 
-                <Button
-                  title="שלח קישור לאיפוס"
-                  onPress={handleReset}
-                  loading={loading}
-                  style={{ marginTop: 10 }}
-                />
+                <TouchableOpacity activeOpacity={0.85} onPress={handleReset} disabled={loading}>
+                  <LinearGradient
+                    colors={[palette.primary, palette.primaryDeep]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.submit}
+                  >
+                    <Text style={styles.submitText}>
+                      {loading ? "שולח..." : "שליחת קישור"}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               </>
             )}
+
+            <View style={styles.footerRow}>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={[styles.link, { color: theme.primary }]}>חזרה</Text>
+              </TouchableOpacity>
+              <Text style={[styles.footerText, { color: theme.textMuted }]}>נזכרתם בסיסמה? </Text>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -145,76 +147,80 @@ export function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
+  keyboardView: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
     flexGrow: 1,
     justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 32,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  brand: { alignItems: "center", gap: 10, marginBottom: 28 },
+  brandMark: {
+    width: 52,
+    height: 52,
+    borderRadius: radii.card,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
-    alignSelf: "flex-end",
+    shadowColor: palette.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 6,
   },
-  brandHeader: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  brandTitle: {
+  brandName: {
     fontFamily: fonts.display,
-    fontSize: 24,
-    fontWeight: "900",
-    textAlign: "center",
-  },
-  brandSubtitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 4,
-    maxWidth: 280,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
   card: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
     borderRadius: radii.sheet,
-    padding: 22,
     borderWidth: 1,
+    paddingHorizontal: 28,
+    paddingVertical: 32,
+    overflow: "hidden",
     shadowColor: "#101828",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.18,
+    shadowRadius: 50,
+    elevation: 8,
   },
-  sentContainer: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  sentTitle: {
+  cardRule: { position: "absolute", top: 0, left: 0, right: 0, height: 4 },
+  title: {
     fontFamily: fonts.display,
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "800",
-    marginBottom: 8,
     textAlign: "center",
+    marginBottom: 4,
   },
-  sentDesc: {
-    fontSize: 13,
+  subtitle: {
+    fontFamily: fonts.body,
+    fontSize: 14,
     textAlign: "center",
-    lineHeight: 18,
+    marginBottom: 24,
   },
+  submit: {
+    height: 48,
+    borderRadius: radii.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitText: {
+    fontFamily: fonts.bodyBold,
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  link: { fontFamily: fonts.bodyBold, fontSize: 13, fontWeight: "600" },
+  footerRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22,
+  },
+  footerText: { fontFamily: fonts.body, fontSize: 13 },
 });

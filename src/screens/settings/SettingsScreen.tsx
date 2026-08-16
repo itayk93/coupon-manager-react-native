@@ -21,9 +21,11 @@ import {
   Settings as SettingsIcon,
   Lock,
   Share2,
+  ShieldCheck,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
@@ -31,6 +33,21 @@ export function SettingsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { user, isAdmin, signOut } = useAuth();
+  const biometric = useBiometricAuth();
+
+  const handleToggleBiometric = async (next: boolean) => {
+    if (!next) {
+      await biometric.disable();
+      notify.success("נעילה ביומטרית בוטלה");
+      return;
+    }
+    // Prove the device can actually authenticate before turning the lock on,
+    // otherwise the user could lock themselves out of their own wallet.
+    const ok = await biometric.authenticate("הפעלת נעילה ביומטרית");
+    if (!ok) return;
+    await biometric.enable(user?.email || "");
+    notify.success(`${biometric.label} הופעל`);
+  };
 
   const handleSignOut = () => {
     notify.confirm(
@@ -144,6 +161,23 @@ export function SettingsScreen() {
               },
             ]}
           >
+
+            {biometric.isAvailable ? (
+              <View style={styles.menuItem}>
+                <Switch
+                  value={biometric.isEnabled}
+                  onValueChange={handleToggleBiometric}
+                  trackColor={{ false: theme.inputBorder, true: theme.primary }}
+                  thumbColor="#ffffff"
+                />
+                <View style={styles.menuItemLabelGroup}>
+                  <Text style={[styles.menuItemText, { color: theme.text }]}>
+                    נעילה עם {biometric.label}
+                  </Text>
+                  <ShieldCheck size={20} color={theme.textMuted} />
+                </View>
+              </View>
+            ) : null}
 
             {/* Sharing Entry */}
             <TouchableOpacity

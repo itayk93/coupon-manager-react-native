@@ -20,6 +20,8 @@ import {
 } from "@expo-google-fonts/heebo";
 import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outfit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BiometricGate } from "@/components/layout/BiometricGate";
+import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 
@@ -138,6 +140,9 @@ function RootLayoutNav() {
           contentStyle: { backgroundColor: theme.background },
         }}
       />
+      <BiometricGate />
+      <ToastHost />
+
       {!isReady ? (
         <View
           style={[styles.loadingOverlay, { backgroundColor: theme.background }]}
