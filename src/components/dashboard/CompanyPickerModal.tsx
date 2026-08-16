@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Search, Plus } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 const POPULAR_COMPANIES = [
@@ -130,7 +130,7 @@ export function CompanyPickerModal({
           scrollEnabled={false}
           contentContainerStyle={styles.grid}
           renderItem={({ item }) => {
-            const logo = getCompanyLogo(item);
+            const logo = getCompanyLogoSource(item);
             return (
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -145,7 +145,7 @@ export function CompanyPickerModal({
               >
                 <View style={styles.logoBox}>
                   <Image
-                    source={{ uri: logo }}
+                    source={logo}
                     style={styles.logoImg}
                     resizeMode="contain"
                   />

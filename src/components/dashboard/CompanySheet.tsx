@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { getCompanyColor, getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 
@@ -72,7 +72,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             <View style={styles.headRow}>
               <View style={[styles.logoFrame, { backgroundColor: theme.card }]}>
                 <Image
-                  source={{ uri: getCompanyLogo(company || "") }}
+                  source={getCompanyLogoSource(company || "")}
                   style={styles.logo}
                   resizeMode="contain"
                 />

@@ -23,9 +23,9 @@ export default function TabsLayout() {
           backgroundColor: theme.card,
           borderTopColor: theme.cardBorder,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 86 : 66,
-          paddingBottom: Platform.OS === "ios" ? 26 : 10,
-          paddingTop: 8,
+          height: Platform.OS === "ios" ? 88 : 72,
+          paddingBottom: Platform.OS === "ios" ? 26 : 12,
+          paddingTop: 10,
           elevation: 0,
         },
         tabBarLabelStyle: styles.label,
@@ -75,5 +75,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 10.5,
     fontWeight: "800",
+    // Hebrew descenders were being clipped at the default line height.
+    lineHeight: 14,
+    marginTop: 2,
   },
 });

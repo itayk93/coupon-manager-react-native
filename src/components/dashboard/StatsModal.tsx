@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, FlatList } from "react-native";
 import { Sparkles, TrendingUp, Tag, PieChart as PieIcon } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -159,7 +159,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
         ) : (
           companySavings.map((item) => {
             const pct = totalSavings > 0 ? (item.saved / totalSavings) * 100 : 0;
-            const logo = getCompanyLogo(item.company);
+            const logo = getCompanyLogoSource(item.company);
 
             return (
               <View
@@ -186,7 +186,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
                     {item.company}
                   </Text>
                   <Image
-                    source={{ uri: logo }}
+                    source={logo}
                     style={styles.companyLogo}
                     resizeMode="contain"
                   />

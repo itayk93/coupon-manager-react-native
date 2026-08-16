@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "./CompanyPickerModal";
 import { useAddCoupon } from "@/hooks/useCoupons";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 type QuickAddModalProps = {
@@ -129,7 +129,7 @@ export function QuickAddModal({
               </Text>
               {company ? (
                 <Image
-                  source={{ uri: getCompanyLogo(company) }}
+                  source={getCompanyLogoSource(company)}
                   style={styles.selectedLogo}
                   resizeMode="contain"
                 />

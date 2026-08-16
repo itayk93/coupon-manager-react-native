@@ -23,7 +23,7 @@ import {
   useRevokeShare,
 } from "@/hooks/useSharing";
 import { useCoupons } from "@/hooks/useCoupons";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -198,7 +198,7 @@ export function SharingScreen() {
                           {item.coupon?.company}
                         </Text>
                         <Image
-                          source={{ uri: getCompanyLogo(item.coupon?.company) }}
+                          source={getCompanyLogoSource(item.coupon?.company)}
                           style={styles.shareLogo}
                           resizeMode="contain"
                         />
@@ -257,7 +257,7 @@ export function SharingScreen() {
                         </Text>
                       </View>
                       <Image
-                        source={{ uri: getCompanyLogo(item.coupon?.company) }}
+                        source={getCompanyLogoSource(item.coupon?.company)}
                         style={styles.shareLogo}
                         resizeMode="contain"
                       />
@@ -329,7 +329,7 @@ export function SharingScreen() {
                       {c.company}
                     </Text>
                     <Image
-                      source={{ uri: getCompanyLogo(c.company) }}
+                      source={getCompanyLogoSource(c.company)}
                       style={styles.selectLogo}
                       resizeMode="contain"
                     />

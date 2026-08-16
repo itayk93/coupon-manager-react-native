@@ -25,7 +25,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -290,7 +290,7 @@ export function StatisticsScreen() {
             companyStats.map((item, idx) => {
               const rem = Math.max(0, item.totalValue - item.usedValue);
               const pct = totalValue > 0 ? (item.totalValue / totalValue) * 100 : 0;
-              const logo = getCompanyLogo(item.company);
+              const logo = getCompanyLogoSource(item.company);
 
               return (
                 <View
@@ -318,7 +318,7 @@ export function StatisticsScreen() {
                         {item.count} קופונים ({pct.toFixed(0)}%)
                       </Text>
                     </View>
-                    <Image source={{ uri: logo }} style={styles.companyStatLogo} resizeMode="contain" />
+                    <Image source={logo} style={styles.companyStatLogo} resizeMode="contain" />
                   </View>
                 </View>
               );

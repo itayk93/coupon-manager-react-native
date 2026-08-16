@@ -4,7 +4,7 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { Check } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { getCompanyColor, getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -93,7 +93,7 @@ export function CouponCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const logoUri = getCompanyLogo(coupon.company);
+  const logoUri = getCompanyLogoSource(coupon.company);
 
   return (
     <TouchableOpacity
@@ -128,7 +128,7 @@ export function CouponCard({
         </View>
 
         <View style={[styles.logoFrame, { backgroundColor: theme.card }]}>
-          <Image source={{ uri: logoUri }} style={styles.logoImg} resizeMode="contain" />
+          <Image source={logoUri} style={styles.logoImg} resizeMode="contain" />
         </View>
       </View>
 
