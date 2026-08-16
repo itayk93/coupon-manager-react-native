@@ -2,6 +2,7 @@ import React from "react";
 import {
   Animated,
   Easing,
+  PanResponder,
   Image,
   Modal,
   Platform,
@@ -54,6 +55,14 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
 
   const visible = company !== null;
   const [mounted, setMounted] = React.useState(visible);
+
+  // Keep the last company while the sheet animates out. Without this the header
+  // colour is derived from an empty name the moment `company` clears, so the
+  // brand colour visibly flips to the fallback blue mid-close.
+  const [shown, setShown] = React.useState(company);
+  React.useEffect(() => {
+    if (company !== null) setShown(company);
+  }, [company]);
   const [openCode, setOpenCode] = React.useState<DecryptedCoupon | null>(null);
   const [copied, setCopied] = React.useState(false);
 
@@ -80,8 +89,8 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   }, [company, markCompanyViewed]);
 
   const rows = React.useMemo(
-    () => coupons.filter((c) => c.company === company),
-    [coupons, company]
+    () => coupons.filter((c) => c.company === shown),
+    [coupons, shown]
   );
 
   const total = rows.reduce(
@@ -89,7 +98,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     0
   );
 
-  const brand = getCompanyColor(company || "");
+  const brand = getCompanyColor(shown || "");
 
   const handleOpenCode = (coupon: DecryptedCoupon) => {
     setOpenCode(coupon);
@@ -108,10 +117,43 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const translateY = progress.interpolate({
+  const drag = React.useRef(new Animated.Value(0)).current;
+
+  const panResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        // Only claim clearly-downward drags, so the list keeps its own scrolling.
+        onMoveShouldSetPanResponder: (_evt, g) =>
+          g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+        onPanResponderMove: (_evt, g) => {
+          if (g.dy > 0) drag.setValue(g.dy);
+        },
+        onPanResponderRelease: (_evt, g) => {
+          const far = g.dy > 120 || g.vy > 0.8;
+          if (far) {
+            onClose();
+            drag.setValue(0);
+          } else {
+            Animated.spring(drag, {
+              toValue: 0,
+              useNativeDriver: true,
+              bounciness: 0,
+            }).start();
+          }
+        },
+      }),
+    [drag, onClose]
+  );
+
+  React.useEffect(() => {
+    if (visible) drag.setValue(0);
+  }, [visible, drag]);
+
+  const enterY = progress.interpolate({
     inputRange: [0, 1],
     outputRange: [600, 0],
   });
+  const translateY = Animated.add(enterY, drag);
 
   return (
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
@@ -126,7 +168,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
         <Animated.View
           style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}
         >
-          <View style={[styles.head, { backgroundColor: brand }]}>
+          <View style={[styles.head, { backgroundColor: brand }]} {...panResponder.panHandlers}>
             <View style={styles.handle} />
 
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityLabel="סגירה">
@@ -136,13 +178,13 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             <View style={styles.headRow}>
               <View style={[styles.logoFrame, { backgroundColor: theme.card }]}>
                 <Image
-                  source={getCompanyLogoSource(company || "")}
+                  source={getCompanyLogoSource(shown || "")}
                   style={styles.logo}
                   resizeMode="contain"
                 />
               </View>
               <Text numberOfLines={1} style={styles.headTitle}>
-                {company}
+                {shown}
               </Text>
             </View>
 
