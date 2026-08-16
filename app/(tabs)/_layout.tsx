@@ -18,6 +18,8 @@ export default function TabsLayout() {
     <View style={[styles.shell, { backgroundColor: theme.background }]}>
       <AppHeader />
       <Tabs
+      // Declaration order is display order; reversed so דשבורד lands on the
+      // right, where Hebrew starts.
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
@@ -30,31 +32,15 @@ export default function TabsLayout() {
           paddingBottom: Platform.OS === "ios" ? 28 : 18,
           paddingTop: 10,
           elevation: 0,
-          // RTL: first tab (דשבורד) sits on the right.
-          flexDirection: "row-reverse",
         },
         tabBarLabelStyle: styles.label,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="settings"
         options={{
-          tabBarLabel: "דשבורד",
-          tabBarIcon: ({ color }) => <Home color={color} size={20} strokeWidth={1.8} />,
-        }}
-      />
-      <Tabs.Screen
-        name="coupons"
-        options={{
-          tabBarLabel: "קופונים",
-          tabBarIcon: ({ color }) => <Ticket color={color} size={20} strokeWidth={1.8} />,
-        }}
-      />
-      <Tabs.Screen
-        name="statistics"
-        options={{
-          tabBarLabel: "סטטיסטיקה",
-          tabBarIcon: ({ color }) => <BarChart3 color={color} size={20} strokeWidth={1.8} />,
+          tabBarLabel: "חשבון",
+          tabBarIcon: ({ color }) => <User color={color} size={20} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen
@@ -65,10 +51,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="statistics"
         options={{
-          tabBarLabel: "חשבון",
-          tabBarIcon: ({ color }) => <User color={color} size={20} strokeWidth={1.8} />,
+          tabBarLabel: "סטטיסטיקה",
+          tabBarIcon: ({ color }) => <BarChart3 color={color} size={20} strokeWidth={1.8} />,
+        }}
+      />
+      <Tabs.Screen
+        name="coupons"
+        options={{
+          tabBarLabel: "קופונים",
+          tabBarIcon: ({ color }) => <Ticket color={color} size={20} strokeWidth={1.8} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          tabBarLabel: "דשבורד",
+          tabBarIcon: ({ color }) => <Home color={color} size={20} strokeWidth={1.8} />,
         }}
       />
       </Tabs>
