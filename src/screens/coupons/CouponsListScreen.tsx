@@ -150,7 +150,7 @@ export function CouponsListScreen() {
               style={[styles.addBtn, { backgroundColor: theme.primary }]}
             >
               <Plus size={18} color="#ffffff" />
-              <Text style={styles.addBtnText}>חדש</Text>
+              <Text style={styles.addBtnText}>קופון חדש</Text>
             </TouchableOpacity>
           </View>
         }
