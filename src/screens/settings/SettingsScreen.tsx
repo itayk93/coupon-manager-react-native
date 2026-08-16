@@ -8,9 +8,7 @@ import {
   SafeAreaView,
   Switch,
 } from "react-native";
-import { CompositeScreenProps } from "@react-navigation/native";
-import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import {
   User,
   Shield,
@@ -25,18 +23,13 @@ import {
   Lock,
   Share2,
 } from "lucide-react-native";
-import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, "SettingsTab">,
-  NativeStackScreenProps<RootStackParamList>
->;
-
-export function SettingsScreen({ navigation }: Props) {
+export function SettingsScreen() {
+  const router = useRouter();
   const { theme, mode, toggleTheme, isDark } = useAppTheme();
   const { user, isAdmin, signOut } = useAuth();
 
@@ -68,7 +61,7 @@ export function SettingsScreen({ navigation }: Props) {
         {/* User Profile Card */}
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => navigation.navigate("Profile")}
+          onPress={() => router.push("/profile")}
           style={[
             styles.profileCard,
             {
@@ -123,7 +116,7 @@ export function SettingsScreen({ navigation }: Props) {
               ]}
             >
               <TouchableOpacity
-                onPress={() => navigation.navigate("AdminDashboard")}
+                onPress={() => router.push("/admin")}
                 style={styles.menuItem}
               >
                 <ChevronLeft size={18} color={theme.textMuted} />
@@ -170,7 +163,7 @@ export function SettingsScreen({ navigation }: Props) {
 
             {/* Sharing Entry */}
             <TouchableOpacity
-              onPress={() => navigation.navigate("Sharing")}
+              onPress={() => router.push("/sharing")}
               style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
             >
               <ChevronLeft size={18} color={theme.textMuted} />
@@ -199,7 +192,7 @@ export function SettingsScreen({ navigation }: Props) {
             ]}
           >
             <TouchableOpacity
-              onPress={() => navigation.navigate("About")}
+              onPress={() => router.push("/about")}
               style={styles.menuItem}
             >
               <ChevronLeft size={18} color={theme.textMuted} />
@@ -212,7 +205,7 @@ export function SettingsScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("Faq")}
+              onPress={() => router.push("/faq")}
               style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
             >
               <ChevronLeft size={18} color={theme.textMuted} />
@@ -225,7 +218,7 @@ export function SettingsScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("Privacy")}
+              onPress={() => router.push("/privacy")}
               style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
             >
               <ChevronLeft size={18} color={theme.textMuted} />
@@ -238,7 +231,7 @@ export function SettingsScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("Issues")}
+              onPress={() => router.push("/issues")}
               style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
             >
               <ChevronLeft size={18} color={theme.textMuted} />

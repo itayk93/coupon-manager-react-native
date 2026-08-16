@@ -9,11 +9,9 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
-import { CompositeScreenProps } from "@react-navigation/native";
-import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   QrCode,
   Sparkles,
@@ -22,19 +20,14 @@ import {
   PlusCircle,
   FileText,
 } from "lucide-react-native";
-import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { useParseCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, "ScannerTab">,
-  NativeStackScreenProps<RootStackParamList>
->;
-
-export function BarcodeScannerScreen({ navigation }: Props) {
+export function BarcodeScannerScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -53,8 +46,9 @@ export function BarcodeScannerScreen({ navigation }: Props) {
     notify.success("הקוד נסרק בהצלחה!", data);
 
     // Navigate to Add Coupon prefilled with scanned code
-    navigation.navigate("AddCoupon", {
-      initialCode: data,
+    router.push({
+      pathname: "/coupons/add",
+      params: { initialCode: data },
     });
 
     setTimeout(() => setScanned(false), 2000);
@@ -70,10 +64,13 @@ export function BarcodeScannerScreen({ navigation }: Props) {
       const results = await parseCoupon.mutateAsync({ text: aiText });
       if (results && results.length > 0) {
         const first = results[0];
-        navigation.navigate("AddCoupon", {
-          initialCompany: first.company || "",
-          initialCode: first.code || "",
-          initialValue: first.value || undefined,
+        router.push({
+          pathname: "/coupons/add",
+          params: {
+            initialCompany: first.company || "",
+            initialCode: first.code || "",
+            ...(first.value ? { initialValue: String(first.value) } : {}),
+          },
         });
       }
     } catch (e: any) {
@@ -172,7 +169,7 @@ export function BarcodeScannerScreen({ navigation }: Props) {
             ) : (
               <View style={styles.cameraWrapper}>
                 <CameraView
-                  style={StyleSheet.absoluteFillObject}
+                  style={StyleSheet.absoluteFill}
                   barcodeScannerSettings={{
                     barcodeTypes: [
                       "qr",
@@ -326,7 +323,7 @@ const styles = StyleSheet.create({
     maxWidth: 240,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(0, 0, 0, 0.4)",

@@ -7,13 +7,10 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { ChevronDown, ChevronUp, HelpCircle } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
-
-type Props = NativeStackScreenProps<RootStackParamList, "Faq">;
 
 const FAQ_ITEMS = [
   {
@@ -34,7 +31,8 @@ const FAQ_ITEMS = [
   },
 ];
 
-export function FaqScreen({ navigation }: Props) {
+export function FaqScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(0);
 
@@ -44,7 +42,7 @@ export function FaqScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="שאלות נפוצות" showBack onBack={() => navigation.goBack()} />
+      <Header title="שאלות נפוצות" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}

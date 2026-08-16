@@ -10,9 +10,8 @@ import {
   SafeAreaView,
   Image,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Mail, Lock, LogIn, ArrowRight } from "lucide-react-native";
-import { AuthStackParamList } from "@/navigation/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { signInLegacy } from "@/lib/legacyAuth";
@@ -20,9 +19,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
-
-export function LoginScreen({ navigation }: Props) {
+export function LoginScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { setLegacySession } = useAuth();
 
@@ -125,7 +123,7 @@ export function LoginScreen({ navigation }: Props) {
             />
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("ForgotPassword")}
+              onPress={() => router.push("/(auth)/forgot-password")}
               style={styles.forgotBtn}
             >
               <Text style={[styles.forgotText, { color: theme.primary }]}>
@@ -143,7 +141,7 @@ export function LoginScreen({ navigation }: Props) {
 
           {/* Switch to Register */}
           <View style={styles.footerRow}>
-            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
               <Text style={[styles.registerLink, { color: theme.primary }]}>
                 הרשם עכשיו
               </Text>

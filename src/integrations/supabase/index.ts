@@ -14,7 +14,6 @@ export type Tag = Database['public']['Tables']['tag']['Row'];
 export type CouponTag = Database['public']['Tables']['coupon_tags']['Row'];
 export type Notification = Database['public']['Tables']['notifications']['Row'];
 export type CouponTransaction = Database['public']['Tables']['coupon_transaction']['Row'];
-export type CouponRequest = Database['public']['Tables']['coupon_requests']['Row'];
 export type CouponShare = Database['public']['Tables']['coupon_shares']['Row'];
 export type AdminMessage = Database['public']['Tables']['admin_messages']['Row'];
 export type AdminSettings = Database['public']['Tables']['admin_settings']['Row'];

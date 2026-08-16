@@ -8,9 +8,8 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Layers, Plus, Building2, ChevronLeft } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,9 +18,8 @@ import { useAddCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<RootStackParamList, "BulkImport">;
-
-export function BulkImportScreen({ navigation }: Props) {
+export function BulkImportScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const addCoupon = useAddCoupon();
 
@@ -68,7 +66,7 @@ export function BulkImportScreen({ navigation }: Props) {
       }
 
       notify.success(`יובאו בהצלחה ${imported} קופונים!`);
-      navigation.goBack();
+      router.back();
     } catch (e: any) {
       notify.error("שגיאה בייבוא מרובה", e.message);
     } finally {
@@ -78,7 +76,7 @@ export function BulkImportScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="ייבוא קופונים מרובה" showBack onBack={() => navigation.goBack()} />
+      <Header title="ייבוא קופונים מרובה" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}

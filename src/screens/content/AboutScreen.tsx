@@ -6,20 +6,18 @@ import {
   ScrollView,
   SafeAreaView,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Sparkles, ShieldCheck, Zap, Heart } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
-type Props = NativeStackScreenProps<RootStackParamList, "About">;
-
-export function AboutScreen({ navigation }: Props) {
+export function AboutScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="אודות" showBack onBack={() => navigation.goBack()} />
+      <Header title="אודות" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}

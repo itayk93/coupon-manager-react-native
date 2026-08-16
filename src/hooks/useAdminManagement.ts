@@ -9,6 +9,7 @@ import {
   TaskExecutionLog,
   AdminMessage,
   AutoUpdateRun,
+  UserUpdate,
 } from "@/integrations/supabase";
 import { notify } from "@/lib/notify";
 
@@ -36,7 +37,7 @@ export function useManageUsers(search = "") {
 export function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: Record<string, any> }) => {
+    mutationFn: async ({ id, updates }: { id: number; updates: UserUpdate }) => {
       const { error } = await supabase.from("users").update(updates).eq("id", id);
       if (error) throw error;
     },

@@ -9,7 +9,7 @@ import {
   Image,
   Share,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import {
   Edit3,
@@ -23,7 +23,6 @@ import {
   History,
   AlertTriangle,
 } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
@@ -44,8 +43,6 @@ import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<RootStackParamList, "CouponDetail">;
-
 function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
 }
@@ -63,8 +60,11 @@ function formatDate(dateStr: string | null) {
   }
 }
 
-export function CouponDetailScreen({ route, navigation }: Props) {
-  const { couponId } = route.params;
+export function CouponDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const parsedId = Number(id);
+  const couponId = Number.isInteger(parsedId) ? parsedId : undefined;
   const { theme } = useAppTheme();
 
   const { data: coupon, isLoading } = useCoupon(couponId);
@@ -79,7 +79,7 @@ export function CouponDetailScreen({ route, navigation }: Props) {
   if (isLoading || !coupon) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <Header title="טוען קופון..." showBack onBack={() => navigation.goBack()} />
+        <Header title="טוען קופון..." showBack onBack={() => router.back()} />
         <View style={styles.loadingContainer}>
           <Text style={{ color: theme.textMuted }}>טוען נתוני קופון...</Text>
         </View>
@@ -100,7 +100,7 @@ export function CouponDetailScreen({ route, navigation }: Props) {
       `האם אתה בטוח שברצונך למחוק את הקופון של ${coupon.company}?`,
       async () => {
         await deleteCoupon.mutateAsync(coupon.id);
-        navigation.goBack();
+        router.back();
       },
       "מחק"
     );
@@ -153,11 +153,11 @@ export function CouponDetailScreen({ route, navigation }: Props) {
       <Header
         title={coupon.company}
         showBack
-        onBack={() => navigation.goBack()}
+        onBack={() => router.back()}
         rightAction={
           <View style={styles.headerRightGroup}>
             <TouchableOpacity
-              onPress={() => navigation.navigate("EditCoupon", { coupon })}
+              onPress={() => router.push({ pathname: "/coupons/edit", params: { couponId: String(coupon.id) } })}
               style={[styles.headerIconBtn, { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" }]}
             >
               <Edit3 size={18} color={theme.text} />
