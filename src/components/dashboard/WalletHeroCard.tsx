@@ -115,14 +115,6 @@ export function WalletHeroCard({
       {/* Stat tiles */}
       <View style={styles.statsRow}>
         <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <ReceiptText size={18} color={theme.primary} />
-          <Text style={[styles.statLabel, { color: theme.textMuted }]}>כבר נוצל</Text>
-          <Text style={[styles.statValue, { color: theme.text }]}>
-            {isLoading || isError ? "—" : formatIls(usedValue)}
-          </Text>
-        </View>
-
-        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <BarChart3 size={18} color={theme.warning} />
           <Text style={[styles.statLabel, { color: theme.textMuted }]}>פגים ב-14 יום</Text>
           <Text style={[styles.statValue, { color: theme.text }]}>
