@@ -21,6 +21,7 @@ import {
 import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outfit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BiometricGate } from "@/components/layout/BiometricGate";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -134,13 +135,16 @@ function RootLayoutNav() {
       }}
     >
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "slide_from_right",
-          contentStyle: { backgroundColor: theme.background },
-        }}
-      />
+      <View style={styles.shell}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: "slide_from_right",
+            contentStyle: { backgroundColor: theme.background },
+          }}
+        />
+        <BottomNav />
+      </View>
       <BiometricGate />
       <ConfirmHost />
       <ToastHost />
@@ -172,6 +176,9 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+  },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
     alignItems: "center",

@@ -24,15 +24,9 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSubtle,
-        tabBarStyle: {
-          backgroundColor: theme.card,
-          borderTopColor: theme.cardBorder,
-          borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 92 : 84,
-          paddingBottom: Platform.OS === "ios" ? 28 : 18,
-          paddingTop: 10,
-          elevation: 0,
-        },
+        // The persistent bar lives at the root (BottomNav) so it survives pushed
+        // routes; this one would otherwise render a second copy on tab screens.
+        tabBarStyle: { display: "none" },
         tabBarLabelStyle: styles.label,
       }}
     >
