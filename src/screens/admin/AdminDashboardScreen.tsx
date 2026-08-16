@@ -37,7 +37,7 @@ import {
   useDeleteAdminMessage,
 } from "@/hooks/useAdminManagement";
 import { useAdminTags, useRenameTag, useDeleteTag } from "@/hooks/useTags";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -228,7 +228,7 @@ export function AdminDashboardScreen() {
                       {item.name}
                     </Text>
                     <Image
-                      source={{ uri: getCompanyLogo(item.name) }}
+                      source={getCompanyLogoSource(item.name)}
                       style={styles.adminLogo}
                       resizeMode="contain"
                     />

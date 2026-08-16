@@ -1,3 +1,5 @@
+import { getLogoAsset } from "./companyLogoAssets";
+
 const SUPABASE_STORAGE_URL = "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public";
 
 const logoByCompany: Record<string, string> = {
@@ -200,4 +202,32 @@ export function getCompanyColor(company: string): string {
     hash = (hash * 31 + trimmed.charCodeAt(i)) >>> 0;
   }
   return fallbackPalette[hash % fallbackPalette.length];
+}
+
+/**
+ * Image source for a company logo.
+ *
+ * Prefers the bundled asset (works on native and web); falls back to a remote
+ * URL for DB-supplied paths and unknown companies.
+ */
+export function getCompanyLogoSource(
+  company: string,
+  dbImagePath?: string | null
+): { uri: string } | number {
+  const trimmed = (company || "").trim();
+
+  const dbFile = dbImagePath?.trim();
+  if (dbFile && !/^https?:\/\//i.test(dbFile)) {
+    const bare = dbFile.split("/").pop();
+    const asset = bare ? getLogoAsset(bare) : undefined;
+    if (asset) return asset;
+  }
+
+  const file = logoByCompany[trimmed.toLowerCase()] || logoByCompany[trimmed];
+  if (file) {
+    const asset = getLogoAsset(file);
+    if (asset) return asset;
+  }
+
+  return { uri: resolveCompanyLogo(company, dbImagePath) };
 }

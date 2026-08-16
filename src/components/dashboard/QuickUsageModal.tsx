@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useRecordUsage } from "@/hooks/useCouponUsage";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 type QuickUsageModalProps = {
@@ -125,7 +125,7 @@ export function QuickUsageModal({
                 </Text>
               </View>
               <Image
-                source={{ uri: getCompanyLogo(selectedCoupon.company) }}
+                source={getCompanyLogoSource(selectedCoupon.company)}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -190,7 +190,7 @@ export function QuickUsageModal({
                       </Text>
                     </View>
                     <Image
-                      source={{ uri: getCompanyLogo(item.company) }}
+                      source={getCompanyLogoSource(item.company)}
                       style={styles.itemLogo}
                       resizeMode="contain"
                     />

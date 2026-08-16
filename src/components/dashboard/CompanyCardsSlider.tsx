@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 
@@ -37,7 +37,7 @@ export function CompanyCardsSlider({
       <View style={styles.grid}>
         {companyCards.map((item) => {
           const isSelected = selectedCompany === item.company;
-          const logoUri = getCompanyLogo(item.company);
+          const logoUri = getCompanyLogoSource(item.company);
 
           return (
             <TouchableOpacity
@@ -55,7 +55,7 @@ export function CompanyCardsSlider({
               ]}
             >
               <View style={[styles.logoWrapper, { borderColor: theme.surfaceAlt }]}>
-                <Image source={{ uri: logoUri }} style={styles.logo} resizeMode="contain" />
+                <Image source={logoUri} style={styles.logo} resizeMode="contain" />
               </View>
 
               <Text numberOfLines={1} style={[styles.companyName, { color: theme.text }]}>

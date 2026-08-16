@@ -22,7 +22,7 @@ import {
   DecryptedCoupon,
 } from "@/hooks/useCoupons";
 import { useCouponTags, useSetCouponTags } from "@/hooks/useTags";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
@@ -277,7 +277,7 @@ function CouponForm({
               </Text>
               {company ? (
                 <Image
-                  source={{ uri: getCompanyLogo(company) }}
+                  source={getCompanyLogoSource(company)}
                   style={styles.selectedLogo}
                   resizeMode="contain"
                 />

@@ -39,7 +39,7 @@ import {
   useCouponUsageHistory,
   useDeleteTransactionRecord,
 } from "@/hooks/useCouponUsage";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -147,7 +147,7 @@ export function CouponDetailScreen() {
     }
   };
 
-  const logo = getCompanyLogo(coupon.company);
+  const logo = getCompanyLogoSource(coupon.company);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -224,7 +224,7 @@ export function CouponDetailScreen() {
                   { backgroundColor: theme.surfaceAlt },
                 ]}
               >
-                <Image source={{ uri: logo }} style={styles.companyLogoImg} resizeMode="contain" />
+                <Image source={logo} style={styles.companyLogoImg} resizeMode="contain" />
               </View>
             </View>
           </View>
