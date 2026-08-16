@@ -16,7 +16,6 @@
     }
   },
   "include": [
-    "expo-env.d.ts",
     "src/declarations.d.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
