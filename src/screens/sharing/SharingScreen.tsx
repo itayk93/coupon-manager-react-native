@@ -111,8 +111,6 @@ export function SharingScreen() {
                 backgroundColor:
                   activeTab === "shared_with_me"
                     ? theme.primary
-                    : theme.isDark
-                    ? theme.surfaceAlt
                     : theme.surfaceAlt,
               },
             ]}
@@ -138,8 +136,6 @@ export function SharingScreen() {
                 backgroundColor:
                   activeTab === "my_shares"
                     ? theme.primary
-                    : theme.isDark
-                    ? theme.surfaceAlt
                     : theme.surfaceAlt,
               },
             ]}

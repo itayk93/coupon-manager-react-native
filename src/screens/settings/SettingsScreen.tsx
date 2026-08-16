@@ -12,7 +12,6 @@ import { useRouter } from "expo-router";
 import {
   User,
   Shield,
-  Moon,
   Bell,
   HelpCircle,
   FileText,
@@ -31,7 +30,7 @@ import { notify } from "@/lib/notify";
 
 export function SettingsScreen() {
   const router = useRouter();
-  const { theme, mode, toggleTheme, isDark } = useAppTheme();
+  const { theme } = useAppTheme();
   const { user, isAdmin, signOut } = useAuth();
 
   const handleSignOut = () => {
@@ -146,21 +145,6 @@ export function SettingsScreen() {
               },
             ]}
           >
-            {/* Dark Mode Switch */}
-            <View style={styles.menuItem}>
-              <Switch
-                value={isDark}
-                onValueChange={toggleTheme}
-                trackColor={{ false: theme.inputBorder, true: theme.primary }}
-                thumbColor="#ffffff"
-              />
-              <View style={styles.menuItemLabelGroup}>
-                <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  מצב לילה (Dark Mode)
-                </Text>
-                <Moon size={20} color={theme.textMuted} />
-              </View>
-            </View>
 
             {/* Sharing Entry */}
             <TouchableOpacity
