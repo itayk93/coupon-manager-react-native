@@ -110,37 +110,32 @@ export function WalletHeroCard({
           </Text>
         </View>
 
-        {/* KPI Mini Grid */}
-        <View style={styles.kpiRow}>
-          <View style={[styles.kpiCard, { backgroundColor: theme.surfaceAlt }]}>
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>פגים ב-14 יום</Text>
-              <BarChart3 size={15} color={theme.warning} />
-            </View>
-            <Text style={[styles.kpiValue, { color: theme.warningText }]}>
-              {isLoading || isError ? "—" : expiringSoonCount}
-            </Text>
-          </View>
+      </View>
 
-          <View style={[styles.kpiCard, { backgroundColor: theme.surfaceAlt }]}>
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>כבר נוצל</Text>
-              <ReceiptText size={15} color={theme.primary} />
-            </View>
-            <Text style={[styles.kpiValue, { color: theme.primary }]}>
-              {isLoading || isError ? "—" : formatIls(usedValue)}
-            </Text>
-          </View>
+      {/* Stat tiles */}
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <ReceiptText size={18} color={theme.primary} />
+          <Text style={[styles.statLabel, { color: theme.textMuted }]}>כבר נוצל</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {isLoading || isError ? "—" : formatIls(usedValue)}
+          </Text>
+        </View>
 
-          <View style={[styles.kpiCard, { backgroundColor: theme.surfaceAlt }]}>
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>חסכת עד היום</Text>
-              <Sparkles size={15} color="#34d399" />
-            </View>
-            <Text style={[styles.kpiValue, { color: "#6ee7b7" }]}>
-              {isLoading || isError ? "—" : formatIls(totalSavings)}
-            </Text>
-          </View>
+        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <BarChart3 size={18} color={theme.warning} />
+          <Text style={[styles.statLabel, { color: theme.textMuted }]}>פגים ב-14 יום</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {isLoading || isError ? "—" : expiringSoonCount}
+          </Text>
+        </View>
+
+        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Sparkles size={18} color={theme.success} />
+          <Text style={[styles.statLabel, { color: theme.textMuted }]}>חסכת עד היום</Text>
+          <Text style={[styles.statValue, { color: theme.success }]}>
+            {isLoading || isError ? "—" : formatIls(totalSavings)}
+          </Text>
         </View>
       </View>
 
@@ -162,7 +157,7 @@ export function WalletHeroCard({
             styles.actionBtn,
             {
               backgroundColor: theme.card,
-              borderColor: theme.border,
+              borderColor: theme.inputBorder,
               borderWidth: 1,
             },
           ]}
@@ -180,7 +175,7 @@ export function WalletHeroCard({
             styles.actionBtn,
             {
               backgroundColor: theme.card,
-              borderColor: theme.border,
+              borderColor: theme.inputBorder,
               borderWidth: 1,
             },
           ]}
@@ -260,35 +255,36 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     marginTop: 2,
   },
-  kpiRow: {
+  statsRow: {
     flexDirection: "row-reverse",
-    gap: 8,
+    gap: 14,
+    marginTop: 14,
   },
-  kpiCard: {
+  statCard: {
     flex: 1,
-    borderRadius: radii.xl,
-    padding: 10,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    padding: 16,
     alignItems: "flex-end",
+    gap: 6,
+    ...shadows.card,
   },
-  kpiHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 4,
-  },
-  kpiLabel: {
-    fontSize: 11,
+  statLabel: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
     fontWeight: "600",
+    textAlign: "right",
   },
-  kpiValue: {
+  statValue: {
     fontFamily: fonts.display,
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: "800",
   },
   actionButtonsRow: {
     flexDirection: "row-reverse",
-    gap: 8,
-    marginTop: 12,
+    gap: 10,
+    marginTop: 16,
+    flexWrap: "wrap",
   },
   actionBtn: {
     flex: 1,

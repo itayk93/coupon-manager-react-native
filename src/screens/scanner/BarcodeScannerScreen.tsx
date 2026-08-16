@@ -93,9 +93,7 @@ export function BarcodeScannerScreen() {
                 backgroundColor:
                   activeTab === "camera"
                     ? theme.primary
-                    : theme.isDark
-                    ? "#1e293b"
-                    : "#f1f5f9",
+                    : theme.surfaceAlt,
               },
             ]}
           >
@@ -121,9 +119,7 @@ export function BarcodeScannerScreen() {
                 backgroundColor:
                   activeTab === "ai"
                     ? theme.primary
-                    : theme.isDark
-                    ? "#1e293b"
-                    : "#f1f5f9",
+                    : theme.surfaceAlt,
               },
             ]}
           >

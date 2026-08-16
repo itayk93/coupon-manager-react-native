@@ -145,3 +145,59 @@ export function resolveCompanyLogo(company: string, dbImagePath?: string | null)
 
   return "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public/company-logos/default.png";
 }
+
+/**
+ * Brand colours used for the coupon card header in the redesign.
+ * Companies outside this list get a stable colour derived from their name, so
+ * the same company always renders the same colour.
+ */
+const colorByCompany: Record<string, string> = {
+  carrefour: "#0055a4",
+  "קרפור": "#0055a4",
+  "רמי לוי": "#f47b20",
+  ramilevi: "#f47b20",
+  kfc: "#c8102e",
+  "קנטקי": "#c8102e",
+  wolt: "#00a9c2",
+  "וולט": "#00a9c2",
+  "fox home": "#22252b",
+  "פוקס הום": "#22252b",
+  foxhome: "#22252b",
+  "סינמה סיטי": "#d81b23",
+  "cinema city": "#d81b23",
+  buyme: "#7c3aed",
+  "ביימי": "#7c3aed",
+  goodpharm: "#0ea472",
+  "גוד פארם": "#0ea472",
+  "שופרסל": "#e2001a",
+  shufersal: "#e2001a",
+  "יס פלאנט": "#d81b23",
+  "yes planet": "#d81b23",
+  xtra: "#1f6fd1",
+  "אקסטרה": "#1f6fd1",
+  "מגה ספורט": "#0055a4",
+  "פולגת": "#22252b",
+};
+
+const fallbackPalette = [
+  "#1f6fd1",
+  "#7c3aed",
+  "#0ea472",
+  "#c8102e",
+  "#f47b20",
+  "#00a9c2",
+  "#22252b",
+  "#d81b23",
+];
+
+export function getCompanyColor(company: string): string {
+  const trimmed = (company || "").trim();
+  const direct = colorByCompany[trimmed.toLowerCase()] || colorByCompany[trimmed];
+  if (direct) return direct;
+
+  let hash = 0;
+  for (let i = 0; i < trimmed.length; i += 1) {
+    hash = (hash * 31 + trimmed.charCodeAt(i)) >>> 0;
+  }
+  return fallbackPalette[hash % fallbackPalette.length];
+}

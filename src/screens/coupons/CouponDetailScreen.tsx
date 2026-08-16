@@ -198,7 +198,7 @@ export function CouponDetailScreen() {
                 <Badge
                   label={`פג בעוד ${daysLeft} ימים`}
                   variant="warning"
-                  icon={<Clock size={12} color="#fbbf24" />}
+                  icon={<Clock size={12} color={theme.warningText} />}
                 />
               ) : (
                 <Badge label="פעיל בארנק" variant="success" />
@@ -238,7 +238,7 @@ export function CouponDetailScreen() {
             <View style={styles.gaugeRow}>
               <View style={styles.gaugeCol}>
                 <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>נוצל</Text>
-                <Text style={[styles.gaugeVal, { color: "#64748b" }]}>
+                <Text style={[styles.gaugeVal, { color: theme.textMuted }]}>
                   {formatIls(coupon.used_value || 0)}
                 </Text>
               </View>
@@ -389,7 +389,7 @@ export function CouponDetailScreen() {
                             ? theme.primary
                             : isNegative
                             ? theme.danger
-                            : "#3b82f6",
+                            : theme.primary,
                       },
                     ]}
                   >

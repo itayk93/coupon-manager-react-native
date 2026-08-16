@@ -130,6 +130,7 @@ export function getTheme(mode: ThemeMode) {
     primaryTint: isDark ? "rgba(31, 111, 209, 0.18)" : palette.primaryTint,
     primaryMuted: palette.primaryMuted,
     secondary: palette.secondary,
+    accent: palette.accent,
     info: palette.info,
 
     // Status

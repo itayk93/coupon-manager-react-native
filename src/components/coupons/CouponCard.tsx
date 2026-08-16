@@ -1,27 +1,12 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import {
-  Copy,
-  Check,
-  Calendar,
-  Eye,
-  ReceiptText,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react-native";
+import { Check } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { Badge } from "@/components/ui/badge";
-import { getCompanyLogo } from "@/lib/companyLogos";
+import { getCompanyColor, getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type CouponCardProps = {
@@ -38,20 +23,17 @@ function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
 }
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return "ללא תוקף";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("he-IL", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
+function daysUntil(expiration: string | null) {
+  if (!expiration) return null;
+  const ms = new Date(expiration).getTime() - Date.now();
+  if (Number.isNaN(ms)) return null;
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
+/**
+ * Coupon card from the redesign: a brand-coloured header with the company logo
+ * overlapping its lower edge, then balance, usage bar, code and two actions.
+ */
 export function CouponCard({
   coupon,
   tags = [],
@@ -64,22 +46,40 @@ export function CouponCard({
   const { theme } = useAppTheme();
   const [copied, setCopied] = React.useState(false);
 
-  const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
   const total = coupon.value || 0;
-  const usedRatio = total > 0 ? (coupon.used_value || 0) / total : 0;
-  const remainingRatio = Math.max(0, 1 - usedRatio);
+  const used = coupon.used_value || 0;
+  const remaining = Math.max(0, total - used);
+  const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
 
+  const days = daysUntil(coupon.expiration);
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
-  const isExpiringSoon = React.useMemo(() => {
-    if (!coupon.expiration) return false;
-    const days = (new Date(coupon.expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    return days >= 0 && days <= 14;
-  }, [coupon.expiration]);
+  const isExpired = days !== null && days < 0;
+  const isExpiringSoon = days !== null && days >= 0 && days <= 14;
 
-  const isExpired = React.useMemo(() => {
-    if (!coupon.expiration) return false;
-    return new Date(coupon.expiration).getTime() < Date.now();
-  }, [coupon.expiration]);
+  const brand = getCompanyColor(coupon.company || "");
+  const headerColor = isFullyUsed || isExpired ? theme.textSubtle : brand;
+
+  const statusLabel = isExpired
+    ? "פג תוקף"
+    : isFullyUsed
+      ? "נוצל"
+      : isExpiringSoon
+        ? "עומד לפוג"
+        : "פעיל";
+
+  const daysLabel = isExpired
+    ? "פג תוקף"
+    : isFullyUsed
+      ? "נוצל במלואו"
+      : isExpiringSoon
+        ? `נותרו ${days} ימים`
+        : "בתוקף";
+
+  const daysColor = isExpired || isFullyUsed
+    ? theme.danger
+    : isExpiringSoon
+      ? theme.warning
+      : theme.success;
 
   const handleCopy = async (e: any) => {
     e?.stopPropagation?.();
@@ -101,175 +101,95 @@ export function CouponCard({
       onPress={showSelect ? onSelect : onPress}
       style={[
         styles.card,
+        shadows.card,
         {
           backgroundColor: theme.card,
-          borderColor: selected
-            ? theme.primary
-            : isFullyUsed
-            ? theme.border
-            : theme.cardBorder,
-          borderWidth: selected ? 2 : 1,
+          borderColor: selected ? theme.primary : "transparent",
+          borderWidth: selected ? 2 : 0,
           opacity: isFullyUsed || isExpired ? 0.75 : 1,
-          shadowColor: theme.text,
         },
       ]}
     >
-      {/* Top Row: Logo, Company Name, Discount Badge, Status */}
-      <View style={styles.topRow}>
-        <View style={styles.badgesGroup}>
-          {isFullyUsed ? (
-            <Badge label="נוצל" variant="default" />
-          ) : isExpired ? (
-            <Badge label="פג תוקף" variant="danger" />
-          ) : isExpiringSoon ? (
-            <Badge
-              label="פג בקרוב"
-              variant="warning"
-              icon={<AlertTriangle size={12} color="#fbbf24" />}
-            />
-          ) : (
-            <Badge label="פעיל" variant="success" />
-          )}
-
-          {coupon.auto_update ? (
-            <Badge
-              label="אוטומטי"
-              variant="secondary"
-              icon={<RefreshCw size={10} color="#60a5fa" />}
-            />
+      {/* Brand header */}
+      <View style={[styles.header, { backgroundColor: headerColor }]}>
+        <View style={styles.headerTitleGroup}>
+          <Text numberOfLines={1} style={styles.company}>
+            {coupon.company || "ללא חברה"}
+          </Text>
+          {coupon.description ? (
+            <Text numberOfLines={1} style={styles.category}>
+              {coupon.description}
+            </Text>
           ) : null}
         </View>
 
-        <View style={styles.companyInfoGroup}>
-          <View style={styles.titleColumn}>
-            <Text
-              numberOfLines={1}
-              style={[styles.companyTitle, { color: theme.text }]}
-            >
-              {coupon.company}
+        <View style={styles.statusPill}>
+          <Text style={styles.statusPillText}>{statusLabel}</Text>
+        </View>
+
+        <View style={[styles.logoFrame, { backgroundColor: theme.card }]}>
+          <Image source={{ uri: logoUri }} style={styles.logoImg} resizeMode="contain" />
+        </View>
+      </View>
+
+      {/* Body */}
+      <View style={styles.body}>
+        <View>
+          <View style={styles.amountRow}>
+            <Text style={[styles.remaining, { color: theme.text }]}>
+              {formatIls(remaining)}
             </Text>
-            {coupon.description ? (
-              <Text
-                numberOfLines={1}
-                style={[styles.descriptionText, { color: theme.textMuted }]}
-              >
-                {coupon.description}
-              </Text>
-            ) : null}
+            <Text style={[styles.ofTotal, { color: theme.textSubtle }]}>
+              מתוך {formatIls(total)}
+            </Text>
           </View>
 
-          <View
-            style={[
-              styles.logoBox,
-              { backgroundColor: theme.surfaceAlt },
-            ]}
-          >
-            <Image
-              source={{ uri: logoUri }}
-              style={styles.logoImage}
-              resizeMode="contain"
+          <View style={[styles.track, { backgroundColor: theme.track }]}>
+            <View
+              style={[styles.fill, { width: `${usedPct}%`, backgroundColor: headerColor }]}
             />
           </View>
         </View>
-      </View>
 
-      {/* Balance & Progress Bar */}
-      <View style={styles.balanceSection}>
-        <View style={styles.balanceValuesRow}>
-          <Text style={[styles.totalSub, { color: theme.textMuted }]}>
-            מתוך {formatIls(total)}
+        <View style={styles.metaRow}>
+          <Text numberOfLines={1} style={[styles.code, { color: theme.label }]}>
+            {coupon.code || "—"}
           </Text>
-          <Text style={[styles.remainingVal, { color: theme.primary }]}>
-            {formatIls(remaining)}
-          </Text>
+          <Text style={[styles.days, { color: daysColor }]}>{daysLabel}</Text>
         </View>
 
-        {/* Progress bar */}
-        <View
-          style={[
-            styles.progressTrack,
-            { backgroundColor: theme.surfaceAlt },
-          ]}
-        >
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.round(remainingRatio * 100)}%`,
-                backgroundColor: isFullyUsed
-                  ? "#64748b"
-                  : isExpiringSoon
-                  ? "#f59e0b"
-                  : theme.primary,
-              },
-            ]}
-          />
-        </View>
-      </View>
+        {tags.length > 0 ? (
+          <View style={styles.tagsRow}>
+            {tags.slice(0, 3).map((tag) => (
+              <View key={tag} style={[styles.tag, { backgroundColor: theme.primaryTint }]}>
+                <Text style={[styles.tagText, { color: theme.primaryDark }]}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
-      {/* Code Display & One-Touch Copy Button */}
-      <View
-        style={[
-          styles.codeRow,
-          {
-            backgroundColor: theme.surfaceAlt,
-            borderColor: theme.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={handleCopy}
-          style={[
-            styles.copyBtn,
-            { backgroundColor: copied ? theme.primary : "transparent" },
-          ]}
-        >
-          {copied ? (
-            <Check size={16} color="#ffffff" />
-          ) : (
-            <Copy size={16} color={theme.textMuted} />
-          )}
-          <Text
-            style={[
-              styles.copyBtnText,
-              { color: copied ? "#ffffff" : theme.text },
-            ]}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            onPress={handleCopy}
+            style={[styles.actionBtn, { backgroundColor: theme.inputBg }]}
           >
-            {copied ? "הועתק!" : "העתק קוד"}
-          </Text>
-        </TouchableOpacity>
+            {copied ? (
+              <Check size={14} color={theme.success} />
+            ) : null}
+            <Text style={[styles.actionText, { color: theme.label }]}>
+              {copied ? "הועתק" : "העתקת קוד"}
+            </Text>
+          </TouchableOpacity>
 
-        <Text
-          numberOfLines={1}
-          style={[styles.codeText, { color: theme.text }]}
-        >
-          {coupon.code ? coupon.code : "ללא קוד"}
-        </Text>
-      </View>
-
-      {/* Bottom Row: Expiration & Tags */}
-      <View style={styles.bottomRow}>
-        <View style={styles.tagsContainer}>
-          {tags.slice(0, 3).map((tag) => (
-            <View
-              key={tag}
-              style={[
-                styles.tagChip,
-                { backgroundColor: theme.surfaceAlt },
-              ]}
-            >
-              <Text style={[styles.tagText, { color: theme.textMuted }]}>
-                #{tag}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.expirationRow}>
-          <Text style={[styles.expirationText, { color: theme.textMuted }]}>
-            {formatDate(coupon.expiration)}
-          </Text>
-          <Calendar size={13} color={theme.textMuted} />
+          <TouchableOpacity
+            onPress={(e: any) => {
+              e?.stopPropagation?.();
+              onReportUsage ? onReportUsage() : onPress();
+            }}
+            style={[styles.actionBtn, { backgroundColor: headerColor }]}
+          >
+            <Text style={[styles.actionText, styles.actionTextOnBrand]}>דיווח שימוש</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -278,140 +198,145 @@ export function CouponCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: radii.sheet,
+    overflow: "hidden",
+    marginBottom: 20,
   },
-  topRow: {
-    flexDirection: "row",
+  header: {
+    height: 84,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    flexDirection: "row-reverse",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 12,
   },
-  badgesGroup: {
-    flexDirection: "row-reverse",
-    gap: 6,
-  },
-  companyInfoGroup: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 12,
+  headerTitleGroup: {
     flex: 1,
-    justifyContent: "flex-start",
-  },
-  logoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 4,
-  },
-  logoImage: {
-    width: "100%",
-    height: "100%",
-  },
-  titleColumn: {
     alignItems: "flex-end",
-    flex: 1,
+    paddingLeft: 8,
   },
-  companyTitle: {
+  company: {
+    fontFamily: fonts.display,
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "800",
+    textAlign: "right",
   },
-  descriptionText: {
+  category: {
+    fontFamily: fonts.body,
+    color: "rgba(255,255,255,0.75)",
     fontSize: 12,
     marginTop: 2,
+    textAlign: "right",
   },
-  balanceSection: {
-    marginVertical: 6,
+  statusPill: {
+    backgroundColor: "rgba(255,255,255,0.22)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
   },
-  balanceValuesRow: {
+  statusPillText: {
+    fontFamily: fonts.bodyBold,
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  logoFrame: {
+    position: "absolute",
+    bottom: -22,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    ...shadows.lifted,
+  },
+  logoImg: {
+    width: "74%",
+    height: "74%",
+  },
+  body: {
+    paddingTop: 32,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    gap: 14,
+  },
+  amountRow: {
     flexDirection: "row-reverse",
-    justifyContent: "space-between",
     alignItems: "baseline",
-    marginBottom: 6,
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  remainingVal: {
-    fontSize: 20,
-    fontWeight: "900",
+  remaining: {
+    fontFamily: fonts.display,
+    fontSize: 19,
+    fontWeight: "800",
   },
-  totalSub: {
+  ofTotal: {
+    fontFamily: fonts.body,
     fontSize: 12,
-    fontWeight: "600",
   },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    width: "100%",
+  track: {
+    height: 10,
+    borderRadius: radii.pill,
     overflow: "hidden",
   },
-  progressFill: {
+  fill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: radii.pill,
   },
-  codeRow: {
-    flexDirection: "row",
+  metaRow: {
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 10,
-    marginBottom: 10,
   },
-  codeText: {
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: 1,
-    flex: 1,
-    textAlign: "right",
-    paddingRight: 8,
+  code: {
+    fontFamily: fonts.display,
+    fontSize: 13,
+    fontWeight: "700",
+    writingDirection: "ltr",
   },
-  copyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  copyBtnText: {
-    fontSize: 12,
+  days: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
     fontWeight: "700",
   },
-  bottomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 4,
-  },
-  expirationRow: {
+  tagsRow: {
     flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 4,
+    flexWrap: "wrap",
+    gap: 6,
   },
-  expirationText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  tagsContainer: {
-    flexDirection: "row-reverse",
-    gap: 4,
-  },
-  tagChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+  tag: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
   },
   tagText: {
-    fontSize: 10,
-    fontWeight: "600",
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  actionsRow: {
+    flexDirection: "row-reverse",
+    gap: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: radii.md,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  actionText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    fontWeight: "700",
+  },
+  actionTextOnBrand: {
+    color: "#ffffff",
   },
 });

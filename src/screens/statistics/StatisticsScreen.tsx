@@ -27,6 +27,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 function formatIls(value: number) {
@@ -165,9 +166,9 @@ export function StatisticsScreen() {
           >
             <View style={styles.kpiHeader}>
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>יתרה זמינה</Text>
-              <WalletCards size={16} color="#34d399" />
+              <WalletCards size={16} color={theme.primary} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#34d399" }]}>
+            <Text style={[styles.kpiValue, { color: theme.text }]}>
               {formatIls(remainingValue)}
             </Text>
           </View>
@@ -183,9 +184,9 @@ export function StatisticsScreen() {
           >
             <View style={styles.kpiHeader}>
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>חיסכון מצטבר</Text>
-              <Sparkles size={16} color="#3b82f6" />
+              <Sparkles size={16} color={theme.success} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#3b82f6" }]}>
+            <Text style={[styles.kpiValue, { color: theme.success }]}>
               {formatIls(totalSavings)}
             </Text>
           </View>
@@ -201,9 +202,9 @@ export function StatisticsScreen() {
           >
             <View style={styles.kpiHeader}>
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>סך הכל נוצל</Text>
-              <CheckCircle2 size={16} color="#8b5cf6" />
+              <CheckCircle2 size={16} color={theme.primary} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#8b5cf6" }]}>
+            <Text style={[styles.kpiValue, { color: theme.text }]}>
               {formatIls(usedValue)}
             </Text>
           </View>
@@ -219,9 +220,9 @@ export function StatisticsScreen() {
           >
             <View style={styles.kpiHeader}>
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>סך שווי קופונים</Text>
-              <TrendingUp size={16} color="#f59e0b" />
+              <TrendingUp size={16} color={theme.warning} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#f59e0b" }]}>
+            <Text style={[styles.kpiValue, { color: theme.text }]}>
               {formatIls(totalValue)}
             </Text>
           </View>
@@ -253,7 +254,7 @@ export function StatisticsScreen() {
             </View>
 
             <View style={styles.statusCol}>
-              <Text style={[styles.statusNum, { color: "#60a5fa" }]}>
+              <Text style={[styles.statusNum, { color: theme.primary }]}>
                 {statusStats.fullyUsed}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>נוצלו במלואם</Text>
@@ -358,17 +359,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   kpiGrid: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 14,
   },
   kpiCard: {
     width: "48%",
-    padding: 14,
-    borderRadius: 18,
+    padding: 16,
+    borderRadius: radii.card,
     borderWidth: 1,
     alignItems: "flex-end",
+    ...shadows.card,
   },
   kpiHeader: {
     flexDirection: "row-reverse",
@@ -377,18 +379,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   kpiLabel: {
-    fontSize: 11,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12.5,
     fontWeight: "600",
   },
   kpiValue: {
-    fontSize: 18,
-    fontWeight: "900",
+    fontFamily: fonts.display,
+    fontSize: 21,
+    fontWeight: "800",
+    marginTop: 6,
   },
   sectionCard: {
-    borderRadius: 22,
-    padding: 16,
+    borderRadius: radii.cardLg,
+    padding: 20,
     borderWidth: 1,
-    marginBottom: 14,
+    marginBottom: 16,
+    ...shadows.card,
   },
   sectionHeader: {
     flexDirection: "row-reverse",

@@ -75,9 +75,9 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>
                 סה״כ נחסך
               </Text>
-              <Sparkles size={16} color="#10b981" />
+              <Sparkles size={16} color={theme.primary} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#10b981" }]}>
+            <Text style={[styles.kpiValue, { color: theme.primary }]}>
               {formatIls(totalSavings)}
             </Text>
           </View>
@@ -95,9 +95,9 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>
                 אחוז חיסכון ממוצע
               </Text>
-              <TrendingUp size={16} color="#3b82f6" />
+              <TrendingUp size={16} color={theme.primary} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#3b82f6" }]}>
+            <Text style={[styles.kpiValue, { color: theme.primary }]}>
               {savingsPct.toFixed(1)}%
             </Text>
           </View>
@@ -115,9 +115,9 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>
                 חיסכון ממוצע לקופון
               </Text>
-              <Tag size={16} color="#8b5cf6" />
+              <Tag size={16} color={theme.accent} />
             </View>
-            <Text style={[styles.kpiValue, { color: "#8b5cf6" }]}>
+            <Text style={[styles.kpiValue, { color: theme.accent }]}>
               {formatIls(avgDiscount)}
             </Text>
           </View>
@@ -135,11 +135,11 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
               <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>
                 החיסכון הגדול ביותר
               </Text>
-              <PieIcon size={16} color="#f59e0b" />
+              <PieIcon size={16} color={theme.warning} />
             </View>
             <Text
               numberOfLines={1}
-              style={[styles.kpiValue, { color: "#f59e0b", fontSize: 16 }]}
+              style={[styles.kpiValue, { color: theme.warning, fontSize: 16 }]}
             >
               {topCompany}
             </Text>

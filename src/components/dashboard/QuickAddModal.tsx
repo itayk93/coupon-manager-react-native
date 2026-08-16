@@ -206,7 +206,7 @@ export function QuickAddModal({
             <Switch
               value={includeCardInfo}
               onValueChange={setIncludeCardInfo}
-              trackColor={{ false: "#767577", true: theme.primary }}
+              trackColor={{ false: theme.inputBorder, true: theme.primary }}
               thumbColor="#ffffff"
             />
             <View style={styles.switchLabelContainer}>
@@ -254,7 +254,7 @@ export function QuickAddModal({
             <Switch
               value={autoUpdate}
               onValueChange={setAutoUpdate}
-              trackColor={{ false: "#767577", true: theme.primary }}
+              trackColor={{ false: theme.inputBorder, true: theme.primary }}
               thumbColor="#ffffff"
             />
             <View style={styles.switchLabelContainer}>

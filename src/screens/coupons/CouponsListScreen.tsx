@@ -27,6 +27,7 @@ import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCo
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type FilterStatus = "all" | "active" | "used" | "expired";
@@ -161,7 +162,7 @@ export function CouponsListScreen() {
           style={[
             styles.searchBar,
             {
-              backgroundColor: theme.inputBg,
+              backgroundColor: theme.card,
               borderColor: theme.inputBorder,
             },
           ]}
@@ -200,18 +201,15 @@ export function CouponsListScreen() {
                 style={[
                   styles.statusTab,
                   {
-                    backgroundColor: isCurrent
-                      ? theme.primary
-                      : theme.isDark
-                      ? "#1e293b"
-                      : "#f1f5f9",
+                    backgroundColor: isCurrent ? theme.primary : theme.card,
+                    borderColor: isCurrent ? theme.primary : theme.inputBorder,
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.statusTabText,
-                    { color: isCurrent ? "#ffffff" : theme.textMuted },
+                    { color: isCurrent ? "#ffffff" : theme.label },
                   ]}
                 >
                   {tab.label}
@@ -239,19 +237,15 @@ export function CouponsListScreen() {
                   style={[
                     styles.tagChip,
                     {
-                      backgroundColor: isSelected
-                        ? theme.primaryMuted
-                        : theme.isDark
-                        ? "#1e293b"
-                        : "#f1f5f9",
-                      borderColor: isSelected ? theme.primary : "transparent",
+                      backgroundColor: isSelected ? theme.primary : theme.card,
+                      borderColor: isSelected ? theme.primary : theme.inputBorder,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.tagChipText,
-                      { color: isSelected ? theme.primary : theme.textMuted },
+                      { color: isSelected ? "#ffffff" : theme.label },
                     ]}
                   >
                     #{item}
@@ -380,11 +374,11 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     paddingHorizontal: 14,
-    height: 46,
-    marginBottom: 10,
+    height: 44,
+    marginBottom: 14,
     gap: 8,
   },
   searchInput: {
@@ -394,19 +388,21 @@ const styles = StyleSheet.create({
   },
   statusTabsRow: {
     flexDirection: "row-reverse",
-    gap: 6,
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 14,
   },
   statusTab: {
     flex: 1,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   statusTabText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    fontWeight: "600",
   },
   tagsSlider: {
     marginBottom: 10,
@@ -416,9 +412,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   tagChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   tagChipText: {

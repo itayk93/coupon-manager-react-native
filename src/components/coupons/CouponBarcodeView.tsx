@@ -11,6 +11,8 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { Copy, Check, Eye, EyeOff, QrCode } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { palette } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type CouponBarcodeViewProps = {
@@ -18,6 +20,7 @@ type CouponBarcodeViewProps = {
 };
 
 export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
+  const { theme } = useAppTheme();
   const [copied, setCopied] = useState(false);
   const [showCvv, setShowCvv] = useState(false);
 
@@ -49,7 +52,7 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
           </View>
         ) : (
           <View style={styles.noCodeBox}>
-            <QrCode size={48} color="#94a3b8" />
+            <QrCode size={48} color={theme.textSubtle} />
             <Text style={styles.noCodeText}>אין קוד להצגת ברקוד</Text>
           </View>
         )}
@@ -90,9 +93,9 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
             style={styles.revealBtn}
           >
             {showCvv ? (
-              <EyeOff size={16} color="#60a5fa" />
+              <EyeOff size={16} color={theme.primary} />
             ) : (
-              <Eye size={16} color="#60a5fa" />
+              <Eye size={16} color={theme.primary} />
             )}
             <Text style={styles.revealText}>
               {showCvv ? "הסתר פרטי כרטיס" : "הצג פרטי כרטיס"}
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   noCodeText: {
-    color: "#64748b",
+    color: palette.lightTextMuted,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -163,24 +166,24 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 12,
     fontWeight: "700",
-    color: "#475569",
+    color: palette.lightTextSecondary,
     textAlign: "center",
   },
   codeBox: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#0f172a",
+    backgroundColor: palette.headerBg,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginTop: 16,
     width: "100%",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: palette.darkInputBorder,
   },
   codeDigits: {
-    color: "#34d399",
+    color: palette.success,
     fontSize: 18,
     fontWeight: "900",
     letterSpacing: 2,
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#10b981",
+    backgroundColor: palette.primary,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
@@ -226,12 +229,12 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#94a3b8",
+    color: palette.lightTextSubtle,
   },
   fieldVal: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#60a5fa",
+    color: palette.primary,
   },
   revealBtn: {
     flexDirection: "row-reverse",
@@ -241,6 +244,6 @@ const styles = StyleSheet.create({
   revealText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#60a5fa",
+    color: palette.primary,
   },
 });
