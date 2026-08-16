@@ -91,10 +91,10 @@ export function SettingsScreen() {
           <View
             style={[
               styles.avatarCircle,
-              { backgroundColor: theme.primaryMuted },
+              { backgroundColor: theme.primary },
             ]}
           >
-            <Text style={[styles.avatarLetter, { color: theme.primary }]}>
+            <Text style={[styles.avatarLetter, styles.avatarLetterOnBrand]}>
               {(user?.first_name?.[0] || user?.email?.[0] || "U").toUpperCase()}
             </Text>
           </View>
@@ -295,15 +295,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   avatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarLetter: {
+    fontFamily: fonts.display,
     fontSize: 22,
-    fontWeight: "900",
+    fontWeight: "800",
+  },
+  avatarLetterOnBrand: {
+    color: "#ffffff",
   },
   section: {
     marginBottom: 20,

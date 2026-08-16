@@ -40,9 +40,46 @@ export function NotificationsScreen() {
         (c.value || 0) - (c.used_value || 0)
       ).toFixed(2)} ₪`,
       type: "warning",
-      date: "היום",
+      // The design splits the feed into "today" and "earlier"; anything expiring
+      // within three days is the urgent, unread group.
+      urgent: days <= 3,
+      date: days <= 3 ? "היום" : `בעוד ${days} ימים`,
     };
   });
+
+  const today = notifications.filter((n) => n.urgent);
+  const earlier = notifications.filter((n) => !n.urgent);
+
+  const renderNotification = (
+    item: (typeof notifications)[number],
+    unread: boolean
+  ) => (
+    <TouchableOpacity
+      key={item.id}
+      activeOpacity={0.8}
+      onPress={() => router.push(`/coupons/${item.couponId}`)}
+      style={[
+        styles.notifCard,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.cardBorder,
+          opacity: unread ? 1 : 0.75,
+        },
+      ]}
+    >
+      <View style={[styles.iconBox, { backgroundColor: theme.warningBg }]}>
+        <AlertTriangle size={18} color={theme.warning} />
+      </View>
+
+      <View style={styles.contentCol}>
+        <Text style={[styles.notifTitle, { color: theme.text }]}>{item.title}</Text>
+        <Text style={[styles.notifMessage, { color: theme.textMuted }]}>{item.message}</Text>
+        <Text style={[styles.notifDate, { color: theme.textSubtle }]}>{item.date}</Text>
+      </View>
+
+      {unread ? <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} /> : null}
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -61,45 +98,21 @@ export function NotificationsScreen() {
         }
       >
         {notifications.length > 0 ? (
-          notifications.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.8}
-              onPress={() =>
-                router.push(`/coupons/${item.couponId}`)
-              }
-              style={[
-                styles.notifCard,
-                {
-                  backgroundColor: theme.card,
-                  borderColor: theme.cardBorder,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.iconBox,
-                  { backgroundColor: theme.warningBg },
-                ]}
-              >
-                <AlertTriangle size={20} color={theme.warning} />
-              </View>
+          <>
+            {today.length > 0 ? (
+              <>
+                <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>היום</Text>
+                {today.map((item) => renderNotification(item, true))}
+              </>
+            ) : null}
 
-              <View style={styles.contentCol}>
-                <Text style={[styles.notifTitle, { color: theme.text }]}>
-                  {item.title}
-                </Text>
-                <Text
-                  style={[styles.notifMessage, { color: theme.textMuted }]}
-                >
-                  {item.message}
-                </Text>
-                <Text style={[styles.notifDate, { color: theme.textMuted }]}>
-                  {item.date}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+            {earlier.length > 0 ? (
+              <>
+                <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>מוקדם יותר</Text>
+                {earlier.map((item) => renderNotification(item, false))}
+              </>
+            ) : null}
+          </>
         ) : (
           <EmptyState
             icon={<Bell size={32} color={theme.primary} />}
@@ -159,5 +172,19 @@ const styles = StyleSheet.create({
   },
   notifDate: {
     fontSize: 12,
+  },
+  groupLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    fontWeight: "800",
+    textAlign: "right",
+    marginBottom: 8,
+    marginTop: 6,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 5,
   },
 });
