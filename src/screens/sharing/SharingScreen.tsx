@@ -9,9 +9,8 @@ import {
   Image,
   RefreshControl,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Share2, Users, UserCheck, Plus, X, Trash2 } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
@@ -28,13 +27,12 @@ import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Sharing">;
-
 function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
 }
 
-export function SharingScreen({ navigation }: Props) {
+export function SharingScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const [activeTab, setActiveTab] = useState<"shared_with_me" | "my_shares">("shared_with_me");
 
@@ -89,7 +87,7 @@ export function SharingScreen({ navigation }: Props) {
       <Header
         title="שיתוף קופונים"
         showBack
-        onBack={() => navigation.goBack()}
+        onBack={() => router.back()}
         rightAction={
           <TouchableOpacity
             onPress={() => setIsShareModalOpen(true)}

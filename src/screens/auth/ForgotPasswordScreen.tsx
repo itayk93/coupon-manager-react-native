@@ -9,18 +9,16 @@ import {
   ScrollView,
   SafeAreaView,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Mail, KeyRound, ArrowRight } from "lucide-react-native";
-import { AuthStackParamList } from "@/navigation/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
-
-export function ForgotPasswordScreen({ navigation }: Props) {
+export function ForgotPasswordScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +61,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         >
           {/* Back Button */}
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             style={[
               styles.backButton,
               { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
@@ -110,7 +108,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                 </Text>
                 <Button
                   title="חזרה להתחברות"
-                  onPress={() => navigation.navigate("Login")}
+                  onPress={() => router.push("/(auth)/login")}
                   style={{ marginTop: 20 }}
                 />
               </View>

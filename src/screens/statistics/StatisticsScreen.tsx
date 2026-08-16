@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   Image,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import {
   BarChart3,
@@ -112,11 +112,12 @@ export function StatisticsScreen() {
         .join("\n");
 
       const csvContent = "\uFEFF" + headers + rows; // UTF-8 BOM for Hebrew Excel
-      const fileUri = `${FileSystem.documentDirectory}coupons_report_${Date.now()}.csv`;
-
-      await FileSystem.writeAsStringAsync(fileUri, csvContent, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      // expo-file-system dropped the `*AsStringAsync` helpers in SDK 54; the
+      // File API writes strings as UTF-8, which the BOM above relies on.
+      const file = new File(Paths.document, `coupons_report_${Date.now()}.csv`);
+      file.create({ overwrite: true });
+      file.write(csvContent);
+      const fileUri = file.uri;
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri, {

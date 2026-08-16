@@ -7,9 +7,8 @@ import {
   SafeAreaView,
   TextInput,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { AlertCircle, Send } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,9 +16,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Issues">;
-
-export function IssuesScreen({ navigation }: Props) {
+export function IssuesScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { user } = useAuth();
 
@@ -38,7 +36,7 @@ export function IssuesScreen({ navigation }: Props) {
       // Simulate submission / send
       await new Promise((resolve) => setTimeout(resolve, 800));
       notify.success("הפנייה נשלחה בהצלחה!", "צוות התמיכה יבדוק את הפנייה בהקדם.");
-      navigation.goBack();
+      router.back();
     } catch (e: any) {
       notify.error("שגיאה בשליחת הפנייה", e.message);
     } finally {
@@ -48,7 +46,7 @@ export function IssuesScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="דיווח על תקלה" showBack onBack={() => navigation.goBack()} />
+      <Header title="דיווח על תקלה" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}

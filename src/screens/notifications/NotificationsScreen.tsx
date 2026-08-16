@@ -8,17 +8,15 @@ import {
   SafeAreaView,
   RefreshControl,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Bell, Check, Clock, Info, AlertTriangle, Sparkles } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Notifications">;
-
-export function NotificationsScreen({ navigation }: Props) {
+export function NotificationsScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
 
@@ -47,7 +45,7 @@ export function NotificationsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="מרכז התראות" showBack onBack={() => navigation.goBack()} />
+      <Header title="מרכז התראות" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}
@@ -67,7 +65,7 @@ export function NotificationsScreen({ navigation }: Props) {
               key={item.id}
               activeOpacity={0.8}
               onPress={() =>
-                navigation.navigate("CouponDetail", { couponId: item.couponId })
+                router.push(`/coupons/${item.couponId}`)
               }
               style={[
                 styles.notifCard,

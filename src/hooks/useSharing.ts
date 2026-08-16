@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import * as Crypto from "expo-crypto";
 import { CouponShare } from "@/integrations/supabase";
 import { notify } from "@/lib/notify";
 import { decrypt } from "@/lib/encryption";
@@ -120,6 +121,12 @@ export function useMyShares() {
   });
 }
 
+/**
+ * `coupon_shares.share_token` and `share_expires_at` are NOT NULL with no
+ * default, so both must be supplied on insert.
+ */
+const SHARE_EXPIRY_DAYS = 30;
+
 export function useCreateShare() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -128,11 +135,9 @@ export function useCreateShare() {
     mutationFn: async ({
       couponId,
       recipientEmail,
-      permission = "view",
     }: {
       couponId: number;
       recipientEmail: string;
-      permission?: "view" | "use" | "manage";
     }) => {
       if (!user) throw new Error("Not authenticated");
 
@@ -146,11 +151,15 @@ export function useCreateShare() {
         throw new Error("משתמש עם אימייל זה לא נמצא במערכת");
       }
 
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + SHARE_EXPIRY_DAYS);
+
       const { error: shareError } = await supabase.from("coupon_shares").insert({
         coupon_id: couponId,
         shared_by_user_id: user.id,
         shared_with_user_id: targetUser.id,
-        permission,
+        share_token: Crypto.randomUUID(),
+        share_expires_at: expiresAt.toISOString(),
         status: "accepted",
         created_at: new Date().toISOString(),
       });

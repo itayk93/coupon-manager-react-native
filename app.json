@@ -7,18 +7,15 @@
     "icon": "./assets/icon.png",
     "scheme": "couponmaster",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0f172a"
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.itaykarkason.couponmaster",
       "infoPlist": {
         "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים."
-      },
-      "runtimeVersion": "1.0.0"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,24 +24,27 @@
       },
       "package": "com.itaykarkason.couponmaster",
       "permissions": [
-        "CAMERA",
-        "NOTIFICATIONS",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
-        "CAMERA",
-        "NOTIFICATIONS",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ],
-      "runtimeVersion": {
-        "policy": "appVersion"
-      }
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
     },
     "plugins": [
+      "expo-router",
       "expo-dev-client",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0f172a"
+        }
+      ],
       [
         "expo-camera",
         {

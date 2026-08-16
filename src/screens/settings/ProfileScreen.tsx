@@ -6,9 +6,8 @@ import {
   ScrollView,
   SafeAreaView,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { User, Lock, Mail, Shield } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,9 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Profile">;
-
-export function ProfileScreen({ navigation }: Props) {
+export function ProfileScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { user, isAdmin } = useAuth();
   const { data: profile } = useProfile();
@@ -78,7 +76,7 @@ export function ProfileScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="פרופיל אישי" showBack onBack={() => navigation.goBack()} />
+      <Header title="פרופיל אישי" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}

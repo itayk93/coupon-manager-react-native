@@ -8,11 +8,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
-import { CompositeScreenProps } from "@react-navigation/native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
-import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
@@ -25,12 +22,8 @@ import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, "DashboardTab">,
-  NativeStackScreenProps<RootStackParamList>
->;
-
-export function DashboardScreen({ navigation }: Props) {
+export function DashboardScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: tagsMap = {} } = useCouponTagsMap();
@@ -95,7 +88,7 @@ export function DashboardScreen({ navigation }: Props) {
       <Header
         title="Coupon Master"
         showNotifications
-        onNotificationsPress={() => navigation.navigate("Notifications")}
+        onNotificationsPress={() => router.push("/notifications")}
       />
 
       <ScrollView
@@ -146,7 +139,7 @@ export function DashboardScreen({ navigation }: Props) {
         ) : (
           <View style={styles.sectionHeader}>
             <TouchableOpacity
-              onPress={() => navigation.navigate("CouponsTab")}
+              onPress={() => router.navigate("/coupons")}
               style={styles.seeAllBtn}
             >
               <ChevronLeft size={16} color={theme.primary} />
@@ -167,7 +160,7 @@ export function DashboardScreen({ navigation }: Props) {
               key={coupon.id}
               coupon={coupon}
               tags={tagsMap[coupon.id] || []}
-              onPress={() => navigation.navigate("CouponDetail", { couponId: coupon.id })}
+              onPress={() => router.push(`/coupons/${coupon.id}`)}
             />
           ))
         ) : (

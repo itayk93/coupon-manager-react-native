@@ -10,9 +10,8 @@ import {
   SafeAreaView,
   Switch,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Mail, Lock, UserPlus, User } from "lucide-react-native";
-import { AuthStackParamList } from "@/navigation/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,9 +20,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
-
-export function RegisterScreen({ navigation }: Props) {
+export function RegisterScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { setLegacySession } = useAuth();
 
@@ -239,7 +237,7 @@ export function RegisterScreen({ navigation }: Props) {
 
           {/* Switch to Login */}
           <View style={styles.footerRow}>
-            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
               <Text style={[styles.loginLink, { color: theme.primary }]}>
                 התחבר כאן
               </Text>

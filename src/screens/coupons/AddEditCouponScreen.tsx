@@ -9,15 +9,15 @@ import {
   Switch,
   Image,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Building2, ChevronLeft, Tag as TagIcon, Plus, X } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
 import {
   useAddCoupon,
+  useCoupon,
   useUpdateCoupon,
   DecryptedCoupon,
 } from "@/hooks/useCoupons";
@@ -26,17 +26,77 @@ import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<
-  RootStackParamList,
-  "AddCoupon" | "EditCoupon"
->;
+type CouponFormProps = {
+  existingCoupon?: DecryptedCoupon;
+  initialCompany?: string;
+  initialCode?: string;
+  initialValue?: string;
+};
 
-export function AddEditCouponScreen({ navigation, route }: Props) {
+/**
+ * Route entry for both `/coupons/add` and `/coupons/edit?couponId=`.
+ *
+ * Edit mode only receives the coupon id over the URL, so the coupon is fetched
+ * by id here and the form is mounted once the data is available. That keeps the
+ * form's state initialisers synchronous and avoids syncing props into state.
+ */
+export function AddEditCouponScreen() {
   const { theme } = useAppTheme();
-  const isEditing = route.name === "EditCoupon";
-  const existingCoupon = isEditing
-    ? (route.params as { coupon: DecryptedCoupon }).coupon
-    : undefined;
+  const router = useRouter();
+  const params = useLocalSearchParams<{
+    couponId?: string;
+    initialCompany?: string;
+    initialCode?: string;
+    initialValue?: string;
+  }>();
+
+  const parsedId = Number(params.couponId);
+  const couponId = Number.isInteger(parsedId) ? parsedId : undefined;
+  const isEditing = couponId !== undefined;
+
+  const { data: existingCoupon, isLoading, isError } = useCoupon(couponId);
+
+  if (isEditing && (isLoading || (!existingCoupon && !isError))) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <Header title="עריכת קופון" showBack onBack={() => router.back()} />
+        <View style={styles.stateContainer}>
+          <Text style={{ color: theme.textMuted }}>טוען נתוני קופון...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isEditing && !existingCoupon) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <Header title="עריכת קופון" showBack onBack={() => router.back()} />
+        <View style={styles.stateContainer}>
+          <Text style={{ color: theme.danger }}>לא ניתן לטעון את הקופון לעריכה</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <CouponForm
+      existingCoupon={existingCoupon}
+      initialCompany={params.initialCompany}
+      initialCode={params.initialCode}
+      initialValue={params.initialValue}
+    />
+  );
+}
+
+function CouponForm({
+  existingCoupon,
+  initialCompany,
+  initialCode,
+  initialValue,
+}: CouponFormProps) {
+  const { theme } = useAppTheme();
+  const router = useRouter();
+  const isEditing = existingCoupon !== undefined;
 
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
@@ -44,19 +104,11 @@ export function AddEditCouponScreen({ navigation, route }: Props) {
   const { data: existingTags = [] } = useCouponTags(existingCoupon?.id);
 
   const [company, setCompany] = useState(
-    existingCoupon?.company ||
-      (route.params as any)?.initialCompany ||
-      ""
+    existingCoupon?.company || initialCompany || ""
   );
-  const [code, setCode] = useState(
-    existingCoupon?.code || (route.params as any)?.initialCode || ""
-  );
+  const [code, setCode] = useState(existingCoupon?.code || initialCode || "");
   const [value, setValue] = useState(
-    existingCoupon?.value
-      ? String(existingCoupon.value)
-      : (route.params as any)?.initialValue
-      ? String((route.params as any).initialValue)
-      : ""
+    existingCoupon?.value ? String(existingCoupon.value) : initialValue || ""
   );
   const [cost, setCost] = useState(
     existingCoupon?.cost !== undefined ? String(existingCoupon.cost) : "0"
@@ -143,7 +195,7 @@ export function AddEditCouponScreen({ navigation, route }: Props) {
           tagNames: tags,
         });
 
-        navigation.goBack();
+        router.back();
       } else {
         const created = await addCoupon.mutateAsync({
           company: company.trim(),
@@ -168,7 +220,7 @@ export function AddEditCouponScreen({ navigation, route }: Props) {
           });
         }
 
-        navigation.goBack();
+        router.back();
       }
     } catch (e) {
       console.error(e);
@@ -180,7 +232,7 @@ export function AddEditCouponScreen({ navigation, route }: Props) {
       <Header
         title={isEditing ? "עריכת קופון" : "הוספת קופון חדש"}
         showBack
-        onBack={() => navigation.goBack()}
+        onBack={() => router.back()}
       />
 
       <ScrollView
@@ -429,6 +481,11 @@ export function AddEditCouponScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  stateContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   container: {
     flex: 1,

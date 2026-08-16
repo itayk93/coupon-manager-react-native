@@ -10,7 +10,7 @@ import {
   TextInput,
   Image,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import {
   Users,
   Building2,
@@ -23,7 +23,6 @@ import {
   Send,
   MessageSquare,
 } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,11 +41,10 @@ import { getCompanyLogo } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = NativeStackScreenProps<RootStackParamList, "AdminDashboard">;
-
 type AdminTab = "users" | "companies" | "tags" | "messages";
 
-export function AdminDashboardScreen({ navigation }: Props) {
+export function AdminDashboardScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
 
@@ -100,7 +98,7 @@ export function AdminDashboardScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="פאנל ניהול" showBack onBack={() => navigation.goBack()} />
+      <Header title="פאנל ניהול" showBack onBack={() => router.back()} />
 
       <View style={styles.container}>
         {/* Navigation Tabs */}

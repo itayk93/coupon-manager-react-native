@@ -9,9 +9,7 @@ import {
   RefreshControl,
   SafeAreaView,
 } from "react-native";
-import { CompositeScreenProps } from "@react-navigation/native";
-import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Search,
   Plus,
@@ -21,7 +19,6 @@ import {
   X,
   Sparkles,
 } from "lucide-react-native";
-import { MainTabParamList, RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -31,14 +28,11 @@ import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, "CouponsTab">,
-  NativeStackScreenProps<RootStackParamList>
->;
-
 type FilterStatus = "all" | "active" | "used" | "expired";
 
-export function CouponsListScreen({ navigation, route }: Props) {
+export function CouponsListScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ initialFilterTag?: string; initialCompany?: string }>();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: tagsMap = {} } = useCouponTagsMap();
@@ -47,7 +41,7 @@ export function CouponsListScreen({ navigation, route }: Props) {
 
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(
-    route.params?.initialFilterTag || null
+    params.initialFilterTag || null
   );
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("active");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -142,7 +136,7 @@ export function CouponsListScreen({ navigation, route }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("AddCoupon", {})}
+              onPress={() => router.push("/coupons/add")}
               style={[styles.addBtn, { backgroundColor: theme.primary }]}
             >
               <Plus size={18} color="#ffffff" />
@@ -316,7 +310,7 @@ export function CouponsListScreen({ navigation, route }: Props) {
                 if (isSelectMode) {
                   toggleSelect(item.id);
                 } else {
-                  navigation.navigate("CouponDetail", { couponId: item.id });
+                  router.push(`/coupons/${item.id}`);
                 }
               }}
             />
@@ -331,7 +325,7 @@ export function CouponsListScreen({ navigation, route }: Props) {
                   : "הוסף את הקופון הראשון שלך עכשיו!"
               }
               actionTitle="הוסף קופון"
-              onAction={() => navigation.navigate("AddCoupon", {})}
+              onAction={() => router.push("/coupons/add")}
             />
           }
         />

@@ -6,20 +6,18 @@ import {
   ScrollView,
   SafeAreaView,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useRouter } from "expo-router";
 import { Lock, Shield } from "lucide-react-native";
-import { RootStackParamList } from "@/navigation/types";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Privacy">;
-
-export function PrivacyScreen({ navigation }: Props) {
+export function PrivacyScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="מדיניות פרטיות" showBack onBack={() => navigation.goBack()} />
+      <Header title="מדיניות פרטיות" showBack onBack={() => router.back()} />
 
       <ScrollView
         style={styles.container}
