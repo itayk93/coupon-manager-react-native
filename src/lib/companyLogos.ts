@@ -231,3 +231,36 @@ export function getCompanyLogoSource(
 
   return { uri: resolveCompanyLogo(company, dbImagePath) };
 }
+
+/**
+ * Coupon categories from the redesign's company table. Derived from the company
+ * name so no schema change is needed; unknown companies fall into "אחר".
+ */
+const categoryByCompany: Record<string, string> = {
+  carrefour: "סופר", "קרפור": "סופר",
+  "רמי לוי": "סופר", "שופרסל": "סופר", shufersal: "סופר",
+  "ויקטורי": "סופר", victory: "סופר", "יוחננוף": "סופר", "אושר עד": "סופר",
+  kfc: "מסעדות", "קנטקי": "מסעדות", mcdonalds: "מסעדות", "מקדונלדס": "מסעדות",
+  benedict: "מסעדות", "בנדיקט": "מסעדות", "קפה קפה": "מסעדות",
+  "קפה עלית": "מסעדות", golda: "מסעדות", "גולדה": "מסעדות",
+  roladin: "מסעדות", "רולדין": "מסעדות", "מאפה נאמן": "מסעדות",
+  "ניצת הדובדבן": "מסעדות",
+  wolt: "משלוחים", "וולט": "משלוחים",
+  "fox home": "אופנה", "פוקס הום": "אופנה", foxhome: "אופנה",
+  "פולגת": "אופנה", polgat: "אופנה", vans: "אופנה", "מגה ספורט": "אופנה",
+  megasport: "אופנה", laline: "אופנה", "ללין": "אופנה",
+  "סינמה סיטי": "בילוי", "cinema city": "בילוי",
+  "יס פלאנט": "בילוי", "yes planet": "בילוי", freefit: "בילוי",
+  "נופשונית פלוס": "בילוי",
+  buyme: "שוברים", "ביימי": "שוברים", "dream card": "שוברים",
+  "power gift": "שוברים", xtra: "שוברים", "אקסטרה": "שוברים",
+  goodpharm: "פארם", "גוד פארם": "פארם",
+  "מחסני חשמל": "חשמל", airalo: "תקשורת",
+};
+
+export function getCompanyCategory(company: string): string {
+  const trimmed = (company || "").trim();
+  return (
+    categoryByCompany[trimmed.toLowerCase()] || categoryByCompany[trimmed] || "אחר"
+  );
+}

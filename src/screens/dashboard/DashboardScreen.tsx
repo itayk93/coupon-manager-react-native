@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
@@ -84,11 +83,6 @@ export function DashboardScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header
-        title="Coupon Master"
-        showNotifications
-        onNotificationsPress={() => router.push("/notifications")}
-      />
 
       <ScrollView
         style={styles.container}

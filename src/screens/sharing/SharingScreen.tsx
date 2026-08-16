@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Share2, Users, UserCheck, Plus, X, Trash2 } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -85,20 +84,7 @@ export function SharingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header
-        title="שיתוף קופונים"
-        showBack
-        onBack={() => router.back()}
-        rightAction={
-          <TouchableOpacity
-            onPress={() => setIsShareModalOpen(true)}
-            style={[styles.newShareBtn, { backgroundColor: theme.primary }]}
-          >
-            <Plus size={16} color="#ffffff" />
-            <Text style={styles.newShareText}>שתף קופון</Text>
-          </TouchableOpacity>
-        }
-      />
+      <Text style={[styles.pageTitle, { color: theme.text }]}>שיתופים</Text>
 
       <View style={styles.container}>
         {/* Tabs */}
@@ -351,6 +337,15 @@ export function SharingScreen() {
 }
 
 const styles = StyleSheet.create({
+  pageTitle: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "right",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 4,
+  },
   safeArea: {
     flex: 1,
   },

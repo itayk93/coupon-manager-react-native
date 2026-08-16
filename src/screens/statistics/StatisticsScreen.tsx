@@ -20,12 +20,12 @@ import {
   WalletCards,
   PieChart as PieIcon,
 } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
+import { getCompanyCategory } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -133,20 +133,52 @@ export function StatisticsScreen() {
     }
   };
 
+  // "חיסכון חודשי" — the last six months of coupon usage, per the design.
+  const monthlyTrend = React.useMemo(() => {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("he-IL", { month: "short" }), value: 0 };
+    });
+    coupons.forEach((c) => {
+      if (!c.date_added) return;
+      const d = new Date(c.date_added);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      const bucket = months.find((m) => m.key === key);
+      if (bucket) bucket.value += c.used_value || 0;
+    });
+    const max = Math.max(1, ...months.map((m) => m.value));
+    return months.map((m) => ({ ...m, pct: Math.round((m.value / max) * 100) }));
+  }, [coupons]);
+
+  // "חיסכון לפי קטגוריה"
+  const categoryStats = React.useMemo(() => {
+    const map = new Map<string, number>();
+    coupons.forEach((c) => {
+      const cat = getCompanyCategory(c.company || "");
+      map.set(cat, (map.get(cat) || 0) + (c.used_value || 0));
+    });
+    const rows = Array.from(map, ([name, value]) => ({ name, value }))
+      .filter((r) => r.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+    const max = Math.max(1, ...rows.map((r) => r.value));
+    return rows.map((r) => ({ ...r, pct: Math.round((r.value / max) * 100) }));
+  }, [coupons]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header
-        title="סטטיסטיקות ודוחות"
-        rightAction={
-          <TouchableOpacity
-            onPress={handleExportCSV}
-            style={[styles.exportBtn, { backgroundColor: theme.surfaceAlt }]}
-          >
-            <Download size={16} color={theme.primary} />
-            <Text style={[styles.exportBtnText, { color: theme.primary }]}>ייצוא CSV</Text>
-          </TouchableOpacity>
-        }
-      />
+      <View style={styles.titleRow}>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>סטטיסטיקות חיסכון</Text>
+
+        <TouchableOpacity
+          onPress={handleExportCSV}
+          style={[styles.exportBtn, { backgroundColor: theme.surfaceAlt }]}
+        >
+          <Download size={16} color={theme.primary} />
+          <Text style={[styles.exportBtnText, { color: theme.primary }]}>ייצוא CSV</Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         style={styles.container}
@@ -227,6 +259,43 @@ export function StatisticsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Monthly savings */}
+        <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>חיסכון חודשי</Text>
+          <View style={styles.barsRow}>
+            {monthlyTrend.map((m) => (
+              <View key={m.key} style={styles.barCol}>
+                <View style={styles.barTrack}>
+                  <View
+                    style={[styles.bar, { height: `${Math.max(m.pct, 2)}%`, backgroundColor: theme.primary }]}
+                  />
+                </View>
+                <Text style={[styles.barLabel, { color: theme.textSubtle }]}>{m.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Savings by category */}
+        {categoryStats.length > 0 ? (
+          <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>חיסכון לפי קטגוריה</Text>
+            <View style={styles.catList}>
+              {categoryStats.map((c) => (
+                <View key={c.name}>
+                  <View style={styles.catRow}>
+                    <Text style={[styles.catName, { color: theme.text }]}>{c.name}</Text>
+                    <Text style={[styles.catVal, { color: theme.textMuted }]}>{formatIls(c.value)}</Text>
+                  </View>
+                  <View style={[styles.catTrack, { backgroundColor: theme.surfaceAlt }]}>
+                    <View style={[styles.catFill, { width: `${c.pct}%`, backgroundColor: theme.primary }]} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {/* Status Distribution */}
         <View
@@ -335,6 +404,73 @@ export function StatisticsScreen() {
 }
 
 const styles = StyleSheet.create({
+  barsRow: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-end",
+    gap: 10,
+    height: 150,
+    marginTop: 16,
+  },
+  barCol: {
+    flex: 1,
+    height: "100%",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 6,
+  },
+  barTrack: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 34,
+    justifyContent: "flex-end",
+  },
+  bar: {
+    width: "100%",
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  barLabel: {
+    fontSize: 11,
+  },
+  catList: {
+    gap: 12,
+    marginTop: 16,
+  },
+  catRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  catName: {
+    fontSize: 12.5,
+    fontWeight: "600",
+  },
+  catVal: {
+    fontSize: 12.5,
+  },
+  catTrack: {
+    height: 8,
+    borderRadius: 99,
+    overflow: "hidden",
+  },
+  catFill: {
+    height: "100%",
+    borderRadius: 99,
+  },
+  titleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 12,
+  },
+  pageTitle: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "right",
+  },
   safeArea: {
     flex: 1,
   },
