@@ -81,7 +81,7 @@ export function BarcodeScannerScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="סורק שוברים וקודים" />
+      <Header title="סורק שוברים וקודים" showBack onBack={() => router.back()} />
 
       <View style={styles.container}>
         {/* Top Mode Selector Tabs */}

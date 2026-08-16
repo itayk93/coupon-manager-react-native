@@ -6,7 +6,9 @@ import {
   BarChart3,
   CirclePlus,
   ListChecks,
+  QrCode,
 } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +35,7 @@ export function WalletHeroCard({
 }: WalletHeroCardProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
+  const router = useRouter();
 
   const visibleCoupons = coupons.filter(
     (c) => !c.is_for_sale && c.status !== "נוצל"
@@ -137,6 +140,22 @@ export function WalletHeroCard({
         >
           <Text style={styles.actionBtnTextPrimary}>הוספת קופון מהירה</Text>
           <CirclePlus size={18} color="#ffffff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/scanner")}
+          style={[
+            styles.actionBtn,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.inputBorder,
+              borderWidth: 1,
+            },
+          ]}
+        >
+          <Text style={[styles.actionBtnText, { color: theme.text }]}>סריקת קוד</Text>
+          <QrCode size={18} color={theme.text} />
         </TouchableOpacity>
 
         <TouchableOpacity
