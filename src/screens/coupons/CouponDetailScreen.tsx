@@ -158,7 +158,7 @@ export function CouponDetailScreen() {
           <View style={styles.headerRightGroup}>
             <TouchableOpacity
               onPress={() => router.push({ pathname: "/coupons/edit", params: { couponId: String(coupon.id) } })}
-              style={[styles.headerIconBtn, { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" }]}
+              style={[styles.headerIconBtn, { backgroundColor: theme.surfaceAlt }]}
             >
               <Edit3 size={18} color={theme.text} />
             </TouchableOpacity>
@@ -220,7 +220,7 @@ export function CouponDetailScreen() {
               <View
                 style={[
                   styles.companyLogoFrame,
-                  { backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc" },
+                  { backgroundColor: theme.surfaceAlt },
                 ]}
               >
                 <Image source={{ uri: logo }} style={styles.companyLogoImg} resizeMode="contain" />
@@ -232,7 +232,7 @@ export function CouponDetailScreen() {
           <View
             style={[
               styles.gaugeContainer,
-              { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+              { backgroundColor: theme.surfaceAlt },
             ]}
           >
             <View style={styles.gaugeRow}>
@@ -278,7 +278,7 @@ export function CouponDetailScreen() {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleMarkAsUsed}
-              style={[styles.actionBtn, { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" }]}
+              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
             >
               <CheckCircle2 size={18} color={theme.text} />
               <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנוצל</Text>
@@ -288,7 +288,7 @@ export function CouponDetailScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleNativeShare}
-            style={[styles.actionBtn, { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" }]}
+            style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
           >
             <Share2 size={18} color={theme.text} />
             <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
@@ -305,7 +305,7 @@ export function CouponDetailScreen() {
             style={[
               styles.externalLinkBtn,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -338,7 +338,7 @@ export function CouponDetailScreen() {
                   key={t.id}
                   style={[
                     styles.tagBubble,
-                    { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                    { backgroundColor: theme.surfaceAlt },
                   ]}
                 >
                   <Text style={[styles.tagBubbleText, { color: theme.primary }]}>

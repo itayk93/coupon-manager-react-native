@@ -66,7 +66,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
             style={[
               styles.kpiBox,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -86,7 +86,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
             style={[
               styles.kpiBox,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -106,7 +106,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
             style={[
               styles.kpiBox,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -126,7 +126,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
             style={[
               styles.kpiBox,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -166,7 +166,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
                 style={[
                   styles.companyRow,
                   {
-                    backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc",
+                    backgroundColor: theme.surfaceAlt,
                     borderColor: theme.border,
                   },
                 ]}

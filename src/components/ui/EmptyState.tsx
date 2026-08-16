@@ -36,7 +36,7 @@ export function EmptyState({
       <View
         style={[
           styles.iconCircle,
-          { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+          { backgroundColor: theme.surfaceAlt },
         ]}
       >
         {icon}

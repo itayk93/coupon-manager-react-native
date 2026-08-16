@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0}
+  a{color:#1f6fd1;text-decoration:none}
+  a:hover{color:#154a8f}
+  @keyframes cmFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes cmScaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+  @keyframes cmPulse{0%,100%{opacity:1}50%{opacity:.55}}
+  @keyframes cmSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes cmSheetDown{from{transform:translateY(0)}to{transform:translateY(100%)}}
+  @keyframes cmScrimIn{from{opacity:0}to{opacity:1}}
+  @keyframes cmScrimOut{from{opacity:1}to{opacity:0}}
+</style>
+</helmet>
+
+<div dir="rtl" style="min-height:100vh;background:#eeece5;font-family:'Heebo',Arial,sans-serif;color:#101828;display:flex;justify-content:center">
+<div style="width:100%;max-width:480px;background:#faf9f6;position:relative;min-height:100vh">
+
+<sc-if value="{{ isAuthPage }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:radial-gradient(circle at 50% -10%, #e8f2fd 0%, #f5f6fd 45%, #f5f6fd 100%)">
+  <div style="width:100%;max-width:420px;animation:cmFadeUp .5s ease both">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:28px">
+      <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1f6fd1,#154a8f);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(36,97,217,.28)">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h14"/><circle cx="17" cy="12" r="1.6"/></svg>
+      </div>
+      <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.01em">קופון מאסטר</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e6e9ef;border-radius:22px;box-shadow:0 20px 50px -20px rgba(16,24,40,.18);padding:32px 28px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;right:0;left:0;height:4px;background:linear-gradient(90deg,#1f6fd1,#5b9bd8)"></div>
+
+      <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">
+        <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0 0 4px;text-align:center">ברוכים השבים</h1>
+        <p style="margin:0 0 24px;text-align:center;color:#667085;font-size:14px">התחברו כדי לנהל את הקופונים שלכם</p>
+      </sc-if>
+      <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+        <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0 0 4px;text-align:center">יצירת חשבון</h1>
+        <p style="margin:0 0 24px;text-align:center;color:#667085;font-size:14px">חוסכים כסף כבר בדקה הראשונה</p>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#344054">שם מלא
+            <input type="text" placeholder="ישראל ישראלי" style="height:46px;border-radius:12px;border:1px solid #d7dce4;padding:0 14px;font-size:15px;font-family:inherit;background:#f4f5fd;outline:none"/>
+          </label>
+        </sc-if>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#344054">אימייל
+          <input type="email" placeholder="you@example.com" dir="ltr" style="height:46px;border-radius:12px;border:1px solid #d7dce4;padding:0 14px;font-size:15px;font-family:inherit;background:#f4f5fd;outline:none;text-align:right"/>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#344054">סיסמה
+          <div style="position:relative;display:flex;align-items:center">
+            <input type="{{ passwordFieldType }}" placeholder="••••••••" style="width:100%;height:46px;border-radius:12px;border:1px solid #d7dce4;padding:0 44px 0 14px;font-size:15px;font-family:inherit;background:#f4f5fd;outline:none"/>
+            <button type="button" onClick="{{ togglePassword }}" style="position:absolute;right:14px;background:none;border:0;color:#98a2b3;cursor:pointer;display:flex;padding:0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </label>
+
+        <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;justify-content:flex-end;margin-top:-6px"><a href="#" style="font-size:13px;font-weight:600">שכחתי סיסמה</a></div>
+        </sc-if>
+
+        <button type="button" onClick="{{ goToDashboard }}" style="height:48px;border-radius:12px;border:0;background:linear-gradient(135deg,#1f6fd1,#1a5fc0);color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 8px 18px -4px rgba(36,97,217,.4);margin-top:4px">
+          {{ authSubmitLabel }}
+        </button>
+
+        <div style="display:flex;align-items:center;gap:10px;color:#98a2b3;font-size:12px;margin:2px 0">
+          <div style="flex:1;height:1px;background:#e6e9ef"></div>הרשמה מהירה עם<div style="flex:1;height:1px;background:#e6e9ef"></div>
+        </div>
+
+        <button type="button" style="height:48px;border-radius:12px;border:1px solid #d7dce4;background:#fff;color:#344054;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.9 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 35.3 26.8 36 24 36c-5.3 0-9.8-3.4-11.4-8.1l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1 3-3.2 5.4-6 6.9l6.3 5.3C39.6 37.2 44 31.4 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+          Google
+        </button>
+      </div>
+
+      <p style="text-align:center;font-size:13px;color:#667085;margin:22px 0 0">
+        <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">אין לכם חשבון? <a href="#" onClick="{{ setModeRegister }}">הרשמה</a></sc-if>
+        <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">כבר יש לכם חשבון? <a href="#" onClick="{{ setModeLogin }}">התחברות</a></sc-if>
+      </p>
+    </div>
+    <p style="text-align:center;font-size:12px;color:#98a2b3;margin-top:20px">בכניסה אתם מאשרים את <a href="#" onClick="{{ goToPrivacy }}">מדיניות הפרטיות</a></p>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isContentPage }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;display:flex;flex-direction:column">
+  <header style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#fff;border-bottom:1px solid #e6e9ef">
+    <div onClick="{{ goToDashboard }}" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#1f6fd1,#154a8f)"></div>
+      <span style="font-family:'Outfit',sans-serif;font-weight:800;font-size:17px">קופון מאסטר</span>
+    </div>
+    <nav style="display:flex;gap:20px;font-size:14px;font-weight:600;color:#475467">
+      <a href="#" onClick="{{ goToAbout }}" style="color:{{ aboutLinkColor }}">אודות</a>
+      <a href="#" onClick="{{ goToFaq }}" style="color:{{ faqLinkColor }}">שאלות נפוצות</a>
+      <a href="#" onClick="{{ goToPrivacy }}" style="color:{{ privacyLinkColor }}">מדיניות פרטיות</a>
+    </nav>
+    <button onClick="{{ goToLogin }}" style="height:38px;padding:0 18px;border-radius:10px;border:0;background:#1f6fd1;color:#fff;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer">התחברות</button>
+  </header>
+
+  <main style="flex:1;max-width:760px;margin:0 auto;width:100%;padding:56px 24px 80px;animation:cmFadeUp .4s ease both">
+    <sc-if value="{{ isAboutPage }}" hint-placeholder-val="{{ true }}">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#e8f2fd;color:#154a8f;font-size:13px;font-weight:700;padding:6px 14px;border-radius:999px;margin-bottom:16px">מי אנחנו</div>
+      <h1 style="font-family:'Outfit',sans-serif;font-size:36px;font-weight:800;letter-spacing:-.02em;margin:0 0 16px">כל הקופונים שלכם, במקום אחד</h1>
+      <p style="font-size:16px;line-height:1.8;color:#475467;margin:0 0 32px">קופון מאסטר עוזר לכם לרכז את כל כרטיסי המתנה, שוברים וקופוני ההנחה שלכם באפליקציה אחת - כדי שלא תשכחו קופון בארנק ולא תפספסו תוקף שפג. אנחנו עוקבים אחרי היתרות שלכם, מתריעים לפני שהקופון פג, ומאפשרים לשתף עם בני משפחה בלחיצת כפתור.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:20px">
+          <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;color:#1f6fd1">01</div>
+          <div style="font-weight:700;margin:8px 0 4px">מוסיפים קופון</div>
+          <div style="font-size:13px;color:#667085;line-height:1.6">ידנית, בסריקה או בהעלאת קובץ</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:20px">
+          <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;color:#1f6fd1">02</div>
+          <div style="font-weight:700;margin:8px 0 4px">עוקבים אחרי היתרה</div>
+          <div style="font-size:13px;color:#667085;line-height:1.6">מתעדכן בכל שימוש בזמן אמת</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:20px">
+          <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;color:#1f6fd1">03</div>
+          <div style="font-weight:700;margin:8px 0 4px">חוסכים יותר</div>
+          <div style="font-size:13px;color:#667085;line-height:1.6">התראות תוקף וסטטיסטיקות חיסכון</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isFaqPage }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:800;margin:0 0 28px">שאלות נפוצות</h1>
+      <sc-for list="{{ faqItems }}" as="item" hint-placeholder-count="5">
+        <div style="border-bottom:1px solid #e6e9ef">
+          <button onClick="{{ item.toggle }}" style="width:100%;background:none;border:0;padding:18px 0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:right;font-family:inherit">
+            <span style="font-weight:700;font-size:15px">{{ item.q }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:{{ item.chevronRotate }};flex-shrink:0;margin-right:12px"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <sc-if value="{{ item.open }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:0 0 18px;font-size:14px;line-height:1.75;color:#475467;animation:cmFadeUp .25s ease both">{{ item.a }}</p>
+          </sc-if>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{ isPrivacyPage }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:800;margin:0 0 8px">מדיניות פרטיות</h1>
+      <p style="color:#98a2b3;font-size:13px;margin:0 0 32px">עודכן לאחרונה: 1 באוגוסט 2026</p>
+      <div style="display:flex;flex-direction:column;gap:24px;font-size:14px;line-height:1.8;color:#475467">
+        <div><h3 style="font-family:'Outfit',sans-serif;color:#101828;font-size:16px;margin:0 0 8px">איסוף מידע</h3>אנו אוספים את המידע שאתם מזינים ביחס לקופונים ולכרטיסי מתנה שלכם - שם החברה, קוד, ערך ותוקף - לצורך הצגת הנתונים בחשבונכם בלבד.</div>
+        <div><h3 style="font-family:'Outfit',sans-serif;color:#101828;font-size:16px;margin:0 0 8px">שימוש במידע</h3>המידע משמש להצגת יתרות, שליחת תזכורות תוקף, והפקת סטטיסטיקות אישיות. אנו לא מוכרים מידע לצד שלישי.</div>
+        <div><h3 style="font-family:'Outfit',sans-serif;color:#101828;font-size:16px;margin:0 0 8px">אבטחה</h3>קודי הקופונים מוצפנים במאגר הנתונים, והגישה מוגבלת לחשבון המשתמש המאומת בלבד.</div>
+        <div><h3 style="font-family:'Outfit',sans-serif;color:#101828;font-size:16px;margin:0 0 8px">יצירת קשר</h3>לשאלות בנוגע לפרטיות ניתן לפנות אלינו דרך עמוד <a href="#" onClick="{{ goToAbout }}">אודות</a>.</div>
+      </div>
+    </sc-if>
+  </main>
+  <footer style="text-align:center;padding:24px;color:#98a2b3;font-size:13px;border-top:1px solid #e6e9ef">קופון מאסטר © 2026</footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAppPage }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;height:100vh;overflow:hidden">
+
+  <header style="height:60px;flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#15202e;color:#fff;position:sticky;top:0;z-index:20">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onClick="{{ toggleMobileNav }}" style="display:flex;background:none;border:0;color:#fff;cursor:pointer;padding:4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div onClick="{{ goToDashboard }}" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#1f6fd1,#5b9bd8)"></div>
+        <span style="font-family:'Outfit',sans-serif;font-weight:800;font-size:18px">קופון מאסטר</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px">
+      <button onClick="{{ goToNotifications }}" style="position:relative;background:none;border:0;color:#fff;cursor:pointer;padding:4px;display:flex">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <sc-if value="{{ hasUnreadNotifs }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:99px;background:#ef4444;border:2px solid #15202e"></span></sc-if>
+      </button>
+      <div onClick="{{ goToProfile }}" style="width:32px;height:32px;border-radius:99px;background:#1f6fd1;border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer">אכ</div>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0;overflow:hidden;position:relative">
+    <sc-if value="{{ mobileNavOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:30;display:flex">
+        <div style="width:250px;background:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:6px;animation:cmFadeUp .2s ease both">
+          <div style="display:flex;align-items:center;gap:8px;padding:0 10px 16px"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1f6fd1,#5b9bd8)"></div><span style="font-family:'Outfit',sans-serif;font-weight:800">קופון מאסטר</span></div>
+          <button onClick="{{ goToDashboard }}" style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:{{ navBg.dashboard }};color:{{ navColor.dashboard }};font-weight:700;font-size:14px;font-family:inherit;text-align:right">דשבורד</button>
+          <button onClick="{{ goToCoupons }}" style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:{{ navBg.coupons }};color:{{ navColor.coupons }};font-weight:700;font-size:14px;font-family:inherit;text-align:right">קופונים</button>
+          <button onClick="{{ goToStatistics }}" style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:{{ navBg.statistics }};color:{{ navColor.statistics }};font-weight:700;font-size:14px;font-family:inherit;text-align:right">סטטיסטיקות</button>
+          <button onClick="{{ goToSharing }}" style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:{{ navBg.sharing }};color:{{ navColor.sharing }};font-weight:700;font-size:14px;font-family:inherit;text-align:right">שיתופים</button>
+          <button onClick="{{ goToProfile }}" style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:{{ navBg.profile }};color:{{ navColor.profile }};font-weight:700;font-size:14px;font-family:inherit;text-align:right">חשבון</button>
+          <button onClick="{{ goToAdmin }}" style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:{{ navBg.admin }};color:{{ navColor.admin }};font-weight:700;font-size:14px;font-family:inherit;text-align:right">פאנל ניהול</button>
+          <div style="height:1px;background:#e6e9ef;margin:8px 4px"></div>
+          <button style="height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;border:0;border-radius:12px;background:transparent;color:#dc2626;font-weight:700;font-size:14px;font-family:inherit;text-align:right">יציאה מהחשבון</button>
+        </div>
+        <button onClick="{{ toggleMobileNav }}" style="flex:1;background:rgba(15,23,42,.4);border:0;cursor:pointer"></button>
+      </div>
+    </sc-if>
+
+    <main class="cm-main" style="flex:1;min-width:0;overflow-y:auto;padding:24px 20px 32px">
+      <div>
+
+      <sc-if value="{{ isDashboardPage }}" hint-placeholder-val="{{ true }}">
+        <section style="animation:cmFadeUp .35s ease both">
+          <div style="display:grid;grid-template-columns:{{ heroGridCols }};gap:14px;background:#fff;border:1px solid #e6e9ef;border-radius:20px;padding:22px;box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex;flex-direction:column;justify-content:center;gap:8px">
+              <div style="display:inline-flex;align-items:center;gap:8px;width:fit-content;background:#e8f2fd;color:#154a8f;padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:800">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg>הארנק שלך
+              </div>
+              <h1 style="font-family:'Outfit',sans-serif;font-size:clamp(22px,3vw,30px);font-weight:800;margin:6px 0 0">בוקר טוב, אורי</h1>
+              <p style="margin:0;color:#667085;font-size:14.5px">{{ activeCouponsCount }} קופונים פעילים לניצול</p>
+            </div>
+            <div style="background:#f2f3fd;border:1px solid #e6e9ef;border-radius:16px;padding:18px;display:flex;flex-direction:column;justify-content:center;gap:4px">
+              <span style="font-size:13px;color:#667085;font-weight:600">יתרה זמינה</span>
+              <strong style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:800">{{ remainingValueFmt }}</strong>
+              <small style="color:#98a2b3;font-size:12.5px">מתוך {{ totalValueFmt }} בארנק</small>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px;margin-top:14px">
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f6fd1" stroke-width="2"><path d="M9 2h6l1 4H8Z"/><path d="M5 6h14l-1 15H6Z"/></svg>
+              <span style="font-size:13px;color:#667085;font-weight:600">כבר נוצל</span>
+              <strong style="font-family:'Outfit',sans-serif;font-size:20px">{{ usedValueFmt }}</strong>
+            </div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              <span style="font-size:13px;color:#667085;font-weight:600">פגים ב-14 יום</span>
+              <strong style="font-family:'Outfit',sans-serif;font-size:20px">{{ expiringSoonCount }}</strong>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button onClick="{{ goToCoupons }}" style="flex:1;min-width:160px;height:46px;border-radius:12px;border:0;background:#1f6fd1;color:#fff;font-weight:700;font-size:14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוספת קופון
+            </button>
+            <button onClick="{{ goToStatistics }}" style="flex:1;min-width:160px;height:46px;border-radius:12px;border:1px solid #d7dce4;background:#fff;color:#344054;font-weight:700;font-size:14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="4" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="20" y1="20" x2="20" y2="14"/></svg>על מה חסכת?
+            </button>
+          </div>
+
+          <h2 style="font-family:'Outfit',sans-serif;font-size:17px;font-weight:800;margin:28px 0 12px">חברות עם קופונים פעילים</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">
+            <sc-for list="{{ companyCards }}" as="c" hint-placeholder-count="8">
+              <article onClick="{{ c.open }}" style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;transition:transform .15s ease" >
+                <div style="width:52px;height:52px;border-radius:14px;background:#fff;border:1px solid #eef0f3;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="{{ c.logo }}" alt="{{ c.company }}" style="width:78%;height:78%;object-fit:contain"/></div>
+                <div style="font-weight:700;font-size:13px">{{ c.company }}</div>
+                <div style="font-size:12px;color:#98a2b3">{{ c.count }} קופונים</div>
+              </article>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isCouponsPage }}" hint-placeholder-val="{{ false }}">
+        <section style="animation:cmFadeUp .35s ease both">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+            <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0">הקופונים שלי</h1>
+            <button style="height:42px;padding:0 18px;border-radius:11px;border:0;background:#1f6fd1;color:#fff;font-weight:700;font-size:14px;font-family:inherit;display:flex;align-items:center;gap:8px;cursor:pointer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>קופון חדש
+            </button>
+          </div>
+
+          <div style="position:relative;max-width:360px;margin-bottom:14px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#98a2b3" stroke-width="2" style="position:absolute;right:14px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="חיפוש קופון..." style="width:100%;height:44px;border-radius:12px;border:1px solid #d7dce4;padding:0 42px 0 14px;font-size:14px;font-family:inherit;background:#fff"/>
+          </div>
+
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:18px">
+            <sc-for list="{{ categoryChips }}" as="chip" hint-placeholder-count="6">
+              <button onClick="{{ chip.select }}" style="flex:0 0 auto;white-space:nowrap;font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;border:1px solid {{ chip.borderColor }};background:{{ chip.bg }};color:{{ chip.color }};cursor:pointer;font-family:inherit">{{ chip.label }}</button>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px">
+            <sc-for list="{{ visibleCoupons }}" as="cp" hint-placeholder-count="6">
+              <article style="background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:transform .15s ease,box-shadow .15s ease">
+                <div style="height:84px;background:{{ cp.color }};position:relative;display:flex;align-items:flex-start;justify-content:space-between;padding:14px">
+                  <div>
+                    <div style="color:#fff;font-weight:800;font-size:16px;font-family:'Outfit',sans-serif">{{ cp.company }}</div>
+                    <div style="color:rgba(255,255,255,.75);font-size:12px;margin-top:2px">{{ cp.category }}</div>
+                  </div>
+                  <span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.22);color:#fff">{{ cp.badgeLabel }}</span>
+                  <div style="position:absolute;bottom:-22px;right:16px;width:44px;height:44px;border-radius:13px;background:#fff;box-shadow:0 4px 10px rgba(16,24,40,.12);display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="{{ cp.logo }}" alt="{{ cp.company }}" style="width:74%;height:74%;object-fit:contain"/></div>
+                </div>
+                <div style="padding:32px 18px 18px;display:flex;flex-direction:column;gap:14px">
+                  <div>
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+                      <strong style="font-family:'Outfit',sans-serif;font-size:19px">{{ cp.remainingFmt }}</strong>
+                      <span style="font-size:12px;color:#98a2b3">מתוך {{ cp.valueFmt }}</span>
+                    </div>
+                    <div style="height:10px;border-radius:99px;background:#f0f1f6;overflow:hidden"><div style="height:100%;width:{{ cp.usedPct }}%;background:{{ cp.color }};border-radius:99px"></div></div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:#98a2b3">
+                    <span dir="ltr" style="font-family:'Outfit',sans-serif;font-weight:700;color:#344054">{{ cp.code }}</span>
+                    <span style="color:{{ cp.daysColor }};font-weight:700">{{ cp.daysLabel }}</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <button style="height:40px;border-radius:11px;border:0;background:#f4f5fd;color:#344054;font-weight:700;font-size:12.5px;font-family:inherit;cursor:pointer">העתקת קוד</button>
+                    <button style="height:40px;border-radius:11px;border:0;background:{{ cp.color }};color:#fff;font-weight:700;font-size:12.5px;font-family:inherit;cursor:pointer">דיווח שימוש</button>
+                  </div>
+                </div>
+              </article>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isStatisticsPage }}" hint-placeholder-val="{{ false }}">
+        <section style="animation:cmFadeUp .35s ease both">
+          <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0 0 18px">סטטיסטיקות חיסכון</h1>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px"><span style="font-size:12.5px;color:#667085;font-weight:600">סה״כ חיסכון</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:21px;margin-top:6px;color:#16a34a">{{ totalSavingsFmt }}</div></div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px"><span style="font-size:12.5px;color:#667085;font-weight:600">ערך כולל בארנק</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:21px;margin-top:6px">{{ totalValueFmt }}</div></div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px"><span style="font-size:12.5px;color:#667085;font-weight:600">נוצל</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:21px;margin-top:6px">{{ usedValueFmt }}</div></div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px"><span style="font-size:12.5px;color:#667085;font-weight:600">אחוז ניצול</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:21px;margin-top:6px">{{ usagePct }}%</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:18px;padding:20px">
+              <h3 style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;margin:0 0 16px">חיסכון חודשי</h3>
+              <div style="display:flex;align-items:flex-end;gap:10px;height:150px">
+                <sc-for list="{{ monthlyTrend }}" as="m" hint-placeholder-count="6">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                    <div style="width:100%;max-width:34px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#5b9bd8,#1f6fd1);height:{{ m.barPct }}%"></div>
+                    <span style="font-size:11px;color:#98a2b3">{{ m.month }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:18px;padding:20px">
+              <h3 style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;margin:0 0 16px">חיסכון לפי קטגוריה</h3>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ categoryStats }}" as="cat" hint-placeholder-count="6">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span style="font-weight:600">{{ cat.name }}</span><span style="color:#667085">{{ cat.valueFmt }}</span></div>
+                    <div style="height:8px;border-radius:99px;background:#eef0f3;overflow:hidden"><div style="height:100%;width:{{ cat.pct }}%;background:#1f6fd1;border-radius:99px"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isSharingPage }}" hint-placeholder-val="{{ false }}">
+        <section style="animation:cmFadeUp .35s ease both">
+          <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0 0 18px">שיתופים</h1>
+          <div style="display:flex;gap:8px;background:#eef0f3;padding:4px;border-radius:12px;width:fit-content;margin-bottom:20px">
+            <button onClick="{{ setSharingReceived }}" style="height:38px;padding:0 18px;border-radius:9px;border:0;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;background:{{ receivedTabBg }};color:{{ receivedTabColor }}">שותפו איתי</button>
+            <button onClick="{{ setSharingSent }}" style="height:38px;padding:0 18px;border-radius:9px;border:0;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;background:{{ sentTabBg }};color:{{ sentTabColor }}">שיתפתי</button>
+          </div>
+
+          <div style="background:#fff;border:1px dashed #d7dce4;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:10px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f6fd1" stroke-width="1.8"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><line x1="8.2" y1="10.8" x2="15.8" y2="6.2"/><line x1="8.2" y1="13.2" x2="15.8" y2="17.8"/></svg>
+              <span style="font-size:14px;font-weight:600">שתפו קופון עם קישור מהיר</span>
+            </div>
+            <button style="height:38px;padding:0 16px;border-radius:10px;border:1px solid #d7dce4;background:#fff;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer">העתקת קישור</button>
+          </div>
+
+          <sc-if value="{{ isReceivedTab }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ receivedShares }}" as="s" hint-placeholder-count="3">
+                <div style="background:#fff;border:1px solid #e6e9ef;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+                  <div style="width:40px;height:40px;border-radius:99px;background:{{ s.color }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">{{ s.initial }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">{{ s.name }}</div><div style="font-size:12.5px;color:#98a2b3">קופון {{ s.company }} · {{ s.valueFmt }}</div></div>
+                  <span style="font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;background:{{ s.statusBg }};color:{{ s.statusColor }}">{{ s.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSentTab }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ sentShares }}" as="s" hint-placeholder-count="3">
+                <div style="background:#fff;border:1px solid #e6e9ef;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+                  <div style="width:40px;height:40px;border-radius:99px;background:{{ s.color }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">{{ s.initial }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">{{ s.name }}</div><div style="font-size:12.5px;color:#98a2b3">קופון {{ s.company }} · {{ s.valueFmt }}</div></div>
+                  <span style="font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;background:{{ s.statusBg }};color:{{ s.statusColor }}">{{ s.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isProfilePage }}" hint-placeholder-val="{{ false }}">
+        <section style="animation:cmFadeUp .35s ease both;max-width:640px">
+          <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0 0 18px">חשבון</h1>
+          <div style="background:#fff;border:1px solid #e6e9ef;border-radius:18px;padding:22px;display:flex;align-items:center;gap:16px;margin-bottom:16px">
+            <div style="width:64px;height:64px;border-radius:99px;background:#1f6fd1;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;font-family:'Outfit',sans-serif">אכ</div>
+            <div><div style="font-weight:800;font-size:17px">אורי כהן</div><div style="color:#98a2b3;font-size:13.5px" dir="ltr">uri.cohen@example.com</div></div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e6e9ef;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:16px;margin-bottom:16px">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#344054">שם מלא<input value="אורי כהן" style="height:44px;border-radius:11px;border:1px solid #d7dce4;padding:0 14px;font-size:14px;font-family:inherit;background:#f4f5fd"/></label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#344054">טלפון<input value="050-1234567" dir="ltr" style="height:44px;border-radius:11px;border:1px solid #d7dce4;padding:0 14px;font-size:14px;font-family:inherit;background:#f4f5fd;text-align:right"/></label>
+            <button style="height:44px;border-radius:11px;border:0;background:#1f6fd1;color:#fff;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer;align-self:flex-start;padding:0 22px">שמירת שינויים</button>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e6e9ef;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:16px;margin-bottom:16px">
+            <h3 style="margin:0;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800">התראות</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px">התראות תוקף במייל</span><button onClick="{{ toggleEmailNotif }}" style="width:44px;height:26px;border-radius:99px;border:0;background:{{ emailNotifBg }};position:relative;cursor:pointer"><span style="position:absolute;top:3px;{{ emailNotifKnobSide }}:3px;width:20px;height:20px;border-radius:99px;background:#fff;transition:.2s"></span></button></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px">התראות פוש</span><button onClick="{{ togglePushNotif }}" style="width:44px;height:26px;border-radius:99px;border:0;background:{{ pushNotifBg }};position:relative;cursor:pointer"><span style="position:absolute;top:3px;{{ pushNotifKnobSide }}:3px;width:20px;height:20px;border-radius:99px;background:#fff;transition:.2s"></span></button></div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #fee2e2;border-radius:18px;padding:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div><div style="font-weight:700;font-size:14px;color:#101828">מחיקת חשבון</div><div style="font-size:12.5px;color:#98a2b3">פעולה זו בלתי הפיכה</div></div>
+            <button style="height:40px;padding:0 18px;border-radius:10px;border:1px solid #fecaca;background:#fff;color:#dc2626;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer">מחיקה</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isNotificationsPage }}" hint-placeholder-val="{{ false }}">
+        <section style="animation:cmFadeUp .35s ease both;max-width:640px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0">התראות</h1>
+            <button style="background:none;border:0;color:#1f6fd1;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">סימון הכל כנקרא</button>
+          </div>
+          <div style="font-size:12.5px;font-weight:800;color:#98a2b3;margin-bottom:8px">היום</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+            <sc-for list="{{ notifsToday }}" as="n" hint-placeholder-count="2">
+              <div style="background:#fff;border:1px solid #e6e9ef;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;position:relative">
+                <div style="width:36px;height:36px;flex:0 0 36px;border-radius:10px;background:{{ n.iconBg }};display:flex;align-items:center;justify-content:center">{{ n.icon }}</div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:600;line-height:1.5">{{ n.text }}</div><div style="font-size:12px;color:#98a2b3;margin-top:3px">{{ n.time }}</div></div>
+                <sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:99px;background:#1f6fd1;margin-top:5px"></span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12.5px;font-weight:800;color:#98a2b3;margin-bottom:8px">מוקדם יותר</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ notifsEarlier }}" as="n" hint-placeholder-count="2">
+              <div style="background:#fff;border:1px solid #e6e9ef;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;opacity:.75">
+                <div style="width:36px;height:36px;flex:0 0 36px;border-radius:10px;background:{{ n.iconBg }};display:flex;align-items:center;justify-content:center">{{ n.icon }}</div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:600;line-height:1.5">{{ n.text }}</div><div style="font-size:12px;color:#98a2b3;margin-top:3px">{{ n.time }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isAdminPage }}" hint-placeholder-val="{{ false }}">
+        <section style="animation:cmFadeUp .35s ease both">
+          <h1 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;margin:0 0 18px">פאנל ניהול</h1>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+            <div style="background:#15202e;color:#fff;border-radius:16px;padding:16px"><span style="font-size:12.5px;opacity:.7;font-weight:600">משתמשים רשומים</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;margin-top:6px">1,248</div></div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px"><span style="font-size:12.5px;color:#667085;font-weight:600">קופונים פעילים במערכת</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;margin-top:6px">3,502</div></div>
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;padding:16px"><span style="font-size:12.5px;color:#667085;font-weight:600">חברות פעילות</span><div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;margin-top:6px">46</div></div>
+          </div>
+
+          <div style="display:flex;gap:8px;background:#eef0f3;padding:4px;border-radius:12px;width:fit-content;margin-bottom:16px">
+            <button onClick="{{ setAdminUsers }}" style="height:36px;padding:0 16px;border-radius:9px;border:0;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;background:{{ adminUsersTabBg }};color:{{ adminUsersTabColor }}">משתמשים</button>
+            <button onClick="{{ setAdminCompanies }}" style="height:36px;padding:0 16px;border-radius:9px;border:0;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;background:{{ adminCompaniesTabBg }};color:{{ adminCompaniesTabColor }}">חברות</button>
+          </div>
+
+          <sc-if value="{{ isAdminUsersTab }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;background:#f2f3fd;font-size:12.5px;font-weight:800;color:#667085">
+                <span>שם</span><span>אימייל</span><span>חבילה</span><span>סטטוס</span>
+              </div>
+              <sc-for list="{{ adminUsers }}" as="u" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:13px 16px;border-top:1px solid #f0f1f4;align-items:center;font-size:13.5px">
+                  <span style="font-weight:600">{{ u.name }}</span><span dir="ltr" style="text-align:right;color:#667085">{{ u.email }}</span><span>{{ u.plan }}</span>
+                  <span><span style="font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:{{ u.statusBg }};color:{{ u.statusColor }}">{{ u.status }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isAdminCompaniesTab }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #e6e9ef;border-radius:16px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr;padding:12px 16px;background:#f2f3fd;font-size:12.5px;font-weight:800;color:#667085">
+                <span>חברה</span><span>קטגוריה</span><span>קופונים</span>
+              </div>
+              <sc-for list="{{ adminCompanies }}" as="co" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr;padding:13px 16px;border-top:1px solid #f0f1f4;align-items:center;font-size:13.5px">
+                  <span style="font-weight:600;display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:6px;background:{{ co.color }};display:inline-block"></span>{{ co.name }}</span><span>{{ co.category }}</span><span>{{ co.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </section>
+      </sc-if>
+
+      </div>
+    </main>
+  </div>
+
+  <nav style="flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-top:1px solid #e6e9ef;padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px))">
+    <button onClick="{{ goToDashboard }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;font-size:10.5px;font-weight:800;color:{{ bottomNavColor.dashboard }};font-family:inherit;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-7 9 7"/><path d="M5 9v10h14V9"/></svg>דשבורד</button>
+    <button onClick="{{ goToCoupons }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;font-size:10.5px;font-weight:800;color:{{ bottomNavColor.coupons }};font-family:inherit;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.6 12.6 12 21.2 2.8 12 2.8 2.8 12 2.8 20.6 11.4Z"/></svg>קופונים</button>
+    <button onClick="{{ goToStatistics }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;font-size:10.5px;font-weight:800;color:{{ bottomNavColor.statistics }};font-family:inherit;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="20" x2="4" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="20" y1="20" x2="20" y2="14"/></svg>סטטיסטיקה</button>
+    <button onClick="{{ goToSharing }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;font-size:10.5px;font-weight:800;color:{{ bottomNavColor.sharing }};font-family:inherit;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><line x1="8.2" y1="10.8" x2="15.8" y2="6.2"/><line x1="8.2" y1="13.2" x2="15.8" y2="17.8"/></svg>שיתופים</button>
+    <button onClick="{{ goToProfile }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;font-size:10.5px;font-weight:800;color:{{ bottomNavColor.profile }};font-family:inherit;cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.6-3.6 4.6-5.4 7.5-5.4s5.9 1.8 7.5 5.4"/></svg>חשבון</button>
+  </nav>
+
+  <sc-if value="{{ companyModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(15,23,42,.4);animation:{{ companyModalScrimAnim }} .28s ease both">
+      <button onClick="{{ closeCompanyModal }}" style="position:absolute;inset:0;border:0;background:transparent;cursor:pointer"></button>
+      <div style="position:relative;background:#fff;border-radius:22px 22px 0 0;max-height:80%;display:flex;flex-direction:column;animation:{{ companyModalSheetAnim }} .32s cubic-bezier(.32,.72,0,1) both">
+        <div style="background:{{ companyModal.color }};border-radius:22px 22px 0 0;padding:20px;color:#fff;flex:0 0 auto">
+          <div style="width:36px;height:4px;background:rgba(255,255,255,.4);border-radius:99px;margin:0 auto 14px"></div>
+          <button onClick="{{ closeCompanyModal }}" style="position:absolute;top:18px;left:18px;background:rgba(255,255,255,.2);border:0;color:#fff;width:28px;height:28px;border-radius:99px;cursor:pointer;font-size:15px;line-height:1">✕</button>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:38px;height:38px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 auto"><img src="{{ companyModal.logo }}" alt="{{ companyModal.name }}" style="width:76%;height:76%;object-fit:contain"/></div>
+            <div style="font-weight:800;font-size:19px;font-family:'Outfit',sans-serif">{{ companyModal.name }}</div>
+          </div>
+          <div style="font-size:13px;opacity:.85;margin-top:4px">{{ companyModal.count }} קופונים · יתרה {{ companyModal.totalFmt }}</div>
+        </div>
+        <div style="overflow-y:auto;padding:8px 20px 24px">
+          <sc-for list="{{ companyModal.coupons }}" as="cp" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f0f1f4">
+              <div>
+                <span dir="ltr" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:13.5px">{{ cp.code }}</span>
+                <div style="font-size:12px;color:{{ cp.daysColor }};font-weight:700;margin-top:2px">{{ cp.daysLabel }}</div>
+              </div>
+              <strong style="font-family:'Outfit',sans-serif;font-size:16px">{{ cp.remainingFmt }}</strong>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const COMPANIES = [
+  { key: 'carrefour', name: 'קרפור', color: '#0055a4', category: 'סופר', logo: 'assets/logos/carrefour.png' },
+  { key: 'ramilevi', name: 'רמי לוי', color: '#f47b20', category: 'סופר', logo: 'assets/logos/ramilevi.jpg' },
+  { key: 'kfc', name: 'KFC', color: '#c8102e', category: 'מסעדות', logo: 'assets/logos/kfc.png' },
+  { key: 'wolt', name: 'וולט', color: '#00a9c2', category: 'משלוחים', logo: 'assets/logos/wolt.png' },
+  { key: 'foxhome', name: 'Fox Home', color: '#22252b', category: 'אופנה', logo: 'assets/logos/foxhome.png' },
+  { key: 'cinema', name: 'סינמה סיטי', color: '#d81b23', category: 'בילוי', logo: 'assets/logos/cinema.png' },
+  { key: 'buyme', name: 'BuyMe', color: '#7c3aed', category: 'שוברים', logo: 'assets/logos/buyme.png' },
+  { key: 'goodpharm', name: 'גוד פארם', color: '#0ea472', category: 'פארם', logo: 'assets/logos/goodpharm.png' },
+];
+
+class Component extends DCLogic {
+  state = {
+    page: 'dashboard',
+    authMode: 'login',
+    passwordVisible: false,
+    mobileNavOpen: false,
+    sharingTab: 'received',
+    adminTab: 'users',
+    emailNotif: true,
+    pushNotif: false,
+    activeChip: 'all',
+    faqOpen: {},
+    companyModalOpen: false,
+    companyModalClosing: false,
+    selectedCompany: null,
+    revealedCodes: {},
+  };
+
+  fmt(v) { return `${v.toFixed(2)} ₪`; }
+
+  renderVals() {
+    const s = this.state;
+    const go = (page) => () => this.setState({ page, mobileNavOpen: false });
+
+    const totalValue = 2840, usedValue = 1120, remainingValue = totalValue - usedValue, totalSavings = 960;
+
+    const companyCards = COMPANIES.map((c, i) => ({
+      company: c.name, color: c.color, initial: c.name[0], logo: c.logo, count: [3,2,5,1,2,4,1,2][i],
+      open: () => this.setState({ companyModalOpen: true, selectedCompany: c.name }),
+    }));
+
+    const couponsData = [
+      { company: 'קרפור', color: '#0055a4', category: 'סופר', code: 'CRF-8821', value: 300, used: 120, expiryDays: 9 },
+      { company: 'רמי לוי', color: '#f47b20', category: 'סופר', code: 'RL-4471', value: 200, used: 200, expiryDays: -1 },
+      { company: 'KFC', color: '#c8102e', category: 'מסעדות', code: 'KFC-119', value: 80, used: 20, expiryDays: 40 },
+      { company: 'וולט', color: '#00a9c2', category: 'משלוחים', code: 'WLT-903', value: 150, used: 60, expiryDays: 5 },
+      { company: 'Fox Home', color: '#22252b', category: 'אופנה', code: 'FOX-220', value: 400, used: 0, expiryDays: 120 },
+      { company: 'BuyMe', color: '#7c3aed', category: 'שוברים', code: 'BM-771', value: 250, used: 90, expiryDays: 12 },
+    ].map((c) => {
+      const usedPct = Math.round((c.used / c.value) * 100);
+      const expired = c.expiryDays < 0;
+      const soon = !expired && c.expiryDays <= 14;
+      const info = COMPANIES.find(co => co.name === c.company);
+      return {
+        ...c, initial: c.company[0], logo: info && info.logo,
+        usedFmt: this.fmt(c.used), valueFmt: this.fmt(c.value), remainingFmt: this.fmt(c.value - c.used), usedPct,
+        expiry: expired ? 'פג תוקף' : `בעוד ${c.expiryDays} ימים`,
+        daysLabel: expired ? 'פג תוקף' : soon ? `נותרו ${c.expiryDays} ימים` : 'בתוקף',
+        daysColor: expired ? '#dc2626' : soon ? '#f59e0b' : '#16a34a',
+        badgeLabel: expired ? 'נוצל' : soon ? 'עומד לפוג' : 'פעיל',
+        badgeBg: expired ? '#f3f4f6' : soon ? '#fef3c7' : '#dcfce7',
+        badgeColor: expired ? '#6b7280' : soon ? '#b45309' : '#15803d',
+      };
+    });
+    const visibleCoupons = s.activeChip === 'all' ? couponsData : couponsData.filter(c => c.category === s.activeChip);
+
+    const categories = ['all', 'סופר', 'מסעדות', 'משלוחים', 'אופנה', 'שוברים'];
+    const categoryChips = categories.map((cat) => {
+      const active = s.activeChip === cat;
+      return {
+        label: cat === 'all' ? 'הכל' : cat,
+        select: () => this.setState({ activeChip: cat }),
+        bg: active ? '#1f6fd1' : '#fff', color: active ? '#fff' : '#344054', borderColor: active ? '#1f6fd1' : '#d7dce4',
+      };
+    });
+
+    const monthlyTrend = [
+      { month: 'מרץ', barPct: 45 }, { month: 'אפר׳', barPct: 65 }, { month: 'מאי', barPct: 40 },
+      { month: 'יוני', barPct: 80 }, { month: 'יולי', barPct: 55 }, { month: 'אוג׳', barPct: 95 },
+    ];
+    const categoryStats = [
+      { name: 'סופר', value: 420, pct: 70 }, { name: 'מסעדות', value: 260, pct: 45 },
+      { name: 'אופנה', value: 180, pct: 30 }, { name: 'משלוחים', value: 100, pct: 18 },
+    ].map(c => ({ ...c, valueFmt: this.fmt(c.value) }));
+
+    const sharesData = {
+      received: [
+        { name: 'דנה לוי', company: 'קרפור', value: 100, status: 'ממתין לאישור', statusBg: '#fef3c7', statusColor: '#b45309', color: '#e0201a' },
+        { name: 'יוסי מזרחי', company: 'KFC', value: 60, status: 'התקבל', statusBg: '#dcfce7', statusColor: '#15803d', color: '#c8102e' },
+      ],
+      sent: [
+        { name: 'מיכל אברהם', company: 'וולט', value: 80, status: 'נצפה', statusBg: '#e8f2fd', statusColor: '#154a8f', color: '#00a9c2' },
+      ],
+    };
+    const withFmt = (arr) => arr.map(s2 => ({ ...s2, initial: s2.name[0], valueFmt: this.fmt(s2.value) }));
+
+    const faqData = [
+      { q: 'איך מוסיפים קופון חדש?', a: 'לוחצים על "קופון חדש" בעמוד הקופונים, ומזינים את פרטי הקופון - חברה, קוד, ערך ותוקף.' },
+      { q: 'האם ניתן לשתף קופון עם מישהו אחר?', a: 'כן, מעמוד השיתופים ניתן לשלוח קופון לחבר או בן משפחה בלחיצת כפתור.' },
+      { q: 'מה קורה כשקופון פג תוקף?', a: 'הקופון עובר אוטומטית לסטטוס "פג תוקף" והוא לא ייספר יותר ביתרה הפעילה.' },
+      { q: 'האם המידע שלי מאובטח?', a: 'כל קודי הקופונים מוצפנים ונשמרים בצורה מאובטחת בהתאם למדיניות הפרטיות שלנו.' },
+    ].map((f, i) => ({
+      ...f, open: !!s.faqOpen[i], chevronRotate: s.faqOpen[i] ? 'rotate(180deg)' : 'rotate(0deg)',
+      toggle: () => this.setState({ faqOpen: { ...s.faqOpen, [i]: !s.faqOpen[i] } }),
+    }));
+
+    const notifsToday = [
+      { text: 'הקופון של רמי לוי פג תוקף היום', time: 'לפני שעתיים', icon: '⏰', iconBg: '#fef3c7', unread: true },
+      { text: 'דנה לוי שיתפה איתך קופון של קרפור', time: 'לפני 5 שעות', icon: '🎁', iconBg: '#e8f2fd', unread: true },
+    ];
+    const notifsEarlier = [
+      { text: 'נוסף חיסכון של 40 ₪ בקופון KFC', time: 'אתמול', icon: '💰', iconBg: '#dcfce7' },
+    ];
+
+    const adminUsers = [
+      { name: 'אורי כהן', email: 'uri@example.com', plan: 'פרימיום', status: 'פעיל', statusBg: '#dcfce7', statusColor: '#15803d' },
+      { name: 'דנה לוי', email: 'dana@example.com', plan: 'חינם', status: 'פעיל', statusBg: '#dcfce7', statusColor: '#15803d' },
+      { name: 'יוסי מזרחי', email: 'yossi@example.com', plan: 'פרימיום', status: 'מושהה', statusBg: '#fee2e2', statusColor: '#b91c1c' },
+    ];
+    const adminCompanies = COMPANIES.slice(0, 5).map(c => ({ name: c.name, category: c.category, count: Math.floor(Math.random()*4)+2, color: c.color }));
+
+    const navKeys = ['dashboard','coupons','statistics','sharing','profile','admin'];
+    const navBg = {}, navColor = {}, bottomNavColor = {};
+    navKeys.forEach(k => {
+      const active = s.page === k;
+      navBg[k] = active ? '#1f6fd1' : 'transparent';
+      navColor[k] = active ? '#fff' : '#344054';
+      bottomNavColor[k] = active ? '#1f6fd1' : '#98a2b3';
+    });
+
+    return {
+      isAuthPage: s.page === 'login' || s.page === 'register',
+      isLoginMode: s.page === 'login', isRegisterMode: s.page === 'register',
+      isContentPage: ['about','faq','privacy'].includes(s.page),
+      isAboutPage: s.page === 'about', isFaqPage: s.page === 'faq', isPrivacyPage: s.page === 'privacy',
+      isAppPage: !['login','register','about','faq','privacy'].includes(s.page),
+      isDashboardPage: s.page === 'dashboard', isCouponsPage: s.page === 'coupons',
+      isStatisticsPage: s.page === 'statistics', isSharingPage: s.page === 'sharing',
+      isProfilePage: s.page === 'profile', isNotificationsPage: s.page === 'notifications',
+      isAdminPage: s.page === 'admin',
+
+      passwordFieldType: s.passwordVisible ? 'text' : 'password',
+      togglePassword: () => this.setState({ passwordVisible: !s.passwordVisible }),
+      authSubmitLabel: s.authMode === 'login' ? 'התחברות' : 'הרשמה',
+      setModeRegister: (e) => { e.preventDefault(); this.setState({ page: 'register' }); },
+      setModeLogin: (e) => { e.preventDefault(); this.setState({ page: 'login' }); },
+      goToLogin: go('login'), goToDashboard: go('dashboard'), goToCoupons: go('coupons'),
+      goToStatistics: go('statistics'), goToSharing: go('sharing'), goToProfile: go('profile'),
+      goToNotifications: go('notifications'), goToAdmin: go('admin'),
+      goToAbout: (e) => { e && e.preventDefault && e.preventDefault(); this.setState({ page: 'about' }); },
+      goToFaq: (e) => { e && e.preventDefault && e.preventDefault(); this.setState({ page: 'faq' }); },
+      goToPrivacy: (e) => { e && e.preventDefault && e.preventDefault(); this.setState({ page: 'privacy' }); },
+      aboutLinkColor: s.page === 'about' ? '#1f6fd1' : '#475467',
+      faqLinkColor: s.page === 'faq' ? '#1f6fd1' : '#475467',
+      privacyLinkColor: s.page === 'privacy' ? '#1f6fd1' : '#475467',
+
+      toggleMobileNav: () => this.setState({ mobileNavOpen: !s.mobileNavOpen }),
+      mobileNavOpen: s.mobileNavOpen,
+      hasUnreadNotifs: true,
+      navBg, navColor, bottomNavColor,
+
+      heroGridCols: '1fr',
+
+      companyModalOpen: s.companyModalOpen,
+      companyModalSheetAnim: s.companyModalClosing ? 'cmSheetDown' : 'cmSheetUp',
+      companyModalScrimAnim: s.companyModalClosing ? 'cmScrimOut' : 'cmScrimIn',
+      closeCompanyModal: () => {
+        this.setState({ companyModalClosing: true });
+        setTimeout(() => this.setState({ companyModalOpen: false, companyModalClosing: false }), 300);
+      },
+      companyModal: (() => {
+        const info = COMPANIES.find(c => c.name === s.selectedCompany);
+        const coupons = couponsData.filter(c => c.company === s.selectedCompany);
+        const total = coupons.reduce((sum, c) => sum + (c.value - c.used), 0);
+        return {
+          name: s.selectedCompany || '', color: info ? info.color : '#667085', logo: info && info.logo,
+          count: coupons.length, totalFmt: this.fmt(total), coupons,
+        };
+      })(),
+
+      activeCouponsCount: couponsData.filter(c => c.expiryDays >= 0).length,
+      remainingValueFmt: this.fmt(remainingValue), totalValueFmt: this.fmt(totalValue),
+      totalSavingsFmt: this.fmt(totalSavings), usedValueFmt: this.fmt(usedValue),
+      expiringSoonCount: couponsData.filter(c => c.expiryDays >= 0 && c.expiryDays <= 14).length,
+      companyCards,
+
+      categoryChips, visibleCoupons,
+
+      usagePct: Math.round((usedValue / totalValue) * 100),
+      monthlyTrend, categoryStats,
+
+      isReceivedTab: s.sharingTab === 'received', isSentTab: s.sharingTab === 'sent',
+      setSharingReceived: () => this.setState({ sharingTab: 'received' }),
+      setSharingSent: () => this.setState({ sharingTab: 'sent' }),
+      receivedTabBg: s.sharingTab === 'received' ? '#fff' : 'transparent',
+      receivedTabColor: s.sharingTab === 'received' ? '#101828' : '#667085',
+      sentTabBg: s.sharingTab === 'sent' ? '#fff' : 'transparent',
+      sentTabColor: s.sharingTab === 'sent' ? '#101828' : '#667085',
+      receivedShares: withFmt(sharesData.received), sentShares: withFmt(sharesData.sent),
+
+      emailNotifBg: s.emailNotif ? '#1f6fd1' : '#d7dce4',
+      emailNotifKnobSide: s.emailNotif ? 'right' : 'left',
+      toggleEmailNotif: () => this.setState({ emailNotif: !s.emailNotif }),
+      pushNotifBg: s.pushNotif ? '#1f6fd1' : '#d7dce4',
+      pushNotifKnobSide: s.pushNotif ? 'right' : 'left',
+      togglePushNotif: () => this.setState({ pushNotif: !s.pushNotif }),
+
+      notifsToday, notifsEarlier,
+
+      isAdminUsersTab: s.adminTab === 'users', isAdminCompaniesTab: s.adminTab === 'companies',
+      setAdminUsers: () => this.setState({ adminTab: 'users' }),
+      setAdminCompanies: () => this.setState({ adminTab: 'companies' }),
+      adminUsersTabBg: s.adminTab === 'users' ? '#fff' : 'transparent',
+      adminUsersTabColor: s.adminTab === 'users' ? '#101828' : '#667085',
+      adminCompaniesTabBg: s.adminTab === 'companies' ? '#fff' : 'transparent',
+      adminCompaniesTabColor: s.adminTab === 'companies' ? '#101828' : '#667085',
+      adminUsers, adminCompanies,
+
+      faqItems: faqData,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -126,7 +126,7 @@ export function DashboardScreen() {
           <View style={styles.filterBanner}>
             <TouchableOpacity
               onPress={() => setSelectedCompany(null)}
-              style={[styles.clearFilterBtn, { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" }]}
+              style={[styles.clearFilterBtn, { backgroundColor: theme.surfaceAlt }]}
             >
               <Text style={[styles.clearFilterText, { color: theme.primary }]}>
                 הצג את כל החברות

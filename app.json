@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "couponmaster",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0f172a"
+        "backgroundColor": "#faf9f6"
       },
       "package": "com.itaykarkason.couponmaster",
       "permissions": [
@@ -42,7 +42,7 @@
         {
           "image": "./assets/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#0f172a"
+          "backgroundColor": "#faf9f6"
         }
       ],
       [

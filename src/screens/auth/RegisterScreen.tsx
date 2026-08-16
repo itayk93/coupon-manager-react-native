@@ -131,7 +131,7 @@ export function RegisterScreen() {
             <View
               style={[
                 styles.logoCircle,
-                { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
               <UserPlus size={32} color={theme.primary} />

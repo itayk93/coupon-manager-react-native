@@ -355,7 +355,7 @@ function CouponForm({
             style={[
               styles.switchRow,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -403,7 +403,7 @@ function CouponForm({
             style={[
               styles.switchRow,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -447,7 +447,7 @@ function CouponForm({
                 key={t}
                 style={[
                   styles.tagBadge,
-                  { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                  { backgroundColor: theme.surfaceAlt },
                 ]}
               >
                 <TouchableOpacity onPress={() => handleRemoveTag(t)}>

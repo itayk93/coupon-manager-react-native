@@ -198,7 +198,7 @@ export function QuickAddModal({
             style={[
               styles.switchRow,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}
@@ -246,7 +246,7 @@ export function QuickAddModal({
             style={[
               styles.switchRow,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#f8fafc",
+                backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
               },
             ]}

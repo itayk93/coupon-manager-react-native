@@ -18,6 +18,7 @@ import {
   SlidersHorizontal,
   X,
   Sparkles,
+  QrCode,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponCard } from "@/components/coupons/CouponCard";
@@ -125,7 +126,7 @@ export function CouponsListScreen() {
               disabled={triggerAutoUpdate.isPending}
               style={[
                 styles.iconBtn,
-                { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
               <RefreshCw
@@ -133,6 +134,14 @@ export function CouponsListScreen() {
                 color={theme.text}
                 style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
               />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/scanner")}
+              accessibilityLabel="סריקת קוד קופון"
+              style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
+            >
+              <QrCode size={18} color={theme.text} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -153,7 +162,7 @@ export function CouponsListScreen() {
             styles.searchBar,
             {
               backgroundColor: theme.inputBg,
-              borderColor: theme.border,
+              borderColor: theme.inputBorder,
             },
           ]}
         >
@@ -259,8 +268,8 @@ export function CouponsListScreen() {
             style={[
               styles.selectionBar,
               {
-                backgroundColor: theme.isDark ? "#1e293b" : "#0f172a",
-                borderColor: theme.border,
+                backgroundColor: theme.surfaceAlt,
+                borderColor: theme.inputBorder,
               },
             ]}
           >

@@ -12,6 +12,14 @@ import {
   useSegments,
 } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useFonts } from "expo-font";
+import {
+  Heebo_400Regular,
+  Heebo_500Medium,
+  Heebo_700Bold,
+  Heebo_800ExtraBold,
+} from "@expo-google-fonts/heebo";
+import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outfit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
@@ -83,7 +91,21 @@ function useAuthGuard() {
 
 function RootLayoutNav() {
   const { isDark, theme } = useAppTheme();
-  const { isReady } = useAuthGuard();
+  const { isReady: authReady } = useAuthGuard();
+
+  // Heebo carries the Hebrew body text; Outfit is the Latin display face used
+  // for headings and figures in the redesign.
+  const [fontsLoaded, fontError] = useFonts({
+    Heebo_400Regular,
+    Heebo_500Medium,
+    Heebo_700Bold,
+    Heebo_800ExtraBold,
+    Outfit_600SemiBold,
+    Outfit_800ExtraBold,
+  });
+
+  // A font failure must not wedge the app behind the splash screen.
+  const isReady = authReady && (fontsLoaded || Boolean(fontError));
 
   useEffect(() => {
     if (isReady) {

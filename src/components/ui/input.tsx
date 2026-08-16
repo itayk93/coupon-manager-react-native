@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { fonts, radii } from "@/lib/theme";
 
 type InputProps = TextInputProps & {
   label?: string;
@@ -38,7 +39,7 @@ export function Input({
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? (
-        <Text style={[styles.label, { color: theme.text, textAlign: "right" }]}>
+        <Text style={[styles.label, { color: theme.label, textAlign: "right" }]}>
           {label}
         </Text>
       ) : null}
@@ -52,7 +53,7 @@ export function Input({
               ? theme.danger
               : isFocused
               ? theme.primary
-              : theme.border,
+              : theme.inputBorder,
           },
         ]}
       >
@@ -74,7 +75,7 @@ export function Input({
         <TextInput
           {...rest}
           secureTextEntry={isPassword ? !showPassword : secureTextEntry}
-          placeholderTextColor={theme.textMuted}
+          placeholderTextColor={theme.textSubtle}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={[
@@ -105,17 +106,18 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   label: {
-    fontSize: 14,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
     fontWeight: "600",
     marginBottom: 6,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: radii.lg,
+    borderWidth: 1,
     paddingHorizontal: 14,
-    height: 48,
+    height: 46,
   },
   input: {
     flex: 1,

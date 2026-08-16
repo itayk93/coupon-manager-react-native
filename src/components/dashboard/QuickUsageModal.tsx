@@ -219,7 +219,7 @@ export function QuickUsageModal({
               onPress={handleFullUsage}
               style={[
                 styles.fullUseBtn,
-                { backgroundColor: theme.isDark ? "#1e293b" : "#f1f5f9" },
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
               <Text style={[styles.fullUseText, { color: theme.primary }]}>
