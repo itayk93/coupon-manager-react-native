@@ -21,14 +21,33 @@ const queryClient = new QueryClient({
   },
 });
 
+const navigationFonts = Platform.select({
+  ios: {
+    regular: { fontFamily: "System", fontWeight: "400" },
+    medium: { fontFamily: "System", fontWeight: "500" },
+    bold: { fontFamily: "System", fontWeight: "600" },
+    heavy: { fontFamily: "System", fontWeight: "700" },
+  },
+  default: {
+    regular: { fontFamily: "sans-serif", fontWeight: "normal" },
+    medium: { fontFamily: "sans-serif-medium", fontWeight: "normal" },
+    bold: { fontFamily: "sans-serif", fontWeight: "600" },
+    heavy: { fontFamily: "sans-serif", fontWeight: "700" },
+  },
+});
+
 function AppContent() {
   const { isDark, theme } = useAppTheme();
+  const navigationBaseTheme = isDark
+    ? NavigationDarkTheme
+    : NavigationDefaultTheme;
 
   return (
     <NavigationContainer
       theme={{
-        ...(isDark ? NavigationDarkTheme : NavigationDefaultTheme),
+        ...navigationBaseTheme,
         dark: isDark,
+        fonts: navigationBaseTheme.fonts ?? navigationFonts,
         colors: {
           primary: theme.primary,
           background: theme.background,
