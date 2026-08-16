@@ -11,14 +11,14 @@ import {
   Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Mail, Lock, UserPlus, User } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Mail, Lock, User, WalletCards } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { storeLegacyUser, LegacyUser } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { fonts, radii, shadows } from "@/lib/theme";
+import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function RegisterScreen() {
@@ -117,7 +117,13 @@ export function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={["#e8f2fd", "#f5f6fd", "#f5f6fd"]}
+        locations={[0, 0.45, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -127,90 +133,80 @@ export function RegisterScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Brand Header */}
-          <View style={styles.brandHeader}>
-            <View
-              style={[
-                styles.logoCircle,
-                { backgroundColor: theme.surfaceAlt },
-              ]}
+          <View style={styles.brand}>
+            <LinearGradient
+              colors={[palette.primary, palette.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.brandMark}
             >
-              <UserPlus size={32} color={theme.primary} />
-            </View>
-            <Text style={[styles.brandTitle, { color: theme.text }]}>
-              יצירת חשבון חדש
-            </Text>
-            <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
-              הצטרף לאלפי משתמשים שחוסכים כסף בכל קנייה
-            </Text>
+              <WalletCards size={26} color="#ffffff" strokeWidth={1.8} />
+            </LinearGradient>
+            <Text style={[styles.brandName, { color: theme.text }]}>קופון מאסטר</Text>
           </View>
 
-          {/* Form Card */}
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            {/* First and Last Name in Row */}
-            <View style={styles.row}>
-              <View style={styles.halfCol}>
-                <Input
-                  label="שם משפחה *"
-                  placeholder="ישראלי"
-                  value={lastName}
-                  onChangeText={setLastName}
-                  error={errors.lastName}
-                  icon={<User size={16} color={theme.textMuted} />}
-                />
-              </View>
-              <View style={styles.halfCol}>
-                <Input
-                  label="שם פרטי *"
-                  placeholder="ישראל"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  error={errors.firstName}
-                  icon={<User size={16} color={theme.textMuted} />}
-                />
-              </View>
-            </View>
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <LinearGradient
+              colors={[palette.primary, palette.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.cardRule}
+            />
+
+            <Text style={[styles.title, { color: theme.text }]}>יצירת חשבון</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              חוסכים כסף כבר בדקה הראשונה
+            </Text>
 
             <Input
-              label="כתובת אימייל *"
-              placeholder="your@email.com"
+              label="שם מלא"
+              placeholder="ישראל ישראלי"
+              value={firstName}
+              onChangeText={setFirstName}
+              error={errors.firstName}
+              icon={<User size={18} color={theme.textSubtle} />}
+            />
+
+            <Input
+              label="שם משפחה"
+              placeholder="ישראלי"
+              value={lastName}
+              onChangeText={setLastName}
+              error={errors.lastName}
+              icon={<User size={18} color={theme.textSubtle} />}
+            />
+
+            <Input
+              label="אימייל"
+              placeholder="you@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
               error={errors.email}
-              icon={<Mail size={16} color={theme.textMuted} />}
+              icon={<Mail size={18} color={theme.textSubtle} />}
             />
 
             <Input
-              label="סיסמה (לפחות 6 תווים) *"
+              label="סיסמה"
               placeholder="••••••••"
               isPassword
               value={password}
               onChangeText={setPassword}
               error={errors.password}
-              icon={<Lock size={16} color={theme.textMuted} />}
+              icon={<Lock size={18} color={theme.textSubtle} />}
             />
 
             <Input
-              label="אימות סיסמה *"
+              label="אימות סיסמה"
               placeholder="••••••••"
               isPassword
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               error={errors.confirmPassword}
-              icon={<Lock size={16} color={theme.textMuted} />}
+              icon={<Lock size={18} color={theme.textSubtle} />}
             />
 
-            {/* Terms Switch */}
             <View style={styles.termsRow}>
               <Switch
                 value={agreeTerms}
@@ -219,34 +215,35 @@ export function RegisterScreen() {
                 thumbColor="#ffffff"
               />
               <Text style={[styles.termsText, { color: theme.textMuted }]}>
-                אני מסכים/ה לתנאי השימוש ומדיניות הפרטיות
+                אני מאשר/ת את תנאי השימוש
               </Text>
             </View>
-            {errors.terms ? (
-              <Text style={[styles.termsError, { color: theme.danger }]}>
-                {errors.terms}
-              </Text>
-            ) : null}
 
-            <Button
-              title="צור חשבון"
-              onPress={handleRegister}
-              loading={loading}
-              style={{ marginTop: 12 }}
-            />
-          </View>
-
-          {/* Switch to Login */}
-          <View style={styles.footerRow}>
-            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-              <Text style={[styles.loginLink, { color: theme.primary }]}>
-                התחבר כאן
-              </Text>
+            <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading}>
+              <LinearGradient
+                colors={[palette.primary, palette.primaryDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.submit}
+              >
+                <Text style={styles.submitText}>{loading ? "נרשם..." : "הרשמה"}</Text>
+              </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.footerText, { color: theme.textMuted }]}>
-              כבר רשום?
-            </Text>
+
+            <View style={styles.footerRow}>
+              <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+                <Text style={[styles.link, { color: theme.primary }]}>התחברות</Text>
+              </TouchableOpacity>
+              <Text style={[styles.footerText, { color: theme.textMuted }]}>כבר יש לכם חשבון? </Text>
+            </View>
           </View>
+
+          <Text style={[styles.legal, { color: theme.textSubtle }]}>
+            בכניסה אתם מאשרים את{" "}
+            <Text style={{ color: theme.primary }} onPress={() => router.push("/privacy")}>
+              מדיניות הפרטיות
+            </Text>
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -254,88 +251,94 @@ export function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
+  keyboardView: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
     flexGrow: 1,
     justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 32,
   },
-  brandHeader: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  brand: { alignItems: "center", gap: 10, marginBottom: 28 },
+  brandMark: {
+    width: 52,
+    height: 52,
+    borderRadius: radii.card,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    shadowColor: palette.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 6,
   },
-  brandTitle: {
+  brandName: {
     fontFamily: fonts.display,
-    fontSize: 24,
-    fontWeight: "900",
-    textAlign: "center",
-  },
-  brandSubtitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 4,
-    maxWidth: 280,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
   card: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
     borderRadius: radii.sheet,
-    padding: 20,
     borderWidth: 1,
+    paddingHorizontal: 28,
+    paddingVertical: 32,
+    overflow: "hidden",
     shadowColor: "#101828",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.18,
+    shadowRadius: 50,
+    elevation: 8,
   },
-  row: {
-    flexDirection: "row-reverse",
-    gap: 10,
+  cardRule: { position: "absolute", top: 0, left: 0, right: 0, height: 4 },
+  title: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 4,
   },
-  halfCol: {
-    flex: 1,
+  subtitle: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 24,
   },
   termsRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 8,
-    marginVertical: 10,
+    justifyContent: "flex-start",
+    gap: 10,
+    marginBottom: 14,
   },
-  termsText: {
-    fontSize: 12,
-    flex: 1,
-    textAlign: "right",
-  },
-  termsError: {
-    fontSize: 12,
-    textAlign: "right",
-    marginBottom: 8,
-  },
-  footerRow: {
-    flexDirection: "row-reverse",
+  termsText: { fontFamily: fonts.body, fontSize: 13 },
+  submit: {
+    height: 48,
+    borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+  },
+  submitText: {
+    fontFamily: fonts.bodyBold,
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  link: { fontFamily: fonts.bodyBold, fontSize: 13, fontWeight: "600" },
+  footerRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22,
+  },
+  footerText: { fontFamily: fonts.body, fontSize: 13 },
+  legal: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    textAlign: "center",
     marginTop: 20,
-  },
-  footerText: {
-    fontSize: 14,
-  },
-  loginLink: {
-    fontSize: 14,
-    fontWeight: "800",
   },
 });

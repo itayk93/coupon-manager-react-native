@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronDown, ChevronUp, HelpCircle } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
+import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 
@@ -43,7 +43,7 @@ export function FaqScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="שאלות נפוצות" showBack onBack={() => router.back()} />
+      <ContentHeader />
 
       <ScrollView
         style={styles.container}
@@ -90,6 +90,9 @@ export function FaqScreen() {
             </View>
           );
         })}
+        <Text style={[contentStyles.footer, { color: theme.textSubtle, borderTopColor: theme.cardBorder }]}>
+          קופון מאסטר © 2026
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

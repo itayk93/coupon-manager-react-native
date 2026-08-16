@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Lock, Shield } from "lucide-react-native";
-import { Header } from "@/components/ui/Header";
+import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 
@@ -18,7 +18,7 @@ export function PrivacyScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="מדיניות פרטיות" showBack onBack={() => router.back()} />
+      <ContentHeader />
 
       <ScrollView
         style={styles.container}
@@ -59,6 +59,9 @@ export function PrivacyScreen() {
             אנו משתמשים בתשתיות אימות מאובטחות מבוססות תקני האבטחה הגבוהים ביותר. תוכל לבקש מחיקה מלאה של חשבונך בכל עת.
           </Text>
         </View>
+        <Text style={[contentStyles.footer, { color: theme.textSubtle, borderTopColor: theme.cardBorder }]}>
+          קופון מאסטר © 2026
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

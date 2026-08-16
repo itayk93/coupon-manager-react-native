@@ -50,7 +50,6 @@ export function LoginScreen() {
     try {
       const user = await signInLegacy(email, password);
       setLegacySession(user);
-      notify.success(`ברוך הבא, ${user.first_name || user.email}!`);
     } catch (err: any) {
       notify.error("שגיאת התחברות", err.message || "אימייל או סיסמה שגויים");
     } finally {

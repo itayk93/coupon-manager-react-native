@@ -95,9 +95,7 @@ export function SharingScreen() {
               styles.tab,
               {
                 backgroundColor:
-                  activeTab === "shared_with_me"
-                    ? theme.primary
-                    : theme.surfaceAlt,
+                  activeTab === "shared_with_me" ? theme.card : "transparent",
               },
             ]}
           >
@@ -106,7 +104,7 @@ export function SharingScreen() {
                 styles.tabText,
                 {
                   color:
-                    activeTab === "shared_with_me" ? "#ffffff" : theme.textMuted,
+                    activeTab === "shared_with_me" ? theme.text : theme.textMuted,
                 },
               ]}
             >
@@ -120,9 +118,7 @@ export function SharingScreen() {
               styles.tab,
               {
                 backgroundColor:
-                  activeTab === "my_shares"
-                    ? theme.primary
-                    : theme.surfaceAlt,
+                  activeTab === "my_shares" ? theme.card : "transparent",
               },
             ]}
           >
@@ -130,7 +126,7 @@ export function SharingScreen() {
               style={[
                 styles.tabText,
                 {
-                  color: activeTab === "my_shares" ? "#ffffff" : theme.textMuted,
+                  color: activeTab === "my_shares" ? theme.text : theme.textMuted,
                 },
               ]}
             >
@@ -369,13 +365,16 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: "row-reverse",
+    alignSelf: "flex-end",
     gap: 8,
-    marginBottom: 12,
+    padding: 4,
+    borderRadius: radii.lg,
+    marginBottom: 20,
   },
   tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    height: 38,
+    paddingHorizontal: 18,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
   },
