@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar } from "react-native";
-import { ChevronRight, Bell, Moon, Sun } from "lucide-react-native";
+import { ChevronRight, Bell } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { fonts, radii } from "@/lib/theme";
@@ -26,7 +26,7 @@ export function Header({
   onNotificationsPress,
   hasUnreadNotifications = false,
 }: HeaderProps) {
-  const { theme, toggleTheme, isDark } = useAppTheme();
+  const { theme } = useAppTheme();
   const { user } = useAuth();
 
   return (
@@ -53,20 +53,6 @@ export function Header({
             rightAction
           ) : (
             <>
-              <TouchableOpacity
-                onPress={toggleTheme}
-                style={[
-                  styles.iconButton,
-                  { backgroundColor: theme.surfaceAlt },
-                ]}
-              >
-                {isDark ? (
-                  <Sun size={18} color={theme.warningText} />
-                ) : (
-                  <Moon size={18} color={theme.textMuted} />
-                )}
-              </TouchableOpacity>
-
               {showNotifications ? (
                 <TouchableOpacity
                   onPress={onNotificationsPress}

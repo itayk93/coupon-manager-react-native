@@ -122,8 +122,6 @@ export function AdminDashboardScreen() {
                   {
                     backgroundColor: isCurrent
                       ? theme.primary
-                      : theme.isDark
-                      ? theme.surfaceAlt
                       : theme.surfaceAlt,
                   },
                 ]}

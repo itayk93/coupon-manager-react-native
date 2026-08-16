@@ -16,6 +16,7 @@ import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
 import { StatsModal } from "@/components/dashboard/StatsModal";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
@@ -33,6 +34,7 @@ export function DashboardScreen() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [sheetCompany, setSheetCompany] = useState<string | null>(null);
 
   const companyPriority = [
     "Carrefour",
@@ -77,11 +79,7 @@ export function DashboardScreen() {
   }, [visibleCoupons, selectedCompany]);
 
   const handleSelectCompany = (company: string) => {
-    if (selectedCompany === company) {
-      setSelectedCompany(null);
-    } else {
-      setSelectedCompany(company);
-    }
+    setSheetCompany(company);
   };
 
   return (
@@ -191,6 +189,12 @@ export function DashboardScreen() {
         visible={isUsageOpen}
         onClose={() => setIsUsageOpen(false)}
         coupons={coupons}
+      />
+
+      <CompanySheet
+        company={sheetCompany}
+        coupons={visibleCoupons}
+        onClose={() => setSheetCompany(null)}
       />
     </SafeAreaView>
   );

@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useColorScheme } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useContext } from "react";
 import { getTheme, ThemeMode } from "@/lib/theme";
 
 type ThemeContextType = {
@@ -11,34 +9,16 @@ type ThemeContextType = {
   toggleTheme: () => void;
 };
 
-const THEME_KEY = "coupon_master_theme_mode";
-
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useColorScheme();
-  // The redesign is a light system; dark stays available via the settings toggle.
-  const [mode, setModeState] = useState<ThemeMode>("light");
+  // "Coupon Master - Redesign" is a light-only system, so the mode is fixed.
+  // setMode/toggleTheme are kept as no-ops so consumers keep compiling.
+  const mode: ThemeMode = "light";
 
-  useEffect(() => {
-    AsyncStorage.getItem(THEME_KEY).then((saved) => {
-      if (saved === "light" || saved === "dark") {
-        setModeState(saved);
-      } else if (systemColorScheme) {
-        setModeState(systemColorScheme === "dark" ? "dark" : "light");
-      }
-    });
-  }, [systemColorScheme]);
+  const setMode = (_newMode: ThemeMode) => {};
 
-  const setMode = (newMode: ThemeMode) => {
-    setModeState(newMode);
-    AsyncStorage.setItem(THEME_KEY, newMode).catch(() => {});
-  };
-
-  const toggleTheme = () => {
-    const next = mode === "dark" ? "light" : "dark";
-    setMode(next);
-  };
+  const toggleTheme = () => {};
 
   const theme = getTheme(mode);
 
@@ -46,7 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <ThemeContext.Provider
       value={{
         mode,
-        isDark: mode === "dark",
+        isDark: false,
         theme,
         setMode,
         toggleTheme,
