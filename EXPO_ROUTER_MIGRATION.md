@@ -5,7 +5,8 @@ tree on Expo SDK 52 to **Expo Router on Expo SDK 57 / React Native 0.86 / React 
 
 - **Starting point:** `7bee58d` ("e2e") on `main`
 - **Scope:** infrastructure only. Every screen, feature, string and style is preserved.
-- **Not done here:** no commit, no push, no EAS build, no store submission, no new EAS project.
+- **Merged to:** `main` (`06cbac9`), at the repository owner's explicit request.
+- **Not done here:** no EAS build, no EAS Update, no store submission, no new EAS project.
 
 ---
 
@@ -378,7 +379,7 @@ app/(tabs)/_layout.tsx  + 5 tab routes
 app/coupons/{[id],add,edit,bulk-import}.tsx
 app/admin/index.tsx, app/+not-found.tsx
 app/{notifications,profile,sharing,about,faq,privacy,issues}.tsx
-tsconfig.native.json, expo-env.d.ts, vitest.config.mts
+tsconfig.native.json, vitest.config.mts
 EXPO_ROUTER_MIGRATION.md
 ```
 
@@ -407,11 +408,39 @@ tsconfig.json, eas.json, ios/Podfile.properties.json
 
 ---
 
-## 8. Git status
+## 8. Web preview deployment
 
-**Nothing has been committed and nothing has been pushed**, as instructed.
+The web target is deployed from `main` by Vercel's git integration:
 
-Working branch: `claude/coupon-master-expo-router-yzrl6s` (at `7bee58d`).
-64 files changed, ~2050 insertions, ~1520 deletions (excluding `package-lock.json`).
-File deletions are staged because they were made with `git rm`; the remaining edits are
-in the working tree. `git diff --check` is clean.
+**https://coupon-master-itays-projects-8e2b877e.vercel.app**
+
+`vercel.json` builds `npx expo export --platform web --output-dir dist` and rewrites
+unknown paths to `index.html`, so deep links and refreshes resolve client-side.
+Verified: `/`, `/login`, `/coupons`, `/settings`, `/statistics` and the dynamic
+`/coupons/123` all return 200, and the 3.8 MB bundle serves.
+
+Two caveats:
+
+- This is the **web** build (`react-native-web`), not the native app. For a phone,
+  run `npm run start:go` locally and scan the QR in Expo Go — the only dependency not
+  bundled in Expo Go is `expo-dev-client`, which `--go` bypasses.
+- The preview is public and talks to the **production** Supabase project. RLS and auth
+  are what protect it, and the anon key was already shipped in the mobile app, so this
+  is not new exposure — but enable Vercel Authentication on the project if the URL
+  should be gated.
+
+---
+
+## 9. Git status
+
+The migration was initially left uncommitted as instructed. The repository owner then
+explicitly asked for it to be committed and pushed to `main` rather than to the
+`claude/coupon-master-expo-router-yzrl6s` branch, which is what happened:
+
+- `06cbac9` — the migration itself (66 files)
+- `2a157f8` — point `vercel.json` at the Expo Router web export
+- `4022d93` — trigger the first Vercel build
+
+`origin/main` was still at `7bee58d`, so this was a clean fast-forward; nothing was
+overwritten. The `claude/coupon-master-expo-router-yzrl6s` branch still exists locally
+and on the remote, at the original `7bee58d`.
