@@ -3,7 +3,7 @@ require 'json'
 package = JSON.parse(File.read(File.join(__dir__, '..', '..', '..', 'package.json')))
 
 Pod::Spec.new do |s|
-  s.name           = 'CouponWidget'
+  s.name           = 'CouponWidgetBridge'
   s.version        = package['version']
   s.summary        = 'Shared storage bridge between the app and the home-screen widget.'
   s.description    = 'Writes the widget payload into the App Group container and reloads WidgetKit timelines.'

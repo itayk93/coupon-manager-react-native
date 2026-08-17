@@ -1,15 +1,38 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - Style
+// MARK: - Design tokens
+//
+// Mirrors `src/lib/theme.ts` ("Coupon Master - Redesign"). The widget wears the
+// app's dark chrome rather than its light body: a home-screen tile has to stay
+// legible over an arbitrary wallpaper.
 
 private enum WidgetStyle {
-    static var primaryGradient: LinearGradient {
+    /// `palette.headerBg` — the chrome colour the app uses in both modes.
+    static let chrome = Color(red: 0x15/255, green: 0x20/255, blue: 0x2e/255)
+    /// `palette.primary`
+    static let primary = Color(red: 0x1f/255, green: 0x6f/255, blue: 0xd1/255)
+    /// `palette.primaryDark`
+    static let primaryDark = Color(red: 0x15/255, green: 0x4a/255, blue: 0x8f/255)
+    /// `palette.primaryLight` — the code text, which needs contrast on dark.
+    static let primaryLight = Color(red: 0x5b/255, green: 0x9b/255, blue: 0xd8/255)
+    /// `palette.lightTextSubtle`
+    static let textSubtle = Color(red: 0x98/255, green: 0xa2/255, blue: 0xb3/255)
+    /// `palette.warning` — expiry alert face.
+    static let warning = Color(red: 0xf5/255, green: 0x9e/255, blue: 0x0b/255)
+    static let warningDeep = Color(red: 0xb4/255, green: 0x53/255, blue: 0x09/255)
+
+    static let cardFill = Color.white.opacity(0.06)
+    static let cardStroke = Color.white.opacity(0.10)
+    static let codeFill = Color(red: 0x1f/255, green: 0x6f/255, blue: 0xd1/255).opacity(0.18)
+    static let codeStroke = Color(red: 0x5b/255, green: 0x9b/255, blue: 0xd8/255).opacity(0.35)
+
+    static var background: LinearGradient {
         LinearGradient(
             gradient: Gradient(stops: [
-                .init(color: Color(red: 44/255, green: 63/255, blue: 80/255), location: 0.0),
-                .init(color: Color(red: 64/255, green: 83/255, blue: 100/255), location: 0.3),
-                .init(color: Color(red: 44/255, green: 63/255, blue: 80/255), location: 1.0)
+                .init(color: chrome, location: 0.0),
+                .init(color: Color(red: 0x1b/255, green: 0x2a/255, blue: 0x3d/255), location: 0.55),
+                .init(color: chrome, location: 1.0)
             ]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -18,15 +41,19 @@ private enum WidgetStyle {
 
     static var alertGradient: LinearGradient {
         LinearGradient(
-            gradient: Gradient(stops: [
-                .init(color: Color(red: 220/255, green: 100/255, blue: 60/255), location: 0.0),
-                .init(color: Color(red: 240/255, green: 120/255, blue: 80/255), location: 0.3),
-                .init(color: Color(red: 220/255, green: 100/255, blue: 60/255), location: 1.0)
-            ]),
+            gradient: Gradient(colors: [warning, warningDeep]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
+}
+
+/// Heebo weights bundled with the target (see `UIAppFonts` in Info.plist).
+private enum HeeboWeight: String {
+    case regular = "Heebo-Regular"
+    case medium = "Heebo-Medium"
+    case bold = "Heebo-Bold"
+    case extraBold = "Heebo-ExtraBold"
 }
 
 private extension View {
@@ -39,8 +66,10 @@ private extension View {
         }
     }
 
-    func couponFont(_ size: CGFloat, weight: Font.Weight = .regular) -> some View {
-        font(.system(size: size, weight: weight, design: .rounded))
+    /// Custom fonts do not scale with Dynamic Type on their own, so pair
+    /// `.custom(_:size:)` with a relative text style.
+    func couponFont(_ size: CGFloat, _ weight: HeeboWeight = .regular) -> some View {
+        font(.custom(weight.rawValue, size: size))
     }
 }
 
@@ -103,10 +132,10 @@ private struct CompanyLogoView: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Circle().fill(Color.blue.opacity(0.1))
+                Circle().fill(WidgetStyle.codeFill)
                 Text(String(company.prefix(2).uppercased()))
-                    .couponFont(size / 3, weight: .bold)
-                    .foregroundColor(.blue)
+                    .couponFont(size / 3, .bold)
+                    .foregroundColor(WidgetStyle.primaryLight)
             }
         }
         .frame(width: size, height: size)
@@ -125,28 +154,21 @@ private struct AppLogoView: View {
                 .frame(width: size, height: size)
                 .cornerRadius(size / 4)
         } else {
+            // Brand gradient placeholder, matching the app's button/gate treatment.
             ZStack {
                 RoundedRectangle(cornerRadius: size / 4)
                     .fill(
                         LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.2, green: 0.6, blue: 1.0),
-                                Color(red: 0.1, green: 0.5, blue: 0.9)
-                            ]),
+                            colors: [WidgetStyle.primary, WidgetStyle.primaryDark],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: size, height: size)
 
-                VStack(spacing: 1) {
-                    Text("%")
-                        .couponFont(size / 2, weight: .heavy)
-                        .foregroundColor(.white)
-                    Text("✂")
-                        .font(.system(size: size / 3))
-                        .foregroundColor(.white.opacity(0.8))
-                }
+                Text("%")
+                    .couponFont(size / 2, .extraBold)
+                    .foregroundColor(.white)
             }
         }
     }
@@ -175,19 +197,19 @@ private struct CouponCardView: View {
 
                 VStack(alignment: .leading, spacing: compact ? 3 : 4) {
                     Text(coupon.company)
-                        .couponFont(compact ? 13 : 15, weight: .semibold)
+                        .couponFont(compact ? 13 : 15, .bold)
                         .foregroundColor(.white)
                         .lineLimit(1)
 
                     Text("יתרה: \(Int(coupon.remainingValue))₪")
-                        .couponFont(compact ? 10 : 12, weight: .semibold)
+                        .couponFont(compact ? 10 : 12, .bold)
                         .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(formatCouponCode(coupon.code))
-                    .couponFont(compact ? 9 : 10, weight: .bold)
-                    .foregroundColor(.blue)
+                    .couponFont(compact ? 9 : 10, .bold)
+                    .foregroundColor(WidgetStyle.primaryLight)
                     .lineLimit(4)
                     .minimumScaleFactor(0.6)
                     .multilineTextAlignment(.center)
@@ -196,26 +218,26 @@ private struct CouponCardView: View {
                     .padding(.vertical, compact ? 12 : 8)
                     .background(
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.blue.opacity(0.1))
+                            .fill(WidgetStyle.codeFill)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                    .stroke(WidgetStyle.codeStroke, lineWidth: 1)
                             )
                     )
 
                 Image(systemName: layoutDirection == .rightToLeft ? "chevron.right" : "chevron.left")
-                    .couponFont(12, weight: .bold)
-                    .foregroundColor(.gray)
+                    .couponFont(12, .bold)
+                    .foregroundColor(WidgetStyle.textSubtle)
                     .opacity(0.5)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.primary.opacity(0.05))
+                    .fill(WidgetStyle.cardFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                            .stroke(WidgetStyle.cardStroke, lineWidth: 1)
                     )
             )
         }
@@ -257,7 +279,7 @@ private struct CouponStatsSmallView: View {
 
     private var statsView: some View {
         ZStack {
-            WidgetStyle.primaryGradient.edgesIgnoringSafeArea(.all)
+            WidgetStyle.background.edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
                 Spacer()
@@ -266,7 +288,7 @@ private struct CouponStatsSmallView: View {
                 VStack(spacing: 10) {
                     AppLogoView(size: 24)
                     Rectangle()
-                        .fill(Color.white.opacity(0.2))
+                        .fill(WidgetStyle.cardStroke)
                         .frame(height: 1)
                         .padding(.horizontal, 20)
                 }
@@ -283,14 +305,14 @@ private struct CouponStatsSmallView: View {
 
                 VStack(spacing: 6) {
                     Text("₪\(Int(payload.totalRemainingValue))")
-                        .couponFont(34, weight: .bold)
+                        .couponFont(34, .extraBold)
                         .foregroundColor(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
                     Text("נותר לשימוש")
                         .couponFont(13)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(WidgetStyle.textSubtle)
                 }
 
                 Spacer()
@@ -304,9 +326,9 @@ private struct CouponStatsSmallView: View {
         VStack(alignment: .center, spacing: 2) {
             Text(label)
                 .couponFont(9)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(WidgetStyle.textSubtle)
             Text("\(value)")
-                .couponFont(20, weight: .bold)
+                .couponFont(20, .extraBold)
                 .foregroundColor(.white)
         }
     }
@@ -318,27 +340,27 @@ private struct CouponStatsSmallView: View {
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .couponFont(16, weight: .bold)
+                        .couponFont(16, .bold)
                         .foregroundColor(.white)
                     Text("קופון עומד לפוג תוקף!")
-                        .couponFont(12, weight: .bold)
+                        .couponFont(12, .bold)
                         .foregroundColor(.white)
                 }
 
                 if let first = expiringThisWeek.first {
                     VStack(spacing: 4) {
                         Text(first.company)
-                            .couponFont(16, weight: .semibold)
+                            .couponFont(16, .bold)
                             .foregroundColor(.white)
 
                         Text("₪\(Int(first.remainingValue))")
-                            .couponFont(24, weight: .bold)
+                            .couponFont(24, .extraBold)
                             .foregroundColor(.white)
 
                         if let date = first.expirationDate {
                             let daysLeft = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
                             Text("נותרו \(daysLeft) ימים")
-                                .couponFont(11, weight: .medium)
+                                .couponFont(11, .medium)
                                 .foregroundColor(.white.opacity(0.9))
                         }
                     }
@@ -346,7 +368,7 @@ private struct CouponStatsSmallView: View {
 
                 Text("מתחלף לסטטיסטיקות...")
                     .couponFont(8)
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(WidgetStyle.textSubtle)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(12)
@@ -363,7 +385,7 @@ private struct CouponMediumView: View {
 
     var body: some View {
         ZStack {
-            WidgetStyle.primaryGradient.edgesIgnoringSafeArea(.all)
+            WidgetStyle.background.edgesIgnoringSafeArea(.all)
 
             VStack(alignment: .leading, spacing: 8) {
                 if couponsToShow.isEmpty {
@@ -377,11 +399,11 @@ private struct CouponMediumView: View {
 
                     if couponsToShow.count == 1 {
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.primary.opacity(0.05))
+                            .fill(WidgetStyle.cardFill)
                             .overlay(
                                 Text("בחר קופון נוסף")
                                     .couponFont(12)
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .foregroundColor(WidgetStyle.textSubtle)
                             )
                             .frame(maxWidth: .infinity, minHeight: 50)
                     }
@@ -401,7 +423,7 @@ private struct CouponLargeView: View {
 
     var body: some View {
         ZStack {
-            WidgetStyle.primaryGradient.edgesIgnoringSafeArea(.all)
+            WidgetStyle.background.edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 4) {
                 HStack(spacing: 12) {
@@ -409,11 +431,11 @@ private struct CouponLargeView: View {
 
                     VStack(alignment: .center, spacing: 2) {
                         Text("קופונים פעילים: \(payload.activeCouponsCount)")
-                            .couponFont(14, weight: .semibold)
+                            .couponFont(14, .bold)
                             .foregroundColor(.white)
 
                         Text("יתרה: ₪\(Int(payload.totalRemainingValue))")
-                            .couponFont(14, weight: .medium)
+                            .couponFont(14, .medium)
                             .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity)
@@ -424,7 +446,7 @@ private struct CouponLargeView: View {
                 .padding(.top, 10)
 
                 Rectangle()
-                    .fill(Color.primary.opacity(0.08))
+                    .fill(WidgetStyle.cardStroke)
                     .frame(height: 1)
                     .padding(.horizontal, 8)
                     .padding(.bottom, 8)
@@ -457,7 +479,7 @@ private func emptyState(text: String) -> some View {
             .couponFont(13)
             .multilineTextAlignment(.center)
     }
-    .foregroundColor(.white.opacity(0.6))
+    .foregroundColor(WidgetStyle.textSubtle)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
 }
 

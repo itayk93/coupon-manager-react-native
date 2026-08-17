@@ -1,10 +1,18 @@
 R_DEF: Internal format may change without notice
 local
+color widget_code
+color widget_divider
+color widget_text
+color widget_text_subtle
 drawable widget_background
 drawable widget_card_background
 drawable widget_code_background
 drawable widget_logo
 drawable widget_logo_fallback
+font heebo_bold
+font heebo_extrabold
+font heebo_medium
+font heebo_regular
 id active_value
 id balance_1
 id balance_2
