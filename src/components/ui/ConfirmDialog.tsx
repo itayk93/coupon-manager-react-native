@@ -56,13 +56,25 @@ export function ConfirmHost() {
     };
   }, []);
 
+  // Keep the last request (and the modal itself) alive through the exit
+  // animation, otherwise the dialog is unmounted on the same frame it closes
+  // and the fade-out never gets to play.
+  const [shown, setShown] = React.useState<ConfirmRequest | null>(null);
+  const [mounted, setMounted] = React.useState(false);
+
   React.useEffect(() => {
+    if (req) {
+      setShown(req);
+      setMounted(true);
+    }
     Animated.timing(anim, {
       toValue: req ? 1 : 0,
       duration: req ? 180 : 140,
       easing: req ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      if (finished && !req) setMounted(false);
+    });
   }, [req, anim]);
 
   const close = () => setReq(null);
@@ -73,9 +85,9 @@ export function ConfirmHost() {
     fn?.();
   };
 
-  if (!req) return null;
+  if (!mounted || !shown) return null;
 
-  const accent = req.destructive ? theme.danger : theme.primary;
+  const accent = shown.destructive ? theme.danger : theme.primary;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={close}>
@@ -99,8 +111,8 @@ export function ConfirmHost() {
             },
           ]}
         >
-          <Text style={[styles.title, { color: theme.text }]}>{req.title}</Text>
-          <Text style={[styles.message, { color: theme.textMuted }]}>{req.message}</Text>
+          <Text style={[styles.title, { color: theme.text }]}>{shown.title}</Text>
+          <Text style={[styles.message, { color: theme.textMuted }]}>{shown.message}</Text>
 
           {/* row-reverse: the confirming action sits on the right, where Hebrew starts. */}
           <View style={styles.actions}>
@@ -109,7 +121,7 @@ export function ConfirmHost() {
               activeOpacity={0.85}
               style={[styles.btn, { backgroundColor: accent }]}
             >
-              <Text style={[styles.btnText, styles.btnTextPrimary]}>{req.confirmText}</Text>
+              <Text style={[styles.btnText, styles.btnTextPrimary]}>{shown.confirmText}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
