@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: "flex-end",
+    alignItems: "center",
   },
   scrim: {
     position: "absolute",
@@ -210,6 +211,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheet: {
+    width: "100%",
+    maxWidth: Platform.OS === "web" ? 430 : undefined,
+    alignSelf: "center",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: 1,

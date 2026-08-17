@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     right: 12,
     zIndex: 9999,
     gap: 8,
-    ...(Platform.OS === "web" ? { maxWidth: 460, marginHorizontal: "auto" } : null),
+    ...(Platform.OS === "web" ? { maxWidth: 430, marginHorizontal: "auto" } : null),
   },
   toast: {
     flexDirection: "row-reverse",
