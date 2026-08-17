@@ -56,7 +56,8 @@
           "faceIDPermission": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "supabaseUrl": "https://dugjsiyenazpsoiyduuz.supabase.co",

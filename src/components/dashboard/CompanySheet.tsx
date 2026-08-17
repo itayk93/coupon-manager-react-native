@@ -15,7 +15,8 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { Check, Copy, X } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { Check, Copy, Pencil, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
@@ -51,6 +52,7 @@ function daysUntil(expiration: string | null) {
  */
 export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   const { theme } = useAppTheme();
+  const router = useRouter();
   const { markCompanyViewed, markCodeViewed } = useCouponViewTracking();
 
   const visible = company !== null;
@@ -115,6 +117,17 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     setCopied(true);
     notify.success("הקוד הועתק ללוח!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Closing the sheet before navigating: leaving the modal mounted would keep it
+  // stacked over the edit screen.
+  const handleEdit = (coupon: DecryptedCoupon) => {
+    setOpenCode(null);
+    onClose();
+    router.push({
+      pathname: "/coupons/edit",
+      params: { couponId: String(coupon.id) },
+    });
   };
 
   const drag = React.useRef(new Animated.Value(0)).current;
@@ -259,6 +272,14 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               >
                 {copied ? <Check size={16} color="#ffffff" /> : <Copy size={16} color="#ffffff" />}
                 <Text style={styles.copyText}>{copied ? "הועתק" : "העתקת קוד"}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => handleEdit(openCode)}
+                style={[styles.editBtn, { borderColor: theme.border }]}
+              >
+                <Pencil size={15} color={theme.text} />
+                <Text style={[styles.editText, { color: theme.text }]}>עריכת קופון</Text>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
@@ -426,6 +447,22 @@ const styles = StyleSheet.create({
   copyText: {
     fontFamily: fonts.bodyBold,
     color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  editBtn: {
+    marginTop: 2,
+    height: 44,
+    alignSelf: "stretch",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  editText: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
     fontWeight: "700",
   },
