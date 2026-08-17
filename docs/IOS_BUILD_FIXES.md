@@ -1,8 +1,12 @@
-# Building CouponMaster on a physical iPhone
+# iOS build fixes — what broke and why
 
-Everything here was found while getting a Debug build onto a real device with Expo SDK 57 /
-React Native 0.86 / Xcode 26.3. The environment quirks in the first section are the reason most
-of the failures below happen at all.
+A record of every failure hit while getting CouponMaster onto a physical iPhone with Expo SDK 57 /
+React Native 0.86 / Xcode 26.3, and what fixed each one. For the commands to actually run the app,
+see [RUNNING_ON_DEVICE.md](RUNNING_ON_DEVICE.md).
+
+Most of these trace back to one thing: **the project path contains a space** (`Python Projects`).
+Several Xcode script phases don't quote paths and break on it — one of them silently. Moving the
+repo to a space-free path would eliminate this entire class of problem.
 
 ## Environment requirements
 
@@ -11,27 +15,6 @@ of the failures below happen at all.
 | `export LANG=en_US.UTF-8` in your shell profile | CocoaPods 1.17 crashes with `Unicode Normalization not appropriate for ASCII-8BIT` on any `pod install` without a UTF-8 locale. `expo prebuild` runs `pod install` internally, so it fails there too. |
 | Project path contains a space (`.../Python Projects/...`) | Several Xcode script phases don't quote paths and break on it. See "Space-in-path bugs" below. Moving the repo to a space-free path removes this whole class of problems permanently. |
 | Device must trust the developer certificate | After the first install: Settings → General → VPN & Device Management → the `Apple Development: <your email>` profile → Trust. Without it the install succeeds but the launch fails with `FBSOpenApplicationErrorDomain error 3` / "invalid code signature, inadequate entitlements or its profile has not been explicitly trusted". |
-
-## Commands
-
-```bash
-npm run ios:device   # build + install + launch on a connected iPhone
-```
-
-```bash
-npm run ios          # simulator
-```
-
-```bash
-npm start            # Metro only, once the app is already installed
-```
-
-If you ever need to run CocoaPods by hand:
-
-```bash
-cd ios && LANG=en_US.UTF-8 pod install
-```
-
 ## Fixes applied
 
 ### 1. Native project regenerated (`AppDelegate`)
@@ -147,82 +130,8 @@ npx patch-package <package-name>
 > `Products`, `.generated` and `.swiftpm`. The xcframework build script writes ~110 MB of artifacts
 > there and patch-package would otherwise bake them into the patch.
 
-## Distributing the app (no computer attached)
-
-Expo Go **cannot** run this app — it uses `expo-dev-client`, its own bundle identifier, Face ID
-entitlements and custom icon/splash, none of which Expo Go can carry. Use EAS Build instead; the
-profiles are already defined in `eas.json`.
-
-One-time setup, which needs an Apple Developer Portal login:
-
-```bash
-npx eas-cli device:create
-```
-
-Then an internal build that installs from a link/QR:
-
-```bash
-npx eas-cli build --profile preview --platform ios
-```
-
-Or the TestFlight route:
-
-```bash
-npx eas-cli build --profile production --platform ios
-```
-
-```bash
-npx eas-cli submit --platform ios
-```
-
-Once installed, JS-only changes ship over the air without a new build:
-
-```bash
-npx eas-cli update --channel preview
-```
-
-### Release build (standalone, no computer)
-
-This is what to use if you just want the app on your own device: the JS bundle is embedded, so it
-launches straight into the app with no Dev Launcher and no Metro.
-
-```bash
-LANG=en_US.UTF-8 npx expo run:ios --device --configuration Release
-```
-
-Two things go wrong here, both worked around:
-
-- Without `LANG`, the `pod install` that `expo run:ios` triggers dies on the CocoaPods encoding bug.
-- The install step fails with `RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range`
-  from `@expo/cli`'s AFC uploader — an off-by-one in its own buffer handling, hit by the longer file
-  paths a Release bundle contains. The build itself succeeds; install with Apple's own tool instead:
-
-```bash
-xcrun devicectl device install app --device <udid> ~/Library/Developer/Xcode/DerivedData/CouponMaster-*/Build/Products/Release-iphoneos/CouponMaster.app
-```
-
-```bash
-xcrun devicectl device launch --device <udid> com.itaykarkason.couponmaster
-```
-
-Get `<udid>` from `xcrun devicectl list devices`.
-
-### Signing: the 7-day limit
-
-The signing team is a **free Apple personal team**, so every install expires 7 days after it is
-built and must be rebuilt from this Mac. EAS Build (`preview` ad-hoc or `production`/TestFlight)
-needs a paid Apple Developer Program membership and will not work until then — no Expo-side setting
-changes this.
-
-## Order of operations after a clean checkout
-
-1. `npm install`
-2. Reapply the `node_modules` patches (or rely on `patch-package` once it's set up).
-3. `cd ios && LANG=en_US.UTF-8 pod install`
-4. `npm run ios:device`
-5. Trust the developer profile on the iPhone, then rerun step 4.
-
 ## Verified working
 
-A Debug build was installed and launched on a physical iPhone (iOS 26.3.1), with Metro bundling
-`expo-router/entry.js` (3676 modules) and hot reload connected.
+A Debug build and a standalone Release build were both installed and launched on a physical iPhone
+(iOS 26.3.1). Debug bundles `expo-router/entry.js` (3676 modules) over Metro with hot reload;
+Release runs off the embedded bundle with no computer attached.
