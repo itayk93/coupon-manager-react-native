@@ -182,10 +182,12 @@ first and replaced after the build failed with
 
 ### 4. JS sync layer
 
-- `src/lib/widgetSync.ts` — `buildWidgetPayload()`. Active = `status === "פעיל"`.
-  One-time coupons are counted but excluded from the balance total (matching
-  the original's `filter { !$0.isOneTime }`). Widget cards = `show_in_widget`
-  and remaining > 0, sorted by `widget_display_order`, capped at 4.
+- `src/lib/couponTotals.ts` — `isSpendableCoupon` / `totalRemainingValue`, the
+  single definition of what counts. See "Keeping the widget and the app in
+  agreement" below.
+- `src/lib/widgetSync.ts` — `buildWidgetPayload()`. Widget cards =
+  `show_in_widget` and remaining > 0, sorted by `widget_display_order`, capped
+  at 4.
 - `src/hooks/useWidgetSync.ts` — mounted once in `app/_layout.tsx`. Pushes on
   every coupon change; clears on sign-out.
 
@@ -340,7 +342,29 @@ Apple Developer account; the simulator does not.
 - A Release build was installed on a physical iPhone (Apple Development
   signing, so it expires after 7 days).
 
-### Deviations from the original, on purpose
+### Keeping the widget and the app in agreement
+
+The widget first shipped showing **33 coupons / ₪3,691** while the dashboard
+showed **35 / ₪4315.21** for the same wallet. Two independent causes:
+
+1. **Different predicate.** The dashboard counts
+   `!is_for_sale && status !== "נוצל"`; the widget counted `status === "פעיל"`,
+   missing coupons whose status is neither.
+2. **One-time coupons.** The widget excluded them from the balance, inherited
+   from the original's `filter { !$0.isOneTime }`. That made sense there —
+   a one-time coupon has no partial remainder — but this app's dashboard counts
+   their full value as spendable, and two different numbers for one wallet
+   means the user trusts neither.
+
+The root cause was duplication: `!is_for_sale && status !== "נוצל"` was written
+out three separate times (`DashboardScreen`, `WalletHeroCard`, and the widget).
+`src/lib/couponTotals.ts` now holds it once and all three import it.
+
+The widget also truncated (`Int(4315.9)` → `4315`); it rounds now. It still
+shows whole shekels while the app shows agorot — a deliberate choice for a
+small tile, and the only remaining intentional difference.
+
+## Deviations from the original, on purpose
 
 **Code wrapping.** The original broke every 10 characters, so a 12-character
 code rendered as `9182736455` + `01` and read as truncated. `formatCouponCode`
