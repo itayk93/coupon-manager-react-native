@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Building2, ChevronLeft, Tag as TagIcon, Plus, X } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
+import { DateField } from "@/components/ui/DateField";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
 import {
@@ -113,7 +114,11 @@ function CouponForm({
   const [cost, setCost] = useState(
     existingCoupon?.cost !== undefined ? String(existingCoupon.cost) : "0"
   );
-  const [expiration, setExpiration] = useState(existingCoupon?.expiration || "");
+  // Sliced to `YYYY-MM-DD`: the date field (and the column) only carry the day,
+  // but older rows can come back with a time component attached.
+  const [expiration, setExpiration] = useState(
+    (existingCoupon?.expiration || "").slice(0, 10)
+  );
   const [description, setDescription] = useState(
     existingCoupon?.description || ""
   );
@@ -325,12 +330,12 @@ function CouponForm({
           </View>
 
           {/* Expiration */}
-          <Input
-            label="תאריך תפוגה (YYYY-MM-DD)"
-            placeholder="2026-12-31"
+          <DateField
+            label="תאריך תפוגה"
             value={expiration}
-            onChangeText={setExpiration}
-            helperText="פורמט: שנה-חודש-יום"
+            onChange={setExpiration}
+            placeholder="בחירת תאריך"
+            helperText="בחירה מלוח השנה (פורמט: שנה-חודש-יום)"
           />
 
           {/* Description */}
