@@ -9,10 +9,11 @@ import {
   ScrollView,
   SafeAreaView,
   Switch,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Mail, Lock, User, WalletCards } from "lucide-react-native";
+import { Mail, Lock, User } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { storeLegacyUser, LegacyUser } from "@/lib/legacyAuth";
@@ -134,14 +135,11 @@ export function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <LinearGradient
-              colors={[palette.primary, palette.primaryDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <Image
+              source={require("../../../public/logo-icon.png")}
               style={styles.brandMark}
-            >
-              <WalletCards size={26} color="#ffffff" strokeWidth={1.8} />
-            </LinearGradient>
+              resizeMode="contain"
+            />
             <Text style={[styles.brandName, { color: theme.text }]}>קופון מאסטר</Text>
           </View>
 

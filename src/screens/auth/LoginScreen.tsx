@@ -8,10 +8,11 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Mail, Lock, WalletCards } from "lucide-react-native";
+import { Mail, Lock } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { signInLegacy } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,14 +78,11 @@ export function LoginScreen() {
         >
           {/* Brand */}
           <View style={styles.brand}>
-            <LinearGradient
-              colors={[palette.primary, palette.primaryDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <Image
+              source={require("../../../public/logo-icon.png")}
               style={styles.brandMark}
-            >
-              <WalletCards size={26} color="#ffffff" strokeWidth={1.8} />
-            </LinearGradient>
+              resizeMode="contain"
+            />
             <Text style={[styles.brandName, { color: theme.text }]}>קופון מאסטר</Text>
           </View>
 
