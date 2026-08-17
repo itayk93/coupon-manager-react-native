@@ -72,6 +72,43 @@ async function checkWerkzeugPasswordHash(storedHash: string, password: string): 
 }
 
 const INVALID_CREDENTIALS = 'אימייל או סיסמה שגויים.';
+const TOO_MANY_ATTEMPTS = 'יותר מדי ניסיונות התחברות. נסה שוב בעוד 15 דקות.';
+
+/** Failed attempts allowed per email inside the window before it locks. */
+const MAX_FAILED_ATTEMPTS = 8;
+const ATTEMPT_WINDOW_MINUTES = 15;
+
+/**
+ * Both helpers fail open: if `auth_login_attempts` is unreachable, login keeps
+ * working. A throttle that can lock everybody out on an infrastructure blip is
+ * worse than the brute-force risk it removes.
+ */
+async function isLockedOut(email: string): Promise<boolean> {
+  try {
+    const since = new Date(Date.now() - ATTEMPT_WINDOW_MINUTES * 60 * 1000).toISOString();
+    const { count, error } = await supabaseAdmin
+      .from('auth_login_attempts')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email)
+      .eq('succeeded', false)
+      .gte('attempted_at', since);
+
+    if (error) return false;
+    return (count ?? 0) >= MAX_FAILED_ATTEMPTS;
+  } catch {
+    return false;
+  }
+}
+
+async function recordAttempt(email: string, succeeded: boolean): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from('auth_login_attempts')
+      .insert({ email, succeeded, attempted_at: new Date().toISOString() });
+  } catch {
+    // ignore
+  }
+}
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -83,6 +120,10 @@ Deno.serve(async (request) => {
 
     if (!email || !password) return jsonResponse({ error: INVALID_CREDENTIALS }, 400);
 
+    if (await isLockedOut(email)) {
+      return jsonResponse({ error: TOO_MANY_ATTEMPTS }, 429);
+    }
+
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id,email,password,first_name,last_name,is_admin,is_confirmed,is_deleted,auth_user_id')
@@ -93,12 +134,18 @@ Deno.serve(async (request) => {
 
     // Same response for "no such user" and "wrong password" so the endpoint
     // cannot be used to enumerate registered addresses.
-    if (!user || !user.password) return jsonResponse({ error: INVALID_CREDENTIALS }, 401);
+    if (!user || !user.password) {
+      await recordAttempt(email, false);
+      return jsonResponse({ error: INVALID_CREDENTIALS }, 401);
+    }
     if (user.is_deleted) return jsonResponse({ error: 'המשתמש הזה נמחק או נחסם.' }, 403);
 
     if (!(await checkWerkzeugPasswordHash(user.password, password))) {
+      await recordAttempt(email, false);
       return jsonResponse({ error: INVALID_CREDENTIALS }, 401);
     }
+
+    await recordAttempt(email, true);
 
     if (!user.is_confirmed) {
       return jsonResponse({ error: 'עליך לאשר את חשבונך לפני התחברות.' }, 403);
