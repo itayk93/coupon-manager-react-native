@@ -276,12 +276,16 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: "flex-end",
+    alignItems: "center",
   },
   scrim: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(15, 23, 42, 0.4)",
   },
   sheet: {
+    width: "100%",
+    maxWidth: Platform.OS === "web" ? 430 : undefined,
+    alignSelf: "center",
     maxHeight: "80%",
     borderTopLeftRadius: radii.sheet,
     borderTopRightRadius: radii.sheet,
