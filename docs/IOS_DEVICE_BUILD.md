@@ -76,6 +76,12 @@ same symptom: `bash: /Users/itaykarkason/Python: is a directory`.
 - `node_modules/expo-updates/ios/EXUpdates.podspec` — `bash -l -c "$PODS_TARGET_SRCROOT/..."`, now
   single-quoted around the path.
 - `node_modules/expo-constants/ios/EXConstants.podspec` — same pattern, fixed preemptively.
+- `node_modules/expo-constants/scripts/get-app-config-ios.sh` — `basename $PROJECT_DIR` unquoted.
+  This one fails **silently**: `basename` takes the second word as a suffix argument and returns
+  `Python` instead of `Pods`, so the script concludes it isn't running in a Pods project and exits 0
+  without writing `app.config`. The build reports no error, and the Release app then dies on launch
+  with `expo-linking needs access to the expo-constants manifest`. Debug is unaffected — the
+  manifest comes from the dev server there — so this only shows up in a Release build.
 
 ### 4. Swift compile errors in node_modules (Xcode 26.3 toolchain)
 
