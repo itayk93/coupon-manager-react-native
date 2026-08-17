@@ -1,0 +1,15 @@
+diff --git a/node_modules/expo-updates/ios/EXUpdates.podspec b/node_modules/expo-updates/ios/EXUpdates.podspec
+index 6c615de..bbd54ce 100644
+--- a/node_modules/expo-updates/ios/EXUpdates.podspec
++++ b/node_modules/expo-updates/ios/EXUpdates.podspec
+@@ -115,7 +115,9 @@ Pod::Spec.new do |s|
+     force_bundling_flag = ex_updates_native_debug ? "export FORCE_BUNDLING=1\n" : ""
+     script_phase = {
+       :name => 'Generate updates resources for expo-updates',
+-      :script => project_root_env_var + force_bundling_flag + 'bash -l -c "$PODS_TARGET_SRCROOT/../scripts/create-updates-resources-ios.sh"',
++      # The inner path is single-quoted so `bash -l -c` receives it as one word; without this a project
++      # path containing a space is split and the script phase fails with "... is a directory".
++      :script => project_root_env_var + force_bundling_flag + %q{bash -l -c '"$PODS_TARGET_SRCROOT/../scripts/create-updates-resources-ios.sh"'},
+       :execution_position => :before_compile
+     }
+     # :always_out_of_date is only available in CocoaPods 1.13.0 and later

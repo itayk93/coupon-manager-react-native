@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start --dev-client",
     "start:clear": "expo start --dev-client -c",
     "start:go": "expo start --go",
@@ -71,6 +72,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/react": "~19.2.2",
     "babel-preset-expo": "~57.0.7",
+    "patch-package": "^8.0.1",
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
   },
