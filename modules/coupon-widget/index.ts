@@ -9,8 +9,12 @@ export type WidgetCouponPayload = {
   remainingValue: number;
   /** ISO date (yyyy-MM-dd) or null. */
   expiration: string | null;
-  /** Absolute URL of the company logo, or null to fall back to initials. */
-  logoUrl: string | null;
+  /**
+   * Absolute path to a logo file in shared storage, or null to fall back to
+   * initials. A path rather than a URL: the widget cannot reach Metro-bundled
+   * assets, so the app copies the file across. See src/lib/widgetLogos.ts.
+   */
+  logoFile: string | null;
 };
 
 /**
@@ -36,6 +40,7 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
 type CouponWidgetNativeModule = {
   setWidgetData(json: string): void;
   getWidgetData(): string | null;
+  getSharedDirectory(): string | null;
   reloadWidgets(): void;
 };
 
@@ -69,4 +74,9 @@ export function clearWidgetData(): void {
 
 export function reloadWidgets(): void {
   native?.reloadWidgets();
+}
+
+/** Directory readable by both the app and the widget, or null off-device. */
+export function getSharedDirectory(): string | null {
+  return native?.getSharedDirectory() ?? null;
 }

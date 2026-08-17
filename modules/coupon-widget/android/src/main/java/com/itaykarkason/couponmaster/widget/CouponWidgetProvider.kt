@@ -16,10 +16,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.net.URL
 
 /**
  * A single resizable widget that mirrors the three iOS layouts:
@@ -46,18 +42,12 @@ class CouponWidgetProvider : AppWidgetProvider() {
     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
     val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
 
-    // Logos come off the network, so draw once without them and again once loaded.
-    manager.updateAppWidget(id, buildViews(context, payload, width, height, emptyMap()))
+    // Logos are local files the app copied across, so a single pass is enough.
+    val logos = payload.coupons
+      .mapNotNull { coupon -> coupon.logoFile?.let { coupon.id to loadCircularBitmap(it) } }
+      .toMap()
 
-    val urls = payload.coupons.mapNotNull { it.logoUrl }
-    if (urls.isEmpty()) return
-
-    CoroutineScope(Dispatchers.IO).launch {
-      val logos = payload.coupons
-        .mapNotNull { coupon -> coupon.logoUrl?.let { coupon.id to loadCircularBitmap(it) } }
-        .toMap()
-      manager.updateAppWidget(id, buildViews(context, payload, width, height, logos))
-    }
+    manager.updateAppWidget(id, buildViews(context, payload, width, height, logos))
   }
 
   // ---------------------------------------------------------------- layouts
@@ -147,8 +137,8 @@ class CouponWidgetProvider : AppWidgetProvider() {
     )
   }
 
-  private fun loadCircularBitmap(url: String): Bitmap? = try {
-    URL(url).openStream().use { BitmapFactory.decodeStream(it) }?.let(::circleCrop)
+  private fun loadCircularBitmap(path: String): Bitmap? = try {
+    BitmapFactory.decodeFile(path)?.let(::circleCrop)
   } catch (e: Exception) {
     null
   }

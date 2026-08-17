@@ -120,15 +120,15 @@ struct CouponProvider: TimelineProvider {
 
 private struct CompanyLogoView: View {
     let company: String
-    let logoUrl: String?
+    let logoFile: String?
     var size: CGFloat = 48
 
+    /// Read from the shared container rather than the network: a widget cannot
+    /// fetch synchronously while rendering, and the app has already put the
+    /// file here. See `src/lib/widgetLogos.ts`.
     private var image: UIImage? {
-        guard let logoUrl,
-              let url = URL(string: logoUrl),
-              let data = try? Data(contentsOf: url)
-        else { return nil }
-        return UIImage(data: data)
+        guard let logoFile, FileManager.default.fileExists(atPath: logoFile) else { return nil }
+        return UIImage(contentsOfFile: logoFile)
     }
 
     var body: some View {
@@ -197,7 +197,7 @@ private struct CouponCardView: View {
             HStack(spacing: 12) {
                 CompanyLogoView(
                     company: coupon.company,
-                    logoUrl: coupon.logoUrl,
+                    logoFile: coupon.logoFile,
                     size: compact ? 40 : 48
                 )
 

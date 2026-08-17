@@ -50,7 +50,7 @@ object SharedStore {
         code = item.optString("code", ""),
         remainingValue = item.optDouble("remainingValue", 0.0),
         expiration = item.optString("expiration", "").ifBlank { null },
-        logoUrl = item.optString("logoUrl", "").ifBlank { null },
+        logoFile = item.optString("logoFile", "").ifBlank { null },
       )
     }
   }
@@ -62,7 +62,11 @@ data class WidgetCoupon(
   val code: String,
   val remainingValue: Double,
   val expiration: String?,
-  val logoUrl: String?,
+  /**
+   * Absolute path to a file the app copied into shared storage. The widget
+   * cannot reach Metro-bundled assets, so it reads from disk.
+   */
+  val logoFile: String?,
 )
 
 data class WidgetPayload(

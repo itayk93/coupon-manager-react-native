@@ -104,7 +104,7 @@ Payload shape (`modules/coupon-widget/index.ts` is the canonical definition;
       "code": "1234567890",   // already decrypted
       "remainingValue": 100,
       "expiration": "2026-09-01",
-      "logoUrl": "https://…"  // already resolved
+      "logoFile": "/…/logos/coupon-42.png"  // see "Company logos" below
     }
   ]
 }
@@ -342,7 +342,37 @@ Apple Developer account; the simulator does not.
 - A Release build was installed on a physical iPhone (Apple Development
   signing, so it expires after 7 days).
 
-### Keeping the widget and the app in agreement
+### Company logos
+
+The widget first shipped showing initials instead of logos, for two reasons:
+
+1. It was handed the output of `resolveCompanyLogo`, which builds URLs against
+   a Supabase `company-logos` bucket **that does not exist** — every request
+   returns `{"code":"NoSuchBucket"}`. The app is unaffected because it calls
+   `getCompanyLogoSource`, which prefers the 66 images bundled from
+   `public/legacy-images/` and never touches the network.
+2. Even a working URL would not have helped. Bundled assets are Metro module
+   handles, unreachable from a separate extension process, and the iOS code
+   fetched with a synchronous `Data(contentsOf:)` inside `body` — which widget
+   rendering does not permit.
+
+Fix: the app copies the logos it actually needs (at most 4) into a directory
+both processes can read, and the payload carries a file path.
+
+- `src/lib/widgetLogos.ts` resolves through `getCompanyLogoSource` — the same
+  call the app's coupon cards use — extracts bundled assets via `expo-asset`,
+  and copies them across. Remote URLs are downloaded instead.
+- The native module exposes `getSharedDirectory()`: the App Group container on
+  iOS, `filesDir` on Android.
+- Both widgets read from disk (`UIImage(contentsOfFile:)`,
+  `BitmapFactory.decodeFile`). This also works offline and removed the
+  background network pass from the Android provider.
+
+Worth knowing separately: the missing `company-logos` bucket means
+`resolveCompanyLogo` 404s for every company without a bundled image. That is an
+app-wide issue, untouched here.
+
+## Keeping the widget and the app in agreement
 
 The widget first shipped showing **33 coupons / ₪3,691** while the dashboard
 showed **35 / ₪4315.21** for the same wallet. Two independent causes:

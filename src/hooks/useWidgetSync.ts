@@ -29,6 +29,6 @@ export function useWidgetSync() {
       return;
     }
 
-    if (coupons) syncWidget(coupons);
+    if (coupons) void syncWidget(coupons);
   }, [user, coupons, widgetBlocked]);
 }
