@@ -73,14 +73,20 @@ private extension View {
     }
 }
 
-/// Matches the Android `formatCouponCode` — a line break every 10 characters.
+/// Wraps a coupon code onto at most 4 balanced lines.
+///
+/// The original broke every 10 characters, which left a 12-character code as
+/// 10 + 2 and read as truncated. Splitting into even chunks keeps the block
+/// rectangular at any length. Must stay in sync with the Android version.
 private func formatCouponCode(_ code: String) -> String {
-    stride(from: 0, to: code.count, by: 10)
-        .map { offset -> String in
-            let start = code.index(code.startIndex, offsetBy: offset)
-            let end = code.index(start, offsetBy: min(10, code.count - offset))
-            return String(code[start..<end])
-        }
+    let characters = Array(code)
+    guard characters.count > 10 else { return code }
+
+    let lineCount = min(4, Int(ceil(Double(characters.count) / 10.0)))
+    let perLine = Int(ceil(Double(characters.count) / Double(lineCount)))
+
+    return stride(from: 0, to: characters.count, by: perLine)
+        .map { String(characters[$0..<min($0 + perLine, characters.count)]) }
         .joined(separator: "\n")
 }
 
