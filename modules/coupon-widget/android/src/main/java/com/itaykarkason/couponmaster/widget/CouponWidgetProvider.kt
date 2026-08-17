@@ -78,7 +78,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
     RemoteViews(context.packageName, R.layout.coupon_widget_stats).apply {
       setTextViewText(R.id.one_time_value, payload.oneTimeCouponsCount.toString())
       setTextViewText(R.id.active_value, payload.activeCouponsCount.toString())
-      setTextViewText(R.id.total_value, "₪${payload.totalRemainingValue.toInt()}")
+      setTextViewText(R.id.total_value, "₪${Math.round(payload.totalRemainingValue)}")
       setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, "couponmaster:///"))
     }
 
@@ -92,7 +92,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
     setViewVisibility(R.id.header, if (showHeader) View.VISIBLE else View.GONE)
     setViewVisibility(R.id.header_divider, if (showHeader) View.VISIBLE else View.GONE)
     setTextViewText(R.id.header_active, "קופונים פעילים: ${payload.activeCouponsCount}")
-    setTextViewText(R.id.header_balance, "יתרה: ₪${payload.totalRemainingValue.toInt()}")
+    setTextViewText(R.id.header_balance, "יתרה: ₪${Math.round(payload.totalRemainingValue)}")
     setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, "couponmaster:///"))
 
     val coupons = payload.coupons.take(limit)
@@ -111,7 +111,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
 
       setViewVisibility(cardId.root, View.VISIBLE)
       setTextViewText(cardId.company, coupon.company)
-      setTextViewText(cardId.balance, "יתרה: ${coupon.remainingValue.toInt()}₪")
+      setTextViewText(cardId.balance, "יתרה: ${Math.round(coupon.remainingValue)}₪")
       setTextViewText(cardId.code, formatCouponCode(coupon.code))
 
       val logo = logos[coupon.id]

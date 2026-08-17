@@ -13,6 +13,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
+import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 
 type WalletHeroCardProps = {
   coupons: DecryptedCoupon[];
@@ -35,15 +36,9 @@ export function WalletHeroCard({
   const { user } = useAuth();
   const router = useRouter();
 
-  const visibleCoupons = coupons.filter(
-    (c) => !c.is_for_sale && c.status !== "נוצל"
-  );
+  const visibleCoupons = coupons.filter(isSpendableCoupon);
   const totalValue = visibleCoupons.reduce((sum, c) => sum + (c.value || 0), 0);
-  const usedValue = visibleCoupons.reduce(
-    (sum, c) => sum + (c.used_value || 0),
-    0
-  );
-  const remainingValue = totalValue - usedValue;
+  const remainingValue = totalRemainingValue(coupons);
   const totalSavings = visibleCoupons.reduce(
     (sum, c) => sum + Math.max(0, (c.value || 0) - (c.cost || 0)),
     0

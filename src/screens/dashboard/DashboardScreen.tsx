@@ -21,6 +21,7 @@ import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
+import { isSpendableCoupon } from "@/lib/couponTotals";
 
 export function DashboardScreen() {
   const router = useRouter();
@@ -44,9 +45,7 @@ export function DashboardScreen() {
     "Power Gift",
   ];
 
-  const visibleCoupons = useMemo(() => {
-    return coupons.filter((c) => !c.is_for_sale && c.status !== "נוצל");
-  }, [coupons]);
+  const visibleCoupons = useMemo(() => coupons.filter(isSpendableCoupon), [coupons]);
 
   const companyCards = useMemo(() => {
     const map = visibleCoupons.reduce<Record<string, { company: string; count: number }>>(

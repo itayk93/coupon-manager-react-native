@@ -207,7 +207,7 @@ private struct CouponCardView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
 
-                    Text("יתרה: \(Int(coupon.remainingValue))₪")
+                    Text("יתרה: \(Int(coupon.remainingValue.rounded()))₪")
                         .couponFont(compact ? 10 : 12, .bold)
                         .foregroundColor(.white)
                 }
@@ -310,7 +310,7 @@ private struct CouponStatsSmallView: View {
                 Spacer()
 
                 VStack(spacing: 6) {
-                    Text("₪\(Int(payload.totalRemainingValue))")
+                    Text("₪\(Int(payload.totalRemainingValue.rounded()))")
                         .couponFont(34, .extraBold)
                         .foregroundColor(.white)
                         .lineLimit(1)
@@ -359,7 +359,7 @@ private struct CouponStatsSmallView: View {
                             .couponFont(16, .bold)
                             .foregroundColor(.white)
 
-                        Text("₪\(Int(first.remainingValue))")
+                        Text("₪\(Int(first.remainingValue.rounded()))")
                             .couponFont(24, .extraBold)
                             .foregroundColor(.white)
 
@@ -440,7 +440,7 @@ private struct CouponLargeView: View {
                             .couponFont(14, .bold)
                             .foregroundColor(.white)
 
-                        Text("יתרה: ₪\(Int(payload.totalRemainingValue))")
+                        Text("יתרה: ₪\(Int(payload.totalRemainingValue.rounded()))")
                             .couponFont(14, .medium)
                             .foregroundColor(.white)
                     }
