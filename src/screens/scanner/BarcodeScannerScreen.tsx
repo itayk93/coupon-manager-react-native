@@ -32,7 +32,7 @@ export function BarcodeScannerScreen() {
   const { theme } = useAppTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [activeTab, setActiveTab] = useState<"camera" | "ai">("camera");
+  const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
   const [aiText, setAiText] = useState("");
   const parseCoupon = useParseCoupon();
 
@@ -87,6 +87,32 @@ export function BarcodeScannerScreen() {
         {/* Top Mode Selector Tabs */}
         <View style={styles.tabSelector}>
           <TouchableOpacity
+            onPress={() => setActiveTab("ai")}
+            style={[
+              styles.tabBtn,
+              {
+                backgroundColor:
+                  activeTab === "ai"
+                    ? theme.primary
+                    : theme.surfaceAlt,
+              },
+            ]}
+          >
+            <Sparkles
+              size={18}
+              color={activeTab === "ai" ? "#ffffff" : theme.textMuted}
+            />
+            <Text
+              style={[
+                styles.tabBtnText,
+                { color: activeTab === "ai" ? "#ffffff" : theme.textMuted },
+              ]}
+            >
+              הוספת קופון מטקסט
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={() => setActiveTab("camera")}
             style={[
               styles.tabBtn,
@@ -109,32 +135,6 @@ export function BarcodeScannerScreen() {
               ]}
             >
               סריקת מצלמה
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setActiveTab("ai")}
-            style={[
-              styles.tabBtn,
-              {
-                backgroundColor:
-                  activeTab === "ai"
-                    ? theme.primary
-                    : theme.surfaceAlt,
-              },
-            ]}
-          >
-            <Sparkles
-              size={18}
-              color={activeTab === "ai" ? "#ffffff" : theme.textMuted}
-            />
-            <Text
-              style={[
-                styles.tabBtnText,
-                { color: activeTab === "ai" ? "#ffffff" : theme.textMuted },
-              ]}
-            >
-              זיהוי חכם (AI)
             </Text>
           </TouchableOpacity>
         </View>
@@ -254,6 +254,14 @@ export function BarcodeScannerScreen() {
             </View>
           </View>
         )}
+
+        <View style={styles.manualAddContainer}>
+          <Button
+            title="הוספת קופון ידנית"
+            onPress={() => router.push("/coupons/add")}
+            icon={<PlusCircle size={18} color="#ffffff" />}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -427,5 +435,9 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 14,
     lineHeight: 20,
+  },
+  manualAddContainer: {
+    marginTop: 10,
+    marginBottom: 20,
   },
 });
