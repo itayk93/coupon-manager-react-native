@@ -34,16 +34,17 @@
                 android:id="@+id/header_active"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/widget_text"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
 
             <TextView
                 android:id="@+id/header_balance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp" />
+                android:textColor="@color/widget_text"
+                android:textSize="14sp" 
+                android:fontFamily="@font/heebo_regular" />
         </LinearLayout>
     </LinearLayout>
 
@@ -52,7 +53,7 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginVertical="8dp"
-        android:background="#33FFFFFF" />
+        android:background="@color/widget_divider" />
 
     <TextView
         android:id="@+id/empty_state"
@@ -61,8 +62,9 @@
         android:layout_marginTop="24dp"
         android:gravity="center"
         android:visibility="gone"
-        android:textColor="#B3FFFFFF"
-        android:textSize="13sp" />
+        android:textColor="@color/widget_text_subtle"
+        android:textSize="13sp" 
+        android:fontFamily="@font/heebo_regular" />
 
     <LinearLayout
         android:id="@+id/card_1"
@@ -93,9 +95,9 @@
                 android:layout_height="44dp"
                 android:gravity="center"
                 android:background="@drawable/widget_logo_fallback"
-                android:textColor="#3B82F6"
+                android:textColor="@color/widget_code"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
         </FrameLayout>
 
         <LinearLayout
@@ -111,16 +113,17 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/widget_text"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
 
             <TextView
                 android:id="@+id/balance_1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                android:textColor="@color/widget_text"
+                android:textSize="11sp" 
+                android:fontFamily="@font/heebo_regular" />
         </LinearLayout>
 
         <TextView
@@ -132,9 +135,9 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="8dp"
             android:background="@drawable/widget_code_background"
-            android:textColor="#3B82F6"
+            android:textColor="@color/widget_code"
             android:textSize="10sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/heebo_bold" />
     </LinearLayout>
 
     <LinearLayout
@@ -166,9 +169,9 @@
                 android:layout_height="44dp"
                 android:gravity="center"
                 android:background="@drawable/widget_logo_fallback"
-                android:textColor="#3B82F6"
+                android:textColor="@color/widget_code"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
         </FrameLayout>
 
         <LinearLayout
@@ -184,16 +187,17 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/widget_text"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
 
             <TextView
                 android:id="@+id/balance_2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                android:textColor="@color/widget_text"
+                android:textSize="11sp" 
+                android:fontFamily="@font/heebo_regular" />
         </LinearLayout>
 
         <TextView
@@ -205,9 +209,9 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="8dp"
             android:background="@drawable/widget_code_background"
-            android:textColor="#3B82F6"
+            android:textColor="@color/widget_code"
             android:textSize="10sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/heebo_bold" />
     </LinearLayout>
 
     <LinearLayout
@@ -239,9 +243,9 @@
                 android:layout_height="44dp"
                 android:gravity="center"
                 android:background="@drawable/widget_logo_fallback"
-                android:textColor="#3B82F6"
+                android:textColor="@color/widget_code"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
         </FrameLayout>
 
         <LinearLayout
@@ -257,16 +261,17 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/widget_text"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
 
             <TextView
                 android:id="@+id/balance_3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                android:textColor="@color/widget_text"
+                android:textSize="11sp" 
+                android:fontFamily="@font/heebo_regular" />
         </LinearLayout>
 
         <TextView
@@ -278,9 +283,9 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="8dp"
             android:background="@drawable/widget_code_background"
-            android:textColor="#3B82F6"
+            android:textColor="@color/widget_code"
             android:textSize="10sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/heebo_bold" />
     </LinearLayout>
 
     <LinearLayout
@@ -312,9 +317,9 @@
                 android:layout_height="44dp"
                 android:gravity="center"
                 android:background="@drawable/widget_logo_fallback"
-                android:textColor="#3B82F6"
+                android:textColor="@color/widget_code"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
         </FrameLayout>
 
         <LinearLayout
@@ -330,16 +335,17 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/widget_text"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/heebo_bold" />
 
             <TextView
                 android:id="@+id/balance_4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                android:textColor="@color/widget_text"
+                android:textSize="11sp" 
+                android:fontFamily="@font/heebo_regular" />
         </LinearLayout>
 
         <TextView
@@ -351,8 +357,8 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="8dp"
             android:background="@drawable/widget_code_background"
-            android:textColor="#3B82F6"
+            android:textColor="@color/widget_code"
             android:textSize="10sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/heebo_bold" />
     </LinearLayout>
 </LinearLayout>

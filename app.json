@@ -62,7 +62,8 @@
       ],
       "expo-asset",
       "@react-native-community/datetimepicker",
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "./plugins/withQuotedBundleScript"
     ],
     "extra": {
       "supabaseUrl": "https://dugjsiyenazpsoiyduuz.supabase.co",

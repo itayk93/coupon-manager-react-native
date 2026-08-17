@@ -7,5 +7,15 @@
       <key>NSExtensionPointIdentifier</key>
       <string>com.apple.widgetkit-extension</string>
     </dict>
+    <!-- Heebo is the app's body face; the widget bundles it so the two match.
+         The .ttf files live in ./fonts and are picked up automatically by the
+         target's synchronized-folder membership. -->
+    <key>UIAppFonts</key>
+    <array>
+      <string>Heebo_400Regular.ttf</string>
+      <string>Heebo_500Medium.ttf</string>
+      <string>Heebo_700Bold.ttf</string>
+      <string>Heebo_800ExtraBold.ttf</string>
+    </array>
   </dict>
 </plist>

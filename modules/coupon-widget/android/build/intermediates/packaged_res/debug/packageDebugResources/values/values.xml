@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="widget_code">#FF5B9BD8</color>
+    <color name="widget_divider">#1AFFFFFF</color>
+    <color name="widget_text">#FFFFFFFF</color>
+    <color name="widget_text_subtle">#FF98A2B3</color>
     <string name="coupon_widget_active">קופונים פעילים</string>
     <string name="coupon_widget_description">עקוב אחר הקופונים שלך ותאריכי התפוגה</string>
     <string name="coupon_widget_one_time">חד פעמיים</string>
