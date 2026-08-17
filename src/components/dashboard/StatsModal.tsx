@@ -274,17 +274,17 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
                         >
                           <View style={styles.couponHeader}>
                             <Text
+                              style={[styles.couponDate, { color: theme.text }]}
+                            >
+                              {formatDate(c.date_added)}
+                            </Text>
+                            <Text
                               style={[
                                 styles.couponPct,
                                 { color: saved > 0 ? theme.primary : theme.textMuted },
                               ]}
                             >
                               {pct.toFixed(1)}% הנחה
-                            </Text>
-                            <Text
-                              style={[styles.couponDate, { color: theme.text }]}
-                            >
-                              {formatDate(c.date_added)}
                             </Text>
                           </View>
 
