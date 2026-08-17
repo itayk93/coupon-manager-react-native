@@ -191,8 +191,19 @@ class CouponWidgetProvider : AppWidgetProvider() {
       CardIds(R.id.card_4, R.id.logo_4, R.id.initials_4, R.id.company_4, R.id.balance_4, R.id.code_4),
     )
 
-    /** Matches the iOS `formatCouponCode` — a line break every 10 characters. */
-    fun formatCouponCode(code: String): String = code.chunked(10).joinToString("\n")
+    /**
+     * Wraps a coupon code onto at most 4 balanced lines.
+     *
+     * The original broke every 10 characters, which left a 12-character code
+     * as 10 + 2 and read as truncated. Even chunks keep the block rectangular
+     * at any length. Must stay in sync with the iOS version.
+     */
+    fun formatCouponCode(code: String): String {
+      if (code.length <= 10) return code
+      val lineCount = minOf(4, Math.ceil(code.length / 10.0).toInt())
+      val perLine = Math.ceil(code.length.toDouble() / lineCount).toInt()
+      return code.chunked(perLine).joinToString("\n")
+    }
 
     fun refreshAll(context: Context) {
       val manager = AppWidgetManager.getInstance(context)

@@ -22,7 +22,7 @@ The reference implementation is `CouponManagerApp/CouponWidgetExtension/`:
 Layout, sizing and behaviour were taken from it verbatim. **Colours and type
 were not** — see the next section.
 
-- Coupon code broken with a newline every 10 characters
+- Coupon code wrapped onto up to 4 lines (see note below)
 - Card `cornerRadius 12`, code chip `cornerRadius 15`
 - Small face flips to an expiry-alert layout for 3 seconds each minute
 - Medium shows 2 coupons with a "בחר קופון נוסף" placeholder when only one is
@@ -340,8 +340,17 @@ Apple Developer account; the simulator does not.
 - A Release build was installed on a physical iPhone (Apple Development
   signing, so it expires after 7 days).
 
-### Known rough edge
+### Deviations from the original, on purpose
 
-`formatCouponCode` breaks every 10 characters, inherited from the original. A
-12-character code renders as 10 + 2, which looks truncated. Balanced wrapping
-would read better but changes the look away from the original.
+**Code wrapping.** The original broke every 10 characters, so a 12-character
+code rendered as `9182736455` + `01` and read as truncated. `formatCouponCode`
+now splits into up to 4 *balanced* lines — the same code renders `918273` /
+`645501`. Codes of 10 or fewer stay on one line, and 20 characters still gives
+10 + 10, so only the ragged cases change. Implemented identically in Swift and
+Kotlin; each references the other.
+
+**`users.allow_widget_access`.** This per-user flag predates the app.
+`useWidgetSync` now clears the shared payload when it is set, so a blocked
+account shows nothing on the home screen. Only an explicit `false` blocks —
+the column is nullable and most rows are null, so treating null as "blocked"
+would silently disable the widget for nearly everyone.
