@@ -63,6 +63,7 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
       {
         company: string;
         saved: number;
+        value: number;
         count: number;
         items: DecryptedCoupon[];
       }
@@ -71,9 +72,10 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
     const comp = c.company || "אחר";
     const saved = Math.max(0, (c.value || 0) - (c.cost || 0));
     if (!acc[comp]) {
-      acc[comp] = { company: comp, saved: 0, count: 0, items: [] };
+      acc[comp] = { company: comp, saved: 0, value: 0, count: 0, items: [] };
     }
     acc[comp].saved += saved;
+    acc[comp].value += c.value || 0;
     acc[comp].count += 1;
     acc[comp].items.push(c);
     return acc;
@@ -84,6 +86,8 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
     .sort((a, b) => b.saved - a.saved)
     .map((s) => ({
       ...s,
+      // weighted by each coupon's value, not a plain average of percentages
+      avgPct: s.value > 0 ? (s.saved / s.value) * 100 : 0,
       // newest coupons first inside the drill-down
       items: [...s.items].sort((a, b) => couponTime(b) - couponTime(a)),
     }));
@@ -223,6 +227,20 @@ export function StatsModal({ visible, onClose, coupons }: StatsModalProps) {
                     </Text>
                     <Text style={[styles.companyCount, { color: theme.textMuted }]}>
                       ({item.count} קופונים)
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.avgPctBadge,
+                      { backgroundColor: theme.surface, borderColor: theme.border },
+                    ]}
+                  >
+                    <Text style={[styles.avgPctValue, { color: theme.accent }]}>
+                      {item.avgPct.toFixed(1)}%
+                    </Text>
+                    <Text style={[styles.avgPctLabel, { color: theme.textMuted }]}>
+                      הנחה ממוצעת
                     </Text>
                   </View>
 
@@ -394,6 +412,23 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
+  },
+  avgPctBadge: {
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  avgPctValue: {
+    fontFamily: fonts.display,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  avgPctLabel: {
+    fontSize: 9,
+    fontWeight: "600",
+    marginTop: 1,
   },
   companyBlock: {
     marginBottom: 8,
