@@ -1,9 +1,8 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { fonts, palette, radii } from "@/lib/theme";
+import { fonts, radii } from "@/lib/theme";
 
 const LINKS = [
   { label: "אודות", path: "/about" },
@@ -28,11 +27,10 @@ export function ContentHeader() {
         activeOpacity={0.8}
         style={styles.brand}
       >
-        <LinearGradient
-          colors={[palette.primary, palette.primaryDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <Image
+          source={require("../../../public/logo-icon.png")}
           style={styles.mark}
+          resizeMode="contain"
         />
         <Text style={[styles.brandText, { color: theme.text }]}>קופון מאסטר</Text>
       </TouchableOpacity>

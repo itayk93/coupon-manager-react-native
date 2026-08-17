@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Image,
   Platform,
   StatusBar,
   StyleSheet,
@@ -8,7 +9,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Bell } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,11 +46,10 @@ export function AppHeader() {
           activeOpacity={0.8}
           style={styles.brand}
         >
-          <LinearGradient
-            colors={[palette.primary, palette.primaryLight]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <Image
+            source={require("../../../public/logo-icon.png")}
             style={styles.mark}
+            resizeMode="contain"
           />
           <Text style={styles.brandText}>קופון מאסטר</Text>
         </TouchableOpacity>
