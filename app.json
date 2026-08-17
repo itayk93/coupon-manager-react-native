@@ -7,9 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "couponmaster",
     "userInterfaceStyle": "light",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.itaykarkason.couponmaster",

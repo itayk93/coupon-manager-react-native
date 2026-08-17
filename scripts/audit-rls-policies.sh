@@ -4,7 +4,7 @@
 # table with no protection at all. This is the check that would have caught the
 # *_anon_ios policies on the day they were added.
 #
-# Reads DATABASE_URL from .env.supabase.local (SQLAlchemy-style URLs are
+# Reads DATABASE_URL from .supabase.local.env (SQLAlchemy-style URLs are
 # normalised for psql).
 #
 #   ./scripts/audit-rls-policies.sh
@@ -13,12 +13,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if [[ -f .env.supabase.local ]]; then
-  set -a; . ./.env.supabase.local; set +a
+if [[ -f .supabase.local.env ]]; then
+  set -a; . ./.supabase.local.env; set +a
 fi
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
-  echo "DATABASE_URL is not set (expected in .env.supabase.local)" >&2
+  echo "DATABASE_URL is not set (expected in .supabase.local.env)" >&2
   exit 2
 fi
 

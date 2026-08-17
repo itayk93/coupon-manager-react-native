@@ -102,7 +102,7 @@
 **מה לקרוא מהמקור:**
 - app/models.py — כל הקובץ (1426 שורות) — לכל המודלים
 - app/extensions.py — הגדרות DB
-- .env.supabase.local — connection string
+- .supabase.local.env — connection string
 
 **פעולות:**
 1. יצירת TypeScript types שמתאימים בדיוק לטבלאות הקיימות
