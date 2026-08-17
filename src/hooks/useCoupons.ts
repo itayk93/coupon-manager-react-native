@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Coupon, CouponInsert, CouponUpdate } from "@/integrations/supabase";
 import { decrypt, encrypt } from "@/lib/encryption";
+import { matchCompanyName } from "@/lib/companyMatch";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 
@@ -91,6 +92,46 @@ export function useCoupon(couponId: number | undefined) {
   });
 }
 
+/**
+ * Company names the app already knows about: the admin `companies` table plus the
+ * distinct companies on the user's own coupons, read straight out of the query
+ * cache so this stays synchronous.
+ */
+function knownCompanyNames(queryClient: ReturnType<typeof useQueryClient>): string[] {
+  const names = new Set<string>();
+
+  const companies = queryClient.getQueryData<{ name?: string | null }[]>(["companies"]);
+  (companies || []).forEach((company) => {
+    const name = company?.name?.trim();
+    if (name) names.add(name);
+  });
+
+  queryClient
+    .getQueriesData<DecryptedCoupon[]>({ queryKey: ["coupons"] })
+    .forEach(([, coupons]) => {
+      (coupons || []).forEach((coupon) => {
+        const name = coupon?.company?.trim();
+        if (name) names.add(name);
+      });
+    });
+
+  return Array.from(names);
+}
+
+/**
+ * Snaps a company name onto the spelling already in use, so a differently-cased
+ * detection ("BUYME" out of the AI parser) cannot open a second company card next
+ * to the existing one — the dashboard groups by exact name.
+ */
+function canonicalCompany(
+  company: string | null | undefined,
+  queryClient: ReturnType<typeof useQueryClient>
+): string | null | undefined {
+  const detected = company?.trim();
+  if (!detected) return company;
+  return matchCompanyName(detected, knownCompanyNames(queryClient)) || detected;
+}
+
 export function useAddCoupon() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -112,6 +153,7 @@ export function useAddCoupon() {
       const couponToInsert: CouponInsert = {
         ...(newCoupon as any),
         user_id: user.id,
+        company: canonicalCompany(newCoupon.company, queryClient),
         code,
         description,
         cvv,
@@ -152,6 +194,9 @@ export function useUpdateCoupon() {
 
       const encryptedUpdates: any = { ...updates };
 
+      if (updates.company !== undefined) {
+        encryptedUpdates.company = canonicalCompany(updates.company, queryClient);
+      }
       if (updates.code !== undefined) {
         encryptedUpdates.code = updates.code ? await encrypt(updates.code) : "";
       }
