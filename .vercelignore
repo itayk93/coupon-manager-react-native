@@ -1,0 +1,14 @@
+node_modules
+ios
+android
+.expo
+web
+test-results
+playwright-report
+blob-report
+playwright
+dist
+web-dist
+docs
+tests
+*.sql

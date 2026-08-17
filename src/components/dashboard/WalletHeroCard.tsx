@@ -18,7 +18,6 @@ type WalletHeroCardProps = {
   coupons: DecryptedCoupon[];
   isLoading?: boolean;
   isError?: boolean;
-  onQuickAdd: () => void;
   onViewStats: () => void;
 };
 
@@ -30,7 +29,6 @@ export function WalletHeroCard({
   coupons,
   isLoading,
   isError,
-  onQuickAdd,
   onViewStats,
 }: WalletHeroCardProps) {
   const { theme } = useAppTheme();
@@ -135,27 +133,16 @@ export function WalletHeroCard({
       <View style={styles.actionButtonsRow}>
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={onQuickAdd}
-          style={[styles.actionBtn, { backgroundColor: theme.primary }]}
-        >
-          <Text style={styles.actionBtnTextPrimary}>הוספת קופון מהירה</Text>
-          <CirclePlus size={18} color="#ffffff" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
           onPress={() => router.push("/scanner")}
           style={[
             styles.actionBtn,
             {
-              backgroundColor: theme.card,
-              borderColor: theme.inputBorder,
-              borderWidth: 1,
+              backgroundColor: theme.primary,
             },
           ]}
         >
-          <Text style={[styles.actionBtnText, { color: theme.text }]}>סריקת קוד</Text>
-          <QrCode size={18} color={theme.text} />
+          <Text style={styles.actionBtnTextPrimary}>הוספת קופון</Text>
+          <CirclePlus size={18} color="#ffffff" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -175,7 +162,6 @@ export function WalletHeroCard({
           </Text>
           <ListChecks size={18} color={theme.text} />
         </TouchableOpacity>
-
       </View>
     </View>
   );

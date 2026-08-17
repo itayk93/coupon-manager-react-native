@@ -12,7 +12,6 @@ import { useRouter } from "expo-router";
 import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
-import { QuickAddModal } from "@/components/dashboard/QuickAddModal";
 import { StatsModal } from "@/components/dashboard/StatsModal";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
@@ -28,8 +27,6 @@ export function DashboardScreen() {
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: tagsMap = {} } = useCouponTagsMap();
-
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
@@ -102,7 +99,6 @@ export function DashboardScreen() {
           coupons={coupons}
           isLoading={isLoading}
           isError={isError}
-          onQuickAdd={() => setIsQuickAddOpen(true)}
           onViewStats={() => setIsStatsOpen(true)}
         />
 
@@ -161,17 +157,12 @@ export function DashboardScreen() {
             title="אין קופונים להצגה"
             subtitle="הוסף את הקופון הראשון שלך ותתחיל לחסוך כסף!"
             actionTitle="הוסף קופון חדש"
-            onAction={() => setIsQuickAddOpen(true)}
+            onAction={() => router.push("/scanner")}
           />
         )}
       </ScrollView>
 
       {/* Modals */}
-      <QuickAddModal
-        visible={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
-      />
-
       <StatsModal
         visible={isStatsOpen}
         onClose={() => setIsStatsOpen(false)}
