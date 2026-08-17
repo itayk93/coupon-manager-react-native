@@ -175,12 +175,38 @@ Once installed, JS-only changes ship over the air without a new build:
 npx eas-cli update --channel preview
 ```
 
-A local Release build is also an option if you just want the app on your own device without the
-cloud — the JS bundle is embedded, so it runs with no Metro and no computer:
+### Release build (standalone, no computer)
+
+This is what to use if you just want the app on your own device: the JS bundle is embedded, so it
+launches straight into the app with no Dev Launcher and no Metro.
 
 ```bash
-npx expo run:ios --device --configuration Release
+LANG=en_US.UTF-8 npx expo run:ios --device --configuration Release
 ```
+
+Two things go wrong here, both worked around:
+
+- Without `LANG`, the `pod install` that `expo run:ios` triggers dies on the CocoaPods encoding bug.
+- The install step fails with `RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range`
+  from `@expo/cli`'s AFC uploader — an off-by-one in its own buffer handling, hit by the longer file
+  paths a Release bundle contains. The build itself succeeds; install with Apple's own tool instead:
+
+```bash
+xcrun devicectl device install app --device <udid> ~/Library/Developer/Xcode/DerivedData/CouponMaster-*/Build/Products/Release-iphoneos/CouponMaster.app
+```
+
+```bash
+xcrun devicectl device launch --device <udid> com.itaykarkason.couponmaster
+```
+
+Get `<udid>` from `xcrun devicectl list devices`.
+
+### Signing: the 7-day limit
+
+The signing team is a **free Apple personal team**, so every install expires 7 days after it is
+built and must be rebuilt from this Mac. EAS Build (`preview` ad-hoc or `production`/TestFlight)
+needs a paid Apple Developer Program membership and will not work until then — no Expo-side setting
+changes this.
 
 ## Order of operations after a clean checkout
 
