@@ -33,6 +33,31 @@ function extractVoucherCode(text: string): string | null {
   return text.match(/\b\d{7,12}-\d{4}\b/)?.[0] || null;
 }
 
+/**
+ * Pulls the expiry out of an explicit "בתוקף עד 02.08.2031" / "תוקף השובר: 31/07/2031"
+ * phrase. The model has been seen rounding such a date to the end of the month
+ * (02.08.2031 → 2031-08-31), and a dotted day-first date is unambiguous enough to
+ * read here instead of trusting it.
+ *
+ * The wording is required to mention תוקף, so unrelated deadlines in the same text
+ * ("יש להוריד את השובר עד לתאריך 19.8.26") are not picked up.
+ */
+function extractExpiration(text: string): string | null {
+  const match = text.match(
+    /(?:בתוקף|תוקף(?:\s+(?:ה?שובר|ה?קופון|ה?מתנה))?)\s*(?:עד|ל)?\s*(?:לתאריך)?\s*[:：-]?\s*(\d{1,2})[./](\d{1,2})[./](\d{2,4})/
+  );
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const rawYear = Number(match[3]);
+  const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  return `${year}-${`${month}`.padStart(2, "0")}-${`${day}`.padStart(2, "0")}`;
+}
+
 export function useParseCoupon() {
   return useMutation({
     mutationFn: async ({ text, imageBase64, companyNames }: { text?: string; imageBase64?: string; companyNames?: string[] }) => {
@@ -56,10 +81,16 @@ export function useParseCoupon() {
       if (coupons.length === 0) throw new Error("לא זוהו קופונים בטקסט או בתמונה");
       const textCardExpiry = text ? extractCardExpiry(text) : null;
       const textVoucherCode = text ? extractVoucherCode(text) : null;
+      // A single-coupon text is the only case where a date found in the text can
+      // safely be applied: with several coupons there is no telling which one it
+      // belongs to.
+      const textExpiration =
+        text && coupons.length === 1 ? extractExpiration(text) : null;
       const normalizedCoupons = coupons.map((coupon: ParsedCoupon) => ({
         ...coupon,
         code: coupon.code || textVoucherCode,
         card_exp: coupon.card_exp || textCardExpiry,
+        expiration: textExpiration || coupon.expiration,
       }));
 
       const filteredCoupons = normalizedCoupons.filter(isLikelyCoupon);
