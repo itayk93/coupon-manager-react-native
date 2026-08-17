@@ -117,21 +117,70 @@ and both `MIGRATION_PLAN.md` files were updated to match.
 > `.env.local`, `.env.development[.local]` and `.env.production[.local]` are safe there. Anything
 > else either breaks the bundle or risks being bundled into the app.
 
-## ⚠️ The node_modules edits are not persistent
+## The node_modules fixes are kept by patch-package
 
-Items 3 and 4 patch files under `node_modules/`. Any `npm install` that refreshes those packages
-wipes them and the build breaks again with the exact errors above. To make them stick, add
-`patch-package` (not currently a dependency) and commit the patches:
+Items 3 and 4 patch files under `node_modules/`, which any `npm install` would wipe. They are now
+committed as patches and reapplied automatically:
+
+- `patches/expo-modules-jsi+57.0.4.patch`
+- `patches/expo-modules-core+57.0.11.patch`
+- `patches/expo-updates+57.0.14.patch`
+- `patches/expo-constants+57.0.11.patch`
+
+`package.json` runs `"postinstall": "patch-package"`, so a fresh `npm install` — including the one
+EAS Build runs in the cloud — reapplies all four. Without this, a cloud build fails on the Swift
+errors in item 4.
+
+If you change one of those files again, regenerate its patch:
 
 ```bash
-npm i -D patch-package
+npx patch-package <package-name>
+```
+
+> Before regenerating the `expo-modules-jsi` patch, delete `node_modules/expo-modules-jsi/apple/.DerivedData`,
+> `Products`, `.generated` and `.swiftpm`. The xcframework build script writes ~110 MB of artifacts
+> there and patch-package would otherwise bake them into the patch.
+
+## Distributing the app (no computer attached)
+
+Expo Go **cannot** run this app — it uses `expo-dev-client`, its own bundle identifier, Face ID
+entitlements and custom icon/splash, none of which Expo Go can carry. Use EAS Build instead; the
+profiles are already defined in `eas.json`.
+
+One-time setup, which needs an Apple Developer Portal login:
+
+```bash
+npx eas-cli device:create
+```
+
+Then an internal build that installs from a link/QR:
+
+```bash
+npx eas-cli build --profile preview --platform ios
+```
+
+Or the TestFlight route:
+
+```bash
+npx eas-cli build --profile production --platform ios
 ```
 
 ```bash
-npx patch-package expo-modules-jsi expo-modules-core expo-updates expo-constants
+npx eas-cli submit --platform ios
 ```
 
-Then add `"postinstall": "patch-package"` to the `scripts` block in `package.json`.
+Once installed, JS-only changes ship over the air without a new build:
+
+```bash
+npx eas-cli update --channel preview
+```
+
+A local Release build is also an option if you just want the app on your own device without the
+cloud — the JS bundle is embedded, so it runs with no Metro and no computer:
+
+```bash
+npx expo run:ios --device --configuration Release
+```
 
 ## Order of operations after a clean checkout
 

@@ -1,0 +1,50 @@
+diff --git a/node_modules/expo-modules-core/ios/Core/Events/EventEmitter.swift b/node_modules/expo-modules-core/ios/Core/Events/EventEmitter.swift
+index 3046568..eb6d03a 100644
+--- a/node_modules/expo-modules-core/ios/Core/Events/EventEmitter.swift
++++ b/node_modules/expo-modules-core/ios/Core/Events/EventEmitter.swift
+@@ -46,10 +46,10 @@ public extension EventEmitter {
+     // safe here because the scheduled closure only calls `withEventTarget`, which touches `@JavaScriptActor`-
+     // isolated or `Sendable` state (the JS object, the registry, `appContext`) and the emitter's identity -
+     // never the module's own mutable state.
+-    nonisolated(unsafe) weak let emitter = self
++    let emitterBox = UncheckedSendableWeakEmitterBox(self)
+ 
+     runtime.schedule {
+-      guard let emitter else {
++      guard let emitter = emitterBox.value else {
+         return
+       }
+       let dispatched = emitter.withEventTarget { target in
+@@ -73,10 +73,10 @@ public extension EventEmitter {
+     // See the note in `emit(event:payload:)` above - the emitter is captured as `nonisolated(unsafe)`
+     // because it isn't necessarily `Sendable`, and the scheduled closure only reaches `@JavaScriptActor`-
+     // isolated or `Sendable` state through it.
+-    nonisolated(unsafe) weak let emitter = self
++    let emitterBox = UncheckedSendableWeakEmitterBox(self)
+ 
+     runtime.schedule { [weak appContext] in
+-      guard let emitter, let appContext else {
++      guard let emitter = emitterBox.value, let appContext else {
+         return
+       }
+       let jsPayload: JavaScriptValue
+@@ -97,6 +97,19 @@ public extension EventEmitter {
+   }
+ }
+ 
++/**
++ Holds a weak, non-`Sendable` emitter so it can cross into the `@JavaScriptActor` region. See the notes
++ on the `emit` overloads above for why this is safe: the scheduled closure only reaches
++ `@JavaScriptActor`-isolated or `Sendable` state through the emitter, never its own mutable state.
++ */
++internal final class UncheckedSendableWeakEmitterBox<Emitter: AnyObject>: @unchecked Sendable {
++  weak var value: Emitter?
++
++  init(_ value: Emitter) {
++    self.value = value
++  }
++}
++
+ /**
+  Sends a pre-converted event payload to the given JavaScript object via the JSI emitter helper.
+  Must run on the JS thread; the public `emit` overloads schedule onto the runtime before calling in.
