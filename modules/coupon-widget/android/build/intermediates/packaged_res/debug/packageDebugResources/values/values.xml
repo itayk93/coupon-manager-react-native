@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coupon_widget_active">קופונים פעילים</string>
+    <string name="coupon_widget_description">עקוב אחר הקופונים שלך ותאריכי התפוגה</string>
+    <string name="coupon_widget_one_time">חד פעמיים</string>
+    <string name="coupon_widget_remaining">נותר לשימוש</string>
+</resources>

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["CouponWidgetModule"]
+  },
+  "android": {
+    "modules": ["com.itaykarkason.couponmaster.widget.CouponWidgetModule"]
+  }
+}

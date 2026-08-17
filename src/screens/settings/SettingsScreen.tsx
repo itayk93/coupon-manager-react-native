@@ -22,6 +22,7 @@ import {
   Lock,
   Share2,
   ShieldCheck,
+  LayoutGrid,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -190,6 +191,20 @@ export function SettingsScreen() {
                   קופונים משותפים
                 </Text>
                 <Share2 size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Home-screen widget */}
+            <TouchableOpacity
+              onPress={() => router.push("/widget-settings")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  ווידג'ט מסך הבית
+                </Text>
+                <LayoutGrid size={20} color={theme.textMuted} />
               </View>
             </TouchableOpacity>
           </View>
