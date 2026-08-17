@@ -1,5 +1,13 @@
 import { useEffect } from "react";
-import { ActivityIndicator, I18nManager, Platform, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  I18nManager,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import {
@@ -26,6 +34,7 @@ import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
+import { fonts } from "@/lib/theme";
 
 // Hebrew RTL must be enabled before the first layout pass, so this runs at
 // module scope rather than in an effect.
@@ -95,6 +104,8 @@ function useAuthGuard() {
 function RootLayoutNav() {
   const { theme } = useAppTheme();
   const { isReady: authReady } = useAuthGuard();
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && width > 480;
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
   // for headings and figures in the redesign.
@@ -135,8 +146,14 @@ function RootLayoutNav() {
       }}
     >
       <StatusBar style="dark" />
-      <View style={styles.outerShell}>
-        <View style={[styles.shell, { backgroundColor: theme.background }]}>
+      <View style={[styles.outerShell, isDesktopWeb && styles.outerShellDesktop]}>
+        <View
+          style={[
+            styles.shell,
+            { backgroundColor: theme.background },
+            isDesktopWeb && styles.shellDesktop,
+          ]}
+        >
           <Stack
             screenOptions={{
               headerShown: false,
@@ -158,6 +175,11 @@ function RootLayoutNav() {
             </View>
           ) : null}
         </View>
+        {isDesktopWeb ? (
+          <Text style={[styles.webFooterText, { color: theme.textSubtle }]}>
+            © קופון מאסטר
+          </Text>
+        ) : null}
       </View>
     </ThemeProvider>
   );
@@ -180,33 +202,39 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   outerShell: {
     flex: 1,
-    backgroundColor: Platform.OS === "web" ? "#edf2f7" : "transparent",
-    ...(Platform.OS === "web"
-      ? {
-          width: "100%",
-          height: "100%",
-          alignItems: "center" as const,
-        }
-      : {}),
+    backgroundColor: "transparent",
+  },
+  outerShellDesktop: {
+    backgroundColor: "#edf2f7",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
   },
   shell: {
     flex: 1,
     width: "100%",
     position: "relative",
-    ...(Platform.OS === "web"
-      ? {
-          maxWidth: 440,
-          height: "100%",
-          shadowColor: "#0f172a",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.08,
-          shadowRadius: 24,
-          elevation: 5,
-          borderLeftWidth: 1,
-          borderRightWidth: 1,
-          borderColor: "#e2e8f0",
-        }
-      : {}),
+  },
+  shellDesktop: {
+    maxWidth: 430,
+    maxHeight: 880,
+    borderRadius: 28,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 10,
+  },
+  webFooterText: {
+    fontSize: 12,
+    fontFamily: fonts.body,
+    marginTop: 10,
+    opacity: 0.7,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
