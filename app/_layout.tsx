@@ -135,28 +135,30 @@ function RootLayoutNav() {
       }}
     >
       <StatusBar style="dark" />
-      <View style={styles.shell}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: "slide_from_right",
-            contentStyle: { backgroundColor: theme.background },
-          }}
-        />
-        <BottomNav />
-      </View>
-      <BiometricGate />
-      <ConfirmHost />
-      <ToastHost />
+      <View style={styles.outerShell}>
+        <View style={[styles.shell, { backgroundColor: theme.background }]}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: "slide_from_right",
+              contentStyle: { backgroundColor: theme.background },
+            }}
+          />
+          <BottomNav />
+          <BiometricGate />
+          <ConfirmHost />
+          <ToastHost />
 
-      {!isReady ? (
-        <View
-          style={[styles.loadingOverlay, { backgroundColor: theme.background }]}
-          pointerEvents="auto"
-        >
-          <ActivityIndicator size="large" color={theme.primary} />
+          {!isReady ? (
+            <View
+              style={[styles.loadingOverlay, { backgroundColor: theme.background }]}
+              pointerEvents="auto"
+            >
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+          ) : null}
         </View>
-      ) : null}
+      </View>
     </ThemeProvider>
   );
 }
@@ -176,8 +178,35 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  outerShell: {
+    flex: 1,
+    backgroundColor: Platform.OS === "web" ? "#edf2f7" : "transparent",
+    ...(Platform.OS === "web"
+      ? {
+          width: "100%",
+          height: "100%",
+          alignItems: "center" as const,
+        }
+      : {}),
+  },
   shell: {
     flex: 1,
+    width: "100%",
+    position: "relative",
+    ...(Platform.OS === "web"
+      ? {
+          maxWidth: 440,
+          height: "100%",
+          shadowColor: "#0f172a",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.08,
+          shadowRadius: 24,
+          elevation: 5,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: "#e2e8f0",
+        }
+      : {}),
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
