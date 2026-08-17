@@ -126,6 +126,41 @@ async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: 
   return { response, rawText };
 }
 
+/** Roughly 8MB of base64, i.e. ~6MB of image bytes. */
+const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BASE64_CHARS = 8 * 1024 * 1024;
+const MAX_TEXT_CHARS = 20000;
+
+/** Parses per user per rolling 24h. Generous for real use, fatal for a script. */
+const MAX_PARSES_PER_DAY = 60;
+
+function serviceClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+}
+
+/**
+ * Fails open: if the usage table cannot be read the parse still runs, because
+ * losing the feature entirely is worse than allowing an occasional extra call.
+ */
+async function isOverDailyLimit(userId: number): Promise<boolean> {
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count, error } = await serviceClient()
+      .from('gpt_usage')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created', since);
+
+    if (error) return false;
+    return (count ?? 0) >= MAX_PARSES_PER_DAY;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -140,8 +175,38 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'נדרשת התחברות' }, 401);
     }
 
+    // Cap the request before anything is parsed or forwarded. Without this a
+    // single caller can push an arbitrarily large payload into the function
+    // (and into the OpenAI bill).
+    const contentLength = Number(req.headers.get('content-length') || 0);
+    if (contentLength > MAX_REQUEST_BYTES) {
+      return jsonResponse({ error: 'הבקשה גדולה מדי. נסה תמונה קטנה יותר.' }, 413);
+    }
+
     const { text, imageBase64, companyNames } = await req.json();
     if (!text && !imageBase64) return jsonResponse({ error: 'צריך טקסט או תמונה' }, 400);
+
+    if (typeof text === 'string' && text.length > MAX_TEXT_CHARS) {
+      return jsonResponse({ error: 'הטקסט ארוך מדי.' }, 413);
+    }
+    if (typeof imageBase64 === 'string') {
+      if (imageBase64.length > MAX_IMAGE_BASE64_CHARS) {
+        return jsonResponse({ error: 'התמונה גדולה מדי. נסה תמונה קטנה יותר.' }, 413);
+      }
+      if (!/^[A-Za-z0-9+/=\s]+$/.test(imageBase64)) {
+        return jsonResponse({ error: 'התמונה אינה בפורמט תקין.' }, 400);
+      }
+    }
+
+    // Daily spend cap per user. gpt_usage was already being written after each
+    // call; this is the read side that makes it an actual limit.
+    const overLimit = await isOverDailyLimit(caller.id);
+    if (overLimit) {
+      return jsonResponse(
+        { error: 'הגעת למכסת הפענוחים היומית. נסה שוב מחר.' },
+        429
+      );
+    }
 
     // Guidance so the model prefers an existing company name (matching the
     // mechanism used in the Flask/iOS apps). Client-side matching still snaps the
