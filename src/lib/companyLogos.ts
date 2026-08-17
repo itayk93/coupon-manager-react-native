@@ -1,6 +1,12 @@
 import { getLogoAsset } from "./companyLogoAssets";
 
-const SUPABASE_STORAGE_URL = "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public";
+/**
+ * Company logos live on the legacy web host, not in Supabase Storage — that
+ * project has no buckets at all, so every `/storage/v1/object/public/...` URL
+ * this file used to build returned `NoSuchBucket`. `companies.image_path` holds
+ * paths relative to this root, e.g. "images/carrefour.png".
+ */
+const LEGACY_IMAGE_ROOT = "https://www.couponmasteril.com/static";
 
 const logoByCompany: Record<string, string> = {
   carrefour: "carrefour.png",
@@ -123,17 +129,17 @@ export function resolveCompanyLogo(company: string, dbImagePath?: string | null)
     }
 
     if (cleanPath.includes("/")) {
-      return `${SUPABASE_STORAGE_URL}/${cleanPath}`;
+      return `${LEGACY_IMAGE_ROOT}/${cleanPath}`;
     }
 
-    return `${SUPABASE_STORAGE_URL}/company-logos/${cleanPath}`;
+    return `${LEGACY_IMAGE_ROOT}/images/${cleanPath}`;
   }
 
   // Preset logo from database/storage
   if (hasStaticLogo(trimmed)) {
     const file = logoByCompany[trimmed.toLowerCase()] || logoByCompany[trimmed];
     if (file && file !== "default.png") {
-      return `${SUPABASE_STORAGE_URL}/company-logos/${file}`;
+      return `${LEGACY_IMAGE_ROOT}/images/${file}`;
     }
   }
 
@@ -145,7 +151,7 @@ export function resolveCompanyLogo(company: string, dbImagePath?: string | null)
     }
   }
 
-  return "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public/company-logos/default.png";
+  return `${LEGACY_IMAGE_ROOT}/images/default_logo.png`;
 }
 
 /**

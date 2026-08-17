@@ -68,7 +68,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
     RemoteViews(context.packageName, R.layout.coupon_widget_stats).apply {
       setTextViewText(R.id.one_time_value, payload.oneTimeCouponsCount.toString())
       setTextViewText(R.id.active_value, payload.activeCouponsCount.toString())
-      setTextViewText(R.id.total_value, "₪${Math.round(payload.totalRemainingValue)}")
+      setTextViewText(R.id.total_value, formatShekels(payload.totalRemainingValue))
       setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, "couponmaster:///"))
     }
 
@@ -82,7 +82,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
     setViewVisibility(R.id.header, if (showHeader) View.VISIBLE else View.GONE)
     setViewVisibility(R.id.header_divider, if (showHeader) View.VISIBLE else View.GONE)
     setTextViewText(R.id.header_active, "קופונים פעילים: ${payload.activeCouponsCount}")
-    setTextViewText(R.id.header_balance, "יתרה: ₪${Math.round(payload.totalRemainingValue)}")
+    setTextViewText(R.id.header_balance, "יתרה: " + formatShekels(payload.totalRemainingValue))
     setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, "couponmaster:///"))
 
     val coupons = payload.coupons.take(limit)
@@ -101,7 +101,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
 
       setViewVisibility(cardId.root, View.VISIBLE)
       setTextViewText(cardId.company, coupon.company)
-      setTextViewText(cardId.balance, "יתרה: ${Math.round(coupon.remainingValue)}₪")
+      setTextViewText(cardId.balance, "יתרה: " + formatShekels(coupon.remainingValue))
       setTextViewText(cardId.code, formatCouponCode(coupon.code))
 
       val logo = logos[coupon.id]
@@ -180,6 +180,14 @@ class CouponWidgetProvider : AppWidgetProvider() {
       CardIds(R.id.card_3, R.id.logo_3, R.id.initials_3, R.id.company_3, R.id.balance_3, R.id.code_3),
       CardIds(R.id.card_4, R.id.logo_4, R.id.initials_4, R.id.company_4, R.id.balance_4, R.id.code_4),
     )
+
+    /**
+     * Formats an amount the way the app does: grouped digits, a space, then ₪.
+     * The app's `formatIls` renders "4,315.21 ₪"; the widget drops the agorot
+     * because the tile is small, but keeps the same order and spacing.
+     */
+    fun formatShekels(value: Double): String =
+      String.format(java.util.Locale.US, "%,d ₪", Math.round(value))
 
     /**
      * Wraps a coupon code onto at most 4 balanced lines.

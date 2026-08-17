@@ -73,6 +73,18 @@ private extension View {
     }
 }
 
+/// Formats an amount the way the app does: grouped digits, a space, then ₪.
+/// `formatIls` in the app renders "4,315.21 ₪"; the widget drops the agorot
+/// because the tile is small, but keeps the same order and spacing.
+private func formatShekels(_ value: Double) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.maximumFractionDigits = 0
+    formatter.groupingSeparator = ","
+    let number = formatter.string(from: NSNumber(value: value.rounded())) ?? "0"
+    return "\(number) ₪"
+}
+
 /// Wraps a coupon code onto at most 4 balanced lines.
 ///
 /// The original broke every 10 characters, which left a 12-character code as
@@ -207,7 +219,7 @@ private struct CouponCardView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
 
-                    Text("יתרה: \(Int(coupon.remainingValue.rounded()))₪")
+                    Text("יתרה: " + formatShekels(coupon.remainingValue))
                         .couponFont(compact ? 10 : 12, .bold)
                         .foregroundColor(.white)
                 }
@@ -310,7 +322,7 @@ private struct CouponStatsSmallView: View {
                 Spacer()
 
                 VStack(spacing: 6) {
-                    Text("₪\(Int(payload.totalRemainingValue.rounded()))")
+                    Text(formatShekels(payload.totalRemainingValue))
                         .couponFont(34, .extraBold)
                         .foregroundColor(.white)
                         .lineLimit(1)
@@ -359,7 +371,7 @@ private struct CouponStatsSmallView: View {
                             .couponFont(16, .bold)
                             .foregroundColor(.white)
 
-                        Text("₪\(Int(first.remainingValue.rounded()))")
+                        Text(formatShekels(first.remainingValue))
                             .couponFont(24, .extraBold)
                             .foregroundColor(.white)
 
@@ -440,7 +452,7 @@ private struct CouponLargeView: View {
                             .couponFont(14, .bold)
                             .foregroundColor(.white)
 
-                        Text("יתרה: ₪\(Int(payload.totalRemainingValue.rounded()))")
+                        Text("יתרה: " + formatShekels(payload.totalRemainingValue))
                             .couponFont(14, .medium)
                             .foregroundColor(.white)
                     }

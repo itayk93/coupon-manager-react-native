@@ -19,6 +19,7 @@ ios/build/
 android/.gradle/
 android/app/build/
 android/build/
+modules/*/android/build/
 dist
 web-dist/
 web/.claude/

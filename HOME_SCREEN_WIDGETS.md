@@ -346,11 +346,21 @@ Apple Developer account; the simulator does not.
 
 The widget first shipped showing initials instead of logos, for two reasons:
 
-1. It was handed the output of `resolveCompanyLogo`, which builds URLs against
-   a Supabase `company-logos` bucket **that does not exist** — every request
-   returns `{"code":"NoSuchBucket"}`. The app is unaffected because it calls
-   `getCompanyLogoSource`, which prefers the 66 images bundled from
-   `public/legacy-images/` and never touches the network.
+1. It was handed the output of `resolveCompanyLogo`, which built URLs against
+   Supabase Storage. **That project has no buckets at all** (`select … from
+   storage.buckets` returns zero rows), so every such URL returned
+   `NoSuchBucket`. The logos actually live on the legacy host — the same one
+   the original Swift widget used:
+
+   ```
+   https://www.couponmasteril.com/static/ + companies.image_path
+   e.g. https://www.couponmasteril.com/static/images/carrefour.png  → 200
+   ```
+
+   `resolveCompanyLogo` now points there. This was an **app-wide** bug, not a
+   widget one: any company without a bundled image 404'd everywhere. The app
+   looked fine only because `getCompanyLogoSource` prefers the 66 images
+   bundled from `public/legacy-images/`.
 2. Even a working URL would not have helped. Bundled assets are Metro module
    handles, unreachable from a separate extension process, and the iOS code
    fetched with a synchronous `Data(contentsOf:)` inside `body` — which widget
@@ -368,9 +378,16 @@ both processes can read, and the payload carries a file path.
   `BitmapFactory.decodeFile`). This also works offline and removed the
   background network pass from the Android provider.
 
-Worth knowing separately: the missing `company-logos` bucket means
-`resolveCompanyLogo` 404s for every company without a bundled image. That is an
-app-wide issue, untouched here.
+`companies.image_path` (e.g. `images/carrefour.png`) is passed through from
+`useWidgetSync` so companies outside the bundled `logoByCompany` map resolve
+too.
+
+**Ordering matters.** `syncWidget` writes the payload *first* and only then
+copies logos and writes again. The first version awaited the copy before
+writing, so one failed copy discarded the whole payload — and because the call
+site was `void syncWidget(...)`, the rejection was swallowed and the widget
+silently kept showing stale numbers. Balances must never be wrong; logos are
+cosmetic.
 
 ## Keeping the widget and the app in agreement
 
@@ -390,9 +407,19 @@ The root cause was duplication: `!is_for_sale && status !== "נוצל"` was writ
 out three separate times (`DashboardScreen`, `WalletHeroCard`, and the widget).
 `src/lib/couponTotals.ts` now holds it once and all three import it.
 
-The widget also truncated (`Int(4315.9)` → `4315`); it rounds now. It still
-shows whole shekels while the app shows agorot — a deliberate choice for a
-small tile, and the only remaining intentional difference.
+The widget also truncated (`Int(4315.9)` → `4315`); it rounds now, and formats
+as `4,315 ₪` — grouped digits, space, then the sign — matching the app's
+`formatIls`. It shows whole shekels while the app shows agorot: a deliberate
+choice for a small tile, and the only remaining intentional difference.
+
+## Splash screen
+
+`assets/splash.png` was a 1200×630 Open Graph share image, not a splash asset,
+so `resizeMode: contain` rendered it as a small banner floating in the middle
+of the screen. Replaced with `assets/splash-icon.png` — the brand coupon mark
+at 1024×1024 on a transparent background, drawn at `imageWidth: 180` over
+`#faf9f6`. That is [Expo's current recommendation](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)
+and the shape every modern app uses: a centred mark on a brand background.
 
 ## Deviations from the original, on purpose
 
