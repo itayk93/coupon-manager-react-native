@@ -18,8 +18,9 @@ export default {
         glow: "0 0 20px -5px hsl(var(--primary) / 0.5)",
       },
       fontFamily: {
-        display: ["Outfit", "Heebo", "sans-serif"],
-        body: ["Rubik", "sans-serif"],
+        display: ["Heebo", "sans-serif"],
+        body: ["Heebo", "sans-serif"],
+        sans: ["Heebo", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

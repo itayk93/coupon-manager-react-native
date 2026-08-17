@@ -61,8 +61,8 @@ export const palette = {
 
 /** Display face for headings/figures; body face for everything else. */
 export const fonts = {
-  display: Platform.select({ web: "Outfit, Heebo, sans-serif", default: "Outfit_800ExtraBold" }) as string,
-  displaySemi: Platform.select({ web: "Outfit, Heebo, sans-serif", default: "Outfit_600SemiBold" }) as string,
+  display: Platform.select({ web: "Heebo, sans-serif", default: "Heebo_800ExtraBold" }) as string,
+  displaySemi: Platform.select({ web: "Heebo, sans-serif", default: "Heebo_700Bold" }) as string,
   body: Platform.select({ web: "Heebo, sans-serif", default: "Heebo_400Regular" }) as string,
   bodyMedium: Platform.select({ web: "Heebo, sans-serif", default: "Heebo_500Medium" }) as string,
   bodyBold: Platform.select({ web: "Heebo, sans-serif", default: "Heebo_700Bold" }) as string,
