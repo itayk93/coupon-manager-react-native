@@ -9,6 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  Animated,
+  Easing,
+  PanResponder,
 } from "react-native";
 import { X } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -24,6 +27,14 @@ type ModalProps = {
   maxHeight?: number | string;
 };
 
+/**
+ * Shared bottom sheet.
+ *
+ * The scrim and the sheet animate separately, the same way `CompanySheet`
+ * does: `animationType="slide"` would translate the whole modal, dragging the
+ * dim backdrop up from the bottom with it. Here the backdrop only fades its
+ * opacity while the sheet translates, which is how a native sheet behaves.
+ */
 export function Modal({
   visible,
   onClose,
@@ -34,69 +45,130 @@ export function Modal({
 }: ModalProps) {
   const { theme } = useAppTheme();
 
+  // Stays mounted through the exit animation, otherwise the sheet would vanish
+  // instantly instead of sliding out.
+  const [mounted, setMounted] = React.useState(visible);
+  const progress = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) setMounted(true);
+    Animated.timing(progress, {
+      toValue: visible ? 1 : 0,
+      duration: visible ? 280 : 220,
+      easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished && !visible) setMounted(false);
+    });
+  }, [visible, progress]);
+
+  const drag = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) drag.setValue(0);
+  }, [visible, drag]);
+
+  // Only the handle and header drag the sheet, so the body keeps its scrolling.
+  const panResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_evt, g) =>
+          g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+        onPanResponderMove: (_evt, g) => {
+          if (g.dy > 0) drag.setValue(g.dy);
+        },
+        onPanResponderRelease: (_evt, g) => {
+          if (g.dy > 120 || g.vy > 0.8) {
+            onClose();
+            drag.setValue(0);
+          } else {
+            Animated.spring(drag, {
+              toValue: 0,
+              useNativeDriver: true,
+              bounciness: 0,
+            }).start();
+          }
+        },
+      }),
+    [drag, onClose]
+  );
+
+  const enterY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [600, 0],
+  });
+  const translateY = Animated.add(enterY, drag);
+
+  if (!mounted) return null;
+
   return (
     <RNModal
-      visible={visible}
+      visible={mounted}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.backdrop}
       >
-        <TouchableOpacity
-          style={styles.backdropTouch}
-          activeOpacity={1}
-          onPress={onClose}
-        />
+        <Animated.View style={[styles.scrim, { opacity: progress }]}>
+          <TouchableOpacity
+            style={styles.scrimTouch}
+            activeOpacity={1}
+            onPress={onClose}
+          />
+        </Animated.View>
 
-        <View
+        <Animated.View
           style={[
             styles.sheet,
             {
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
+              transform: [{ translateY }],
             },
           ]}
         >
           <SafeAreaView>
-            <View style={styles.handleContainer}>
-              <View style={[styles.handle, { backgroundColor: theme.border }]} />
-            </View>
+            <View {...panResponder.panHandlers}>
+              <View style={styles.handleContainer}>
+                <View style={[styles.handle, { backgroundColor: theme.border }]} />
+              </View>
 
-            <View style={[styles.header, { borderBottomColor: theme.border }]}>
-              <TouchableOpacity
-                onPress={onClose}
-                style={[
-                  styles.closeButton,
-                  { backgroundColor: theme.surfaceAlt },
-                ]}
-              >
-                <X size={18} color={theme.text} />
-              </TouchableOpacity>
+              <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={[
+                    styles.closeButton,
+                    { backgroundColor: theme.surfaceAlt },
+                  ]}
+                >
+                  <X size={18} color={theme.text} />
+                </TouchableOpacity>
 
-              <View style={styles.headerTitleContainer}>
-                {title ? (
-                  <Text
-                    style={[
-                      styles.title,
-                      { color: theme.text, textAlign: "right" },
-                    ]}
-                  >
-                    {title}
-                  </Text>
-                ) : null}
-                {subtitle ? (
-                  <Text
-                    style={[
-                      styles.subtitle,
-                      { color: theme.textMuted, textAlign: "right" },
-                    ]}
-                  >
-                    {subtitle}
-                  </Text>
-                ) : null}
+                <View style={styles.headerTitleContainer}>
+                  {title ? (
+                    <Text
+                      style={[
+                        styles.title,
+                        { color: theme.text, textAlign: "right" },
+                      ]}
+                    >
+                      {title}
+                    </Text>
+                  ) : null}
+                  {subtitle ? (
+                    <Text
+                      style={[
+                        styles.subtitle,
+                        { color: theme.textMuted, textAlign: "right" },
+                      ]}
+                    >
+                      {subtitle}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             </View>
 
@@ -115,7 +187,7 @@ export function Modal({
               </View>
             ) : null}
           </SafeAreaView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </RNModal>
   );
@@ -124,10 +196,13 @@ export function Modal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "flex-end",
   },
-  backdropTouch: {
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
+  },
+  scrimTouch: {
     flex: 1,
   },
   sheet: {
