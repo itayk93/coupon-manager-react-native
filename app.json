@@ -11,6 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.itaykarkason.couponmaster",
+      "appleTeamId": "TM252YSY6T",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.itaykarkason.couponmaster"]
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.",
         "NSFaceIDUsageDescription": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
@@ -57,7 +61,8 @@
         }
       ],
       "expo-asset",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "@bacons/apple-targets"
     ],
     "extra": {
       "supabaseUrl": "https://dugjsiyenazpsoiyduuz.supabase.co",

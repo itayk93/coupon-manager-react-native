@@ -33,6 +33,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -104,6 +105,7 @@ function useAuthGuard() {
 function RootLayoutNav() {
   const { theme } = useAppTheme();
   const { isReady: authReady } = useAuthGuard();
+  useWidgetSync();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > 480;
 

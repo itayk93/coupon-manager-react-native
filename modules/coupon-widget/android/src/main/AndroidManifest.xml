@@ -1,0 +1,17 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <application>
+    <receiver
+      android:name="com.itaykarkason.couponmaster.widget.CouponWidgetProvider"
+      android:label="Coupon Master"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/coupon_widget_info" />
+    </receiver>
+  </application>
+</manifest>
