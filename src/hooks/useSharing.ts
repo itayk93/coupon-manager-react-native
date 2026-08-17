@@ -97,6 +97,9 @@ export function useMyShares() {
           shared_with:shared_with_user_id (email, first_name, last_name)
         `)
         .eq("shared_by_user_id", publicUser.id)
+        // Revoking only flips the status, so revoked shares must be filtered
+        // out here or they keep showing up as if the cancel did nothing.
+        .neq("status", "revoked")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -141,6 +144,16 @@ export function useCreateShare() {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
+      // `shared_by_user_id` references public.users.id (an int), not the auth
+      // uuid, so the sender has to be resolved the same way the reader is.
+      const { data: senderUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", user.email || "")
+        .maybeSingle();
+
+      if (!senderUser) throw new Error("לא נמצא משתמש תואם לחשבון שלך");
+
       const { data: targetUser, error: findError } = await supabase
         .from("users")
         .select("id")
@@ -156,7 +169,7 @@ export function useCreateShare() {
 
       const { error: shareError } = await supabase.from("coupon_shares").insert({
         coupon_id: couponId,
-        shared_by_user_id: user.id,
+        shared_by_user_id: senderUser.id,
         shared_with_user_id: targetUser.id,
         share_token: Crypto.randomUUID(),
         share_expires_at: expiresAt.toISOString(),
@@ -185,15 +198,21 @@ export function useRevokeShare() {
     mutationFn: async (shareId: number) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
+      // Returning the row makes an RLS-blocked update surface as an error
+      // instead of a silent no-op that still reports success.
+      const { data, error } = await supabase
         .from("coupon_shares")
         .update({
           status: "revoked",
           revoked_at: new Date().toISOString(),
         })
-        .eq("id", shareId);
+        .eq("id", shareId)
+        .select("id");
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("אין לך הרשאה לבטל את השיתוף הזה");
+      }
       return true;
     },
     onSuccess: () => {
