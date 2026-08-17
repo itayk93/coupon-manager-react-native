@@ -21,7 +21,7 @@ export const MAX_WIDGET_COUPONS = 4;
  * The counts and balance deliberately use the same predicate as the dashboard
  * (`isSpendableCoupon`) so the widget and the app can never disagree.
  */
-export async function buildWidgetPayload(coupons: DecryptedCoupon[]): Promise<WidgetPayload> {
+export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
   const spendable = coupons.filter(isSpendableCoupon);
 
   const chosen = spendable
@@ -29,22 +29,13 @@ export async function buildWidgetPayload(coupons: DecryptedCoupon[]): Promise<Wi
     .sort((a, b) => (a.widget_display_order ?? 999) - (b.widget_display_order ?? 999))
     .slice(0, MAX_WIDGET_COUPONS);
 
-  // The widget has no access to bundled JS assets, so copy the logos across.
-  const logos = await prepareWidgetLogos(
-    chosen.map((coupon) => ({
-      couponId: coupon.id,
-      company: coupon.company,
-      dbImagePath: null,
-    }))
-  );
-
   const selected: WidgetCouponPayload[] = chosen.map((coupon) => ({
     id: coupon.id,
     company: coupon.company,
     code: coupon.code,
     remainingValue: couponRemainingValue(coupon),
     expiration: coupon.expiration ?? null,
-    logoFile: logos[coupon.id] ?? null,
+    logoFile: null,
   }));
 
   return {
@@ -56,6 +47,45 @@ export async function buildWidgetPayload(coupons: DecryptedCoupon[]): Promise<Wi
   };
 }
 
-export async function syncWidget(coupons: DecryptedCoupon[]): Promise<void> {
-  setWidgetData(await buildWidgetPayload(coupons));
+/**
+ * Writes the payload, then upgrades it with logos.
+ *
+ * Deliberately two writes. Copying logo files touches the filesystem and can
+ * fail; doing it before the write meant one bad copy discarded the whole
+ * payload and left the widget showing stale numbers. Balances and counts are
+ * the part that must never be wrong, so they land first.
+ */
+export async function syncWidget(
+  coupons: DecryptedCoupon[],
+  /** `companies.image_path` by company name, so logos resolve for companies
+   *  that are not in the bundled `logoByCompany` map. */
+  imagePathByCompany: Record<string, string | null> = {}
+): Promise<void> {
+  const payload = buildWidgetPayload(coupons);
+  setWidgetData(payload);
+
+  if (payload.coupons.length === 0) return;
+
+  try {
+    const logos = await prepareWidgetLogos(
+      payload.coupons.map((coupon) => ({
+        couponId: coupon.id,
+        company: coupon.company,
+        dbImagePath: imagePathByCompany[coupon.company] ?? null,
+      }))
+    );
+
+    if (Object.keys(logos).length === 0) return;
+
+    setWidgetData({
+      ...payload,
+      coupons: payload.coupons.map((coupon) => ({
+        ...coupon,
+        logoFile: logos[coupon.id] ?? null,
+      })),
+    });
+  } catch (error) {
+    // Logos are cosmetic; the numbers are already on screen.
+    console.warn("[widget] failed to prepare company logos", error);
+  }
 }
