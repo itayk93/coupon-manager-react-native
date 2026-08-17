@@ -1,29 +1,26 @@
 import React from "react";
 import {
-  Image,
   Platform,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Bell } from "lucide-react-native";
-import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
-import { fonts, palette, radii } from "@/lib/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { radii } from "@/lib/theme";
 
 /**
- * The app shell header from the redesign: a fixed dark bar carrying the brand
- * mark, a notification bell with an unread dot, and the account avatar.
- * Rendered once above the tab navigator rather than per screen.
+ * Floating notification bell icon on top-left of the screen, replacing the
+ * previous dark header bar for a clean, minimal interface.
  */
 export function AppHeader() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { theme } = useAppTheme();
   const { data: coupons = [] } = useCoupons();
 
   const hasUnread = coupons.some((c) => {
@@ -32,113 +29,55 @@ export function AppHeader() {
     return days >= 0 && days <= 14;
   });
 
-  const initials =
-    `${user?.first_name?.[0] || ""}${user?.last_name?.[0] || ""}`.trim() ||
-    (user?.email?.[0] || "U").toUpperCase();
-
   const topInset = Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : insets.top;
 
   return (
-    <View style={[styles.wrap, { paddingTop: topInset }]}>
-      <View style={styles.bar}>
-        <TouchableOpacity
-          onPress={() => router.navigate("/(tabs)")}
-          activeOpacity={0.8}
-          style={styles.brand}
-        >
-          <Image
-            source={require("../../../public/logo-icon.png")}
-            style={styles.mark}
-            resizeMode="contain"
-          />
-          <Text style={styles.brandText}>קופון מאסטר</Text>
-        </TouchableOpacity>
-
-        <View style={styles.actions}>
-          <TouchableOpacity
-            onPress={() => router.push("/notifications")}
-            activeOpacity={0.8}
-            style={styles.bellBtn}
-            accessibilityLabel="התראות"
-          >
-            <Bell size={21} color="#ffffff" strokeWidth={1.8} />
-            {hasUnread ? <View style={styles.dot} /> : null}
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/profile")}
-            activeOpacity={0.8}
-            style={styles.avatar}
-            accessibilityLabel="פרופיל"
-          >
-            <Text style={styles.avatarText}>{initials}</Text>
-          </TouchableOpacity>
-
-        </View>
-      </View>
+    <View style={[styles.floatingWrap, { top: (topInset || 12) + 8 }]} pointerEvents="box-none">
+      <TouchableOpacity
+        onPress={() => router.push("/notifications")}
+        activeOpacity={0.8}
+        style={[
+          styles.floatingBell,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
+          },
+        ]}
+        accessibilityLabel="התראות"
+      >
+        <Bell size={20} color={theme.text} strokeWidth={1.9} />
+        {hasUnread ? <View style={styles.dot} /> : null}
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    backgroundColor: palette.headerBg,
+  floatingWrap: {
+    position: "absolute",
+    left: 18,
+    zIndex: 999,
   },
-  bar: {
-    height: 60,
-    flexDirection: "row-reverse",
+  floatingBell: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    borderWidth: 1,
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-  },
-  brand: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-  },
-  mark: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-  },
-  brandText: {
-    fontFamily: fonts.display,
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  actions: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 18,
-  },
-  bellBtn: {
-    padding: 4,
+    justifyContent: "center",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   dot: {
     position: "absolute",
-    top: 1,
-    right: 1,
-    width: 9,
-    height: 9,
+    top: 8,
+    right: 9,
+    width: 8,
+    height: 8,
     borderRadius: radii.pill,
     backgroundColor: "#ef4444",
-    borderWidth: 2,
-    borderColor: palette.headerBg,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: radii.pill,
-    backgroundColor: palette.primary,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.7)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontFamily: fonts.bodyBold,
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
   },
 });
