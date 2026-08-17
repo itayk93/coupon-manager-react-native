@@ -9,6 +9,7 @@ import {
   RefreshControl,
   SafeAreaView,
   ScrollView,
+  I18nManager,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -201,10 +202,11 @@ export function CouponsListScreen() {
             <Search size={18} color={theme.textMuted} />
           )}
           <TextInput
-            placeholder="חיפוש לפי חברה, תיאור או קוד..."
+            placeholder="חיפוש לפי חברה, תיאור או קוד"
             placeholderTextColor={theme.textMuted}
             value={search}
             onChangeText={setSearch}
+            textAlign="right"
             style={[styles.searchInput, { color: theme.text }]}
           />
         </View>
@@ -443,7 +445,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   searchBar: {
-    flexDirection: "row-reverse",
+    // Keep the icon on the right whether or not the runtime flipped the layout.
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -456,6 +459,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     textAlign: "right",
+    writingDirection: "rtl",
   },
   statusTabsRow: {
     flexDirection: "row-reverse",
