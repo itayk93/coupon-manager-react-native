@@ -1,6 +1,6 @@
 # Secrets / local env
 .env
-.env.supabase.local
+.supabase.local.env
 .env*.local
 
 # Logs
