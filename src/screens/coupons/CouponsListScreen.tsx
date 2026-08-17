@@ -48,7 +48,11 @@ export function CouponsListScreen() {
   );
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("active");
   const [category, setCategory] = useState<string>("all");
-  const [showStatusRow, setShowStatusRow] = useState(false);
+  // Status + tag filter rows stay collapsed until the filter button is pressed,
+  // unless we arrived here with a tag already applied.
+  const [showStatusRow, setShowStatusRow] = useState(
+    Boolean(params.initialFilterTag)
+  );
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
 
@@ -274,8 +278,8 @@ export function CouponsListScreen() {
           </View>
         ) : null}
 
-        {/* Tag Filter Chips (if tags exist) */}
-        {allTags.length > 0 ? (
+        {/* Tag Filter Chips (if tags exist), hidden behind the same filter button */}
+        {showStatusRow && allTags.length > 0 ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
