@@ -73,16 +73,14 @@ private extension View {
     }
 }
 
-/// Formats an amount the way the app does: grouped digits, a space, then ₪.
-/// `formatIls` in the app renders "4,315.21 ₪"; the widget drops the agorot
-/// because the tile is small, but keeps the same order and spacing.
+/// Formats an amount: ₪ on the left, no space, grouped digits.
 private func formatShekels(_ value: Double) -> String {
     let formatter = NumberFormatter()
     formatter.numberStyle = .decimal
     formatter.maximumFractionDigits = 0
     formatter.groupingSeparator = ","
     let number = formatter.string(from: NSNumber(value: value.rounded())) ?? "0"
-    return "\(number) ₪"
+    return "₪\(number)"
 }
 
 /// Wraps a coupon code onto at most 4 balanced lines.

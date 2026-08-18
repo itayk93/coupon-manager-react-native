@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
-import { useProfile } from "@/hooks/useProfile";
 import { useCompanies } from "@/hooks/useAdminManagement";
 import { syncWidget } from "@/lib/widgetSync";
 import { clearWidgetData, isWidgetSupported } from "../../modules/coupon-widget";
@@ -13,7 +12,6 @@ import { clearWidgetData, isWidgetSupported } from "../../modules/coupon-widget"
 export function useWidgetSync() {
   const { user } = useAuth();
   const { data: coupons } = useCoupons();
-  const { data: profile } = useProfile();
   const { data: companies } = useCompanies();
 
   // company name -> companies.image_path, for logo resolution in the widget.
@@ -23,21 +21,17 @@ export function useWidgetSync() {
     return map;
   }, [companies]);
 
-  // `users.allow_widget_access` predates this app. Only an explicit `false`
-  // blocks: the column is nullable and most rows are null, so treating null as
-  // "blocked" would silently disable the widget for nearly everyone.
-  const widgetBlocked = profile?.allow_widget_access === false;
-
   useEffect(() => {
     if (!isWidgetSupported) return;
 
-    if (!user || widgetBlocked) {
-      // Don't leave coupon codes on the home screen after sign-out, or for a
-      // user whose account disallows widget access.
+    if (!user) {
+      // Don't leave coupon codes on the home screen after sign-out. The widget
+      // itself is for every account — `users.allow_widget_access` is a legacy
+      // column from the old product and deliberately not consulted here.
       clearWidgetData();
       return;
     }
 
     if (coupons) void syncWidget(coupons, imagePathByCompany);
-  }, [user, coupons, widgetBlocked, imagePathByCompany]);
+  }, [user, coupons, imagePathByCompany]);
 }
