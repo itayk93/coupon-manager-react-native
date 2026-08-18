@@ -303,7 +303,7 @@ private struct CouponStatsSmallView: View {
                 Spacer()
                 Spacer()
 
-                VStack(spacing: 10) {
+                VStack(spacing: 14) {
                     AppLogoView(size: 24)
                     Rectangle()
                         .fill(WidgetStyle.cardStroke)
@@ -317,11 +317,11 @@ private struct CouponStatsSmallView: View {
                     statColumn(label: "קופונים פעילים", value: payload.activeCouponsCount)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 18)
 
                 Spacer()
 
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     Text(formatShekels(payload.totalRemainingValue))
                         .couponFont(34, .extraBold)
                         .foregroundColor(.white)
@@ -336,6 +336,7 @@ private struct CouponStatsSmallView: View {
                 Spacer()
                 Spacer()
             }
+            .padding(.vertical, 6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
