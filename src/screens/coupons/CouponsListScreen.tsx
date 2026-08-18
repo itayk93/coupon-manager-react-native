@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ScrollView,
   I18nManager,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -26,7 +27,7 @@ import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponTagsMap } from "@/hooks/useTags";
-import { getCompanyCategory } from "@/lib/companyLogos";
+import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
@@ -48,7 +49,7 @@ export function CouponsListScreen() {
     params.initialFilterTag || null
   );
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("active");
-  const [category, setCategory] = useState<string>("all");
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   // Status + tag filter rows stay collapsed until the filter button is pressed,
   // unless we arrived here with a tag already applied.
   const [showStatusRow, setShowStatusRow] = useState(
@@ -57,12 +58,22 @@ export function CouponsListScreen() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
 
-  // Category chips, from the redesign. Only categories actually present show up.
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    coupons.forEach((c) => set.add(getCompanyCategory(c.company || "")));
-    return ["all", ...Array.from(set).sort()];
+  // Company chips — ordered left-to-right from fewest to most coupons, so the
+  // right edge (where the row lands after scrollToEnd) is the highest-count
+  // company and the left edge is the lowest-count company.
+  const companyChips = useMemo(() => {
+    const counts = coupons.reduce<Record<string, number>>((acc, coupon) => {
+      const company = (coupon.company || "").trim();
+      if (company) acc[company] = (acc[company] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(counts)
+      .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "he"))
+      .map(([company]) => company);
   }, [coupons]);
+
+  const isCompanyFiltered = (coupon: DecryptedCoupon) =>
+    !selectedCompany || (coupon.company || "").trim() === selectedCompany;
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -82,9 +93,7 @@ export function CouponsListScreen() {
 
       if (!matchSearch) return false;
 
-      if (category !== "all" && getCompanyCategory(coupon.company || "") !== category) {
-        return false;
-      }
+      if (!isCompanyFiltered(coupon)) return false;
 
       // Tag filter
       if (selectedTag) {
@@ -109,7 +118,7 @@ export function CouponsListScreen() {
       }
       return true; // "all"
     });
-  }, [coupons, search, selectedTag, statusFilter, tagsMap, category]);
+  }, [coupons, search, selectedCompany, selectedTag, statusFilter, tagsMap]);
 
   const toggleSelect = (id: number) => {
     if (selectedIds.includes(id)) {
@@ -120,6 +129,15 @@ export function CouponsListScreen() {
       setSelectedIds([...selectedIds, id]);
     }
   };
+
+  // Keep the highest-count company (the right edge of the row) in view when
+  // the data first lands or changes.
+  const companyScrollRef = React.useRef<ScrollView>(null);
+  React.useEffect(() => {
+    if (companyChips.length > 0) {
+      companyScrollRef.current?.scrollToEnd({ animated: false });
+    }
+  }, [companyChips]);
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
@@ -211,31 +229,64 @@ export function CouponsListScreen() {
           />
         </View>
 
-        {/* Category chips — one scrollable row */}
+        {/* Company chips — ordered by coupon count, most on the right */}
         <ScrollView
+          ref={companyScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.chipRow}
-          contentContainerStyle={styles.chipRowContent}
+          contentContainerStyle={styles.companyChipRowContent}
         >
-          {categories.map((item) => {
-            const isCurrent = category === item;
+          <TouchableOpacity
+            key="all"
+            onPress={() => setSelectedCompany(null)}
+            style={[
+              styles.tagChip,
+              {
+                backgroundColor: selectedCompany === null ? theme.primary : theme.card,
+                borderColor: selectedCompany === null ? theme.primary : theme.inputBorder,
+              },
+            ]}
+          >
+            <Text
+              style={[styles.tagChipText, { color: selectedCompany === null ? "#ffffff" : theme.label }]}
+            >
+              הכל
+            </Text>
+          </TouchableOpacity>
+
+          {companyChips.map((company) => {
+            const isCurrent = selectedCompany === company;
+            const count = coupons.filter(
+              (coupon) => (coupon.company || "").trim() === company
+            ).length;
             return (
               <TouchableOpacity
-                key={item}
-                onPress={() => setCategory(item)}
+                key={company}
+                onPress={() => setSelectedCompany(isCurrent ? null : company)}
                 style={[
-                  styles.tagChip,
+                  styles.companyChip,
                   {
                     backgroundColor: isCurrent ? theme.primary : theme.card,
                     borderColor: isCurrent ? theme.primary : theme.inputBorder,
                   },
                 ]}
               >
+                <Image
+                  source={getCompanyLogoSource(company)}
+                  style={styles.companyChipLogo}
+                  resizeMode="contain"
+                />
                 <Text
-                  style={[styles.tagChipText, { color: isCurrent ? "#ffffff" : theme.label }]}
+                  numberOfLines={1}
+                  style={[styles.companyChipText, { color: isCurrent ? "#ffffff" : theme.label }]}
                 >
-                  {item === "all" ? "הכל" : item}
+                  {company}
+                </Text>
+                <Text
+                  style={[styles.companyChipCount, { color: isCurrent ? "rgba(255,255,255,0.85)" : theme.textMuted }]}
+                >
+                  {count}
                 </Text>
               </TouchableOpacity>
             );
@@ -496,6 +547,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 2,
   },
+  companyChipRowContent: {
+    // row (left-to-right) keeps the highest-count company on the right edge and
+    // the lowest-count company on the left edge. The initial scrollToEnd also
+    // aligns the row to the right.
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 2,
+  },
   tagChip: {
     height: 34,
     justifyContent: "center",
@@ -506,6 +566,35 @@ const styles = StyleSheet.create({
   tagChipText: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  companyChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 34,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    maxWidth: 160,
+  },
+  companyChipLogo: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    flexShrink: 0,
+  },
+  companyChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    flexShrink: 1,
+  },
+  companyChipCount: {
+    fontSize: 11,
+    fontWeight: "800",
+    minWidth: 18,
+    textAlign: "center",
+    flexShrink: 0,
   },
   selectionBar: {
     flexDirection: "row-reverse",
