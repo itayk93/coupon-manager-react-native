@@ -117,10 +117,6 @@ export default function Dashboard() {
             <CirclePlus size={19} />
             הוספת קופון מהירה
           </button>
-          <button type="button" className="legacy-stats-button legacy-info-button" onClick={() => setOpenModal("stats")}>
-            <ListChecks size={19} />
-            על מה חסכת?
-          </button>
           <button type="button" className="legacy-stats-button legacy-report-button" onClick={() => setOpenModal("usage")}>
             <CirclePlus size={19} />
             דיווח מהיר על שימוש

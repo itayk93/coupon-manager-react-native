@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -119,7 +119,7 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', 'Heebo', sans-serif;
+    font-family: 'Heebo', sans-serif;
   }
 }
 
@@ -157,7 +157,7 @@ body {
   direction: rtl;
   background-color: #f6f8fb;
   color: #15202e;
-  font-family: "Rubik", Arial, sans-serif;
+  font-family: "Heebo", Arial, sans-serif;
   padding-bottom: 50px;
 }
 
@@ -481,7 +481,7 @@ body {
   min-height: 100vh;
   background-color: var(--bg-color);
   color: var(--text-color);
-  font-family: "Rubik", sans-serif;
+  font-family: "Heebo", sans-serif;
   background: radial-gradient(circle at 50% -10%, #e5efff 0, #f3f6fa 48%, #eef2f6 100%);
 }
 
@@ -712,7 +712,7 @@ body {
   font-weight: 800;
   letter-spacing: 0;
   white-space: nowrap;
-  font-family: "Rubik", Arial, sans-serif;
+  font-family: "Heebo", Arial, sans-serif;
   /* The link measured 32px tall. It fits inside the 68px topbar, so raising it
      to the 44px target costs no layout — the row is already taller. */
   min-height: 44px;
@@ -1019,7 +1019,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 900;
-  font-family: "Rubik", Arial, sans-serif;
+  font-family: "Heebo", Arial, sans-serif;
   text-align: right;
 }
 
@@ -1120,7 +1120,7 @@ body {
   line-height: 1.1;
   font-weight: 900;
   direction: ltr;
-  font-family: "Rubik", Arial, sans-serif;
+  font-family: "Heebo", Arial, sans-serif;
 }
 
 .legacy-action-row {
@@ -1285,7 +1285,7 @@ body {
   border: 1px solid hsl(var(--primary) / 0.16);
   background: linear-gradient(180deg, #fff 0%, hsl(var(--primary) / 0.035) 100%);
   color: #1f2937;
-  font-family: "Rubik", Arial, sans-serif;
+  font-family: "Heebo", Arial, sans-serif;
   text-align: right;
 }
 
