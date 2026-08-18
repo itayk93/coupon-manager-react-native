@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.native.json"
   },
   "dependencies": {
-    "@expo-google-fonts/heebo": "^0.2.3",
+    "@expo-google-fonts/heebo": "^0.4.2",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@expo/metro-runtime": "~57.0.10",
     "coupon-widget": "file:./modules/coupon-widget",
