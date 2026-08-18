@@ -93,7 +93,7 @@ export function WidgetSettingsScreen() {
           {coupon.company}
         </Text>
         <Text style={[styles.rowSubtitle, { color: theme.textMuted }]}>
-          ₪{Math.round(remaining(coupon))} נותר
+          נותרו {Math.round(remaining(coupon))} ₪
         </Text>
       </View>
 
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   loader: { marginTop: 40 },
   content: { padding: 16, paddingBottom: 120, gap: 8 },
   intro: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     gap: 12,
     padding: 14,
@@ -209,12 +209,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   introText: { flex: 1, gap: 2 },
-  introTitle: { fontFamily: fonts.bodyBold, fontSize: 15 },
-  introSubtitle: { fontFamily: fonts.body, fontSize: 13 },
-  sectionTitle: { fontFamily: fonts.bodyBold, fontSize: 15, marginTop: 16, marginBottom: 4 },
-  hint: { fontFamily: fonts.body, fontSize: 13, paddingVertical: 8 },
+  introTitle: { fontFamily: fonts.bodyBold, fontSize: 15, textAlign: "right" },
+  introSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "right" },
+  sectionTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    marginTop: 16,
+    marginBottom: 4,
+    textAlign: "right",
+  },
+  hint: { fontFamily: fonts.body, fontSize: 13, paddingVertical: 8, textAlign: "right" },
   row: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     gap: 12,
     padding: 12,
@@ -224,8 +230,8 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: fonts.bodyBold, fontSize: 16 },
   rowContent: { flex: 1, gap: 2 },
-  rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 15 },
-  rowSubtitle: { fontFamily: fonts.body, fontSize: 13 },
+  rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 15, textAlign: "right" },
+  rowSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "right", writingDirection: "rtl" },
   reorder: { gap: 2 },
   actionButton: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
 });
