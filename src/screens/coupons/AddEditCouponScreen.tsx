@@ -279,7 +279,10 @@ function CouponForm({
           });
         }
 
-        router.back();
+        // A new coupon usually arrives via the scanner, and going `back` would
+        // drop the user onto the scanner they are done with. Send them to the
+        // dashboard, where the coupon they just saved is now counted.
+        router.replace("/(tabs)");
       }
     } catch (e) {
       console.error(e);
