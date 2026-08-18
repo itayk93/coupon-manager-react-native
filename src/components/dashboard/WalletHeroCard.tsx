@@ -14,6 +14,7 @@ import { fonts, radii, shadows } from "@/lib/theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
+import { formatIls } from "@/lib/formatIls";
 
 type WalletHeroCardProps = {
   coupons: DecryptedCoupon[];
@@ -21,10 +22,6 @@ type WalletHeroCardProps = {
   isError?: boolean;
   onViewStats: () => void;
 };
-
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
 
 export function WalletHeroCard({
   coupons,

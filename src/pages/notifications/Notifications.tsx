@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { NOTIFICATIONS_COLUMNS } from '@/lib/tableColumns';
 
 /** Legacy notifications were stored in English by the previous app. Translate on display. */
 const LEGACY_MESSAGES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
@@ -36,7 +37,7 @@ export default function Notifications() {
 
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select(NOTIFICATIONS_COLUMNS)
         .eq('user_id', user.id)
         .eq('hide_from_view', false)
         .order('timestamp', { ascending: false });

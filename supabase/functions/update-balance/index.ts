@@ -18,9 +18,10 @@
 // Deploy: supabase functions deploy update-balance
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { createServiceClient, sendPushToRows } from '../_shared/push.ts';
 import { requireSameUser, requireUser } from '../_shared/auth.ts';
+import { safeFetch } from '../_shared/ssrf.ts';
 
 type Coupon = {
   id: number;
@@ -77,7 +78,7 @@ async function fetchRemaining(coupon: Coupon, provider: string): Promise<number 
   const base = Deno.env.get('SCRAPER_SERVICE_URL');
   if (!base) return null;
   try {
-    const resp = await fetch(`${base.replace(/\/$/, '')}/scrape/${provider}`, {
+    const resp = await safeFetch(`${base.replace(/\/$/, '')}/scrape/${provider}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -96,7 +97,7 @@ async function fetchRemaining(coupon: Coupon, provider: string): Promise<number 
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
     const { user_id, coupon_id } = await req.json();
@@ -181,7 +182,7 @@ Deno.serve(async (req: Request) => {
     let dispatchMessage: string | null = null;
     if (multipassCouponsToDispatch.length > 0) {
       const triggerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/trigger-multipass-update`;
-      const dispatchResponse = await fetch(triggerUrl, {
+      const dispatchResponse = await safeFetch(triggerUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

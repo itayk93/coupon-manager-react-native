@@ -1,7 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireSameUser, requireUser } from '../_shared/auth.ts';
 import { decryptCouponCodes } from '../_shared/encryption.ts';
+import { safeFetch } from '../_shared/ssrf.ts';
 
 type DispatchResult =
   | { success: true; runId: string | null; runUrl: string | null; workflow: string; ref: string }
@@ -36,7 +37,7 @@ async function dispatchMultipassWorkflow(couponCodes: string[]): Promise<Dispatc
   };
 
   const triggerUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/actions/workflows/${workflowId}/dispatches`;
-  const dispatchResponse = await fetch(triggerUrl, {
+  const dispatchResponse = await safeFetch(triggerUrl, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -59,7 +60,7 @@ async function dispatchMultipassWorkflow(couponCodes: string[]): Promise<Dispatc
   try {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     const runsUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/actions/workflows/${workflowId}/runs?event=workflow_dispatch&per_page=1`;
-    const runsResponse = await fetch(runsUrl, { headers });
+    const runsResponse = await safeFetch(runsUrl, { headers });
     if (runsResponse.ok) {
       const runsPayload = await runsResponse.json();
       const latestRun = runsPayload?.workflow_runs?.[0];
@@ -74,7 +75,7 @@ async function dispatchMultipassWorkflow(couponCodes: string[]): Promise<Dispatc
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
     const body = await req.json().catch(() => ({}));

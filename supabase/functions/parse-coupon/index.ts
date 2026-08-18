@@ -11,8 +11,9 @@
 // Deploy: supabase functions deploy parse-coupon
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
+import { safeFetch } from '../_shared/ssrf.ts';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = 'gpt-5-mini';
@@ -118,7 +119,7 @@ async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: 
         response_format: { type: 'json_object' },
       };
 
-  const response = await fetch(OPENAI_API_URL, {
+  const response = await safeFetch(OPENAI_API_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -167,7 +168,7 @@ async function isOverDailyLimit(userId: number): Promise<boolean> {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
     // Every call spends money on the OpenAI key held by this function, so the

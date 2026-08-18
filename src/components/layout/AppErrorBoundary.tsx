@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { logError } from '@/lib/errorReporting';
 
 type Props = { children: ReactNode };
 type State = { hasError: boolean };
@@ -13,6 +14,11 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[App] render error', error, info);
+    void logError(
+      'render_crash:app',
+      new Error(`${error.message}\n\nComponent stack:${info.componentStack}`),
+      'critical',
+    );
   }
 
   render() {

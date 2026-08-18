@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { OPT_OUTS_COLUMNS } from '@/lib/tableColumns';
 
 export const CONSENT_VERSION = '1.0';
 
@@ -14,7 +15,7 @@ export function useOptOut() {
       if (!user) return null;
       const { data } = await supabase
         .from('opt_outs')
-        .select('*')
+        .select(OPT_OUTS_COLUMNS)
         .eq('user_id', user.id)
         .maybeSingle();
       return data;

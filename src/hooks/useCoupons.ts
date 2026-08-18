@@ -5,6 +5,7 @@ import { decrypt, encrypt } from "@/lib/encryption";
 import { matchCompanyName } from "@/lib/companyMatch";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { COUPON_COLUMNS } from "@/lib/tableColumns";
 
 export type DecryptedCoupon = Omit<
   Coupon,
@@ -52,7 +53,7 @@ export function useCoupons() {
 
       const { data, error } = await supabase
         .from("coupon")
-        .select("*")
+        .select(COUPON_COLUMNS)
         .eq("user_id", user.id)
         .order("date_added", { ascending: false });
 
@@ -77,7 +78,7 @@ export function useCoupon(couponId: number | undefined) {
 
       const { data, error } = await supabase
         .from("coupon")
-        .select("*")
+        .select(COUPON_COLUMNS)
         .eq("id", couponId)
         .eq("user_id", user.id)
         .single();

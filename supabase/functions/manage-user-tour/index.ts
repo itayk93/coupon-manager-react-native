@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireSameUser, requireUser } from '../_shared/auth.ts';
 
 type TourStepKey = 'index' | 'add_coupon' | 'coupon_detail';
@@ -18,7 +18,7 @@ function supa() {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
     const { action, user_id, step } = await req.json();
@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     if (action === 'get') {
       const { data, error } = await supabase
         .from('user_tour_progress')
-        .select('*')
+        .select('user_id,index_timestamp,add_coupon_timestamp,coupon_detail_timestamp,id')
         .eq('user_id', userId)
         .maybeSingle();
       if (error) throw error;

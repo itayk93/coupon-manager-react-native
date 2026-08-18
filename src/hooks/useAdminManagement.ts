@@ -1,5 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { USER_COLUMNS } from "@/lib/userColumns";
+import {
+  ADMIN_MESSAGES_COLUMNS,
+  AUTO_UPDATE_RUNS_COLUMNS,
+  COMPANIES_COLUMNS,
+  NEWSLETTERS_COLUMNS,
+  SCHEDULED_TASKS_COLUMNS,
+  TASK_EXECUTION_LOGS_COLUMNS,
+} from "@/lib/tableColumns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -54,7 +62,7 @@ export function useCompanies() {
   return useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("*").order("company_count", { ascending: false });
+      const { data, error } = await supabase.from("companies").select(COMPANIES_COLUMNS).order("company_count", { ascending: false });
       if (error) throw error;
       return data as Company[];
     },
@@ -107,7 +115,7 @@ export function useScheduledTasks() {
   return useQuery({
     queryKey: ["scheduled_tasks"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("scheduled_tasks").select("*").order("id", { ascending: false });
+      const { data, error } = await supabase.from("scheduled_tasks").select(SCHEDULED_TASKS_COLUMNS).order("id", { ascending: false });
       if (error) throw error;
       return data as ScheduledTask[];
     },
@@ -122,7 +130,7 @@ export function useTaskLogs(taskId: number | undefined) {
       if (!taskId) return [];
       const { data, error } = await supabase
         .from("task_execution_logs")
-        .select("*")
+        .select(TASK_EXECUTION_LOGS_COLUMNS)
         .eq("task_id", taskId)
         .order("executed_at", { ascending: false })
         .limit(50);
@@ -157,7 +165,7 @@ export function useNewsletters() {
   return useQuery({
     queryKey: ["newsletters"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("newsletters").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("newsletters").select(NEWSLETTERS_COLUMNS).order("created_at", { ascending: false });
       if (error) throw error;
       return data as Newsletter[];
     },
@@ -215,7 +223,7 @@ export function useAdminMessages() {
   return useQuery({
     queryKey: ["admin_messages"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("admin_messages").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("admin_messages").select(ADMIN_MESSAGES_COLUMNS).order("created_at", { ascending: false });
       if (error) throw error;
       return data as AdminMessage[];
     },
@@ -264,7 +272,7 @@ export function useAutoUpdateRuns() {
       if (!user) return [];
       const { data, error } = await supabase
         .from("auto_update_runs")
-        .select("*")
+        .select(AUTO_UPDATE_RUNS_COLUMNS)
         .eq("user_id", user.id)
         .order("started_at", { ascending: false })
         .limit(20);

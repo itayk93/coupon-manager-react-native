@@ -1,10 +1,11 @@
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, corsHeadersFor } from '../_shared/cors.ts';
 import { adminClient, issueSessionToken } from '../_shared/session.ts';
+import { safeFetch } from '../_shared/ssrf.ts';
 
 const supabaseAdmin = adminClient();
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(request) });
 
   try {
     const { access_token } = await request.json();
@@ -12,7 +13,7 @@ Deno.serve(async (request) => {
       return new Response(JSON.stringify({ error: 'Missing Google access token' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const googleResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+    const googleResponse = await safeFetch('https://openidconnect.googleapis.com/v1/userinfo', {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     if (!googleResponse.ok) throw new Error('Google token validation failed');

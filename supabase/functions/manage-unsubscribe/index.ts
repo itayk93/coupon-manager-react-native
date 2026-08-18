@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 
 const textEncoder = new TextEncoder();
 
@@ -24,6 +24,13 @@ function fromBase64Url(value: string) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i += 1) result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return result === 0;
+}
+
 async function signPayload(payload: string, secret: string) {
   const key = await crypto.subtle.importKey(
     'raw',
@@ -43,7 +50,7 @@ async function verifyToken(token: string, secret: string) {
   const payloadBytes = fromBase64Url(payloadPart);
   const payload = new TextDecoder().decode(payloadBytes);
   const expectedSignature = await signPayload(payload, secret);
-  if (expectedSignature !== signaturePart) return null;
+  if (!timingSafeEqual(expectedSignature, signaturePart)) return null;
 
   const parsed = JSON.parse(payload) as { user_id?: number; email?: string; type?: string };
   if (!parsed.user_id || !parsed.email || parsed.type !== 'unsubscribe') return null;
@@ -51,7 +58,7 @@ async function verifyToken(token: string, secret: string) {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
     const secret = Deno.env.get('UNSUBSCRIBE_SECRET');
