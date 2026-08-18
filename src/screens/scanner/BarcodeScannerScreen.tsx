@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
+  Image,
   Platform,
   ActivityIndicator,
 } from "react-native";
@@ -20,6 +21,7 @@ import {
   PlusCircle,
   FileText,
   ImagePlus,
+  X,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,11 @@ export function BarcodeScannerScreen() {
   const scannedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
   const [aiText, setAiText] = useState("");
+  // The picked image is held here rather than parsed on selection: the model
+  // misses details on a busy screenshot often enough that the user wants to add
+  // the surrounding text before spending a parse.
+  const [imageBase64, setImageBase64] = useState<string | undefined>();
+  const [imageUri, setImageUri] = useState<string | undefined>();
   const parseCoupon = useParseCoupon();
 
   const handleBarcodeScanned = ({ data, type }: { data: string; type: string }) => {
@@ -87,14 +94,20 @@ export function BarcodeScannerScreen() {
     });
   };
 
-  const handleParseAiText = async () => {
-    if (!aiText.trim()) {
-      notify.error("יש להדביק או להקליד טקסט של קופון/SMS");
+  /// Sends whatever the user supplied — text, an image, or both. Together they
+  /// read better than either alone: the picture carries the layout, the pasted
+  /// text carries the small print the model tends to drop.
+  const handleParse = async () => {
+    if (!aiText.trim() && !imageBase64) {
+      notify.error("יש להדביק טקסט או לצרף תמונה של השובר");
       return;
     }
 
     try {
-      const results = await parseCoupon.mutateAsync({ text: aiText });
+      const results = await parseCoupon.mutateAsync({
+        text: aiText.trim() || undefined,
+        imageBase64,
+      });
       if (results && results.length > 0) {
         goToAddCoupon(results[0]);
       }
@@ -112,7 +125,7 @@ export function BarcodeScannerScreen() {
   /// evaluated, which takes the whole screen down on a binary built before the
   /// dependency was added. Loading it on demand keeps the scanner usable and
   /// turns a missing native module into a message.
-  const handleParseImage = async (source: "camera" | "library") => {
+  const handlePickImage = async (source: "camera" | "library") => {
     let ImagePicker: typeof import("expo-image-picker");
     try {
       ImagePicker = require("expo-image-picker");
@@ -154,19 +167,22 @@ export function BarcodeScannerScreen() {
 
       if (result.canceled) return;
 
-      const imageBase64 = result.assets?.[0]?.base64;
-      if (!imageBase64) {
+      const asset = result.assets?.[0];
+      if (!asset?.base64) {
         notify.error("לא ניתן לקרוא את התמונה");
         return;
       }
 
-      const results = await parseCoupon.mutateAsync({ imageBase64 });
-      if (results && results.length > 0) {
-        goToAddCoupon(results[0]);
-      }
+      setImageBase64(asset.base64);
+      setImageUri(asset.uri);
     } catch (e: any) {
       console.error(e);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImageBase64(undefined);
+    setImageUri(undefined);
   };
 
   return (
@@ -334,16 +350,8 @@ export function BarcodeScannerScreen() {
                 ]}
               />
 
-              <Button
-                title="חלץ פרטים והוסף קופון"
-                onPress={handleParseAiText}
-                loading={parseCoupon.isPending}
-                icon={<Sparkles size={18} color="#ffffff" />}
-                style={{ marginTop: 16 }}
-              />
-
               <Text style={[styles.aiDividerText, { color: theme.textMuted }]}>
-                או זהה שובר מתוך תמונה
+                אפשר גם לצרף תמונה של השובר
               </Text>
 
               <View style={styles.imageBtnRow}>
@@ -351,7 +359,7 @@ export function BarcodeScannerScreen() {
                   <Button
                     title="בחר מהגלריה"
                     variant="outline"
-                    onPress={() => handleParseImage("library")}
+                    onPress={() => handlePickImage("library")}
                     disabled={parseCoupon.isPending}
                     icon={<ImagePlus size={18} color={theme.primary} />}
                   />
@@ -360,12 +368,41 @@ export function BarcodeScannerScreen() {
                   <Button
                     title="צלם שובר"
                     variant="outline"
-                    onPress={() => handleParseImage("camera")}
+                    onPress={() => handlePickImage("camera")}
                     disabled={parseCoupon.isPending}
                     icon={<Camera size={18} color={theme.primary} />}
                   />
                 </View>
               </View>
+
+              {imageUri ? (
+                <View
+                  style={[
+                    styles.imagePreviewRow,
+                    { backgroundColor: theme.surfaceAlt, borderColor: theme.border },
+                  ]}
+                >
+                  <TouchableOpacity onPress={handleRemoveImage} hitSlop={8}>
+                    <X size={18} color={theme.textMuted} />
+                  </TouchableOpacity>
+                  <Text
+                    style={[styles.imagePreviewText, { color: theme.textMuted }]}
+                    numberOfLines={1}
+                  >
+                    תמונה מצורפת
+                  </Text>
+                  <Image source={{ uri: imageUri }} style={styles.imageThumb} />
+                </View>
+              ) : null}
+
+              <Button
+                title="חלץ פרטים והוסף קופון"
+                onPress={handleParse}
+                loading={parseCoupon.isPending}
+                disabled={!aiText.trim() && !imageBase64}
+                icon={<Sparkles size={18} color="#ffffff" />}
+                style={{ marginTop: 16 }}
+              />
             </View>
           </View>
         )}
@@ -400,6 +437,25 @@ const styles = StyleSheet.create({
   imageBtnRow: {
     flexDirection: "row-reverse",
     gap: 10,
+  },
+  imagePreviewRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 12,
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  imageThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  imagePreviewText: {
+    flex: 1,
+    fontSize: 12,
+    textAlign: "right",
   },
   tabSelector: {
     flexDirection: "row-reverse",

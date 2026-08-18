@@ -18,6 +18,7 @@
     "build:dev:ios": "eas build --profile development --platform ios",
     "build:dev:android": "eas build --profile development --platform android",
     "build:sim:ios": "eas build --profile development-simulator --platform ios",
+    "build:ios:device": "./build-ios.command",
     "test": "vitest run",
     "test:crypto": "vitest run src/lib/encryption.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.native.json"
