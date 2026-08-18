@@ -26,6 +26,7 @@
     "@expo-google-fonts/heebo": "^0.2.3",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@expo/metro-runtime": "~57.0.10",
+    "coupon-widget": "file:./modules/coupon-widget",
     "@noble/hashes": "^2.2.0",
     "@opentelemetry/api": "^1.9.1",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -44,6 +45,7 @@
     "expo-file-system": "~57.0.3",
     "expo-font": "~57.0.1",
     "expo-haptics": "~57.0.1",
+    "expo-image-picker": "~57.0.11",
     "expo-linear-gradient": "~57.0.1",
     "expo-linking": "~57.0.6",
     "expo-local-authentication": "~57.0.2",
@@ -78,5 +80,12 @@
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "searchPaths": [
+        "modules"
+      ]
+    }
+  }
 }

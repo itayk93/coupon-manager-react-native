@@ -1,0 +1,7 @@
+{
+  "name": "coupon-widget",
+  "version": "1.0.0",
+  "description": "Shared storage bridge between the app and the home-screen widget",
+  "main": "index.ts",
+  "types": "index.ts"
+}

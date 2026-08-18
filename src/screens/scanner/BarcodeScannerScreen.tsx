@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import {
@@ -19,10 +19,11 @@ import {
   RotateCcw,
   PlusCircle,
   FileText,
+  ImagePlus,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
-import { useParseCoupon } from "@/hooks/useCouponAI";
+import { useParseCoupon, ParsedCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -32,12 +33,17 @@ export function BarcodeScannerScreen() {
   const { theme } = useAppTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  // `onBarcodeScanned` fires several times per second, and a state update does
+  // not land before the next frame's callbacks — so the guard has to be a ref,
+  // or one barcode produces a burst of toasts and navigations.
+  const scannedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
   const [aiText, setAiText] = useState("");
   const parseCoupon = useParseCoupon();
 
   const handleBarcodeScanned = ({ data, type }: { data: string; type: string }) => {
-    if (scanned) return;
+    if (scannedRef.current) return;
+    scannedRef.current = true;
     setScanned(true);
 
     if (Platform.OS !== "web") {
@@ -51,8 +57,34 @@ export function BarcodeScannerScreen() {
       pathname: "/coupons/add",
       params: { initialCode: data },
     });
+  };
 
-    setTimeout(() => setScanned(false), 2000);
+  // Re-arm when the user comes back to the scanner rather than on a timer: the
+  // screen stays mounted under the add-coupon route, and a timer would let the
+  // camera keep firing while the user is filling in the form.
+  useFocusEffect(
+    useCallback(() => {
+      scannedRef.current = false;
+      setScanned(false);
+    }, [])
+  );
+
+  /// Hands the parsed fields to the add-coupon form. Every field the parser
+  /// resolved has to be forwarded here — anything left out silently comes back
+  /// as an empty input, which is what used to happen to the expiry date.
+  const goToAddCoupon = (parsed: ParsedCoupon) => {
+    router.push({
+      pathname: "/coupons/add",
+      params: {
+        initialCompany: parsed.company || "",
+        initialCode: parsed.code || "",
+        ...(parsed.value ? { initialValue: String(parsed.value) } : {}),
+        ...(parsed.expiration
+          ? { initialExpiration: parsed.expiration.slice(0, 10) }
+          : {}),
+        ...(parsed.description ? { initialDescription: parsed.description } : {}),
+      },
+    });
   };
 
   const handleParseAiText = async () => {
@@ -64,15 +96,73 @@ export function BarcodeScannerScreen() {
     try {
       const results = await parseCoupon.mutateAsync({ text: aiText });
       if (results && results.length > 0) {
-        const first = results[0];
-        router.push({
-          pathname: "/coupons/add",
-          params: {
-            initialCompany: first.company || "",
-            initialCode: first.code || "",
-            ...(first.value ? { initialValue: String(first.value) } : {}),
-          },
-        });
+        goToAddCoupon(results[0]);
+      }
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
+
+  /// Reads a voucher off a photo or screenshot. The barcode scanner only ever
+  /// yields the code digits; the amount and expiry live in the surrounding
+  /// text, so the picture itself has to reach the parser.
+  ///
+  /// expo-image-picker is loaded here rather than at the top of the file on
+  /// purpose: its entry point calls `requireNativeModule` while the module is
+  /// evaluated, which takes the whole screen down on a binary built before the
+  /// dependency was added. Loading it on demand keeps the scanner usable and
+  /// turns a missing native module into a message.
+  const handleParseImage = async (source: "camera" | "library") => {
+    let ImagePicker: typeof import("expo-image-picker");
+    try {
+      ImagePicker = require("expo-image-picker");
+    } catch {
+      notify.error(
+        "זיהוי מתמונה אינו זמין בגרסה המותקנת",
+        "צריך להתקין מחדש את האפליקציה כדי להשתמש בו"
+      );
+      return;
+    }
+
+    try {
+      const permission =
+        source === "camera"
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        notify.error(
+          source === "camera"
+            ? "אין הרשאה למצלמה"
+            : "אין הרשאה לגלריית התמונות"
+        );
+        return;
+      }
+
+      const options: import("expo-image-picker").ImagePickerOptions = {
+        mediaTypes: ["images"],
+        base64: true,
+        // Keeps the upload well under the parser's 8MB base64 cap without
+        // costing the legibility the model needs to read small print.
+        quality: 0.6,
+      };
+
+      const result =
+        source === "camera"
+          ? await ImagePicker.launchCameraAsync(options)
+          : await ImagePicker.launchImageLibraryAsync(options);
+
+      if (result.canceled) return;
+
+      const imageBase64 = result.assets?.[0]?.base64;
+      if (!imageBase64) {
+        notify.error("לא ניתן לקרוא את התמונה");
+        return;
+      }
+
+      const results = await parseCoupon.mutateAsync({ imageBase64 });
+      if (results && results.length > 0) {
+        goToAddCoupon(results[0]);
       }
     } catch (e: any) {
       console.error(e);
@@ -251,6 +341,31 @@ export function BarcodeScannerScreen() {
                 icon={<Sparkles size={18} color="#ffffff" />}
                 style={{ marginTop: 16 }}
               />
+
+              <Text style={[styles.aiDividerText, { color: theme.textMuted }]}>
+                או זהה שובר מתוך תמונה
+              </Text>
+
+              <View style={styles.imageBtnRow}>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="בחר מהגלריה"
+                    variant="outline"
+                    onPress={() => handleParseImage("library")}
+                    disabled={parseCoupon.isPending}
+                    icon={<ImagePlus size={18} color={theme.primary} />}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="צלם שובר"
+                    variant="outline"
+                    onPress={() => handleParseImage("camera")}
+                    disabled={parseCoupon.isPending}
+                    icon={<Camera size={18} color={theme.primary} />}
+                  />
+                </View>
+              </View>
             </View>
           </View>
         )}
@@ -275,6 +390,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
+  },
+  aiDividerText: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 16,
+    marginBottom: 10,
+  },
+  imageBtnRow: {
+    flexDirection: "row-reverse",
+    gap: 10,
   },
   tabSelector: {
     flexDirection: "row-reverse",

@@ -48,3 +48,6 @@ dist-ssr
 # local database dumps
 db_dump_*.sql
 supabase/.temp/
+
+# Xcode derived data written by `expo run:ios`
+/build/

@@ -33,6 +33,8 @@ type CouponFormProps = {
   initialCompany?: string;
   initialCode?: string;
   initialValue?: string;
+  initialExpiration?: string;
+  initialDescription?: string;
 };
 
 /**
@@ -78,6 +80,8 @@ export function AddEditCouponScreen() {
     initialCompany?: string;
     initialCode?: string;
     initialValue?: string;
+    initialExpiration?: string;
+    initialDescription?: string;
   }>();
 
   const parsedId = Number(params.couponId);
@@ -114,6 +118,8 @@ export function AddEditCouponScreen() {
       initialCompany={params.initialCompany}
       initialCode={params.initialCode}
       initialValue={params.initialValue}
+      initialExpiration={params.initialExpiration}
+      initialDescription={params.initialDescription}
     />
   );
 }
@@ -123,6 +129,8 @@ function CouponForm({
   initialCompany,
   initialCode,
   initialValue,
+  initialExpiration,
+  initialDescription,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -148,10 +156,10 @@ function CouponForm({
   // Sliced to `YYYY-MM-DD`: the date field (and the column) only carry the day,
   // but older rows can come back with a time component attached.
   const [expiration, setExpiration] = useState(
-    (existingCoupon?.expiration || "").slice(0, 10)
+    (existingCoupon?.expiration || initialExpiration || "").slice(0, 10)
   );
   const [description, setDescription] = useState(
-    existingCoupon?.description || ""
+    existingCoupon?.description || initialDescription || ""
   );
   const [includeCardInfo, setIncludeCardInfo] = useState(
     Boolean(existingCoupon?.cvv || existingCoupon?.card_exp)
