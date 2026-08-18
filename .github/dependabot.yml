@@ -7,6 +7,8 @@ updates:
     ignore:
       - dependency-name: "react-native"
         versions: [">=0.87.0"]
+      - dependency-name: "react-native-worklets"
+        versions: [">=0.11.0"]
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
