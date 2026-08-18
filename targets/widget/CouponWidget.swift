@@ -303,8 +303,8 @@ private struct CouponStatsSmallView: View {
                 Spacer()
                 Spacer()
 
-                VStack(spacing: 14) {
-                    AppLogoView(size: 24)
+                VStack(spacing: 8) {
+                    AppLogoView(size: 20)
                     Rectangle()
                         .fill(WidgetStyle.cardStroke)
                         .frame(height: 1)
@@ -317,26 +317,29 @@ private struct CouponStatsSmallView: View {
                     statColumn(label: "קופונים פעילים", value: payload.activeCouponsCount)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 18)
+                .padding(.top, 6)
 
                 Spacer()
 
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Text(formatShekels(payload.totalRemainingValue))
-                        .couponFont(34, .extraBold)
+                        .couponFont(28, .extraBold)
                         .foregroundColor(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
                     Text("נותר לשימוש")
-                        .couponFont(13)
+                        .couponFont(12)
                         .foregroundColor(WidgetStyle.textSubtle)
                 }
 
                 Spacer()
                 Spacer()
             }
-            .padding(.vertical, 6)
+            // The stack fills the tile, so top/bottom breathing room has to be
+            // bought by keeping the content itself compact — padding alone just
+            // pushes the logo and the footer off the edges.
+            .padding(.vertical, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -347,7 +350,7 @@ private struct CouponStatsSmallView: View {
                 .couponFont(9)
                 .foregroundColor(WidgetStyle.textSubtle)
             Text("\(value)")
-                .couponFont(20, .extraBold)
+                .couponFont(18, .extraBold)
                 .foregroundColor(.white)
         }
     }

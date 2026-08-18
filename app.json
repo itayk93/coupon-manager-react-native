@@ -56,6 +56,13 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "אפליקציה זו זקוקה לגישה לתמונות כדי לזהות פרטי שובר מצילום מסך.",
+          "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לצלם שובר ולזהות את פרטיו."
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
