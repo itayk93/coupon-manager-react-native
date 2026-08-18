@@ -12,6 +12,7 @@ public class CouponWidgetModule: Module {
     Function("setWidgetData") { (json: String) in
       guard let defaults = UserDefaults(suiteName: couponWidgetAppGroup) else { return }
       defaults.set(json, forKey: couponWidgetDataKey)
+      defaults.synchronize()
     }
 
     Function("getWidgetData") { () -> String? in
