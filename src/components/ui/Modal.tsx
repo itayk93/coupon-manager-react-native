@@ -22,6 +22,7 @@ type ModalProps = {
   onClose: () => void;
   title?: string;
   subtitle?: string;
+  titleIcon?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxHeight?: number | string;
@@ -40,6 +41,7 @@ export function Modal({
   onClose,
   title,
   subtitle,
+  titleIcon,
   children,
   footer,
 }: ModalProps) {
@@ -149,14 +151,19 @@ export function Modal({
 
                 <View style={styles.headerTitleContainer}>
                   {title ? (
-                    <Text
-                      style={[
-                        styles.title,
-                        { color: theme.text, textAlign: "right" },
-                      ]}
-                    >
-                      {title}
-                    </Text>
+                    <View style={styles.titleRow}>
+                      {titleIcon ? (
+                        <View style={styles.titleIcon}>{titleIcon}</View>
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.title,
+                          { color: theme.text, textAlign: "right" },
+                        ]}
+                      >
+                        {title}
+                      </Text>
+                    </View>
                   ) : null}
                   {subtitle ? (
                     <Text
@@ -242,6 +249,20 @@ const styles = StyleSheet.create({
   headerTitleContainer: {
     flex: 1,
     marginLeft: 12,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 8,
+  },
+  titleIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontFamily: fonts.bodyBold,

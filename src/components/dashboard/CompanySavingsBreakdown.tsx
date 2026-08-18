@@ -141,6 +141,15 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
         visible={selectedCompany !== null}
         onClose={() => setSelectedCompany(null)}
         title={selectedCompany?.company}
+        titleIcon={
+          selectedCompany ? (
+            <Image
+              source={getCompanyLogoSource(selectedCompany.company)}
+              style={styles.titleIcon}
+              resizeMode="contain"
+            />
+          ) : undefined
+        }
         subtitle={
           selectedCompany
             ? `${selectedCompany.count} קופונים · הנחה ממוצעת ${selectedCompany.avgPct.toFixed(1)}%`
@@ -288,6 +297,11 @@ const styles = StyleSheet.create({
   },
   sheetBody: {
     paddingBottom: 4,
+  },
+  titleIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
   },
   summaryRow: {
     flexDirection: "row",
