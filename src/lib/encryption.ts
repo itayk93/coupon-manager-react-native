@@ -68,6 +68,30 @@ function wordArrayToBytes(wordArray: CryptoJS.lib.WordArray): Uint8Array {
   return bytes;
 }
 
+/**
+ * Hermes has no global WebCrypto, so `CryptoJS.lib.WordArray.random()` throws
+ * "Native crypto module could not be used to get secure random number." on
+ * device. Prefer expo-crypto there, and fall back to WebCrypto on web/node.
+ */
+function randomBytes(length: number): Uint8Array {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const ExpoCrypto = require("expo-crypto");
+    if (typeof ExpoCrypto?.getRandomBytes === "function") {
+      return Uint8Array.from(ExpoCrypto.getRandomBytes(length));
+    }
+  } catch {
+    // expo-crypto is unavailable in plain Node/vitest runtimes
+  }
+
+  const webCrypto = (globalThis as any)?.crypto;
+  if (typeof webCrypto?.getRandomValues === "function") {
+    return webCrypto.getRandomValues(new Uint8Array(length));
+  }
+
+  throw new Error("No secure random source available");
+}
+
 function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let result = 0;
@@ -161,8 +185,7 @@ export async function encrypt(plaintext: string | null | undefined): Promise<str
     view.setBigUint64(0, BigInt(nowSecs), false);
 
     // 3. IV (16 random bytes)
-    const randomWords = CryptoJS.lib.WordArray.random(16);
-    const iv = wordArrayToBytes(randomWords);
+    const iv = randomBytes(16);
 
     // 4. Encrypt AES-128-CBC with PKCS7 padding
     const encrypted = CryptoJS.AES.encrypt(

@@ -25,6 +25,7 @@ import {
 import { useCouponTags, useSetCouponTags } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 
 type CouponFormProps = {
@@ -33,6 +34,34 @@ type CouponFormProps = {
   initialCode?: string;
   initialValue?: string;
 };
+
+/**
+ * Providers the balance scraper knows how to log into. Kept in sync with the
+ * web form (`src/components/coupons/CouponForm.tsx`).
+ */
+const AUTO_PROVIDERS = ["BuyMe", "Multipass", "Max"] as const;
+type AutoProvider = (typeof AUTO_PROVIDERS)[number];
+
+function normalizeAutoProvider(
+  value: string | null | undefined,
+  allowAutoUpdater: boolean
+): AutoProvider | null {
+  if (!allowAutoUpdater) return null;
+  return AUTO_PROVIDERS.includes(value as AutoProvider)
+    ? (value as AutoProvider)
+    : null;
+}
+
+function getDefaultAutoProvider(
+  company: string | null | undefined
+): AutoProvider | null {
+  const name = company?.trim().toLowerCase() || "";
+  if (name.includes("buyme") || name.includes("ביימי")) return "BuyMe";
+  if (name.includes("multipass") || name.includes("מולטיפאס")) return "Multipass";
+  if (name.includes("max") || name.includes("מקס")) return "Max";
+  if (name.includes("xtra") || name.includes("אקסטרה")) return "Multipass";
+  return null;
+}
 
 /**
  * Route entry for both `/coupons/add` and `/coupons/edit?couponId=`.
@@ -103,6 +132,8 @@ function CouponForm({
   const updateCoupon = useUpdateCoupon();
   const setCouponTags = useSetCouponTags();
   const { data: existingTags = [] } = useCouponTags(existingCoupon?.id);
+  const { user } = useAuth();
+  const showAutoUsageUpdater = user?.id === 1;
 
   const [company, setCompany] = useState(
     existingCoupon?.company || initialCompany || ""
@@ -127,10 +158,14 @@ function CouponForm({
   );
   const [cvv, setCvv] = useState(existingCoupon?.cvv || "");
   const [cardExp, setCardExp] = useState(existingCoupon?.card_exp || "");
-  const [autoUpdate, setAutoUpdate] = useState(
-    existingCoupon?.auto_update !== undefined
-      ? existingCoupon.auto_update
-      : true
+  // The automatic balance updater only runs for the maintainer's own account,
+  // so everyone else stores `auto_download_details: null` and never sees it.
+  const [autoProvider, setAutoProvider] = useState<AutoProvider | null>(() =>
+    normalizeAutoProvider(
+      existingCoupon?.auto_download_details ??
+        getDefaultAutoProvider(existingCoupon?.company || initialCompany),
+      showAutoUsageUpdater
+    )
   );
   const [redemptionUrl, setRedemptionUrl] = useState(
     existingCoupon?.buyme_coupon_url ||
@@ -150,6 +185,15 @@ function CouponForm({
       setTags(existingTags.map((t) => t.name));
     }
   }, [existingTags]);
+
+  // Picking a company suggests its provider, but never overrides an explicit
+  // choice the user already made.
+  const handleSelectCompany = (name: string) => {
+    setCompany(name);
+    if (showAutoUsageUpdater && !autoProvider) {
+      setAutoProvider(getDefaultAutoProvider(name));
+    }
+  };
 
   const handleAddTag = () => {
     const trimmed = newTagInput.trim();
@@ -191,7 +235,8 @@ function CouponForm({
             cvv: includeCardInfo ? cvv.trim() || null : null,
             card_exp: includeCardInfo ? cardExp.trim() || null : null,
             buyme_coupon_url: redemptionUrl.trim() || null,
-            auto_update: autoUpdate,
+            auto_download_details: showAutoUsageUpdater ? autoProvider : null,
+            auto_update: showAutoUsageUpdater ? autoProvider !== null : false,
           },
         });
 
@@ -212,7 +257,8 @@ function CouponForm({
           cvv: includeCardInfo ? cvv.trim() || null : null,
           card_exp: includeCardInfo ? cardExp.trim() || null : null,
           buyme_coupon_url: redemptionUrl.trim() || null,
-          auto_update: autoUpdate,
+          auto_download_details: showAutoUsageUpdater ? autoProvider : null,
+          auto_update: showAutoUsageUpdater ? autoProvider !== null : false,
           used_value: 0,
           status: "פעיל",
         });
@@ -403,31 +449,56 @@ function CouponForm({
             </View>
           ) : null}
 
-          {/* Auto Update Switch */}
-          <View
-            style={[
-              styles.switchRow,
-              {
-                backgroundColor: theme.surfaceAlt,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Switch
-              value={autoUpdate}
-              onValueChange={setAutoUpdate}
-              trackColor={{ false: theme.inputBorder, true: theme.primary }}
-              thumbColor="#ffffff"
-            />
-            <View style={styles.switchLabelContainer}>
+          {/* Auto usage updater — maintainer account only */}
+          {showAutoUsageUpdater ? (
+            <View
+              style={[
+                styles.autoProviderCard,
+                {
+                  backgroundColor: theme.surfaceAlt,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
               <Text style={[styles.switchLabel, { color: theme.text }]}>
                 עדכון יתרה אוטומטי
               </Text>
               <Text style={[styles.switchSub, { color: theme.textMuted }]}>
-                משיכת יתרה עדכנית באופן אוטומטי
+                בחירת ספק למשיכת יתרה עדכנית באופן אוטומטי
               </Text>
+              <View style={styles.autoProviderRow}>
+                {[null, ...AUTO_PROVIDERS].map((provider) => {
+                  const isSelected = autoProvider === provider;
+                  return (
+                    <TouchableOpacity
+                      key={provider ?? "none"}
+                      onPress={() => setAutoProvider(provider)}
+                      style={[
+                        styles.autoProviderChip,
+                        {
+                          backgroundColor: isSelected
+                            ? theme.primary
+                            : theme.surface,
+                          borderColor: isSelected
+                            ? theme.primary
+                            : theme.inputBorder,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.autoProviderChipText,
+                          { color: isSelected ? "#ffffff" : theme.text },
+                        ]}
+                      >
+                        {provider ?? "ללא"}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          ) : null}
 
           {/* Tags Section */}
           <Text style={[styles.fieldLabel, { color: theme.text }]}>תגיות</Text>
@@ -477,7 +548,7 @@ function CouponForm({
       <CompanyPickerModal
         visible={isCompanyPickerOpen}
         onClose={() => setIsCompanyPickerOpen(false)}
-        onSelect={setCompany}
+        onSelect={handleSelectCompany}
       />
     </SafeAreaView>
   );
@@ -569,6 +640,29 @@ const styles = StyleSheet.create({
   switchSub: {
     fontSize: 11,
     marginTop: 2,
+  },
+  autoProviderCard: {
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 14,
+    alignItems: "flex-end",
+  },
+  autoProviderRow: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  autoProviderChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  autoProviderChipText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
   addTagRow: {
     flexDirection: "row-reverse",
