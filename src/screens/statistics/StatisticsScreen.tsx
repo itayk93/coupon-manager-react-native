@@ -141,7 +141,7 @@ export function StatisticsScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={styles.titleRow}>
-        <Text style={[styles.pageTitle, { color: theme.text }]}>סטטיסטיקות חיסכון</Text>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>על מה חסכת</Text>
 
         <TouchableOpacity
           onPress={handleExportCSV}
@@ -279,7 +279,7 @@ export function StatisticsScreen() {
           </View>
         </View>
 
-        {/* Top Companies Breakdown — same drill-down as "על מה חסכת?" */}
+        {/* Top Companies Breakdown */}
         <View
           style={[
             styles.sectionCard,

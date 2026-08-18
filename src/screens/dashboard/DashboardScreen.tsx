@@ -12,7 +12,6 @@ import { useRouter } from "expo-router";
 import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
-import { StatsModal } from "@/components/dashboard/StatsModal";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { CouponCard } from "@/components/coupons/CouponCard";
@@ -28,7 +27,6 @@ export function DashboardScreen() {
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: tagsMap = {} } = useCouponTagsMap();
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
@@ -98,7 +96,6 @@ export function DashboardScreen() {
           coupons={coupons}
           isLoading={isLoading}
           isError={isError}
-          onViewStats={() => setIsStatsOpen(true)}
         />
 
         {/* Company Cards Slider */}
@@ -162,12 +159,6 @@ export function DashboardScreen() {
       </ScrollView>
 
       {/* Modals */}
-      <StatsModal
-        visible={isStatsOpen}
-        onClose={() => setIsStatsOpen(false)}
-        coupons={coupons}
-      />
-
       <QuickUsageModal
         visible={isUsageOpen}
         onClose={() => setIsUsageOpen(false)}
