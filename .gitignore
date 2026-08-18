@@ -51,3 +51,6 @@ supabase/.temp/
 
 # Xcode derived data written by `expo run:ios`
 /build/
+docs/
+.commandcode/
+*.auth/
