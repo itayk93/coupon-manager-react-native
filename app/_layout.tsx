@@ -30,6 +30,7 @@ import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outf
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BiometricGate } from "@/components/layout/BiometricGate";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -193,7 +194,9 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <AppThemeProvider>
-            <RootLayoutNav />
+            <NativeErrorBoundary>
+              <RootLayoutNav />
+            </NativeErrorBoundary>
           </AppThemeProvider>
         </AuthProvider>
       </QueryClientProvider>

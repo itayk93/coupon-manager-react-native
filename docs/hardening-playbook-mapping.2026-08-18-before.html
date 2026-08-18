@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מיפוי Playbook הקשחת אפליקציה — coupon-manager</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --green: #059669;
+    --green-bg: #ecfdf5;
+    --yellow: #b45309;
+    --yellow-bg: #fffbeb;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --gray: #64748b;
+    --gray-bg: #f1f5f9;
+    --blue: #2563eb;
+    --blue-bg: #eff6ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Heebo", "Assistant", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.7;
+    padding: 24px 16px 64px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 {
+    font-size: 2rem;
+    margin: 0 0 8px;
+    line-height: 1.3;
+  }
+  h2 {
+    font-size: 1.5rem;
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  h3 {
+    font-size: 1.1rem;
+    margin: 0 0 8px;
+  }
+  p { margin: 0 0 12px; }
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .summary-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+  }
+  .summary-box .num { font-size: 2rem; font-weight: 700; }
+  .summary-box .label { color: var(--muted); font-size: 0.85rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 14px 0;
+  }
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge.green { background: var(--green-bg); color: var(--green); }
+  .badge.yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .badge.red { background: var(--red-bg); color: var(--red); }
+  .badge.gray { background: var(--gray-bg); color: var(--gray); }
+  .status-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .chip {
+    font-size: 0.8rem;
+    background: var(--gray-bg);
+    color: var(--gray);
+    border-radius: 8px;
+    padding: 2px 8px;
+  }
+  .box {
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 10px 0;
+  }
+  .box.green { background: var(--green-bg); border-right: 4px solid var(--green); }
+  .box.yellow { background: var(--yellow-bg); border-right: 4px solid #d97706; }
+  .box.red { background: var(--red-bg); border-right: 4px solid var(--red); }
+  .box.blue { background: var(--blue-bg); border-right: 4px solid var(--blue); }
+  .box .tag {
+    display: block;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+  code {
+    direction: ltr;
+    display: inline-block;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 0.82rem;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.85rem; }
+  ul { margin: 6px 0 10px; padding-right: 22px; }
+  li { margin: 4px 0; }
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+  }
+  .toc a { color: var(--blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .card, .summary-box, .toc { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>מיפוי Playbook הקשחת אפליקציה שנבנתה עם AI</h1>
+<p class="subtitle">בדיקה מעשית של הפרויקט <strong>coupon-manager-project-react-native</strong> מול 20 הסעיפים במסמך, נכון ל־18 באוגוסט 2026. הסימון: <span class="badge green">מיושם</span> <span class="badge yellow">חלקי</span> <span class="badge red">לא מיושם</span> <span class="badge gray">לא רלוונטי</span></p>
+
+<div class="summary">
+  <div class="summary-box"><div class="num" style="color:var(--green)">4</div><div class="label">מיושם מלא</div></div>
+  <div class="summary-box"><div class="num" style="color:var(--yellow)">9</div><div class="label">חלקי / דורש שיפור</div></div>
+  <div class="summary-box"><div class="num" style="color:var(--red)">6</div><div class="label">לא מיושם</div></div>
+  <div class="summary-box"><div class="num" style="color:var(--gray)">1</div><div class="label">לא רלוונטי</div></div>
+</div>
+
+<div class="toc">
+  <strong>תוכן עניינים:</strong>
+  <a href="#part-a">חלק א' — אבטחה נישתית (סעיפים 1–10)</a> ·
+  <a href="#part-b">חלק ב' — פרצות נפוצות (סעיפים 11–15)</a> ·
+  <a href="#part-c">חלק ג' — מה יישבר מול המשתמש הראשון (סעיפים 16–20)</a> ·
+  <a href="#work">נהלי עבודה</a> ·
+  <a href="#priority">סדר עדיפות מומלץ</a>
+</div>
+
+<p class="muted small" style="margin-top:16px">הבדיקה התבססה על סריקת הקוד בפועל: <code>src/</code>, <code>app/</code>, <code>supabase/</code>, קונפיגורציה וקבצי deploy. המלצות הפעולה מנוסחות בשפה פשוטה ופרקטית.</p>
+
+<h2 id="part-a">חלק א' — אבטחה נישתית</h2>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 1. השוואת סודות ב־Constant-Time</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    השוואת סיסמאות <code>pbkdf2/scrypt</code> נעשית בלולאת XOR קבועה, ואימות חתימת <code>Fernet HMAC</code> משתמש ב־<code>crypto.subtle.verify</code>. קבצים: <code>supabase/functions/legacy-login/index.ts</code> ו־<code>supabase/functions/_shared/encryption.ts</code>.
+  </div>
+  <div class="box red"><span class="tag">מה חסר</span>
+    בבדיקת טוקן ביטול הרשמה <code>supabase/functions/manage-unsubscribe/index.ts:46</code> יש השוואה רגילה <code>if (expectedSignature !== signaturePart)</code>. זו חתימת HMAC וצריך להשוות אותה בקבוע־זמן.
+  </div>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    להחליף את ההשוואה הזו בלולאת XOR על בתים, בדומה לפונקציה שכבר קיימת ב־<code>legacy-login</code>.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 2. הגבלת עומק ומורכבות ב־GraphQL</div>
+    <span class="badge gray">לא רלוונטי</span>
+  </div>
+  <p>אין GraphQL בפרויקט. כל הקריאות עוברות דרך <code>@supabase/supabase-js</code> (REST/PostgREST), ולא נמצא <code>pg_graphql</code> בשום מיגרציה או קונפיגורציה.</p>
+  <div class="box blue"><span class="tag">פעולה מומלצת</span>
+    לוודא בקונסולת Supabase שההרחבה <code>pg_graphql</code> לא פעילה אם אין בה שימוש.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 3. הגנת SSRF ביציאות</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    כל קריאות ה־<code>fetch()</code> בצד השרת משתמשות בכתובות קבועות או במשתני סביבה — <strong>לא מגיעות מקלט המשתמש</strong>. דוגמאות: <code>OPENAI_API_URL</code>, <code>BREVO_API_URL</code>, Google <code>userinfo</code>.
+  </div>
+  <div class="box red"><span class="tag">מה חסר</span>
+    אין allowlist של דומיינים, אין חסימת טווחי IP פנימיים (<code>127.*</code>, <code>169.254.169.254</code> וכו') ואין איסור על redirects. אם כתובת <code>SCRAPER_SERVICE_URL</code> תשתנה או תיעקף, אין שכבת הגנה שנייה.
+  </div>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    להוסיף פונקציית אימות URL משותפת לכל ה־Edge Functions: דומיין מורשה + חסימת IP פנימי + איסור redirects.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 4. Lockfile מקומיט</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    <code>package-lock.json</code> קיים גם בשורש וגם ב־<code>web/</code> ואינו ב־<code>.gitignore</code>. ב־<code>vercel.json</code> הראשי כתוב <code>npm ci</code>.
+  </div>
+  <div class="box red"><span class="tag">מה חסר</span>
+    אין <code>.github/workflows</code> או CI אחר, ולכן אין אכיפה של <code>npm ci</code>. ב־<code>web/vercel.json</code> אין פקודת install, כך ש־Vercel ישתמש כברירת מחדל ב־<code>npm install</code>.
+  </div>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    להוסיף <code>installCommand: "npm ci"</code> גם ל־<code>web/vercel.json</code>, ולהקים CI בסיסי שיריץ <code>npm ci</code>, בדיקות ו־typecheck.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 5. הגבלת IP לממשק האדמין</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין שום מנגנון של <code>ADMIN_IP_ALLOWLIST</code> או זיהוי כתובת לקוח. הרשאת אדמין נקבעת רק לפי שדה <code>is_admin</code> במסד הנתונים.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    אם יש צורך, להוסיף פונקציית אכיפה אחת בכניסה ל־Edge Functions של אדמין, עם fail-open מכוון כדי לא לנעול בטעות את כל המנהלים.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 6. רשומות DNS CAA</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>לא נמצא תיעוד או קונפיגורציה של רשומות CAA. זה ניהול חיצוני (DNS/רשם) ולא מופיע בקוד.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    להוסיף רשומות CAA למי שרשאי להנפיק תעודות SSL לדומיין, ולבדוק את המנפיק הנוכחי לפני הנעילה.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 7. MFA נפרד לרשם הדומיין</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין אזכור ברמת הריפו. ניהול חיצוני של חשבון רשם הדומיין.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    לוודא גורם שני נפרד ונעילת העברה בחשבון רשם הדומיין.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟢 8. Canary Tokens</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין סיסמאות פיתיון, אין <code>checkCanary</code>, ואין היגיון של טוקן מלכודת בשום מקום.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    אם רוצים, לשתול סוד דמה מחוץ לריפו ולהוסיף בדיקה best-effort שמדווחת לשרת אבל לא משנה את התגובה לתוקף.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 9. קשירת Session ל־Device Fingerprint</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין קשירת טוקן למכשיר בצד השרת. ה־<code>user_agent</code> שנשמר בהרשאת push הוא רק טלמטריה, לא בדיקת בעלות. הנעילה הביומטרית (<code>useBiometricAuth</code>) היא מקומית בלבד — היא מגנה על פתיחת האפליקציה, לא על הטוקן עצמו.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    עבודה גדולה: לקשור את הטוקן למזהה מכשיר שמאומת בצד השרת, או לכל הפחות לתעד את הסיכון כחוב טכני.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 10. סריקת Secrets ב־CI</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין CI בכלל, ולכן אין <code>gitleaks</code>, <code>trufflehog</code> או כל סריקת סודות אוטומטית.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    בהקמת CI, להוסיף gitleaks עם <code>fetch-depth: 0</code> כדי לסרוק את כל ההיסטוריה.
+  </div>
+</div>
+
+<h2 id="part-b">חלק ב' — פרצות נפוצות</h2>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 11. תנאים דינמיים שגויים ב־ORM / בעלות</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    RLS מקיף: אין מדיניות <code>using (true)</code> ריקה שנשארה, כל הטבלאות עם RLS, שמות עמודות מגיעים מ־whitelist קבוע, והשאילתות ממומרטות. קובץ מרכזי: <code>supabase/migrations/0011_lock_down_rls.sql</code>.
+  </div>
+  <div class="box red"><span class="tag">מה חסר</span>
+    <code>SECURITY_REVIEW.md:45-63</code> מסמן 9 פונקציות <code>SECURITY DEFINER</code> נגישות ל־<code>anon</code>, כולל <code>get_widget_coupons(p_user_id)</code> ו־<code>get_widget_statistics(p_user_id)</code>. לא אומת אם יש בהן בדיקת בעלות.
+  </div>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    לבדוק את גוף הפונקציות מול הסכימה האמיתית. אם אין בדיקת בעלות — להוסיף או לחסום את ההרשאה. זו סכנת IDOR פוטנציאלית.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 12. חוזי API נפוחים</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <p>נמצאו 21 קריאות <code>select('*')</code> בקליינט ובשתי פונקציות שרת. רובן מעבירות יותר שדות ממה שה־UI מציג, אבל יש גם קריאות עם עמודות מפורשות — כך שהמצב מעורב.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    לעבור על 21 המופעים ולשאול בכל אחד: אילו שדות באמת מוצגים? לצמצם לעמודות נחוצות, במיוחד בכל מה שנוגע לפרטי משתמשים.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">✅ 13. SSRF — ראה סעיף 3</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <p>כפילות של סעיף 3. אין URL מקלט משתמש, אבל חסרה הגנת עומק.</p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 14. Stored XSS — הפרצה החמורה ביותר</div>
+    <span class="badge green">מיושם</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    אין <code>dangerouslySetInnerHTML</code> עם נתוני משתמש, אין בניית מחרוזות HTML ידנית ואין <code>react-native-webview</code> ישיר. React מבריח כברירת מחדל את כל הטקסט שנכנס ל־JSX. ה־<code>dangerouslySetInnerHTML</code> היחיד הוא CSS סטטי (<code>app/+html.tsx</code>).
+  </div>
+  <div class="box yellow"><span class="tag">הערה</span>
+    אין DOMPurify או סניטיזציה מפורשת, אבל זה בסדר כל עוד לא מזריקים HTML. במידה שיום אחד יתווסף HTML עשיר, חייבים סניטייזר.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 15. CORS פתוח לרווחה</div>
+    <span class="badge yellow">חלקי / פעור</span>
+  </div>
+  <div class="box red"><span class="tag">מה קיים</span>
+    <code>supabase/functions/_shared/cors.ts:3</code> מחזיר <code>Access-Control-Allow-Origin: '*'</code> לכל הפונקציות, כולל כאלו שמאמתות טוקן. אין allowlist ואין הגבלת מקור.
+  </div>
+  <div class="box green"><span class="tag">הקלה פרקטית</span>
+    באפליקציית מובייל הסיכון נמוך — אין דפדפן ועוגיות, וכל פונקציה מאמתת טוקן בעצמה. הסיכון גדל בממשק ווב.
+  </div>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    לצמצם את ה־CORS לדומיינים המורשים בלבד, ממקור אחד משותף, אחרי מיפוי כל הלקוחות הקיימים.
+  </div>
+</div>
+
+<h2 id="part-c">חלק ג' — מה יישבר מול המשתמש הראשון</h2>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 16. מסך לבן (Error Boundary)</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    יש Boundary ברמת האפליקציה בממשק ווב: <code>src/components/layout/AppErrorBoundary.tsx</code> עם fallback RTL וכפתור רענון, עטוף סביב <code>App</code> ב־<code>src/main.tsx</code>.
+  </div>
+  <div class="box red"><span class="tag">מה חסר</span>
+    אין Boundary ברמת עמוד, אין <code>key={pathname}</code> לאיפוס, וב־Native (expo-router) אין Boundary בכלל — קריסת render תגיע למסך ברירת המחדל של המכשיר.
+  </div>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    להוסיף שכבת עמוד עם <code>key</code> לפי נתיב, ולהוסיף Boundary גם ב־<code>app/_layout.tsx</code> ל־Native.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟡 17. ספינר נצחי</div>
+    <span class="badge green">מיושם</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    כל קריאות <code>setLoading(true)</code> שנבדקו מסיימות ב־<code>finally</code> או במנגנון של react-query שמנקה את עצמו. יש מצבי skeleton, שגיאה, ריק וכפתורי "נסה שוב" — למשל <code>src/pages/coupons/CouponsList.tsx</code> ו־<code>src/pages/dashboard/Dashboard.tsx</code>.
+  </div>
+  <div class="box yellow"><span class="tag">הערה</span>
+    בטופס <code>AddEditCouponScreen</code> יש <code>try/catch</code> בלי <code>finally</code>, אבל הלחצן תלוי ב־react-query ולכן לא נתקע. בכל זאת חסר כאן חיווי שגיאה למשתמש.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">✅ 18. טפסים ששורדים כשל</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין IndexedDB, אין draft, אין autosave ואין שמירת התקדמות לפני סנכרון. טפסי הקופונים מחזיקים את המצב בזיכרון בלבד — כשל בשליחה מאבד את מה שהמשתמש הקליד.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    להוסיף שמירת טיוטה ל־AsyncStorage/IndexedDB בטופס הקופון, ולשחזר אותה בכניסה מחדש.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔴 19. אין דיווח שגיאות</div>
+    <span class="badge red">לא מיושם</span>
+  </div>
+  <p>אין <code>window.onerror</code>, אין <code>unhandledrejection</code>, אין Sentry/Bugsnag ואין פונקציית <code>logError</code>. ה־Boundary רק מדפיס <code>console.error</code>, והטופס <code>Issues.tsx</code> הוא דיווח ידני של המשתמש — לא לכידה אוטומטית.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    לחבר מאזין גלובלי לשגיאות ו־rejections, עם דירוג: קריסת render = קריטי, rejection רגיל = דרך סף.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🟢 20. עמוד 404</div>
+    <span class="badge yellow">חלקי</span>
+  </div>
+  <div class="box green"><span class="tag">מה כבר טוב</span>
+    בממשק ווב יש catch-all: <code>src/App.tsx:76</code> עם רכיב <code>NotFound</code> וקישור הביתה.
+  </div>
+  <div class="box red"><span class="tag">מה חסר</span>
+    ב־Native יש רק <code>app/+not-found.tsx</code> שמחזיר את <code>Unmatched</code> של expo-router, בלי UI מותאם ובלי קישור.
+  </div>
+</div>
+
+<h2 id="work">נהלי עבודה — הכי חשוב במסמך</h2>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">א. שומרי CI לכל תיקון</div><span class="badge red">לא מיושם</span></div>
+  <p>אין CI, ולכן אין שום guard אוטומטי שמונע חזרה של באג. הפרויקט מריץ בדיקות וקומפילציה ידנית בלבד.</p>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">ב. בדוק את השומר הפוך</div><span class="badge red">לא מיושם</span></div>
+  <p>אין תשתית שמאפשרת להוכיח שבדיקה נכשלת כשצריך. כלל חשוב ליישום עם הקמת ה־CI.</p>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">ג. אמת בדפדפן, לא רק בקומפילציה</div><span class="badge yellow">חלקי</span></div>
+  <p>יש Playwright עם בדיקות E2E ו־security (<code>web/package.json</code>), אבל אין עדות לבדיקות שמודדות XSS חי, מסך לבן או promise rejection בפועל.</p>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">ד. בדוק שה־CI בכלל ירוק</div><span class="badge gray">לא רלוונטי</span></div>
+  <p>אין CI, ולכן אין מצב ירוק/אדום לנטר. ברגע שיהיה CI — חובה הגנת branch או התראה על כשלון.</p>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">ה. קוד בגיט ≠ קוד בפרודקשן</div><span class="badge yellow">חלקי</span></div>
+  <p>יש תיעוד הגון, אבל מסמך האבטחה עצמו מציין שמיגרציה עדיין לא הורצה (<code>SECURITY_REVIEW.md</code>), כלומר קיים פער מודע בין קוד לייצור.</p>
+  <div class="box blue"><span class="tag">מה לעשות</span>
+    לוודא לפני סיום כל סבב: פונקציות נפרסו, מיגרציות הוחלו, סודות הוגדרו. להשוות תאריכי deploy מול הקומיטים.
+  </div>
+</div>
+
+<h2 id="priority">סדר עדיפות מומלץ לפרויקט הזה</h2>
+
+<div class="card">
+  <ul>
+    <li><strong>מיד — פרצות ניצול:</strong> סעיף 11 (בדיקת פונקציות SECURITY DEFINER), סעיף 1 (השוואת HMAC), סעיף 15 (CORS), וסעיף 19 (דיווח שגיאות).</li>
+    <li><strong>בקרוב — מה שישבור משתמש:</strong> סעיף 16 (Error Boundary מלא, כולל Native), סעיף 20 (404 ב־Native), סעיף 18 (שמירת טיוטת טופס).</li>
+    <li><strong>היגיינה:</strong> סעיפים 4, 10, 12 — CI, סריקת secrets, צמצום <code>select('*')</code>.</li>
+    <li><strong>תפעול ידני:</strong> סעיפים 6, 7, 5, 8 — DNS CAA, MFA לרשם, הגבלת IP, Canary.</li>
+    <li><strong>עבודה גדולה:</strong> סעיף 9 (קשירת session למכשיר) וסעיף 2 (GraphQL — לא רלוונטי כרגע).</li>
+  </ul>
+</div>
+
+<p class="muted small">הקובץ נוצר אוטומטית מסריקת הקוד. כל הממצאים כוללים נתיב קובץ ואפשר לחזור ולאמת אותם ישירות.</p>
+
+</div>
+</body>
+</html>

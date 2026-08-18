@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { USER_COLUMNS } from '@/lib/userColumns';
+import { ADMIN_SETTINGS_COLUMNS } from '@/lib/tableColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -70,7 +71,7 @@ export function useAdminSettings() {
 
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('*')
+        .select(ADMIN_SETTINGS_COLUMNS)
         .order('setting_key');
         
       if (error) throw error;

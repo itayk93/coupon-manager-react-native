@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { COUPON_TRANSACTION_COLUMNS, COUPON_USAGE_COLUMNS } from "@/lib/tableColumns";
 import { DecryptedCoupon } from "./useCoupons";
 
 export type ConsolidatedRow = {
@@ -25,13 +26,13 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
       // Fetch from coupon_usage
       const { data: usageData } = await supabase
         .from("coupon_usage")
-        .select("*")
+        .select(COUPON_USAGE_COLUMNS)
         .eq("coupon_id", couponId);
 
       // Fetch from coupon_transaction
       const { data: txData } = await supabase
         .from("coupon_transaction")
-        .select("*")
+        .select(COUPON_TRANSACTION_COLUMNS)
         .eq("coupon_id", couponId);
 
       const rows: ConsolidatedRow[] = [];

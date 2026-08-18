@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,37 +6,33 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Image,
 } from "react-native";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import {
-  BarChart3,
   TrendingUp,
   Sparkles,
   Download,
   CheckCircle2,
-  Clock,
   WalletCards,
   PieChart as PieIcon,
 } from "lucide-react-native";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
-import { getCompanyLogoSource } from "@/lib/companyLogos";
-import { getCompanyCategory } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
-
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
+import { formatIls } from "@/lib/formatIls";
+import {
+  KpiDrilldownModal,
+  type KpiConfig,
+} from "@/components/dashboard/KpiDrilldownModal";
+import { CompanySavingsBreakdown } from "@/components/dashboard/CompanySavingsBreakdown";
 
 export function StatisticsScreen() {
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading } = useCoupons();
+  const [activeKpi, setActiveKpi] = useState<KpiConfig | null>(null);
+  const [activeMonth, setActiveMonth] = useState<string | null>(null);
 
   const totalValue = useMemo(
     () => coupons.reduce((sum, c) => sum + (c.value || 0), 0),
@@ -76,27 +72,6 @@ export function StatisticsScreen() {
     return { active, fullyUsed, expired };
   }, [coupons]);
 
-  const companyStats = useMemo(() => {
-    const map: Record<
-      string,
-      { company: string; totalValue: number; usedValue: number; count: number }
-    > = {};
-
-    coupons.forEach((c) => {
-      const comp = c.company || "ללא חברה";
-      if (!map[comp]) {
-        map[comp] = { company: comp, totalValue: 0, usedValue: 0, count: 0 };
-      }
-      map[comp].totalValue += c.value || 0;
-      map[comp].usedValue += c.used_value || 0;
-      map[comp].count += 1;
-    });
-
-    return Object.values(map)
-      .sort((a, b) => b.totalValue - a.totalValue)
-      .slice(0, 10);
-  }, [coupons]);
-
   const handleExportCSV = async () => {
     if (coupons.length === 0) {
       notify.warning("אין נתונים לייצוא");
@@ -134,11 +109,16 @@ export function StatisticsScreen() {
   };
 
   // "חיסכון חודשי" — the last six months of coupon usage, per the design.
-  const monthlyTrend = React.useMemo(() => {
+  const monthlyTrend = useMemo(() => {
     const now = new Date();
     const months = Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-      return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("he-IL", { month: "short" }), value: 0 };
+      return {
+        key: `${d.getFullYear()}-${d.getMonth()}`,
+        shortLabel: d.toLocaleDateString("he-IL", { month: "short" }),
+        fullLabel: d.toLocaleDateString("he-IL", { month: "long", year: "numeric" }),
+        value: 0,
+      };
     });
     coupons.forEach((c) => {
       if (!c.date_added) return;
@@ -151,20 +131,12 @@ export function StatisticsScreen() {
     return months.map((m) => ({ ...m, pct: Math.round((m.value / max) * 100) }));
   }, [coupons]);
 
-  // "חיסכון לפי קטגוריה"
-  const categoryStats = React.useMemo(() => {
-    const map = new Map<string, number>();
-    coupons.forEach((c) => {
-      const cat = getCompanyCategory(c.company || "");
-      map.set(cat, (map.get(cat) || 0) + (c.used_value || 0));
-    });
-    const rows = Array.from(map, ([name, value]) => ({ name, value }))
-      .filter((r) => r.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6);
-    const max = Math.max(1, ...rows.map((r) => r.value));
-    return rows.map((r) => ({ ...r, pct: Math.round((r.value / max) * 100) }));
-  }, [coupons]);
+  const kpiConfigs: KpiConfig[] = [
+    { key: "remaining", title: "יתרה זמינה" },
+    { key: "savings", title: "חיסכון מצטבר" },
+    { key: "used", title: "סך הכל נוצל" },
+    { key: "value", title: "סך שווי קופונים" },
+  ];
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -187,115 +159,84 @@ export function StatisticsScreen() {
       >
         {/* KPI Top 4-Grid */}
         <View style={styles.kpiGrid}>
-          <View
-            style={[
-              styles.kpiCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>יתרה זמינה</Text>
-              <WalletCards size={16} color={theme.primary} />
-            </View>
-            <Text style={[styles.kpiValue, { color: theme.text }]}>
-              {formatIls(remainingValue)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.kpiCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>חיסכון מצטבר</Text>
-              <Sparkles size={16} color={theme.success} />
-            </View>
-            <Text style={[styles.kpiValue, { color: theme.success }]}>
-              {formatIls(totalSavings)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.kpiCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>סך הכל נוצל</Text>
-              <CheckCircle2 size={16} color={theme.primary} />
-            </View>
-            <Text style={[styles.kpiValue, { color: theme.text }]}>
-              {formatIls(usedValue)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.kpiCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            <View style={styles.kpiHeader}>
-              <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>סך שווי קופונים</Text>
-              <TrendingUp size={16} color={theme.warning} />
-            </View>
-            <Text style={[styles.kpiValue, { color: theme.text }]}>
-              {formatIls(totalValue)}
-            </Text>
-          </View>
+          {[
+            { config: kpiConfigs[0], label: "יתרה זמינה", value: remainingValue, color: theme.text, icon: <WalletCards size={16} color={theme.primary} /> },
+            { config: kpiConfigs[1], label: "חיסכון מצטבר", value: totalSavings, color: theme.success, icon: <Sparkles size={16} color={theme.success} /> },
+            { config: kpiConfigs[2], label: "סך הכל נוצל", value: usedValue, color: theme.text, icon: <CheckCircle2 size={16} color={theme.primary} /> },
+            { config: kpiConfigs[3], label: "סך שווי קופונים", value: totalValue, color: theme.text, icon: <TrendingUp size={16} color={theme.warning} /> },
+          ].map((kpi) => (
+            <TouchableOpacity
+              key={kpi.config.key}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={kpi.label}
+              onPress={() => setActiveKpi(kpi.config)}
+              style={[
+                styles.kpiCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                },
+              ]}
+            >
+              <View style={styles.kpiHeader}>
+                <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>{kpi.label}</Text>
+                {kpi.icon}
+              </View>
+              <Text style={[styles.kpiValue, { color: kpi.color }]}>
+                {formatIls(kpi.value)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Monthly savings */}
         <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>חיסכון חודשי</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>חיסכון חודשי</Text>
+          </View>
+
+          {activeMonth && (
+            <View style={[styles.monthTooltip, { backgroundColor: theme.surfaceAlt, borderColor: theme.border }]}>
+              <Text style={[styles.monthTooltipLabel, { color: theme.textMuted }]}>
+                {monthlyTrend.find((m) => m.key === activeMonth)?.fullLabel}
+              </Text>
+              <Text style={[styles.monthTooltipValue, { color: theme.primary }]}>
+                {formatIls(monthlyTrend.find((m) => m.key === activeMonth)?.value || 0)}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.barsRow}>
-            {monthlyTrend.map((m) => (
-              <View key={m.key} style={styles.barCol}>
-                <View style={styles.barTrack}>
-                  <View
-                    style={[styles.bar, { height: `${Math.max(m.pct, 2)}%`, backgroundColor: theme.primary }]}
-                  />
-                </View>
-                <Text style={[styles.barLabel, { color: theme.textSubtle }]}>{m.label}</Text>
-              </View>
-            ))}
+            {monthlyTrend.map((m) => {
+              const isActive = activeMonth === m.key;
+              return (
+                <TouchableOpacity
+                  key={m.key}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${m.fullLabel}: ${formatIls(m.value)}`}
+                  onPress={() => setActiveMonth(isActive ? null : m.key)}
+                  style={styles.barCol}
+                >
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.bar,
+                        {
+                          height: `${Math.max(m.pct, 2)}%`,
+                          backgroundColor: isActive ? theme.primaryDark : theme.primary,
+                          opacity: activeMonth && !isActive ? 0.55 : 1,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.barLabel, { color: theme.textSubtle }]}>{m.shortLabel}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
-
-        {/* Savings by category */}
-        {categoryStats.length > 0 ? (
-          <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>חיסכון לפי קטגוריה</Text>
-            <View style={styles.catList}>
-              {categoryStats.map((c) => (
-                <View key={c.name}>
-                  <View style={styles.catRow}>
-                    <Text style={[styles.catName, { color: theme.text }]}>{c.name}</Text>
-                    <Text style={[styles.catVal, { color: theme.textMuted }]}>{formatIls(c.value)}</Text>
-                  </View>
-                  <View style={[styles.catTrack, { backgroundColor: theme.surfaceAlt }]}>
-                    <View style={[styles.catFill, { width: `${c.pct}%`, backgroundColor: theme.primary }]} />
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : null}
 
         {/* Status Distribution */}
         <View
@@ -338,7 +279,7 @@ export function StatisticsScreen() {
           </View>
         </View>
 
-        {/* Top Companies Breakdown */}
+        {/* Top Companies Breakdown — same drill-down as "על מה חסכת?" */}
         <View
           style={[
             styles.sectionCard,
@@ -350,55 +291,19 @@ export function StatisticsScreen() {
         >
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              10 החברות המובילות בארנק
+              החברות המובילות בארנק
             </Text>
-            <BarChart3 size={18} color={theme.primary} />
           </View>
-
-          {companyStats.length > 0 ? (
-            companyStats.map((item, idx) => {
-              const rem = Math.max(0, item.totalValue - item.usedValue);
-              const pct = totalValue > 0 ? (item.totalValue / totalValue) * 100 : 0;
-              const logo = getCompanyLogoSource(item.company);
-
-              return (
-                <View
-                  key={item.company}
-                  style={[
-                    styles.companyStatRow,
-                    { borderBottomColor: theme.border },
-                  ]}
-                >
-                  <View style={styles.companyValuesCol}>
-                    <Text style={[styles.companyRemVal, { color: theme.primary }]}>
-                      {formatIls(rem)}
-                    </Text>
-                    <Text style={[styles.companyTotalVal, { color: theme.textMuted }]}>
-                      מתוך {formatIls(item.totalValue)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.companyNameGroup}>
-                    <View style={styles.companyTitleBox}>
-                      <Text style={[styles.companyStatName, { color: theme.text }]}>
-                        {item.company}
-                      </Text>
-                      <Text style={[styles.companyStatCount, { color: theme.textMuted }]}>
-                        {item.count} קופונים ({pct.toFixed(0)}%)
-                      </Text>
-                    </View>
-                    <Image source={logo} style={styles.companyStatLogo} resizeMode="contain" />
-                  </View>
-                </View>
-              );
-            })
-          ) : (
-            <Text style={{ color: theme.textMuted, textAlign: "center", paddingVertical: 14 }}>
-              אין עדיין נתונים להצגה
-            </Text>
-          )}
+          <CompanySavingsBreakdown coupons={coupons} />
         </View>
       </ScrollView>
+
+      <KpiDrilldownModal
+        visible={activeKpi !== null}
+        onClose={() => setActiveKpi(null)}
+        config={activeKpi}
+        coupons={coupons}
+      />
     </SafeAreaView>
   );
 }
@@ -432,31 +337,23 @@ const styles = StyleSheet.create({
   barLabel: {
     fontSize: 11,
   },
-  catList: {
-    gap: 12,
-    marginTop: 16,
+  monthTooltip: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    alignItems: "flex-end",
   },
-  catRow: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  catName: {
-    fontSize: 12.5,
+  monthTooltipLabel: {
+    fontSize: 12,
     fontWeight: "600",
+    marginBottom: 4,
   },
-  catVal: {
-    fontSize: 12.5,
-  },
-  catTrack: {
-    height: 8,
-    borderRadius: 99,
-    overflow: "hidden",
-    flexDirection: "row-reverse",
-  },
-  catFill: {
-    height: "100%",
-    borderRadius: 99,
+  monthTooltipValue: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    fontWeight: "900",
   },
   titleRow: {
     flexDirection: "row-reverse",
@@ -561,50 +458,5 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 12,
     fontWeight: "600",
-  },
-  companyStatRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  companyNameGroup: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 10,
-    flex: 1,
-    justifyContent: "flex-start",
-  },
-  companyStatLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-  },
-  companyTitleBox: {
-    alignItems: "flex-end",
-  },
-  companyStatName: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  companyStatCount: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  companyValuesCol: {
-    alignItems: "flex-start",
-  },
-  companyRemVal: {
-    fontFamily: fonts.display,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  companyTotalVal: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    marginTop: 2,
   },
 });

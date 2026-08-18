@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { FEATURE_ACCESS_COLUMNS, USER_FEATURE_OVERRIDES_COLUMNS } from "@/lib/tableColumns";
 
 export const FEATURE_KEYS = [
   "dashboard",
@@ -47,7 +48,7 @@ export function useFeatureCatalog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("feature_access")
-        .select("*")
+        .select(FEATURE_ACCESS_COLUMNS)
         .order("feature_name", { ascending: true });
       if (error) throw error;
       return data;
@@ -62,7 +63,7 @@ export function useUserFeatureOverrides(targetUserId?: number) {
       if (!targetUserId) return [];
       const { data, error } = await supabase
         .from("user_feature_overrides" as any)
-        .select("*")
+        .select(USER_FEATURE_OVERRIDES_COLUMNS)
         .eq("user_id", targetUserId)
         .order("feature_key", { ascending: true });
       if (error) throw error;

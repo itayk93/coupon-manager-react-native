@@ -14,8 +14,9 @@
 // Deploy: supabase functions deploy send-emails
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall } from '../_shared/auth.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
+import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall, isAdminIpAllowed } from '../_shared/auth.ts';
+import { safeFetch } from '../_shared/ssrf.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const textEncoder = new TextEncoder();
@@ -26,7 +27,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'Coupon Master';
   if (!apiKey) return false;
   try {
-    const resp = await fetch(BREVO_API_URL, {
+    const resp = await safeFetch(BREVO_API_URL, {
       method: 'POST',
       headers: {
         'api-key': apiKey,
@@ -109,7 +110,11 @@ async function wrapMarketingEmail(html: string, userId: number, email: string) {
 
 async function handleNewsletter(newsletterId: number) {
   const supabase = supa();
-  const { data: nl } = await supabase.from('newsletters').select('*').eq('id', newsletterId).single();
+  const { data: nl } = await supabase
+    .from('newsletters')
+    .select('id,title,content,main_title,custom_html,is_sent,sent_count,is_published')
+    .eq('id', newsletterId)
+    .single();
   if (!nl) return jsonResponse({ error: 'ניוזלטר לא נמצא' }, 404);
 
   // Subscribers who have not opted out
@@ -220,7 +225,7 @@ async function handleUpdateSummary(userId: number, updated: number, failed: numb
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
     const body = await req.json();
@@ -232,6 +237,9 @@ Deno.serve(async (req: Request) => {
     // requires an admin, or the service role for the cron-driven run.
     const ADMIN_MODES = ['newsletter', 'expiration_reminders', 'test'];
     if (ADMIN_MODES.includes(mode) && !isServiceRoleCall(req)) {
+      if (!isAdminIpAllowed(req)) {
+        return jsonResponse({ error: 'הגישה נדחתה מכתובת הרשת הזו' }, 403);
+      }
       try {
         await requireAdmin(req);
       } catch {

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>סקירת מסך ה־Biometric Gate</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --text: #1c1c1c;
+      --muted: #6b6b6b;
+      --accent: #2563eb;
+      --border: #e5e5e0;
+      --danger: #b91c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Heebo", "Arial", sans-serif;
+      line-height: 1.7;
+      padding: 40px 16px;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 0 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 32px;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 36px 0 12px;
+    }
+
+    p {
+      margin: 12px 0;
+    }
+
+    ul {
+      margin: 12px 0;
+      padding-right: 24px;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    .callout {
+      background: #f0f6ff;
+      border-right: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 24px 0;
+    }
+
+    .recommendation {
+      background: #fbfbf9;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 14px 0;
+    }
+
+    .recommendation strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .sources {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sources h2 {
+      margin-top: 0;
+    }
+
+    .sources a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .sources a:hover {
+      text-decoration: underline;
+    }
+
+    .filename {
+      direction: ltr;
+      unicode-bidi: embed;
+      font-family: "SF Mono", ui-monospace, "Courier New", monospace;
+      font-size: 13px;
+      background: #f1f1ee;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>סקירת מסך ה־Biometric Gate</h1>
+    <p class="meta">הערכה כנה על המסך שנועל את האפליקציה עם Face ID / Touch ID — והשוואה לאיך שאפליקציות אחרות פותרות את זה.</p>
+
+    <div class="callout">
+      <p style="margin:0"><strong>השורה התחתונה:</strong> כן, זה נראה קצת יותר מדי "AI". לא כי זה מכוער — אלא כי הוא עושה עבודה שמערכת ההפעלה כבר עושה, עם מראה תבניתי וסימטרי מדי.</p>
+    </div>
+
+    <h2>מה בדיוק נראה גנרי</h2>
+    <p>המסך ב־<span class="filename">src/components/layout/BiometricGate.tsx</span> מציג:</p>
+    <ul>
+      <li>אייקון Face ID בריבוע כחול עם גרדיאנט.</li>
+      <li>כותרת "הארנק נעול" ותת־כותרת "אמת את זהותך עם Face ID כדי להמשיך".</li>
+      <li>כפתור כחול "פתיחה עם Face ID".</li>
+    </ul>
+    <p>התחושה היא של תבנית אונבורדינג: סימטריה מושלמת, אייקון סטוק, וריבוע גרדיאנט כחול. זה עיצוב "נקי" אבל חסר החלטה מוצרית.</p>
+
+    <h2>מה עושות אפליקציות אחרות</h2>
+    <p>בנקים ומנהלי סיסמאות (Chase, 1Password, Authy וכדומה) לא מציירים מסך Face ID משלהם. הסיבה פשוטה: ב־iOS וב־Android, דיאלוג האימות הביומטרי נשלט על ידי מערכת ההפעלה.</p>
+    <ul>
+      <li>אפליקציות קוראות ל־<span class="filename">LAContext.evaluatePolicy</span> ב־iOS או ל־<span class="filename">BiometricPrompt</span> באנדרואיד, והדיאלוג של אפל/גוגל נפתח מיד.</li>
+      <li>אם יש מסך הכנה, הוא מינימלי: לוגו, טקסט קצר, ולפעמים אין כפתור בכלל — הבקשה רצה אוטומטית.</li>
+      <li>תמיד יש fallback גלוי באותו מסך, כמו כניסה עם סיסמה או PIN.</li>
+    </ul>
+
+    <h2>הבעיה האמיתית בפלואו הנוכחי</h2>
+    <p>הוויזואל הוא רק חצי מהסיפור. עכשיו יש "מסך בתוך מסך": המשתמש רואה מסך מותאם עם כפתור, לוחץ עליו, ואז נפתח דיאלוג מערכת נוסף. זה גורם לאימות להרגיש כבד יותר ממה שהוא אמור להיות, ולא מנוצל היתרון של Face ID — שהוא אמור להרגיש שקוף ומיידי.</p>
+
+    <h2>מה אני ממליץ</h2>
+    <div class="recommendation">
+      <strong>1. הכי נכון — להסיר את המסך</strong>
+      להפעיל את <span class="filename">authenticate()</span> ישירות כשה־<span class="filename">shouldLock</span> נכון. דיאלוג המערכת הופך לחוויה כולה, ומתחתיו אפשר להשאיר רק רקע דהוי.
+    </div>
+    <div class="recommendation">
+      <strong>2. ביניים — מסך הכנה מותג ולא גנרי</strong>
+      לוגו האפליקציה במקום אייקון הפנים, בלי גרדיאנט כחול, בלי כפתור. להריץ את <span class="filename">authenticate()</span> אוטומטית ברגע שהמסך מופיע.
+    </div>
+    <div class="recommendation">
+      <strong>3. תיקון מינימלי — fallback וגוון ניטרלי</strong>
+      להוסיף כפתור fallback גלוי כמו "התחברות בדרך אחרת", ולהסיר את הגרדיאנט הכחול מהאייקון — להשתמש בגוון הטקסט הרגיל.
+    </div>
+
+    <div class="sources">
+      <h2>מקורות</h2>
+      <ul>
+        <li><a href="https://www.orbix.studio/blogs/biometric-authentication-app-design" target="_blank" rel="noopener">Biometric Authentication App Design: Complete UX Guide 2026</a></li>
+        <li><a href="https://www.theusefulapps.com/news/face-id-touch-id-passkeys-ux-patterns" target="_blank" rel="noopener">Face ID, Touch ID &amp; Passkeys: The Biometric UX Patterns Users Actually Trust</a></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

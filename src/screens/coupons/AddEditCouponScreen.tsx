@@ -27,6 +27,7 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { clearCouponDraft, loadCouponDraft, saveCouponDraft } from "@/lib/couponDraft";
 
 type CouponFormProps = {
   existingCoupon?: DecryptedCoupon;
@@ -189,6 +190,23 @@ function CouponForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (isEditing) return;
+    void loadCouponDraft().then((draft) => {
+      if (!draft) return;
+      setCompany(draft.company);
+      setCode(draft.code);
+      setValue(draft.value);
+      setCost(draft.cost);
+      setExpiration(draft.expiration);
+      setDescription(draft.description);
+      setIncludeCardInfo(draft.includeCardInfo);
+      setCvv(draft.cvv);
+      setCardExp(draft.cardExp);
+      setRedemptionUrl(draft.redemptionUrl);
+    });
+  }, [isEditing]);
+
+  useEffect(() => {
     if (existingTags.length > 0) {
       setTags(existingTags.map((t) => t.name));
     }
@@ -279,6 +297,8 @@ function CouponForm({
           });
         }
 
+        await clearCouponDraft();
+
         // A new coupon usually arrives via the scanner, and going `back` would
         // drop the user onto the scanner they are done with. Send them to the
         // dashboard, where the coupon they just saved is now counted.
@@ -286,6 +306,21 @@ function CouponForm({
       }
     } catch (e) {
       console.error(e);
+      if (!isEditing) {
+        await saveCouponDraft({
+          company,
+          code,
+          value,
+          cost,
+          expiration,
+          description,
+          cvv,
+          cardExp,
+          redemptionUrl,
+          includeCardInfo,
+        });
+      }
+      notify.error("שגיאה בשמירת הקופון", "הטיוטה נשמרה. נסה שוב בעוד רגע.");
     }
   };
 

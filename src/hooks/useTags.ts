@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tag } from "@/integrations/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { TAG_COLUMNS } from "@/lib/tableColumns";
 
 // All tags in the system
 export function useTags() {
@@ -11,7 +12,7 @@ export function useTags() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tag")
-        .select("*")
+        .select(TAG_COLUMNS)
         .order("count", { ascending: false });
 
       if (error) throw error;
@@ -37,7 +38,7 @@ export function useCouponTags(couponId: number | undefined) {
 
       const { data: tags, error: tagsError } = await supabase
         .from("tag")
-        .select("*")
+        .select(TAG_COLUMNS)
         .in("id", tagIds);
 
       if (tagsError) throw tagsError;
@@ -51,7 +52,7 @@ async function getOrCreateTag(name: string): Promise<Tag> {
   const trimmed = name.trim();
   const { data: existing } = await supabase
     .from("tag")
-    .select("*")
+    .select(TAG_COLUMNS)
     .eq("name", trimmed)
     .maybeSingle();
 
@@ -157,7 +158,7 @@ export function useAdminTags() {
   return useQuery({
     queryKey: ["admin_tags"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("tag").select("*").order("name");
+      const { data, error } = await supabase.from("tag").select(TAG_COLUMNS).order("name");
       if (error) throw error;
       return data as Tag[];
     },

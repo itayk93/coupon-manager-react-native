@@ -266,21 +266,23 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                 יתרה {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
               </Text>
 
-              <TouchableOpacity
-                onPress={handleCopy}
-                style={[styles.copyBtn, { backgroundColor: theme.primary }]}
-              >
-                {copied ? <Check size={16} color="#ffffff" /> : <Copy size={16} color="#ffffff" />}
-                <Text style={styles.copyText}>{copied ? "הועתק" : "העתקת קוד"}</Text>
-              </TouchableOpacity>
+              <View style={styles.codeActions}>
+                <TouchableOpacity
+                  onPress={handleCopy}
+                  style={[styles.copyBtn, { backgroundColor: theme.primary }]}
+                  accessibilityLabel="העתקת קוד"
+                >
+                  {copied ? <Check size={18} color="#ffffff" /> : <Copy size={18} color="#ffffff" />}
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => handleEdit(openCode)}
-                style={[styles.editBtn, { borderColor: theme.border }]}
-              >
-                <Pencil size={15} color={theme.text} />
-                <Text style={[styles.editText, { color: theme.text }]}>עריכת קופון</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleEdit(openCode)}
+                  style={[styles.editBtn, { borderColor: theme.border }]}
+                  accessibilityLabel="עריכת קופון"
+                >
+                  <Pencil size={18} color={theme.text} />
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
                 <Text style={[styles.codeCloseText, { color: theme.textMuted }]}>סגירה</Text>
@@ -434,37 +436,28 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 13.5,
   },
-  copyBtn: {
+  codeActions: {
     marginTop: 8,
-    height: 46,
-    alignSelf: "stretch",
-    borderRadius: radii.lg,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 12,
+    width: "100%",
   },
-  copyText: {
-    fontFamily: fonts.bodyBold,
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "700",
+  copyBtn: {
+    height: 46,
+    width: 46,
+    borderRadius: radii.lg,
+    alignItems: "center",
+    justifyContent: "center",
   },
   editBtn: {
-    marginTop: 2,
-    height: 44,
-    alignSelf: "stretch",
+    height: 46,
+    width: 46,
     borderRadius: radii.lg,
     borderWidth: 1,
-    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-  },
-  editText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    fontWeight: "700",
   },
   codeClose: {
     paddingVertical: 6,

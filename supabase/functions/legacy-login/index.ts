@@ -12,8 +12,9 @@ import { pbkdf2Async } from 'https://esm.sh/@noble/hashes@1.5.0/pbkdf2';
 import { scryptAsync } from 'https://esm.sh/@noble/hashes@1.5.0/scrypt';
 import { sha256, sha512 } from 'https://esm.sh/@noble/hashes@1.5.0/sha2';
 import { utf8ToBytes } from 'https://esm.sh/@noble/hashes@1.5.0/utils';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { adminClient, issueSessionToken } from '../_shared/session.ts';
+import { isCanaryToken, reportCanaryTrip } from '../_shared/canary.ts';
 
 const supabaseAdmin = adminClient();
 
@@ -111,7 +112,7 @@ async function recordAttempt(email: string, succeeded: boolean): Promise<void> {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(request) });
 
   try {
     const body = await request.json();
@@ -119,6 +120,11 @@ Deno.serve(async (request) => {
     const password = String(body?.password ?? '');
 
     if (!email || !password) return jsonResponse({ error: INVALID_CREDENTIALS }, 400);
+
+    if (await isCanaryToken(password)) {
+      await reportCanaryTrip('legacy-login', password);
+      return jsonResponse({ error: INVALID_CREDENTIALS }, 401);
+    }
 
     if (await isLockedOut(email)) {
       return jsonResponse({ error: TOO_MANY_ATTEMPTS }, 429);

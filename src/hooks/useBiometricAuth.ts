@@ -59,7 +59,7 @@ export function useBiometricAuth() {
   }, []);
 
   const label =
-    kind === "face" ? "Face ID" : kind === "fingerprint" ? "טביעת אצבע" : "זיהוי ביומטרי";
+    kind === "face" ? "זיהוי פנים" : kind === "fingerprint" ? "טביעת אצבע" : "זיהוי ביומטרי";
 
   /** Prompt for biometrics. Resolves true only on a successful match. */
   const authenticate = useCallback(

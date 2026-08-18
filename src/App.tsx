@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { PrivateRoute } from "./components/layout/PrivateRoute";
 import { AppLayout } from "./components/layout/AppLayout";
+import { PageErrorBoundary } from "./components/layout/PageErrorBoundary";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -60,15 +61,15 @@ function App() {
               {/* Protected Routes inside AppLayout */}
               <Route element={<PrivateRoute />}>
                 <Route element={<AppLayout />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<PageErrorBoundary boundaryName="dashboard"><Dashboard /></PageErrorBoundary>} />
                   <Route path="/dashboard" element={<Navigate to="/" replace />} />
-                  <Route path="/coupons" element={<FeatureGate featureKey="coupons" redirectTo="/"><CouponsList /></FeatureGate>} />
-                  <Route path="/statistics" element={<FeatureGate featureKey="statistics" redirectTo="/"><Statistics /></FeatureGate>} />
-                  <Route path="/sharing" element={<FeatureGate featureKey="sharing" redirectTo="/"><SharingPage /></FeatureGate>} />
-                  <Route path="/profile" element={<FeatureGate featureKey="profile" redirectTo="/"><Profile /></FeatureGate>} />
-                  <Route path="/settings" element={<FeatureGate featureKey="settings" redirectTo="/"><Settings /></FeatureGate>} />
-                  <Route path="/notifications" element={<FeatureGate featureKey="notifications" redirectTo="/"><Notifications /></FeatureGate>} />
-                  <Route path="/admin" element={<FeatureGate featureKey="admin" redirectTo="/"><AdminDashboard /></FeatureGate>} />
+                  <Route path="/coupons" element={<FeatureGate featureKey="coupons" redirectTo="/"><PageErrorBoundary boundaryName="coupons"><CouponsList /></PageErrorBoundary></FeatureGate>} />
+                  <Route path="/statistics" element={<FeatureGate featureKey="statistics" redirectTo="/"><PageErrorBoundary boundaryName="statistics"><Statistics /></PageErrorBoundary></FeatureGate>} />
+                  <Route path="/sharing" element={<FeatureGate featureKey="sharing" redirectTo="/"><PageErrorBoundary boundaryName="sharing"><SharingPage /></PageErrorBoundary></FeatureGate>} />
+                  <Route path="/profile" element={<FeatureGate featureKey="profile" redirectTo="/"><PageErrorBoundary boundaryName="profile"><Profile /></PageErrorBoundary></FeatureGate>} />
+                  <Route path="/settings" element={<FeatureGate featureKey="settings" redirectTo="/"><PageErrorBoundary boundaryName="settings"><Settings /></PageErrorBoundary></FeatureGate>} />
+                  <Route path="/notifications" element={<FeatureGate featureKey="notifications" redirectTo="/"><PageErrorBoundary boundaryName="notifications"><Notifications /></PageErrorBoundary></FeatureGate>} />
+                  <Route path="/admin" element={<FeatureGate featureKey="admin" redirectTo="/"><PageErrorBoundary boundaryName="admin"><AdminDashboard /></PageErrorBoundary></FeatureGate>} />
                 </Route>
               </Route>
               
