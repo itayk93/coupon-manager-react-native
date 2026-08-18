@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "react-native"
+        versions: [">=0.87.0"]
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
