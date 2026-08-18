@@ -24,6 +24,9 @@ export function BiometricGate() {
 
   const [unlocked, setUnlocked] = React.useState(false);
   const [prompting, setPrompting] = React.useState(false);
+  const [isActive, setIsActive] = React.useState(
+    AppState.currentState === "active"
+  );
 
   const runPrompt = React.useCallback(async () => {
     if (prompting) return;
@@ -36,18 +39,22 @@ export function BiometricGate() {
     }
   }, [authenticate, label, prompting]);
 
-  // Prompt as soon as the lock becomes relevant.
+  // Prompt only once the app is actually in the foreground. This prevents the
+  // system Face ID sheet from firing while the phone is still locked after the
+  // app was backgrounded.
   React.useEffect(() => {
-    if (shouldLock && !unlocked) void runPrompt();
+    if (shouldLock && !unlocked && isActive) void runPrompt();
     // runPrompt is intentionally omitted: re-running on its identity would
     // re-open the system dialog while it is already on screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldLock, unlocked]);
+  }, [shouldLock, unlocked, isActive]);
 
-  // Re-lock when the app goes to the background.
+  // Re-lock when the app is sent to the background, and only prompt again when
+  // it returns to the foreground.
   React.useEffect(() => {
     if (!shouldLock) return;
     const sub = AppState.addEventListener("change", (state) => {
+      setIsActive(state === "active");
       if (state === "background") setUnlocked(false);
     });
     return () => sub.remove();
