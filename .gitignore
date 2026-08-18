@@ -54,3 +54,10 @@ supabase/.temp/
 docs/
 .commandcode/
 *.auth/
+
+# Local agent/editor config and internal notes — not part of the public repo
+.claude/
+.cursor/
+.commandcode/
+SECURITY_REVIEW.md
+SESSION_*.md

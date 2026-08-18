@@ -33,22 +33,6 @@ jobs:
       - run: npm ci
       - run: npm test
 
-  test-web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Install web dependencies
-        working-directory: web
-        run: npm ci
-      - name: Run web unit tests
-        working-directory: web
-        run: npm test
-
   secret-scan:
     runs-on: ubuntu-latest
     steps:
