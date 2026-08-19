@@ -1,9 +1,10 @@
 // Supabase Edge Function: send-emails
-// Handles three modes:
+// Handles these modes:
 //   mode: "newsletter"           -> send a newsletter to all subscribed users
-//   mode: "expiration_reminders" -> email users about coupons expiring in 30/7/1 days
 //   mode: "test"                 -> send a single test email
 //   mode: "issue_report"         -> send a support report to the admin
+//
+// Expiry reminders moved to send-expiry-alerts (email + push + in-app).
 //
 // Env vars:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY - injected automatically
@@ -16,10 +17,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall, isAdminIpAllowed } from '../_shared/auth.ts';
+import { buildUnsubscribeUrl } from '../_shared/unsubscribe.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
-const textEncoder = new TextEncoder();
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
@@ -58,43 +59,6 @@ function supa() {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
-}
-
-function toBase64Url(bytes: Uint8Array) {
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
-}
-
-async function signPayload(payload: string, secret: string) {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    textEncoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload));
-  return toBase64Url(new Uint8Array(signature));
-}
-
-async function createUnsubscribeToken(userId: number, email: string) {
-  const secret = Deno.env.get('UNSUBSCRIBE_SECRET');
-  if (!secret) return null;
-  const payload = JSON.stringify({ user_id: userId, email, type: 'unsubscribe' });
-  const payloadPart = toBase64Url(textEncoder.encode(payload));
-  const signaturePart = await signPayload(payload, secret);
-  return `${payloadPart}.${signaturePart}`;
-}
-
-async function buildUnsubscribeUrl(userId: number, email: string) {
-  const appBaseUrl = Deno.env.get('APP_BASE_URL');
-  if (!appBaseUrl) return null;
-  const token = await createUnsubscribeToken(userId, email);
-  if (!token) return null;
-  const normalizedBase = appBaseUrl.replace(/\/$/, '');
-  return `${normalizedBase}/unsubscribe?token=${encodeURIComponent(token)}`;
 }
 
 async function wrapMarketingEmail(html: string, userId: number, email: string) {
@@ -155,55 +119,6 @@ async function handleNewsletter(newsletterId: number) {
   return jsonResponse({ sent, failed });
 }
 
-async function handleExpirationReminders() {
-  const supabase = supa();
-  const now = new Date();
-  const windows = [
-    { days: 30, flag: 'reminder_sent_30_days' },
-    { days: 7, flag: 'reminder_sent_7_days' },
-    { days: 1, flag: 'reminder_sent_1_day' },
-  ];
-
-  let sent = 0;
-  for (const w of windows) {
-    const target = new Date(now.getTime() + w.days * 86400000);
-    const dayStart = new Date(target); dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(target); dayEnd.setHours(23, 59, 59, 999);
-
-    const { data: coupons } = await supabase
-      .from('coupon')
-      .select('id, company, value, used_value, expiration, user_id, ' + w.flag)
-      .eq('status', 'פעיל')
-      .eq(w.flag, false)
-      .gte('expiration', dayStart.toISOString())
-      .lte('expiration', dayEnd.toISOString());
-
-    for (const c of (coupons || []) as any[]) {
-      const { data: user } = await supabase
-        .from('users')
-        .select('email, first_name')
-        .eq('id', c.user_id)
-        .single();
-      if (!user?.email) continue;
-
-      const remaining = (c.value - c.used_value).toFixed(2);
-      const html = `<div dir="rtl">
-        <h2>שלום ${user.first_name || ''},</h2>
-        <p>הקופון שלך מחברת <strong>${c.company}</strong> עומד לפוג בעוד ${w.days} ימים.</p>
-        <p>יתרה נותרת: <strong>${remaining} ₪</strong></p>
-        <p>מומלץ לנצל אותו בזמן!</p>
-      </div>`;
-      const ok = await sendEmail(user.email, `תזכורת: קופון ${c.company} עומד לפוג`, html);
-      if (ok) {
-        await supabase.from('coupon').update({ [w.flag]: true }).eq('id', c.id);
-        sent++;
-      }
-    }
-  }
-
-  return jsonResponse({ sent });
-}
-
 async function handleUpdateSummary(userId: number, updated: number, failed: number, skipped: number) {
   const supabase = supa();
   const { data: user } = await supabase.from('users').select('email, first_name').eq('id', userId).single();
@@ -235,7 +150,7 @@ Deno.serve(async (req: Request) => {
     // issue_report is reached from /issues, a public route. So authorisation is
     // per-mode: everything that sends mail to anyone other than the site owner
     // requires an admin, or the service role for the cron-driven run.
-    const ADMIN_MODES = ['newsletter', 'expiration_reminders', 'test'];
+    const ADMIN_MODES = ['newsletter', 'test'];
     if (ADMIN_MODES.includes(mode) && !isServiceRoleCall(req)) {
       if (!isAdminIpAllowed(req)) {
         return jsonResponse({ error: 'הגישה נדחתה מכתובת הרשת הזו' }, 403);
@@ -248,7 +163,6 @@ Deno.serve(async (req: Request) => {
     }
 
     if (mode === 'newsletter') return await handleNewsletter(body.newsletter_id);
-    if (mode === 'expiration_reminders') return await handleExpirationReminders();
     if (mode === 'multipass_update_summary') {
       if (isServiceRoleCall(req)) {
         return await handleUpdateSummary(

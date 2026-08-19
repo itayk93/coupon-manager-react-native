@@ -18,18 +18,21 @@ export function useSendNewsletter() {
   });
 }
 
-// Manually trigger the expiration-reminder run (normally invoked by cron).
+// Manually trigger the expiry-alert run (normally invoked by pg_cron).
 export function useSendExpirationReminders() {
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('send-emails', {
-        body: { mode: 'expiration_reminders' },
+      const { data, error } = await supabase.functions.invoke('send-expiry-alerts', {
+        body: {},
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return data as { sent: number };
+      return data as { alerts: number; email: number; push: number; inApp: number };
     },
-    onSuccess: (r) => toast.success(`נשלחו ${r.sent} תזכורות תפוגה`),
+    onSuccess: (r) =>
+      toast.success(
+        `נשלחו התראות תפוגה: ${r.email} מייל, ${r.push} push, ${r.inApp} בתוך האפליקציה`
+      ),
     onError: (e: any) => toast.error(`שגיאה: ${e.message}`),
   });
 }

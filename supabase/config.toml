@@ -46,7 +46,13 @@ verify_jwt = true
 
 [functions.send-emails]
 # Cannot be true: the issue_report mode is reached from /issues, a public
-# route. Authorisation is per-mode inside the function — newsletter,
-# expiration_reminders and test require requireAdmin() or the service role
-# (cron); issue_report is public but only ever mails the site owner.
+# route. Authorisation is per-mode inside the function — newsletter and test
+# require requireAdmin(); issue_report is public but only ever mails the site
+# owner.
+verify_jwt = false
+
+[functions.send-expiry-alerts]
+# Cannot be true: pg_cron has no JWT to present, it authenticates with the
+# EXPIRY_CRON_TOKEN header instead. The function admits nobody else — a caller
+# without that token must pass requireAdmin() or be the service role.
 verify_jwt = false

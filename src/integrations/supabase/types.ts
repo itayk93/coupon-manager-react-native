@@ -193,10 +193,6 @@ export type Database = {
           last_detail_view: string | null
           last_scraped: string | null
           purpose: string | null
-          reminder_sent_1_day: boolean
-          reminder_sent_30_days: boolean
-          reminder_sent_7_days: boolean
-          reminder_sent_today: boolean | null
           show_in_widget: boolean | null
           source: string | null
           status: string
@@ -228,10 +224,6 @@ export type Database = {
           last_detail_view?: string | null
           last_scraped?: string | null
           purpose?: string | null
-          reminder_sent_1_day?: boolean
-          reminder_sent_30_days?: boolean
-          reminder_sent_7_days?: boolean
-          reminder_sent_today?: boolean | null
           show_in_widget?: boolean | null
           source?: string | null
           status: string
@@ -263,10 +255,6 @@ export type Database = {
           last_detail_view?: string | null
           last_scraped?: string | null
           purpose?: string | null
-          reminder_sent_1_day?: boolean
-          reminder_sent_30_days?: boolean
-          reminder_sent_7_days?: boolean
-          reminder_sent_today?: boolean | null
           show_in_widget?: boolean | null
           source?: string | null
           status?: string
@@ -284,6 +272,51 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_alerts: {
+        Row: {
+          channel: string
+          coupon_id: number
+          id: number
+          sent_at: string
+          status: string
+          user_id: number
+          window_days: number
+        }
+        Insert: {
+          channel: string
+          coupon_id: number
+          id?: number
+          sent_at?: string
+          status: string
+          user_id: number
+          window_days: number
+        }
+        Update: {
+          channel?: string
+          coupon_id?: number
+          id?: number
+          sent_at?: string
+          status?: string
+          user_id?: number
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_alerts_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupon"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -749,6 +782,50 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email: boolean
+          in_app: boolean
+          push: boolean
+          quiet_until: string | null
+          timezone: string
+          updated_at: string
+          user_id: number
+          windows: number[] | null
+        }
+        Insert: {
+          created_at?: string
+          email?: boolean
+          in_app?: boolean
+          push?: boolean
+          quiet_until?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id: number
+          windows?: number[] | null
+        }
+        Update: {
+          created_at?: string
+          email?: boolean
+          in_app?: boolean
+          push?: boolean
+          quiet_until?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: number
+          windows?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           hide_from_view: boolean
@@ -820,8 +897,10 @@ export type Database = {
         Row: {
           created_at: string
           endpoint: string
+          expo_token: string | null
+          kind: string
           platform: string | null
-          subscription: Json
+          subscription: Json | null
           updated_at: string
           user_agent: string | null
           user_email: string
@@ -830,8 +909,10 @@ export type Database = {
         Insert: {
           created_at?: string
           endpoint: string
+          expo_token?: string | null
+          kind?: string
           platform?: string | null
-          subscription: Json
+          subscription?: Json | null
           updated_at?: string
           user_agent?: string | null
           user_email: string
@@ -840,8 +921,10 @@ export type Database = {
         Update: {
           created_at?: string
           endpoint?: string
+          expo_token?: string | null
+          kind?: string
           platform?: string | null
-          subscription?: Json
+          subscription?: Json | null
           updated_at?: string
           user_agent?: string | null
           user_email?: string

@@ -180,6 +180,20 @@ export function SettingsScreen() {
               </View>
             ) : null}
 
+            {/* Notification preferences */}
+            <TouchableOpacity
+              onPress={() => router.push("/notification-settings")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  התראות
+                </Text>
+                <Bell size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
             {/* Sharing Entry */}
             <TouchableOpacity
               onPress={() => router.push("/sharing")}

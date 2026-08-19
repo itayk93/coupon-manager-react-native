@@ -71,6 +71,13 @@
       "expo-asset",
       "@react-native-community/datetimepicker",
       "@bacons/apple-targets",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#1f6fd1"
+        }
+      ],
       "./plugins/withQuotedBundleScript"
     ],
     "extra": {

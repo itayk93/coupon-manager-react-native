@@ -81,13 +81,26 @@ Deno.serve(async (req: Request) => {
     if (userError) throw userError;
     if (!user) return jsonResponse({ error: 'משתמש לא נמצא' }, 404);
 
+    const optedOut = Boolean(opted_out);
+
     const { error } = await supabase
       .from('opt_outs')
       .upsert(
-        { user_id: user.id, opted_out: Boolean(opted_out), timestamp: new Date().toISOString() },
+        { user_id: user.id, opted_out: optedOut, timestamp: new Date().toISOString() },
         { onConflict: 'user_id' },
       );
     if (error) throw error;
+
+    // The same link ends both kinds of mail. Someone who unsubscribes from an
+    // expiry reminder means it, so the per-channel preference has to follow —
+    // opt_outs alone governs marketing and would leave the reminders running.
+    const { error: prefsError } = await supabase
+      .from('notification_preferences')
+      .upsert(
+        { user_id: user.id, email: !optedOut, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' },
+      );
+    if (prefsError) throw prefsError;
 
     return jsonResponse({ ok: true });
   } catch (error) {
