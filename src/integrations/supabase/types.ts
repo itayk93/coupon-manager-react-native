@@ -180,7 +180,6 @@ export type Database = {
           card_exp: string | null
           code: string
           company: string
-          company_display_order: number | null
           company_id: number | null
           cost: number
           cvv: string | null
@@ -220,7 +219,6 @@ export type Database = {
           card_exp?: string | null
           code: string
           company: string
-          company_display_order?: number | null
           company_id?: number | null
           cost: number
           cvv?: string | null
@@ -260,7 +258,6 @@ export type Database = {
           card_exp?: string | null
           code?: string
           company?: string
-          company_display_order?: number | null
           company_id?: number | null
           cost?: number
           cvv?: string | null
