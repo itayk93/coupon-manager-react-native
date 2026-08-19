@@ -180,15 +180,12 @@ export type Database = {
           card_exp: string | null
           code: string
           company: string
-          company_id: number | null
           cost: number
           cvv: string | null
           date_added: string | null
           description: string | null
-          discount_percentage: number | null
           expiration: string | null
           id: number
-          is_available: boolean | null
           is_for_sale: boolean | null
           is_one_time: boolean | null
           last_code_view: string | null
@@ -202,7 +199,6 @@ export type Database = {
           reminder_sent_today: boolean | null
           show_in_widget: boolean | null
           source: string | null
-          special_message: string | null
           status: string
           strauss_coupon_url: string | null
           used_value: number
@@ -219,15 +215,12 @@ export type Database = {
           card_exp?: string | null
           code: string
           company: string
-          company_id?: number | null
           cost: number
           cvv?: string | null
           date_added?: string | null
           description?: string | null
-          discount_percentage?: number | null
           expiration?: string | null
           id?: number
-          is_available?: boolean | null
           is_for_sale?: boolean | null
           is_one_time?: boolean | null
           last_code_view?: string | null
@@ -241,7 +234,6 @@ export type Database = {
           reminder_sent_today?: boolean | null
           show_in_widget?: boolean | null
           source?: string | null
-          special_message?: string | null
           status: string
           strauss_coupon_url?: string | null
           used_value: number
@@ -258,15 +250,12 @@ export type Database = {
           card_exp?: string | null
           code?: string
           company?: string
-          company_id?: number | null
           cost?: number
           cvv?: string | null
           date_added?: string | null
           description?: string | null
-          discount_percentage?: number | null
           expiration?: string | null
           id?: number
-          is_available?: boolean | null
           is_for_sale?: boolean | null
           is_one_time?: boolean | null
           last_code_view?: string | null
@@ -280,7 +269,6 @@ export type Database = {
           reminder_sent_today?: boolean | null
           show_in_widget?: boolean | null
           source?: string | null
-          special_message?: string | null
           status?: string
           strauss_coupon_url?: string | null
           used_value?: number
