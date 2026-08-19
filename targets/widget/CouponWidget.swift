@@ -329,7 +329,7 @@ private struct CouponStatsSmallView: View {
             // The stack fills the tile, so top/bottom breathing room has to be
             // bought by keeping the content itself compact — padding alone just
             // pushes the logo and the footer off the edges.
-            .padding(.vertical, 10)
+            .padding(.vertical, 18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
