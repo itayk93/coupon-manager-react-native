@@ -160,33 +160,27 @@ private struct CompanyLogoView: View {
 }
 
 private struct AppLogoView: View {
-    var size: CGFloat = 24
+    var fontSize: CGFloat = 11.5
+    var iconSize: CGFloat = 10
 
     var body: some View {
-        if let uiImage = UIImage(named: "CouponLogo") {
-            Image(uiImage: uiImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
-                .cornerRadius(size / 4)
-        } else {
-            // Brand gradient placeholder, matching the app's button/gate treatment.
-            ZStack {
-                RoundedRectangle(cornerRadius: size / 4)
-                    .fill(
-                        LinearGradient(
-                            colors: [WidgetStyle.primary, WidgetStyle.primaryDark],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: size, height: size)
+        HStack(spacing: 4.5) {
+            Text("COUPON")
+                .couponFont(fontSize, .extraBold)
+                .foregroundColor(.white)
+                .tracking(1.0)
 
-                Text("%")
-                    .couponFont(size / 2, .extraBold)
-                    .foregroundColor(.white)
-            }
+            Image(systemName: "ticket.fill")
+                .font(.system(size: iconSize, weight: .bold))
+                .foregroundColor(WidgetStyle.primaryLight)
+                .rotationEffect(.degrees(-15))
+
+            Text("MASTER")
+                .couponFont(fontSize, .extraBold)
+                .foregroundColor(WidgetStyle.primaryLight)
+                .tracking(1.0)
         }
+        .environment(\.layoutDirection, .leftToRight)
     }
 }
 
@@ -299,14 +293,13 @@ private struct CouponStatsSmallView: View {
 
             VStack(spacing: 0) {
                 Spacer()
-                Spacer()
 
                 VStack(spacing: 8) {
-                    AppLogoView(size: 20)
+                    AppLogoView()
                     Rectangle()
                         .fill(WidgetStyle.cardStroke)
                         .frame(height: 1)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 16)
                 }
 
                 HStack {
@@ -319,19 +312,18 @@ private struct CouponStatsSmallView: View {
 
                 Spacer()
 
-                VStack(spacing: 4) {
+                VStack(spacing: 3) {
                     Text(formatShekels(payload.totalRemainingValue))
-                        .couponFont(28, .extraBold)
+                        .couponFont(32, .extraBold)
                         .foregroundColor(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
                     Text("נותר לשימוש")
-                        .couponFont(12)
+                        .couponFont(13, .medium)
                         .foregroundColor(WidgetStyle.textSubtle)
                 }
 
-                Spacer()
                 Spacer()
             }
             // The stack fills the tile, so top/bottom breathing room has to be
@@ -345,10 +337,10 @@ private struct CouponStatsSmallView: View {
     private func statColumn(label: String, value: Int) -> some View {
         VStack(alignment: .center, spacing: 2) {
             Text(label)
-                .couponFont(9)
+                .couponFont(11, .medium)
                 .foregroundColor(WidgetStyle.textSubtle)
             Text("\(value)")
-                .couponFont(18, .extraBold)
+                .couponFont(21, .extraBold)
                 .foregroundColor(.white)
         }
     }
@@ -447,7 +439,7 @@ private struct CouponLargeView: View {
 
             VStack(spacing: 4) {
                 HStack(spacing: 12) {
-                    AppLogoView(size: 32)
+                    AppLogoView(fontSize: 15, iconSize: 13)
 
                     VStack(alignment: .center, spacing: 2) {
                         Text("קופונים פעילים: \(payload.activeCouponsCount)")
