@@ -7,6 +7,12 @@
 // Constraints this file exists to satisfy: table layout (flexbox and grid are
 // unreliable in Outlook), every style inline (no <style> block survives Gmail),
 // Heebo requested by link with a system fallback stack, and a fixed 600px body.
+//
+// Direction is repeated on every element that holds text. Gmail on iOS drops the
+// dir attribute from <html> and <body> when it sanitises the message, which
+// leaves the paragraph direction LTR: a line opening with a digit ("3 קופונים")
+// has that digit thrown to the far end, and the shekel sign lands on the wrong
+// side of the amount. Only direction declared further in survives.
 
 const COLOR = {
   shell: '#eeece5',
@@ -29,6 +35,21 @@ const COLOR = {
 } as const;
 
 const FONT = "'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
+
+/** Inline direction, repeated everywhere because Gmail strips it from <body>. */
+const RTL = 'direction:rtl;text-align:right';
+
+/** Right-to-left mark. Forces a line that opens with a digit to stay right-aligned. */
+const RLM = '&#8207;';
+
+/**
+ * Hebrew writes the amount before the sign — "120.50 ₪" — which bidi then lays
+ * out with the sign to the left of the digits. Authoring it the other way round
+ * is what put the shekel on the wrong side.
+ */
+function money(amount: number) {
+  return `${amount.toFixed(2)}&nbsp;₪`;
+}
 
 export type ExpiryCoupon = {
   company: string;
@@ -65,23 +86,23 @@ function couponRow(coupon: ExpiryCoupon, accent: ReturnType<typeof accentFor>) {
   return `
   <tr>
     <td style="padding:0 0 10px 0">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-             style="background:${COLOR.card};border:1px solid ${COLOR.cardBorder};border-radius:16px">
+      <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="${RTL};background:${COLOR.card};border:1px solid ${COLOR.cardBorder};border-radius:16px">
         <tr>
           <td width="4" style="background:${accent.bar};border-radius:0 16px 16px 0;font-size:0">&nbsp;</td>
-          <td style="padding:14px 16px">
-            <div style="font-family:${FONT};font-size:16px;font-weight:700;color:${COLOR.text};line-height:1.4">
+          <td dir="rtl" align="right" style="${RTL};padding:14px 16px">
+            <div dir="rtl" style="${RTL};font-family:${FONT};font-size:16px;font-weight:700;color:${COLOR.text};line-height:1.4">
               ${escapeHtml(coupon.company)}
             </div>
-            <div style="font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding-top:2px">
-              בתוקף עד ${formatDate(coupon.expiration)}
+            <div dir="rtl" style="${RTL};font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding-top:2px">
+              ${RLM}בתוקף עד ${formatDate(coupon.expiration)}
             </div>
           </td>
-          <td align="left" style="padding:14px 16px;white-space:nowrap">
-            <div style="font-family:${FONT};font-size:18px;font-weight:800;color:${COLOR.primary}">
-              ₪${coupon.remaining.toFixed(2)}
+          <td dir="rtl" align="left" style="direction:rtl;text-align:left;padding:14px 16px;white-space:nowrap">
+            <div dir="rtl" style="direction:rtl;text-align:left;font-family:${FONT};font-size:18px;font-weight:800;color:${COLOR.primary}">
+              ${RLM}${money(coupon.remaining)}
             </div>
-            <div style="font-family:${FONT};font-size:11px;color:${COLOR.textMuted}">יתרה</div>
+            <div dir="rtl" style="direction:rtl;text-align:left;font-family:${FONT};font-size:11px;color:${COLOR.textMuted}">יתרה</div>
           </td>
         </tr>
       </table>
@@ -105,7 +126,7 @@ export function expiryEmailHtml(options: {
 
   const cta = appUrl
     ? `<tr>
-         <td align="center" style="padding:6px 0 4px 0">
+         <td dir="rtl" align="center" style="${RTL};text-align:center;padding:6px 0 4px 0">
            <a href="${escapeHtml(appUrl)}"
               style="display:inline-block;background:${COLOR.primary};color:#ffffff;font-family:${FONT};
                      font-size:15px;font-weight:700;text-decoration:none;padding:13px 30px;border-radius:12px">
@@ -116,7 +137,7 @@ export function expiryEmailHtml(options: {
     : '';
 
   const footer = unsubscribeUrl
-    ? `<p style="margin:10px 0 0 0;font-family:${FONT};font-size:12px;color:${COLOR.textMuted};line-height:1.6">
+    ? `<p dir="rtl" style="${RTL};margin:10px 0 0 0;font-family:${FONT};font-size:12px;color:${COLOR.textMuted};line-height:1.6">
          לא רוצה לקבל תזכורות תפוגה במייל?
          <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLOR.textSecondary}">אפשר לבטל כאן</a>.
        </p>`
@@ -131,60 +152,60 @@ export function expiryEmailHtml(options: {
   <title>${escapeHtml(headline)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background:${COLOR.shell}">
+<body dir="rtl" style="${RTL};margin:0;padding:0;background:${COLOR.shell}">
   <!-- Preheader: the grey line clients show next to the subject. -->
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0">
-    ${escapeHtml(headline)} ${escapeHtml(whenLabel(days))} — יתרה כוללת ₪${total.toFixed(2)}
+  <div dir="rtl" style="${RTL};display:none;max-height:0;overflow:hidden;opacity:0">
+    ${RLM}${escapeHtml(headline)} ${escapeHtml(whenLabel(days))} — יתרה כוללת ${money(total)}
   </div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background:${COLOR.shell};padding:24px 12px">
+  <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="${RTL};background:${COLOR.shell};padding:24px 12px">
     <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-               style="width:100%;max-width:600px">
+      <td dir="rtl" align="center" style="${RTL};text-align:center">
+        <table dir="rtl" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+               style="${RTL};width:100%;max-width:600px">
 
           <!-- The app chrome is dark in both themes; the header follows it. -->
           <tr>
-            <td style="background:${COLOR.headerBg};border-radius:20px 20px 0 0;padding:22px 24px">
-              <div style="font-family:${FONT};font-size:19px;font-weight:800;color:#ffffff">
+            <td dir="rtl" align="right" style="${RTL};background:${COLOR.headerBg};border-radius:20px 20px 0 0;padding:22px 24px">
+              <div dir="rtl" style="${RTL};font-family:${FONT};font-size:19px;font-weight:800;color:#ffffff">
                 קופון מאסטר
               </div>
             </td>
           </tr>
 
           <tr>
-            <td style="background:${COLOR.card};padding:26px 24px 22px 24px">
-              <div style="font-family:${FONT};font-size:15px;color:${COLOR.textSecondary}">
+            <td dir="rtl" align="right" style="${RTL};background:${COLOR.card};padding:26px 24px 22px 24px">
+              <div dir="rtl" style="${RTL};font-family:${FONT};font-size:15px;color:${COLOR.textSecondary}">
                 שלום ${escapeHtml(firstName || '')},
               </div>
 
-              <div style="font-family:${FONT};font-size:24px;font-weight:800;color:${COLOR.text};
+              <div dir="rtl" style="${RTL};font-family:${FONT};font-size:24px;font-weight:800;color:${COLOR.text};
                           line-height:1.35;padding:6px 0 12px 0">
-                ${escapeHtml(headline)} ${escapeHtml(whenLabel(days))}
+                ${RLM}${escapeHtml(headline)} ${escapeHtml(whenLabel(days))}
               </div>
 
-              <span style="display:inline-block;background:${accent.bg};color:${accent.text};
+              <span dir="rtl" style="${RTL};display:inline-block;background:${accent.bg};color:${accent.text};
                            font-family:${FONT};font-size:13px;font-weight:700;
                            padding:6px 14px;border-radius:999px">
-                יתרה כוללת ₪${total.toFixed(2)}
+                ${RLM}יתרה כוללת ${money(total)}
               </span>
 
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="padding-top:18px">
+              <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="${RTL};padding-top:18px">
                 ${coupons.map((coupon) => couponRow(coupon, accent)).join('')}
               </table>
 
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL}">
                 ${cta}
               </table>
             </td>
           </tr>
 
           <tr>
-            <td style="background:${COLOR.surface};border-radius:0 0 20px 20px;
+            <td dir="rtl" align="right" style="${RTL};background:${COLOR.surface};border-radius:0 0 20px 20px;
                        border-top:1px solid ${COLOR.divider};padding:18px 24px">
-              <p style="margin:0;font-family:${FONT};font-size:13px;color:${COLOR.textMuted};line-height:1.6">
+              <p dir="rtl" style="${RTL};margin:0;font-family:${FONT};font-size:13px;color:${COLOR.textMuted};line-height:1.6">
                 אפשר לכבות או לכוונן את התזכורות במסך ההגדרות באפליקציה.
               </p>
               ${footer}
