@@ -20,6 +20,7 @@ import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { isServiceRoleCall, requireAdmin } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 import { buildUnsubscribeUrl } from '../_shared/unsubscribe.ts';
+import { expiryEmailHtml } from '../_shared/emailTemplate.ts';
 import { createServiceClient, sendPushToRows, type PushSubscriptionRow } from '../_shared/push.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
@@ -76,12 +77,6 @@ function isCronCall(req: Request): boolean {
   return diff === 0;
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>'"]/g, (char) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
-  })[char] || char);
-}
-
 /** Calendar date (YYYY-MM-DD) as it reads right now in the given zone. */
 function todayInTimeZone(timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -134,29 +129,6 @@ function whenLabel(days: number): string {
   if (days === 0) return 'היום';
   if (days === 1) return 'מחר';
   return `בעוד ${days} ימים`;
-}
-
-function summaryHtml(
-  coupons: CouponRow[], days: number, firstName: string, unsubscribe: string | null,
-): string {
-  const lines = coupons
-    .map((c) => `<li><strong>${escapeHtml(c.company)}</strong> — ${remainingFor(c).toFixed(2)} ₪</li>`)
-    .join('');
-
-  const footer = unsubscribe
-    ? `<p style="font-size:12px;color:#667">
-         לא רוצה לקבל תזכורות תפוגה במייל?
-         <a href="${escapeHtml(unsubscribe)}">אפשר לבטל כאן</a>.
-       </p>`
-    : '';
-
-  return `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.7">
-    <h2>שלום ${escapeHtml(firstName || '')},</h2>
-    <p>יש לך ${coupons.length === 1 ? 'קופון שעומד לפוג' : `${coupons.length} קופונים שעומדים לפוג`} ${whenLabel(days)}:</p>
-    <ul style="padding-right:20px">${lines}</ul>
-    <p>כדאי לנצל אותם בזמן.</p>
-    ${footer}
-  </div>`;
 }
 
 function summaryText(coupons: CouponRow[], days: number): string {
@@ -346,7 +318,17 @@ Deno.serve(async (req: Request) => {
           const ok = await sendEmail(
             user.email,
             subject,
-            summaryHtml(pending.email, days, user.first_name || '', await buildUnsubscribeUrl(user.id, user.email)),
+            expiryEmailHtml({
+              firstName: user.first_name || '',
+              days,
+              coupons: pending.email.map((c) => ({
+                company: c.company,
+                remaining: remainingFor(c),
+                expiration: c.expiration,
+              })),
+              appUrl: Deno.env.get('APP_BASE_URL') || null,
+              unsubscribeUrl: await buildUnsubscribeUrl(user.id, user.email),
+            }),
           );
           if (ok) emailCount += 1;
           record('email', ok);
