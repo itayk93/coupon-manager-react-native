@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { signInWithSocialProvider } from "@/lib/socialAuth";
 
 export function LoginScreen() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"google" | "apple" | null>(null);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
@@ -42,6 +44,20 @@ export function LoginScreen() {
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const handleSocialLogin = async (provider: "google" | "apple") => {
+    setSocialLoading(provider);
+    try {
+      await signInWithSocialProvider(provider);
+    } catch (err: any) {
+      notify.error(
+        provider === "google" ? "התחברות עם Google" : "התחברות עם Apple",
+        err.message || "ההתחברות נכשלה. נסו שוב.",
+      );
+    } finally {
+      setSocialLoading(null);
+    }
   };
 
   const handleLogin = async () => {
@@ -148,15 +164,29 @@ export function LoginScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                onPress={() =>
-                  notify.error("התחברות עם Google", "האפשרות תופעל בקרוב")
-                }
+                onPress={() => handleSocialLogin("google")}
+                disabled={socialLoading !== null}
                 style={[
-                  styles.googleBtn,
+                  styles.socialBtn,
                   { backgroundColor: theme.card, borderColor: theme.inputBorder },
                 ]}
               >
-                <Text style={[styles.googleText, { color: theme.label }]}>Google</Text>
+                <Text style={styles.googleIcon}>G</Text>
+                <Text style={[styles.socialText, { color: theme.label }]}>
+                  {socialLoading === "google" ? "מתחבר..." : "המשך עם Google"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => handleSocialLogin("apple")}
+                disabled={socialLoading !== null}
+                style={[styles.socialBtn, styles.appleBtn]}
+              >
+                <Text style={styles.appleIcon}></Text>
+                <Text style={[styles.socialText, styles.appleText]}>
+                  {socialLoading === "apple" ? "מתחבר..." : "המשך עם Apple"}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -290,7 +320,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
   },
-  googleBtn: {
+  socialBtn: {
     height: 48,
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -298,11 +328,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row-reverse",
     gap: 10,
+    marginBottom: 10,
   },
-  googleText: {
+  socialText: {
     fontFamily: fonts.bodyBold,
     fontSize: 14,
     fontWeight: "600",
+  },
+  googleIcon: {
+    color: "#4285f4",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  appleBtn: {
+    backgroundColor: "#000000",
+    borderColor: "#000000",
+  },
+  appleIcon: {
+    color: "#ffffff",
+    fontSize: 21,
+  },
+  appleText: {
+    color: "#ffffff",
   },
   footerRow: {
     flexDirection: "row-reverse",

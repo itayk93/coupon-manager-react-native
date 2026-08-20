@@ -10,6 +10,7 @@
     "runtimeVersion": "1.0.0",
     "ios": {
       "supportsTablet": true,
+      "usesAppleSignIn": true,
       "bundleIdentifier": "com.itaykarkason.couponmaster",
       "appleTeamId": "TM252YSY6T",
       "entitlements": {
