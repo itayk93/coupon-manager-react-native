@@ -16,7 +16,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Check, Copy, Pencil, X } from "lucide-react-native";
+import { Check, Copy, Pencil, ReceiptText, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
@@ -81,8 +81,13 @@ type CompanySheetProps = {
   onClose: () => void;
 };
 
+/**
+ * "₪ 35.10" with the shekel sign to the left of the number. The isolate marks
+ * keep the pair intact inside RTL text instead of letting the bidi algorithm
+ * flip the sign to the other side.
+ */
 function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
+  return `\u2066₪ ${value.toFixed(2)}\u2069`;
 }
 
 function daysUntil(expiration: string | null) {
@@ -339,11 +344,11 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                 </Text>
 
                 <View style={[styles.codeBalance, { backgroundColor: theme.inputBg }]}>
+                  <Text style={[styles.codeBalanceLabel, { color: theme.textMuted }]}>
+                    יתרה:
+                  </Text>
                   <Text style={[styles.codeBalanceValue, { color: theme.text }]}>
                     {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
-                  </Text>
-                  <Text style={[styles.codeBalanceLabel, { color: theme.textMuted }]}>
-                    יתרה
                   </Text>
                 </View>
 
@@ -364,7 +369,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                     style={[styles.codeSecondaryBtn, { backgroundColor: theme.inputBg }]}
                     accessibilityLabel="מעבר לעמוד הקופון"
                   >
-                    <ArrowLeft size={16} color={theme.label} />
+                    <ReceiptText size={16} color={theme.label} />
                     <Text style={[styles.codeSecondaryText, { color: theme.label }]}>
                       לעמוד הקופון
                     </Text>
@@ -561,7 +566,7 @@ const styles = StyleSheet.create({
   },
   codeBig: {
     fontFamily: fonts.display,
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: "800",
     letterSpacing: 1,
     textAlign: "center",
