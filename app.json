@@ -29,7 +29,6 @@
       "package": "com.itaykarkason.couponmaster",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS"
       ]
     },
@@ -84,7 +83,6 @@
     "extra": {
       "supabaseUrl": "https://dugjsiyenazpsoiyduuz.supabase.co",
       "supabaseAnonKey": "REMOVED_PUBLIC_SUPABASE_ANON_KEY",
-      "encryptionKey": "REMOVED_PUBLIC_ENCRYPTION_KEY=",
       "eas": {
         "projectId": "864f975d-b0a6-4e41-888a-bb60b26ae1fe"
       }

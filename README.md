@@ -1,5 +1,8 @@
 # Coupon Master
 
+[![CI](https://github.com/itayk93/coupon-manager-react-native/actions/workflows/ci.yml/badge.svg)](https://github.com/itayk93/coupon-manager-react-native/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Expo / React Native app for tracking gift cards and prepaid coupons: what you own,
 how much is left on each, and when it expires. Hebrew-first, RTL throughout.
 Backed by Supabase (Postgres + Auth + Edge Functions).
@@ -7,7 +10,7 @@ Backed by Supabase (Postgres + Auth + Edge Functions).
 ## Features
 
 - Coupon vault with per-coupon balance, usage history and expiry tracking
-- Coupon codes encrypted at rest (AES, `src/lib/encryption.ts`)
+- Coupon-code encryption compatible with the server-side Fernet format
 - Camera scanning + AI parsing of coupon screenshots (`supabase/functions/parse-coupon`)
 - Automatic balance refresh for supported providers (Multipass)
 - Home-screen widgets on iOS and Android (`modules/coupon-widget`, `targets/`)
@@ -32,6 +35,9 @@ npm install
 cp .env.example .env   # fill in your own Supabase project
 npm run ios            # or: npm run android
 ```
+
+Use a separate Supabase project for local development. Never reuse production
+credentials or production coupon data.
 
 `npm start` alone expects a dev client. The app uses native modules, so Expo Go
 will not run it — build once with `npm run ios` / `npm run android` first.
@@ -60,6 +66,16 @@ There is no application server. All authorization is enforced in the database:
   (`0016_revoke_public_rpc_execute.sql`).
 - The anon key is public by design — it grants no data access on its own.
 
+### Encryption limitation
+
+`EXPO_PUBLIC_ENCRYPTION_KEY` is bundled into the app. It protects values from
+casual inspection in the database, but it is **not** a secret and does not
+provide end-to-end encryption. Do not use this project for sensitive coupon
+data without moving cryptographic operations behind an authenticated server
+boundary or adopting per-user keys stored in platform secure storage.
+
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
 ## Tests
 
 ```bash
@@ -70,3 +86,8 @@ npm run typecheck
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). By contributing, you agree that your
+changes are provided under the MIT license.

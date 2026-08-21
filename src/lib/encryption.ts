@@ -14,7 +14,8 @@ try {
 export const ENCRYPTION_KEY =
   extraConfig?.encryptionKey ||
   (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_ENCRYPTION_KEY) ||
-  "REMOVED_PUBLIC_ENCRYPTION_KEY=";
+  (typeof process !== "undefined" && process.env?.VITE_ENCRYPTION_KEY) ||
+  "";
 
 function base64UrlDecode(str: string): Uint8Array {
   let base64 = str.replace(/-/g, "+").replace(/_/g, "/");

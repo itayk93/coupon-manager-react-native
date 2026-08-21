@@ -51,6 +51,8 @@ supabase/.temp/
 
 # Xcode derived data written by `expo run:ios`
 /build/
+/build-widget-test/
+/build-widget-target/
 docs/
 .commandcode/
 *.auth/
@@ -61,3 +63,6 @@ docs/
 .commandcode/
 SECURITY_REVIEW.md
 SESSION_*.md
+AGENTS.md
+CLAUDE.md
+GEMINI.md
