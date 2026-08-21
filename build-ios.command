@@ -52,16 +52,23 @@ echo "================================================="
 # the Pods project keeps compiling the old one's file list. xcodebuild then
 # fails with "Build input files cannot be found" on files that no longer exist.
 NEEDS_PODS=$FORCE_PODS
+UPDATE_PODS=0
 if [ ! -d "ios/Pods" ] || [ ! -f "ios/Podfile.lock" ]; then
   NEEDS_PODS=1
 elif [ node_modules/.package-lock.json -nt ios/Podfile.lock ] 2>/dev/null; then
   NEEDS_PODS=1
+  UPDATE_PODS=1
   echo "ℹ️  התלויות ב-node_modules חדשות יותר מ-Podfile.lock."
 fi
 
 if [ "$NEEDS_PODS" -eq 1 ]; then
-  echo "📦 מריץ pod install..."
-  pod install --project-directory=ios
+  if [ "$UPDATE_PODS" -eq 1 ] || { [ "$FORCE_PODS" -eq 1 ] && [ -f "ios/Podfile.lock" ]; }; then
+    echo "📦 מסנכרן גרסאות CocoaPods..."
+    (cd ios && pod update --no-repo-update)
+  else
+    echo "📦 מתקין CocoaPods..."
+    pod install --project-directory=ios
+  fi
 else
   echo "📦 ה-Pods מעודכנים."
 fi
