@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Alert,
 } from "react-native";
-import { Check, ChevronDown } from "lucide-react-native";
+import { CheckCheck, Check, ChevronDown } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,15 +49,57 @@ export function QuickUsageModal({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!visible) return;
+    setSelectedCouponId(
+      preselectedCoupon ? preselectedCoupon.id : activeCoupons[0]?.id ?? null
+    );
+    setAmount("");
+    setDetails("");
+    setError("");
+    setIsPickerOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, preselectedCoupon?.id]);
+
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId);
   const remaining = selectedCoupon
     ? Math.max(0, (selectedCoupon.value || 0) - (selectedCoupon.used_value || 0))
     : 0;
 
-  const handleFullUsage = () => {
-    if (remaining > 0) {
-      setAmount(String(remaining));
-    }
+  const submitUsage = async (numAmount: number, usageDetails: string) => {
+    await recordUsage.mutateAsync({
+      couponId: selectedCouponId as number,
+      usedAmount: numAmount,
+      details: usageDetails,
+    });
+    setAmount("");
+    setDetails("");
+    setError("");
+    onClose();
+  };
+
+  const handleMarkFullyUsed = () => {
+    if (!selectedCouponId || remaining <= 0) return;
+    Alert.alert(
+      "סימון הקופון כנוצל",
+      `לסמן את כל היתרה שנותרה (${formatIls(remaining)}) של ${
+        selectedCoupon?.company ?? "הקופון"
+      } כנוצלה? הקופון יעבור לסטטוס נוצל.`,
+      [
+        { text: "ביטול", style: "cancel" },
+        {
+          text: "סמן כנוצל",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await submitUsage(remaining, details.trim() || "סימון הקופון כנוצל");
+            } catch (e) {
+              console.error(e);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleSubmit = async () => {
@@ -75,15 +118,7 @@ export function QuickUsageModal({
     }
 
     try {
-      await recordUsage.mutateAsync({
-        couponId: selectedCouponId,
-        usedAmount: numAmount,
-        details: details.trim() || "שימוש מהיר באפליקציה",
-      });
-      setAmount("");
-      setDetails("");
-      setError("");
-      onClose();
+      await submitUsage(numAmount, details.trim() || "שימוש מהיר באפליקציה");
     } catch (e) {
       console.error(e);
     }
@@ -215,17 +250,15 @@ export function QuickUsageModal({
             error={error}
           />
           {remaining > 0 ? (
-            <TouchableOpacity
-              onPress={handleFullUsage}
-              style={[
-                styles.fullUseBtn,
-                { backgroundColor: theme.surfaceAlt },
-              ]}
-            >
-              <Text style={[styles.fullUseText, { color: theme.primary }]}>
-                שימוש במלוא היתרה ({formatIls(remaining)})
-              </Text>
-            </TouchableOpacity>
+            <Button
+              title={`סימון הקופון כנוצל (${formatIls(remaining)})`}
+              onPress={handleMarkFullyUsed}
+              variant="outline"
+              size="lg"
+              disabled={recordUsage.isPending}
+              icon={<CheckCheck size={20} color={theme.primary} />}
+              style={styles.fullUseBtn}
+            />
           ) : null}
         </View>
 
@@ -330,15 +363,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   fullUseBtn: {
-    alignSelf: "flex-end",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginTop: -6,
+    marginTop: 2,
     marginBottom: 12,
-  },
-  fullUseText: {
-    fontSize: 12,
-    fontWeight: "700",
   },
 });
