@@ -290,65 +290,52 @@ private struct CouponStatsSmallView: View {
                 statsView
             }
         }
+        .widgetURL(URL(string: "couponmaster:///coupons"))
         .widgetBackground(Color.clear)
     }
 
+    /// One idea per tile: the money is the hero, everything else is one line of
+    /// context under it. The old face gave three numbers equal visual weight,
+    /// which left no entry point for the eye.
     private var statsView: some View {
         ZStack {
             WidgetStyle.background.edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
-                Spacer()
+                AppLogoView(height: 12)
+                    .opacity(0.75)
 
-                VStack(spacing: 8) {
-                    AppLogoView(height: 15)
-                    Rectangle()
-                        .fill(WidgetStyle.cardStroke)
-                        .frame(height: 1)
-                        .padding(.horizontal, 16)
+                Spacer(minLength: 0)
+
+                Text(formatShekels(payload.totalRemainingValue))
+                    .couponFont(34, .extraBold)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+
+                Text("נותר ב־\(payload.activeCouponsCount) קופונים")
+                    .couponFont(12, .medium)
+                    .foregroundColor(WidgetStyle.textSubtle)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.top, 4)
+
+                Spacer(minLength: 0)
+
+                // Same affordance the bank widgets use: one short verb phrase
+                // plus a chevron, in the accent colour, pinned to the bottom.
+                HStack(spacing: 4) {
+                    Text("לכל הקופונים")
+                        .couponFont(12, .bold)
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 9, weight: .bold))
                 }
-
-                HStack {
-                    statColumn(label: "חד פעמיים", value: payload.oneTimeCouponsCount)
-                    Spacer()
-                    statColumn(label: "קופונים פעילים", value: payload.activeCouponsCount)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-
-                Spacer()
-
-                VStack(spacing: 3) {
-                    Text(formatShekels(payload.totalRemainingValue))
-                        .couponFont(32, .extraBold)
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-
-                    Text("נותר לשימוש")
-                        .couponFont(13, .medium)
-                        .foregroundColor(WidgetStyle.textSubtle)
-                }
-
-                Spacer()
+                .foregroundColor(WidgetStyle.primaryLight)
             }
-            // The stack fills the tile, so top/bottom breathing room has to be
-            // bought by keeping the content itself compact — padding alone just
-            // pushes the logo and the footer off the edges.
-            .padding(.vertical, 18)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func statColumn(label: String, value: Int) -> some View {
-        VStack(alignment: .center, spacing: 2) {
-            Text(label)
-                .couponFont(11, .medium)
-                .foregroundColor(WidgetStyle.textSubtle)
-            Text("\(value)")
-                .couponFont(21, .extraBold)
-                .foregroundColor(.white)
-        }
     }
 
     private var expiringView: some View {
