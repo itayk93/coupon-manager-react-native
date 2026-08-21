@@ -1,7 +1,7 @@
 # Coupon Master
 
 [![CI](https://github.com/itayk93/coupon-manager-react-native/actions/workflows/ci.yml/badge.svg)](https://github.com/itayk93/coupon-manager-react-native/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: All Rights Reserved](https://img.shields.io/badge/License-All%20Rights%20Reserved-red.svg)](LICENSE)
 
 ![Coupon Master social preview](public/social-preview.png)
 
@@ -89,9 +89,11 @@ npm run typecheck
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Copyright © 2026 Itay Karkason. All rights reserved. Viewing this public
+repository does not grant permission to use, copy, modify, distribute, or sell
+the code. See [LICENSE](LICENSE).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). By contributing, you agree that your
-changes are provided under the MIT license.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions require explicit written
+approval and do not change the proprietary license.
