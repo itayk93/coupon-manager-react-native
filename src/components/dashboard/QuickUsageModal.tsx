@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
-  Alert,
 } from "react-native";
 import { CheckCheck, Check, ChevronDown } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
@@ -48,6 +47,7 @@ export function QuickUsageModal({
   const [details, setDetails] = useState("");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [error, setError] = useState("");
+  const [isConfirmingFullUse, setIsConfirmingFullUse] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -58,6 +58,7 @@ export function QuickUsageModal({
     setDetails("");
     setError("");
     setIsPickerOpen(false);
+    setIsConfirmingFullUse(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, preselectedCoupon?.id]);
 
@@ -78,28 +79,14 @@ export function QuickUsageModal({
     onClose();
   };
 
-  const handleMarkFullyUsed = () => {
+  const handleConfirmFullUse = async () => {
     if (!selectedCouponId || remaining <= 0) return;
-    Alert.alert(
-      "סימון הקופון כנוצל",
-      `לסמן את כל היתרה שנותרה (${formatIls(remaining)}) של ${
-        selectedCoupon?.company ?? "הקופון"
-      } כנוצלה? הקופון יעבור לסטטוס נוצל.`,
-      [
-        { text: "ביטול", style: "cancel" },
-        {
-          text: "סמן כנוצל",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await submitUsage(remaining, details.trim() || "סימון הקופון כנוצל");
-            } catch (e) {
-              console.error(e);
-            }
-          },
-        },
-      ]
-    );
+    try {
+      await submitUsage(remaining, details.trim() || "סימון הקופון כנוצל");
+      setIsConfirmingFullUse(false);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleSubmit = async () => {
@@ -195,6 +182,7 @@ export function QuickUsageModal({
                     onPress={() => {
                       setSelectedCouponId(item.id);
                       setIsPickerOpen(false);
+                      setIsConfirmingFullUse(false);
                       setError("");
                     }}
                     style={[
@@ -250,15 +238,47 @@ export function QuickUsageModal({
             error={error}
           />
           {remaining > 0 ? (
-            <Button
-              title={`סימון הקופון כנוצל (${formatIls(remaining)})`}
-              onPress={handleMarkFullyUsed}
-              variant="outline"
-              size="lg"
-              disabled={recordUsage.isPending}
-              icon={<CheckCheck size={20} color={theme.primary} />}
-              style={styles.fullUseBtn}
-            />
+            isConfirmingFullUse ? (
+              <View
+                style={[
+                  styles.confirmBox,
+                  { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                ]}
+              >
+                <Text style={[styles.confirmText, { color: theme.text }]}>
+                  לסמן את כל היתרה שנותרה ({formatIls(remaining)}) כנוצלה?
+                  הקופון יעבור לסטטוס "נוצל".
+                </Text>
+                <View style={styles.confirmActions}>
+                  <Button
+                    title="ביטול"
+                    onPress={() => setIsConfirmingFullUse(false)}
+                    variant="ghost"
+                    size="md"
+                    disabled={recordUsage.isPending}
+                    style={styles.confirmBtn}
+                  />
+                  <Button
+                    title="כן, סמן כנוצל"
+                    onPress={handleConfirmFullUse}
+                    variant="primary"
+                    size="md"
+                    loading={recordUsage.isPending}
+                    style={styles.confirmBtn}
+                  />
+                </View>
+              </View>
+            ) : (
+              <Button
+                title={`סימון הקופון כנוצל (${formatIls(remaining)})`}
+                onPress={() => setIsConfirmingFullUse(true)}
+                variant="outline"
+                size="lg"
+                disabled={recordUsage.isPending}
+                icon={<CheckCheck size={20} color={theme.primary} />}
+                style={styles.fullUseBtn}
+              />
+            )
           ) : null}
         </View>
 
@@ -365,5 +385,26 @@ const styles = StyleSheet.create({
   fullUseBtn: {
     marginTop: 2,
     marginBottom: 12,
+  },
+  confirmBox: {
+    borderWidth: 1.5,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 2,
+    marginBottom: 12,
+    gap: 10,
+  },
+  confirmText: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "right",
+    lineHeight: 19,
+  },
+  confirmActions: {
+    flexDirection: "row-reverse",
+    gap: 8,
+  },
+  confirmBtn: {
+    flex: 1,
   },
 });
