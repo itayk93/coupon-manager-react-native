@@ -1,8 +1,11 @@
-node_modules
-ios
 android
+ios
+build
+node_modules
+.git
 .expo
-test-results
-dist
-docs
-*.sql
+build-widget-test
+*.log
+.env
+.env.*
+!.env.example

@@ -1,11 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Coupon, CouponInsert, CouponUpdate } from "@/integrations/supabase";
-import { decrypt, encrypt } from "@/lib/encryption";
+import { Coupon } from "@/integrations/supabase";
 import { matchCompanyName } from "@/lib/companyMatch";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
-import { COUPON_COLUMNS } from "@/lib/tableColumns";
+import { couponVault } from "@/lib/couponVault";
 
 export type DecryptedCoupon = Omit<
   Coupon,
@@ -29,20 +28,6 @@ export type DecryptedCoupon = Omit<
 };
 
 // Helper function to decrypt a single coupon
-export const decryptCoupon = async (coupon: Coupon): Promise<DecryptedCoupon> => {
-  return {
-    ...coupon,
-    code: await decrypt(coupon.code),
-    description: coupon.description ? await decrypt(coupon.description) : null,
-    buyme_coupon_url: coupon.buyme_coupon_url ? await decrypt(coupon.buyme_coupon_url) : null,
-    strauss_coupon_url: coupon.strauss_coupon_url ? await decrypt(coupon.strauss_coupon_url) : null,
-    xgiftcard_coupon_url: coupon.xgiftcard_coupon_url ? await decrypt(coupon.xgiftcard_coupon_url) : null,
-    xtra_coupon_url: coupon.xtra_coupon_url ? await decrypt(coupon.xtra_coupon_url) : null,
-    cvv: coupon.cvv ? await decrypt(coupon.cvv) : null,
-    card_exp: coupon.card_exp ? await decrypt(coupon.card_exp) : null,
-  };
-};
-
 export function useCoupons() {
   const { user } = useAuth();
 
@@ -51,18 +36,7 @@ export function useCoupons() {
     queryFn: async () => {
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
-        .from("coupon")
-        .select(COUPON_COLUMNS)
-        .eq("user_id", user.id)
-        .order("date_added", { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      const decryptedCoupons = await Promise.all((data || []).map(decryptCoupon));
-      return decryptedCoupons;
+      return couponVault<DecryptedCoupon[]>({ action: "list" });
     },
     enabled: !!user,
   });
@@ -76,18 +50,7 @@ export function useCoupon(couponId: number | undefined) {
     queryFn: async () => {
       if (!user || !couponId) throw new Error("Invalid request");
 
-      const { data, error } = await supabase
-        .from("coupon")
-        .select(COUPON_COLUMNS)
-        .eq("id", couponId)
-        .eq("user_id", user.id)
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return await decryptCoupon(data);
+      return couponVault<DecryptedCoupon>({ action: "get", id: couponId });
     },
     enabled: !!user && !!couponId,
   });
@@ -141,39 +104,21 @@ export function useAddCoupon() {
     mutationFn: async (newCoupon: Partial<DecryptedCoupon>) => {
       if (!user) throw new Error("Not authenticated");
 
-      const code = newCoupon.code ? await encrypt(newCoupon.code) : "";
-      const description = newCoupon.description ? await encrypt(newCoupon.description) : null;
-      const cvv = newCoupon.cvv ? await encrypt(newCoupon.cvv) : null;
-      const card_exp = newCoupon.card_exp ? await encrypt(newCoupon.card_exp) : null;
-      const buyme_coupon_url = newCoupon.buyme_coupon_url ? await encrypt(newCoupon.buyme_coupon_url) : null;
-
       const expiration = newCoupon.expiration
         ? (newCoupon.expiration.includes("T") ? newCoupon.expiration.split("T")[0] : newCoupon.expiration).slice(0, 10)
         : null;
 
-      const couponToInsert: CouponInsert = {
+      const couponToInsert = {
         ...(newCoupon as any),
         user_id: user.id,
         company: canonicalCompany(newCoupon.company, queryClient),
-        code,
-        description,
-        cvv,
-        card_exp,
-        buyme_coupon_url,
         expiration,
         date_added: new Date().toISOString(),
         used_value: newCoupon.used_value || 0,
         status: newCoupon.status || "פעיל",
       };
 
-      const { data, error } = await supabase
-        .from("coupon")
-        .insert(couponToInsert)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return couponVault<DecryptedCoupon>({ action: "create", coupon: couponToInsert });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
@@ -192,42 +137,18 @@ export function useUpdateCoupon() {
     mutationFn: async ({ id, updates }: { id: number; updates: Partial<DecryptedCoupon> }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const encryptedUpdates: any = { ...updates };
+      const normalizedUpdates: Record<string, unknown> = { ...updates };
 
       if (updates.company !== undefined) {
-        encryptedUpdates.company = canonicalCompany(updates.company, queryClient);
-      }
-      if (updates.code !== undefined) {
-        encryptedUpdates.code = updates.code ? await encrypt(updates.code) : "";
-      }
-      if (updates.description !== undefined) {
-        encryptedUpdates.description = updates.description ? await encrypt(updates.description) : null;
-      }
-      if (updates.cvv !== undefined) {
-        encryptedUpdates.cvv = updates.cvv ? await encrypt(updates.cvv) : null;
-      }
-      if (updates.card_exp !== undefined) {
-        encryptedUpdates.card_exp = updates.card_exp ? await encrypt(updates.card_exp) : null;
-      }
-      if (updates.buyme_coupon_url !== undefined) {
-        encryptedUpdates.buyme_coupon_url = updates.buyme_coupon_url ? await encrypt(updates.buyme_coupon_url) : null;
+        normalizedUpdates.company = canonicalCompany(updates.company, queryClient);
       }
       if (updates.expiration !== undefined) {
-        encryptedUpdates.expiration = updates.expiration
+        normalizedUpdates.expiration = updates.expiration
           ? (updates.expiration.includes("T") ? updates.expiration.split("T")[0] : updates.expiration).slice(0, 10)
           : null;
       }
 
-      const { data, error } = await supabase
-        .from("coupon")
-        .update(encryptedUpdates)
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return couponVault<DecryptedCoupon>({ action: "update", id, updates: normalizedUpdates });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });

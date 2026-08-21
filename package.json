@@ -19,7 +19,6 @@
     "build:sim:ios": "eas build --profile development-simulator --platform ios",
     "build:ios:device": "./build-ios.command",
     "test": "vitest run",
-    "test:crypto": "vitest run src/lib/encryption.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.native.json"
   },
   "dependencies": {
@@ -33,7 +32,6 @@
     "@supabase/supabase-js": "^2.48.0",
     "@tanstack/react-query": "^5.66.0",
     "coupon-widget": "file:./modules/coupon-widget",
-    "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "expo": "~57.0.15",
     "expo-asset": "~57.0.11",
@@ -75,10 +73,11 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@bacons/apple-targets": "^5.0.0",
-    "@types/crypto-js": "^4.2.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "~19.2.2",
     "babel-preset-expo": "~57.0.7",
     "patch-package": "^8.0.1",
+    "pg": "^8.23.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
   },

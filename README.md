@@ -72,13 +72,11 @@ There is no application server. All authorization is enforced in the database:
   (`0016_revoke_public_rpc_execute.sql`).
 - The anon key is public by design — it grants no data access on its own.
 
-### Encryption limitation
+### Coupon encryption
 
-`EXPO_PUBLIC_ENCRYPTION_KEY` is bundled into the app. It protects values from
-casual inspection in the database, but it is **not** a secret and does not
-provide end-to-end encryption. Do not use this project for sensitive coupon
-data without moving cryptographic operations behind an authenticated server
-boundary or adopting per-user keys stored in platform secure storage.
+Sensitive coupon fields are encrypted and decrypted only by the authenticated
+`coupon-vault` Edge Function. Encryption keys stay in Supabase secrets and are
+never bundled into the web or mobile application.
 
 Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
