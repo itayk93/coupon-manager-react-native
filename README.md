@@ -3,6 +3,8 @@
 [![CI](https://github.com/itayk93/coupon-manager-react-native/actions/workflows/ci.yml/badge.svg)](https://github.com/itayk93/coupon-manager-react-native/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+![Coupon Master social preview](public/social-preview.png)
+
 Expo / React Native app for tracking gift cards and prepaid coupons: what you own,
 how much is left on each, and when it expires. Hebrew-first, RTL throughout.
 Backed by Supabase (Postgres + Auth + Edge Functions).
