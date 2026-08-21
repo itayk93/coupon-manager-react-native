@@ -18,6 +18,10 @@ Backed by Supabase (Postgres + Auth + Edge Functions).
 - Home-screen widgets on iOS and Android (`modules/coupon-widget`, `targets/`)
 - Biometric lock, push and email notifications, marketplace for reselling coupons
 
+## Screenshot
+
+<img src="public/screenshots/login.png" alt="Coupon Master login screen in Hebrew" width="320" />
+
 ## Stack
 
 | Layer | Choice |

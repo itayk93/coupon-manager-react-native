@@ -58,6 +58,7 @@ export function useUpdateUser() {
 
 // ---------- Companies / Logos ----------
 export function useCompanies() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
@@ -65,6 +66,7 @@ export function useCompanies() {
       if (error) throw error;
       return data as Company[];
     },
+    enabled: !!user,
   });
 }
 

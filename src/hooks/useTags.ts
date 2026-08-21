@@ -7,6 +7,7 @@ import { TAG_COLUMNS } from "@/lib/tableColumns";
 
 // All tags in the system
 export function useTags() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ["tags"],
     queryFn: async () => {
@@ -18,6 +19,7 @@ export function useTags() {
       if (error) throw error;
       return data as Tag[];
     },
+    enabled: !!user,
   });
 }
 
@@ -123,6 +125,7 @@ export function useSetCouponTags() {
 }
 
 export function useCouponTagsMap() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ["coupon_tags_map"],
     queryFn: async () => {
@@ -149,6 +152,7 @@ export function useCouponTagsMap() {
       }
       return map;
     },
+    enabled: !!user,
   });
 }
 
