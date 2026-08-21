@@ -16,7 +16,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { Check, Copy, Pencil, X } from "lucide-react-native";
+import { ArrowLeft, Check, Copy, Pencil, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
@@ -186,6 +186,12 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     });
   };
 
+  const handleOpenDetail = (coupon: DecryptedCoupon) => {
+    setOpenCode(null);
+    onClose();
+    router.push(`/coupons/${coupon.id}`);
+  };
+
   const drag = React.useRef(new Animated.Value(0)).current;
 
   const panResponder = React.useMemo(
@@ -311,39 +317,75 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             </TouchableWithoutFeedback>
 
             <View style={[styles.codeCard, { backgroundColor: theme.card }]}>
-              <Text style={[styles.codeCompany, { color: theme.textMuted }]}>
-                {openCode.company}
-              </Text>
-
-              <Text selectable style={[styles.codeBig, { color: theme.text }]}>
-                {openCode.code || "—"}
-              </Text>
-
-              <Text style={[styles.codeAmount, { color: theme.textMuted }]}>
-                יתרה {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
-              </Text>
-
-              <View style={styles.codeActions}>
-                <TouchableOpacity
-                  onPress={handleCopy}
-                  style={[styles.copyBtn, { backgroundColor: theme.primary }]}
-                  accessibilityLabel="העתקת קוד"
-                >
-                  {copied ? <Check size={18} color="#ffffff" /> : <Copy size={18} color="#ffffff" />}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => handleEdit(openCode)}
-                  style={[styles.editBtn, { borderColor: theme.border }]}
-                  accessibilityLabel="עריכת קופון"
-                >
-                  <Pencil size={18} color={theme.text} />
-                </TouchableOpacity>
+              {/* Brand strip: the same header language as the coupon cards */}
+              <View style={[styles.codeHead, { backgroundColor: brand }]}>
+                <Text numberOfLines={1} style={[styles.codeCompany, { color: headText }]}>
+                  {openCode.company}
+                </Text>
+                <View style={[styles.codeLogoFrame, { backgroundColor: theme.card }]}>
+                  <Image
+                    source={getCompanyLogoSource(openCode.company || "")}
+                    style={styles.codeLogo}
+                    resizeMode="contain"
+                  />
+                </View>
               </View>
 
-              <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
-                <Text style={[styles.codeCloseText, { color: theme.textMuted }]}>סגירה</Text>
-              </TouchableOpacity>
+              <View style={styles.codeBody}>
+                <Text style={[styles.codeLabel, { color: theme.textMuted }]}>קוד הקופון</Text>
+
+                <Text selectable style={[styles.codeBig, { color: theme.text }]}>
+                  {openCode.code || "—"}
+                </Text>
+
+                <View style={[styles.codeBalance, { backgroundColor: theme.inputBg }]}>
+                  <Text style={[styles.codeBalanceValue, { color: theme.text }]}>
+                    {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
+                  </Text>
+                  <Text style={[styles.codeBalanceLabel, { color: theme.textMuted }]}>
+                    יתרה
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleCopy}
+                  style={[styles.codePrimaryBtn, { backgroundColor: theme.primary }]}
+                  accessibilityLabel="העתקת קוד"
+                >
+                  {copied ? <Check size={16} color="#ffffff" /> : <Copy size={16} color="#ffffff" />}
+                  <Text style={styles.codePrimaryText}>
+                    {copied ? "הועתק" : "העתקת קוד"}
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={styles.codeSecondaryRow}>
+                  <TouchableOpacity
+                    onPress={() => handleOpenDetail(openCode)}
+                    style={[styles.codeSecondaryBtn, { backgroundColor: theme.inputBg }]}
+                    accessibilityLabel="מעבר לעמוד הקופון"
+                  >
+                    <ArrowLeft size={16} color={theme.label} />
+                    <Text style={[styles.codeSecondaryText, { color: theme.label }]}>
+                      לעמוד הקופון
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleEdit(openCode)}
+                    style={[styles.codeSecondaryBtn, { backgroundColor: theme.inputBg }]}
+                    accessibilityLabel="עריכת קופון"
+                  >
+                    <Pencil size={16} color={theme.label} />
+                    <Text style={[styles.codeSecondaryText, { color: theme.label }]}>
+                      עריכה
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
+                  <Text style={[styles.codeCloseText, { color: theme.textMuted }]}>סגירה</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         ) : null}
@@ -478,50 +520,104 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 380,
     borderRadius: radii.sheet,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    overflow: "hidden",
+  },
+  codeHead: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  codeCompany: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    fontWeight: "800",
+    flex: 1,
+    textAlign: "right",
+  },
+  codeLogoFrame: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  codeLogo: {
+    width: 28,
+    height: 28,
+  },
+  codeBody: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 14,
     alignItems: "center",
     gap: 10,
   },
-  codeCompany: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    fontWeight: "700",
+  codeLabel: {
+    fontFamily: fonts.body,
+    fontSize: 12,
   },
   codeBig: {
     fontFamily: fonts.display,
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "800",
     letterSpacing: 1,
     textAlign: "center",
     writingDirection: "ltr",
   },
-  codeAmount: {
-    fontFamily: fonts.body,
-    fontSize: 13.5,
+  codeBalance: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
   },
-  codeActions: {
-    marginTop: 8,
+  codeBalanceLabel: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+  },
+  codeBalanceValue: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  codePrimaryBtn: {
+    marginTop: 6,
+    width: "100%",
+    height: 46,
+    borderRadius: radii.lg,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 8,
+  },
+  codePrimaryText: {
+    fontFamily: fonts.bodyBold,
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  codeSecondaryRow: {
+    flexDirection: "row-reverse",
+    gap: 10,
     width: "100%",
   },
-  copyBtn: {
-    height: 46,
-    width: 46,
+  codeSecondaryBtn: {
+    flex: 1,
+    height: 42,
     borderRadius: radii.lg,
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
   },
-  editBtn: {
-    height: 46,
-    width: 46,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  codeSecondaryText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "700",
   },
   codeClose: {
     paddingVertical: 6,
