@@ -218,11 +218,6 @@ export function CouponDetailScreen() {
                 <Text style={[styles.companyMainTitle, { color: theme.text }]}>
                   {coupon.company}
                 </Text>
-                {coupon.description ? (
-                  <Text style={[styles.companyDescription, { color: theme.textMuted }]}>
-                    {coupon.description}
-                  </Text>
-                ) : null}
               </View>
 
               <View
@@ -267,37 +262,55 @@ export function CouponDetailScreen() {
             </View>
           </View>
 
-          {coupon.expiration ? (
-            <View
-              style={[
-                styles.expirationRow,
-                { backgroundColor: theme.surfaceAlt },
-              ]}
-            >
-              <Text style={[styles.expirationLabel, { color: theme.textMuted }]}>
-                תוקף
-              </Text>
-              <Text
-                style={[
-                  styles.expirationValue,
-                  {
-                    color:
-                      daysLeft !== null && daysLeft < 0
-                        ? theme.danger
-                        : daysLeft !== null && daysLeft <= 14
-                        ? theme.warningText
-                        : theme.text,
-                  },
-                ]}
-              >
-                {formatDate(coupon.expiration)}
-              </Text>
-            </View>
-          ) : null}
         </View>
 
         {/* Barcode & QR Code Presentation Box */}
         <CouponBarcodeView coupon={coupon} />
+
+        {coupon.expiration ? (
+          <View
+            style={[
+              styles.expirationRow,
+              { backgroundColor: theme.surfaceAlt },
+            ]}
+          >
+            <Text style={[styles.expirationLabel, { color: theme.textMuted }]}>
+              תוקף הקופון
+            </Text>
+            <Text
+              style={[
+                styles.expirationValue,
+                {
+                  color:
+                    daysLeft !== null && daysLeft < 0
+                      ? theme.danger
+                      : daysLeft !== null && daysLeft <= 14
+                      ? theme.warningText
+                      : theme.text,
+                },
+              ]}
+            >
+              {formatDate(coupon.expiration)}
+            </Text>
+          </View>
+        ) : null}
+
+        {coupon.description ? (
+          <View
+            style={[
+              styles.descriptionCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.descriptionLabel, { color: theme.textMuted }]}>תיאור</Text>
+            <Text style={[styles.companyDescription, { color: theme.textMuted }]}>
+              {coupon.description}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Action Buttons Row */}
         <View style={styles.actionsGrid}>
@@ -528,7 +541,20 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 20,
     textAlign: "right",
-    marginTop: 4,
+  },
+  descriptionCard: {
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  descriptionLabel: {
+    fontFamily: fonts.display,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "right",
+    marginBottom: 8,
   },
   companyLogoFrame: {
     width: 52,
@@ -582,7 +608,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    marginTop: 12,
+    marginTop: 2,
+    marginBottom: 12,
   },
   expirationLabel: {
     fontSize: 14,

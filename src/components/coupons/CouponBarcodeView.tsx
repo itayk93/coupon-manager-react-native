@@ -88,7 +88,7 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
               {coupon.card_exp ? (
                 <View style={styles.cardDetailItem}>
                   <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
-                    תוקף:
+                    תוקף כרטיס:
                   </Text>
                   <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
                     {coupon.card_exp}
@@ -235,7 +235,7 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
               {coupon.card_exp ? (
                 <View style={styles.modalCardDetailItem}>
                   <Text style={[styles.modalCardDetailLabel, { color: theme.textMuted }]}>
-                    תוקף:
+                    תוקף כרטיס:
                   </Text>
                   <Text style={[styles.modalCardDetailVal, { color: theme.text }]} selectable>
                     {coupon.card_exp}
@@ -453,4 +453,3 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
 });
-
