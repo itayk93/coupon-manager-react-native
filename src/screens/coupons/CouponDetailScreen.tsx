@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {
+  Animated,
+  Easing,
   View,
   Text,
   StyleSheet,
@@ -60,6 +62,73 @@ function formatDate(dateStr: string | null) {
   } catch {
     return dateStr;
   }
+}
+
+/**
+ * Confirmation for deleting a history record. It unfolds under the row it
+ * belongs to instead of throwing a system alert over the screen, so the record
+ * being deleted stays visible while the choice is made.
+ */
+function DeleteConfirm({
+  theme,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  theme: ReturnType<typeof useAppTheme>["theme"];
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const anim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 160,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [anim]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.confirmCard,
+        {
+          backgroundColor: theme.dangerBg,
+          borderColor: theme.dangerBorder,
+          opacity: anim,
+          transform: [
+            { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) },
+          ],
+        },
+      ]}
+    >
+      <Text style={[styles.confirmTitle, { color: theme.dangerText }]}>
+        למחוק את הרשומה?
+      </Text>
+      <Text style={[styles.confirmBody, { color: theme.dangerText }]}>
+        יתרת הקופון תחושב מחדש, והקופון יחזור לפעילים אם ייווצר בו זיכוי.
+      </Text>
+
+      <View style={styles.confirmActions}>
+        <TouchableOpacity
+          disabled={busy}
+          onPress={onConfirm}
+          style={[styles.confirmBtn, { backgroundColor: theme.danger }]}
+        >
+          <Text style={[styles.confirmBtnText, { color: "#ffffff" }]}>מחיקה</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onCancel}
+          style={[styles.confirmBtn, { backgroundColor: theme.card }]}
+        >
+          <Text style={[styles.confirmBtnText, { color: theme.text }]}>ביטול</Text>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
 }
 
 export function CouponDetailScreen() {
@@ -451,92 +520,87 @@ export function CouponDetailScreen() {
               const canDelete = h.source_table !== "sum_row" && typeof h.id === "number";
               const isPendingDelete = pendingDeleteId === String(h.id);
               return (
-                <View
-                  key={String(h.id)}
-                  style={[
-                    styles.historyRow,
-                    { borderBottomColor: theme.border },
-                  ]}
-                >
-                  <Text
+                <View key={String(h.id)}>
+                  <View
                     style={[
-                      styles.historyAmount,
-                      {
-                        color:
-                          h.source_table === "sum_row"
-                            ? theme.primary
-                            : isNegative
-                            ? theme.danger
-                            : theme.primary,
-                      },
+                      styles.historyRow,
+                      { borderBottomColor: theme.border },
+                      isPendingDelete && { borderBottomWidth: 0 },
                     ]}
                   >
-                    {isNegative ? "-" : "+"}
-                    {formatIls(Math.abs(h.transaction_amount))}
-                  </Text>
-
-                  <View style={styles.historyDetailsCol}>
-                    <Text style={[styles.historyDetails, { color: theme.text }]}>
-                      {h.details}
-                    </Text>
-                    {h.timestamp ? (
-                      <Text style={[styles.historyDate, { color: theme.textMuted }]}>
-                        {formatDate(h.timestamp)}
-                      </Text>
-                    ) : null}
-                  </View>
-
-                  {isEditingHistory && canDelete ? (
-                    isPendingDelete ? (
-                      <View style={styles.historyConfirmRow}>
-                        <TouchableOpacity
-                          disabled={deleteTx.isPending}
-                          onPress={() => {
-                            setPendingDeleteId(null);
-                            deleteTx.mutate(
-                              {
-                                recordId: h.id,
-                                sourceTable: h.source_table,
-                                couponId: coupon.id,
-                              },
-                              {
-                                onSuccess: () =>
-                                  notify.success("הרשומה נמחקה", "יתרת הקופון עודכנה"),
-                              }
-                            );
-                          }}
-                          style={[
-                            styles.historyConfirmBtn,
-                            { backgroundColor: theme.danger },
-                          ]}
-                        >
-                          <Text style={[styles.historyConfirmText, { color: "#fff" }]}>
-                            מחק
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => setPendingDeleteId(null)}
-                          style={[
-                            styles.historyConfirmBtn,
-                            { backgroundColor: theme.neutralBg },
-                          ]}
-                        >
-                          <Text style={[styles.historyConfirmText, { color: theme.text }]}>
-                            ביטול
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
+                    {/* RTL: the row reads from the right, so its action sits at
+                        the end of the line — the left edge. */}
+                    {isEditingHistory && canDelete ? (
                       <TouchableOpacity
-                        onPress={() => setPendingDeleteId(String(h.id))}
+                        onPress={() =>
+                          setPendingDeleteId(isPendingDelete ? null : String(h.id))
+                        }
                         style={[
                           styles.historyDeleteBtn,
-                          { backgroundColor: theme.dangerBg },
+                          {
+                            backgroundColor: isPendingDelete
+                              ? theme.danger
+                              : theme.dangerBg,
+                          },
                         ]}
+                        accessibilityLabel="מחיקת רשומה"
                       >
-                        <Trash2 size={16} color={theme.danger} />
+                        <Trash2
+                          size={16}
+                          color={isPendingDelete ? "#ffffff" : theme.danger}
+                        />
                       </TouchableOpacity>
-                    )
+                    ) : null}
+
+                    <Text
+                      style={[
+                        styles.historyAmount,
+                        {
+                          color:
+                            h.source_table === "sum_row"
+                              ? theme.primary
+                              : isNegative
+                              ? theme.danger
+                              : theme.primary,
+                        },
+                      ]}
+                    >
+                      {isNegative ? "-" : "+"}
+                      {formatIls(Math.abs(h.transaction_amount))}
+                    </Text>
+
+                    <View style={styles.historyDetailsCol}>
+                      <Text style={[styles.historyDetails, { color: theme.text }]}>
+                        {h.details}
+                      </Text>
+                      {h.timestamp ? (
+                        <Text style={[styles.historyDate, { color: theme.textMuted }]}>
+                          {formatDate(h.timestamp)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {isPendingDelete ? (
+                    <DeleteConfirm
+                      theme={theme}
+                      busy={deleteTx.isPending}
+                      onCancel={() => setPendingDeleteId(null)}
+                      onConfirm={() => {
+                        setPendingDeleteId(null);
+                        deleteTx.mutate(
+                          {
+                            recordId: h.id,
+                            sourceTable: h.source_table,
+                            couponId: coupon.id,
+                          },
+                          {
+                            onSuccess: () =>
+                              notify.success("הרשומה נמחקה", "יתרת הקופון עודכנה"),
+                          }
+                        );
+                      }}
+                    />
                   ) : null}
                 </View>
               );
@@ -815,17 +879,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  historyConfirmRow: {
-    flexDirection: "row-reverse",
+  confirmCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 10,
     gap: 6,
   },
-  historyConfirmBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+  confirmTitle: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    fontWeight: "800",
+    textAlign: "right",
   },
-  historyConfirmText: {
+  confirmBody: {
     fontSize: 12,
-    fontWeight: "700",
+    lineHeight: 17,
+    textAlign: "right",
+    opacity: 0.9,
+  },
+  confirmActions: {
+    flexDirection: "row-reverse",
+    gap: 8,
+    marginTop: 4,
+  },
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  confirmBtnText: {
+    fontSize: 13,
+    fontWeight: "800",
   },
 });
