@@ -2,6 +2,7 @@
 .env
 .supabase.local.env
 .env*.local
+build-ios.command.zip
 
 # Logs
 logs
