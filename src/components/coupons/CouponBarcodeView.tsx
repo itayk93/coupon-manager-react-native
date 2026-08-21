@@ -23,7 +23,6 @@ type CouponBarcodeViewProps = {
 export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
   const { theme, isDark } = useAppTheme();
   const [copied, setCopied] = useState(false);
-  const [showCvv, setShowCvv] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const code = coupon.code || "";
@@ -76,6 +75,50 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
           <Text style={[styles.codeText, { color: palette.success }]} selectable>
             {code || "—"}
           </Text>
+
+          {coupon.card_exp || coupon.cvv ? (
+            <View
+              style={[
+                styles.cardDetailsRow,
+                {
+                  borderTopColor: isDark ? "rgba(22, 163, 74, 0.3)" : "rgba(22, 163, 74, 0.2)",
+                },
+              ]}
+            >
+              {coupon.card_exp ? (
+                <View style={styles.cardDetailItem}>
+                  <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
+                    תוקף:
+                  </Text>
+                  <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
+                    {coupon.card_exp}
+                  </Text>
+                </View>
+              ) : null}
+
+              {coupon.card_exp && coupon.cvv ? (
+                <View
+                  style={[
+                    styles.cardDetailDivider,
+                    {
+                      backgroundColor: isDark ? "rgba(22, 163, 74, 0.3)" : "rgba(22, 163, 74, 0.2)",
+                    },
+                  ]}
+                />
+              ) : null}
+
+              {coupon.cvv ? (
+                <View style={styles.cardDetailItem}>
+                  <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
+                    CVV:
+                  </Text>
+                  <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
+                    {coupon.cvv}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </TouchableOpacity>
 
         {/* Action Buttons Row: Copy + Show QR */}
@@ -120,55 +163,8 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
             </TouchableOpacity>
           ) : null}
         </View>
+
       </View>
-
-      {/* CVV & Card Exp if available */}
-      {coupon.cvv || coupon.card_exp ? (
-        <View
-          style={[
-            styles.cardInfoBox,
-            {
-              backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.08)",
-              borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)",
-            },
-          ]}
-        >
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setShowCvv(!showCvv)}
-            style={styles.revealBtn}
-          >
-            {showCvv ? (
-              <EyeOff size={16} color={theme.primary} />
-            ) : (
-              <Eye size={16} color={theme.primary} />
-            )}
-            <Text style={[styles.revealText, { color: theme.primary }]}>
-              {showCvv ? "הסתר פרטי כרטיס" : "הצג פרטי כרטיס"}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.cardFieldsRow}>
-            {coupon.card_exp ? (
-              <View style={styles.fieldItem}>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>תוקף:</Text>
-                <Text style={[styles.fieldVal, { color: theme.primary }]}>
-                  {showCvv ? coupon.card_exp : "••/••"}
-                </Text>
-              </View>
-            ) : null}
-
-            {coupon.cvv ? (
-              <View style={styles.fieldItem}>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>CVV:</Text>
-                <Text style={[styles.fieldVal, { color: theme.primary }]}>
-                  {showCvv ? coupon.cvv : "•••"}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-      ) : null}
 
       {/* Large QR Code Modal */}
       <Modal
@@ -225,6 +221,39 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
               {code}
             </Text>
           </TouchableOpacity>
+
+          {coupon.card_exp || coupon.cvv ? (
+            <View
+              style={[
+                styles.modalCardDetailsBox,
+                {
+                  backgroundColor: isDark ? theme.surfaceAlt : "#f8fafc",
+                  borderColor: isDark ? theme.border : "#e2e8f0",
+                },
+              ]}
+            >
+              {coupon.card_exp ? (
+                <View style={styles.modalCardDetailItem}>
+                  <Text style={[styles.modalCardDetailLabel, { color: theme.textMuted }]}>
+                    תוקף:
+                  </Text>
+                  <Text style={[styles.modalCardDetailVal, { color: theme.text }]} selectable>
+                    {coupon.card_exp}
+                  </Text>
+                </View>
+              ) : null}
+              {coupon.cvv ? (
+                <View style={styles.modalCardDetailItem}>
+                  <Text style={[styles.modalCardDetailLabel, { color: theme.textMuted }]}>
+                    CVV:
+                  </Text>
+                  <Text style={[styles.modalCardDetailVal, { color: theme.text }]} selectable>
+                    {coupon.cvv}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </Modal>
     </View>
@@ -300,42 +329,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
   },
-  cardInfoBox: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 12,
-    marginTop: 12,
+  cardDetailsRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-around",
+    alignItems: "center",
     width: "100%",
+    borderTopWidth: 1.5,
+    borderStyle: "dashed",
+    marginTop: 14,
+    paddingTop: 14,
+    paddingHorizontal: 8,
+  },
+  cardDetailItem: {
     flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "baseline",
+    gap: 8,
   },
-  cardFieldsRow: {
-    flexDirection: "row-reverse",
-    gap: 16,
-  },
-  fieldItem: {
-    flexDirection: "row-reverse",
-    gap: 4,
-    alignItems: "center",
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  fieldVal: {
-    fontFamily: fonts.display,
+  cardDetailLabel: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
-    fontWeight: "800",
-  },
-  revealBtn: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 6,
-  },
-  revealText: {
-    fontSize: 12,
     fontWeight: "700",
+  },
+  cardDetailVal: {
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: 2,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  cardDetailDivider: {
+    width: 1.5,
+    height: 28,
   },
   // QR Modal Styles
   modalContent: {
@@ -401,6 +424,33 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 12,
     fontWeight: "700",
+  },
+  modalCardDetailsBox: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  modalCardDetailItem: {
+    flexDirection: "row-reverse",
+    alignItems: "baseline",
+    gap: 8,
+  },
+  modalCardDetailLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  modalCardDetailVal: {
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 1.5,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
 });
 

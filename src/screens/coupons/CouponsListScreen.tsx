@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   TextInput,
   TouchableOpacity,
   RefreshControl,
@@ -26,6 +26,7 @@ import {
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
+import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
@@ -34,6 +35,12 @@ import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type FilterStatus = "all" | "active" | "used" | "expired";
+
+interface CouponSection {
+  key: string;
+  title: string;
+  data: DecryptedCoupon[];
+}
 
 export function CouponsListScreen() {
   const router = useRouter();
@@ -48,7 +55,7 @@ export function CouponsListScreen() {
   const [selectedTag, setSelectedTag] = useState<string | null>(
     params.initialFilterTag || null
   );
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>("active");
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   // Status + tag filter rows stay collapsed until the filter button is pressed,
   // unless we arrived here with a tag already applied.
@@ -57,6 +64,8 @@ export function CouponsListScreen() {
   );
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  // Set when a coupon card is held: the usage modal opens on that coupon.
+  const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
 
   // Company chips — ordered left-to-right from fewest to most coupons, so the
   // right edge (where the row lands after scrollToEnd) is the highest-count
@@ -81,7 +90,7 @@ export function CouponsListScreen() {
     return Array.from(set).sort();
   }, [tagsMap]);
 
-  const filteredCoupons = useMemo(() => {
+  const matchedCoupons = useMemo(() => {
     return coupons.filter((coupon) => {
       // Search
       const term = search.trim().toLowerCase();
@@ -101,24 +110,50 @@ export function CouponsListScreen() {
         if (!cTags.includes(selectedTag)) return false;
       }
 
-      // Status filter
+      return true;
+    });
+  }, [coupons, search, selectedCompany, selectedTag, tagsMap]);
+
+  const sections = useMemo(() => {
+    const active: DecryptedCoupon[] = [];
+    const expired: DecryptedCoupon[] = [];
+    const used: DecryptedCoupon[] = [];
+
+    for (const coupon of matchedCoupons) {
       const remaining = (coupon.value || 0) - (coupon.used_value || 0);
       const isExpired =
         coupon.expiration && new Date(coupon.expiration).getTime() < Date.now();
       const isUsed = coupon.status === "נוצל" || remaining <= 0;
 
-      if (statusFilter === "active") {
-        return !isUsed && !isExpired;
+      if (isUsed) {
+        used.push(coupon);
+      } else if (isExpired) {
+        expired.push(coupon);
+      } else {
+        active.push(coupon);
       }
-      if (statusFilter === "used") {
-        return isUsed;
+    }
+
+    const list: CouponSection[] = [];
+
+    if (statusFilter === "all" || statusFilter === "active") {
+      if (active.length > 0) {
+        list.push({ key: "active", title: "פעילים:", data: active });
       }
-      if (statusFilter === "expired") {
-        return isExpired && !isUsed;
+    }
+    if (statusFilter === "all" || statusFilter === "expired") {
+      if (expired.length > 0) {
+        list.push({ key: "expired", title: "פגי תוקף:", data: expired });
       }
-      return true; // "all"
-    });
-  }, [coupons, search, selectedCompany, selectedTag, statusFilter, tagsMap]);
+    }
+    if (statusFilter === "all" || statusFilter === "used") {
+      if (used.length > 0) {
+        list.push({ key: "used", title: "נוצלו במלואם:", data: used });
+      }
+    }
+
+    return list;
+  }, [matchedCoupons, statusFilter]);
 
   const toggleSelect = (id: number) => {
     if (selectedIds.includes(id)) {
@@ -298,10 +333,10 @@ export function CouponsListScreen() {
           <View style={styles.statusTabsRow}>
             {(
               [
-                { key: "active", label: "פעילים" },
-                { key: "used", label: "נוצלו" },
-                { key: "expired", label: "פגי תוקף" },
                 { key: "all", label: "הכל" },
+                { key: "active", label: "פעילים" },
+                { key: "expired", label: "פגי תוקף" },
+                { key: "used", label: "נוצלו במלואם" },
               ] as const
             ).map((tab) => {
               const isCurrent = statusFilter === tab.key;
@@ -397,11 +432,12 @@ export function CouponsListScreen() {
         ) : null}
 
         {/* Coupons List */}
-        <FlatList
-          data={filteredCoupons}
+        <SectionList
+          sections={sections}
           keyExtractor={(item: DecryptedCoupon) => String(item.id)}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -410,6 +446,20 @@ export function CouponsListScreen() {
               colors={[theme.primary]}
             />
           }
+          renderSectionHeader={({ section: { title, data } }) => (
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderTitleRow}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                  {title}
+                </Text>
+                <View style={[styles.sectionBadge, { backgroundColor: theme.surfaceAlt }]}>
+                  <Text style={[styles.sectionBadgeText, { color: theme.textSubtle }]}>
+                    {data.length}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
           renderItem={({ item }: { item: DecryptedCoupon }) => (
             <CouponCard
               coupon={item}
@@ -424,6 +474,7 @@ export function CouponsListScreen() {
                   router.push(`/coupons/${item.id}`);
                 }
               }}
+              onReportUsage={() => setUsageCoupon(item)}
             />
           )}
           ListEmptyComponent={
@@ -441,6 +492,13 @@ export function CouponsListScreen() {
           }
         />
       </View>
+
+      <QuickUsageModal
+        visible={Boolean(usageCoupon)}
+        onClose={() => setUsageCoupon(null)}
+        coupons={coupons}
+        preselectedCoupon={usageCoupon}
+      />
     </SafeAreaView>
   );
 }
@@ -624,5 +682,34 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 32,
+  },
+  sectionHeader: {
+    paddingVertical: 10,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  sectionHeaderTitleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+  },
+  sectionTitle: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  sectionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+    minWidth: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionBadgeText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

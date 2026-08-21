@@ -256,6 +256,8 @@ PODS:
   - ExpoRouter (57.0.13):
     - ExpoModulesCore
     - RNScreens
+  - ExpoSensors (57.0.2):
+    - ExpoModulesCore
   - ExpoSharing (57.0.12):
     - ExpoModulesCore
   - ExpoSplashScreen (57.0.6):
@@ -2583,6 +2585,7 @@ DEPENDENCIES:
   - ExpoModulesWorkletsAdapter (from `../node_modules/expo-modules-core`)
   - ExpoNotifications (from `../node_modules/expo-notifications/ios`)
   - ExpoRouter (from `../node_modules/expo-router/ios`)
+  - ExpoSensors (from `../node_modules/expo-sensors/ios`)
   - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
@@ -2750,6 +2753,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-notifications/ios"
   ExpoRouter:
     :path: "../node_modules/expo-router/ios"
+  ExpoSensors:
+    :path: "../node_modules/expo-sensors/ios"
   ExpoSharing:
     :path: "../node_modules/expo-sharing/ios"
   ExpoSplashScreen:
@@ -2974,6 +2979,7 @@ SPEC CHECKSUMS:
   ExpoModulesWorkletsAdapter: b4765c3a7ea7f23bcddde04f981ff4b6d01c25d1
   ExpoNotifications: 68ff0e02eef93ccb6739317eae4bfee6ea737023
   ExpoRouter: 5e3858e1f94c18aebb2289c62996be55edfa7169
+  ExpoSensors: e71c7b6cb0c09d3427ef6ae29c69532a10c86b05
   ExpoSharing: efb8f6341420901f6c7ecec5274dc7d389c69588
   ExpoSplashScreen: 2dda363bfc268b92f00530ee7fa2a3be4534cf57
   ExpoSymbols: 0efd93edf0f825bf3c762582b0769dd3b296235c

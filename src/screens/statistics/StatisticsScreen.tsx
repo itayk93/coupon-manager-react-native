@@ -7,12 +7,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from "react-native";
-import { File, Paths } from "expo-file-system";
-import * as Sharing from "expo-sharing";
+import { useRouter } from "expo-router";
 import {
   TrendingUp,
   Sparkles,
-  Download,
   CheckCircle2,
   WalletCards,
   PieChart as PieIcon,
@@ -20,19 +18,29 @@ import {
 import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
-import { notify } from "@/lib/notify";
 import { formatIls } from "@/lib/formatIls";
 import {
   KpiDrilldownModal,
   type KpiConfig,
+  type KpiMonthSelection,
 } from "@/components/dashboard/KpiDrilldownModal";
 import { CompanySavingsBreakdown } from "@/components/dashboard/CompanySavingsBreakdown";
+import { StatusDrilldownModal } from "@/components/dashboard/StatusDrilldownModal";
+import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownModal";
 
 export function StatisticsScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
-  const { data: coupons = [], isLoading } = useCoupons();
+  const { data: coupons = [] } = useCoupons();
   const [activeKpi, setActiveKpi] = useState<KpiConfig | null>(null);
   const [activeMonth, setActiveMonth] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<CouponStatusFilter | null>(null);
+  const [expandedYear, setExpandedYear] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<KpiMonthSelection | null>(null);
+
+  const handleOpenCoupon = (couponId: number) => {
+    router.push(`/coupons/${couponId}`);
+  };
 
   const totalValue = useMemo(
     () => coupons.reduce((sum, c) => sum + (c.value || 0), 0),
@@ -72,42 +80,6 @@ export function StatisticsScreen() {
     return { active, fullyUsed, expired };
   }, [coupons]);
 
-  const handleExportCSV = async () => {
-    if (coupons.length === 0) {
-      notify.warning("אין נתונים לייצוא");
-      return;
-    }
-
-    try {
-      const headers = "חברה,קוד,שווי,נוצל,יתרה,עלות,תאריך תפוגה,סטטוס\n";
-      const rows = coupons
-        .map((c) => {
-          const rem = Math.max(0, (c.value || 0) - (c.used_value || 0));
-          return `"${c.company}","${c.code}",${c.value},${c.used_value},${rem},${c.cost || 0},"${c.expiration || ""}",${c.status || "פעיל"}`;
-        })
-        .join("\n");
-
-      const csvContent = "\uFEFF" + headers + rows; // UTF-8 BOM for Hebrew Excel
-      // expo-file-system dropped the `*AsStringAsync` helpers in SDK 54; the
-      // File API writes strings as UTF-8, which the BOM above relies on.
-      const file = new File(Paths.document, `coupons_report_${Date.now()}.csv`);
-      file.create({ overwrite: true });
-      file.write(csvContent);
-      const fileUri = file.uri;
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: "text/csv",
-          dialogTitle: "ייצוא דוח קופונים ל-CSV",
-        });
-      } else {
-        notify.success("הקובץ נוצר בהצלחה!", fileUri);
-      }
-    } catch (e: any) {
-      notify.error("שגיאה בייצוא הדוח", e.message);
-    }
-  };
-
   // "חיסכון חודשי" — the last six months of coupon usage, per the design.
   const monthlyTrend = useMemo(() => {
     const now = new Date();
@@ -142,14 +114,6 @@ export function StatisticsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={styles.titleRow}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>על מה חסכת</Text>
-
-        <TouchableOpacity
-          onPress={handleExportCSV}
-          style={[styles.exportBtn, { backgroundColor: theme.surfaceAlt }]}
-        >
-          <Download size={16} color={theme.primary} />
-          <Text style={[styles.exportBtnText, { color: theme.primary }]}>ייצוא CSV</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -256,26 +220,44 @@ export function StatisticsScreen() {
           </View>
 
           <View style={styles.statusDistributionRow}>
-            <View style={styles.statusCol}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="פעילים"
+              onPress={() => setStatusFilter("active")}
+              style={styles.statusCol}
+            >
               <Text style={[styles.statusNum, { color: theme.primary }]}>
                 {statusStats.active}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>פעילים</Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.statusCol}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="נוצלו במלואם"
+              onPress={() => setStatusFilter("used")}
+              style={styles.statusCol}
+            >
               <Text style={[styles.statusNum, { color: theme.primary }]}>
                 {statusStats.fullyUsed}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>נוצלו במלואם</Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.statusCol}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="פגי תוקף"
+              onPress={() => setStatusFilter("expired")}
+              style={styles.statusCol}
+            >
               <Text style={[styles.statusNum, { color: theme.danger }]}>
                 {statusStats.expired}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>פגי תוקף</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -302,6 +284,18 @@ export function StatisticsScreen() {
         visible={activeKpi !== null}
         onClose={() => setActiveKpi(null)}
         config={activeKpi}
+        coupons={coupons}
+        onOpenCoupon={handleOpenCoupon}
+        expandedYear={expandedYear}
+        onExpandedYearChange={setExpandedYear}
+        selectedMonth={selectedMonth}
+        onSelectedMonthChange={setSelectedMonth}
+      />
+
+      <StatusDrilldownModal
+        visible={statusFilter !== null}
+        onClose={() => setStatusFilter(null)}
+        filter={statusFilter}
         coupons={coupons}
       />
     </SafeAreaView>
@@ -379,18 +373,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: 40,
-  },
-  exportBtn: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    gap: 6,
-  },
-  exportBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
   },
   kpiGrid: {
     flexDirection: "row-reverse",

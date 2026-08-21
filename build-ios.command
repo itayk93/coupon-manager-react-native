@@ -88,6 +88,11 @@ echo "📱 מכשיר יעד: ${DEVICE_NAME:-unknown} ($DEVICE_ID)"
 if [ "$CLEAN" -eq 1 ]; then
   echo "🧹 מנקה derived data..."
   rm -rf "$DERIVED"
+else
+  # Always ensure widget extension target is rebuilt when targets/ changes
+  rm -rf "$DERIVED/Build/Intermediates.noindex/CouponMaster.build/Release-iphoneos/CouponWidget.build" \
+         "$DERIVED/Build/Products/Release-iphoneos/CouponWidget.appex" \
+         "$APP_PATH/PlugIns/CouponWidget.appex" 2>/dev/null || true
 fi
 
 mkdir -p "$DERIVED"

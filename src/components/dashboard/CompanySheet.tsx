@@ -23,6 +23,57 @@ import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { useHoldAction } from "@/hooks/useHoldAction";
+import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+
+type CouponRowProps = {
+  coupon: DecryptedCoupon;
+  onOpenCode: () => void;
+  onReportUsage: () => void;
+  children: React.ReactNode;
+  style: any;
+};
+
+/**
+ * One coupon line in the sheet. A tap enlarges the code; holding it opens the
+ * usage report, the same shortcut the coupon cards have.
+ */
+function CouponRow({ coupon, onOpenCode, onReportUsage, children, style }: CouponRowProps) {
+  const usable = coupon.status !== "נוצל";
+  const hold = useHoldAction({ onHold: onReportUsage, enabled: usable });
+
+  const fill = hold.progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => {
+        if (hold.consumeHold()) return;
+        onOpenCode();
+      }}
+      onPressIn={hold.handlers.onPressIn}
+      onPressOut={hold.handlers.onPressOut}
+      style={style}
+    >
+      <Animated.View pointerEvents="none" style={[rowStyles.holdBar, { width: fill }]} />
+      {children}
+    </TouchableOpacity>
+  );
+}
+
+const rowStyles = StyleSheet.create({
+  holdBar: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "rgba(37, 99, 235, 0.55)",
+  },
+});
 
 type CompanySheetProps = {
   company: string | null;
@@ -101,6 +152,9 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   );
 
   const brand = getCompanyColor(shown || "");
+
+  // Set when a row is held: the usage modal opens on that coupon.
+  const [usageCoupon, setUsageCoupon] = React.useState<DecryptedCoupon | null>(null);
 
   const handleOpenCode = (coupon: DecryptedCoupon) => {
     setOpenCode(coupon);
@@ -212,10 +266,11 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               const expired = days !== null && days < 0;
               const soon = days !== null && days >= 0 && days <= 14;
               return (
-                <TouchableOpacity
+                <CouponRow
                   key={c.id}
-                  activeOpacity={0.7}
-                  onPress={() => handleOpenCode(c)}
+                  coupon={c}
+                  onOpenCode={() => handleOpenCode(c)}
+                  onReportUsage={() => setUsageCoupon(c)}
                   style={[styles.row, { borderBottomColor: theme.divider }]}
                 >
                   {/* Hebrew reads right-to-left: the code leads, the amount trails. */}
@@ -240,7 +295,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                   <Text style={[styles.remaining, { color: theme.text }]}>
                     {formatIls(Math.max(0, (c.value || 0) - (c.used_value || 0)))}
                   </Text>
-                </TouchableOpacity>
+                </CouponRow>
               );
             })}
           </ScrollView>
@@ -290,6 +345,13 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             </View>
           </View>
         ) : null}
+
+        <QuickUsageModal
+          visible={Boolean(usageCoupon)}
+          onClose={() => setUsageCoupon(null)}
+          coupons={coupons}
+          preselectedCoupon={usageCoupon}
+        />
       </View>
     </Modal>
   );

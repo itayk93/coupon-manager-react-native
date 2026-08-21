@@ -15,8 +15,8 @@ import {
   Edit3,
   Trash2,
   Share2,
-  ExternalLink,
   ReceiptText,
+  ExternalLink,
   CheckCircle2,
   Clock,
   Tag,
@@ -266,6 +266,34 @@ export function CouponDetailScreen() {
               </View>
             </View>
           </View>
+
+          {coupon.expiration ? (
+            <View
+              style={[
+                styles.expirationRow,
+                { backgroundColor: theme.surfaceAlt },
+              ]}
+            >
+              <Text style={[styles.expirationLabel, { color: theme.textMuted }]}>
+                תוקף
+              </Text>
+              <Text
+                style={[
+                  styles.expirationValue,
+                  {
+                    color:
+                      daysLeft !== null && daysLeft < 0
+                        ? theme.danger
+                        : daysLeft !== null && daysLeft <= 14
+                        ? theme.warningText
+                        : theme.text,
+                  },
+                ]}
+              >
+                {formatDate(coupon.expiration)}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Barcode & QR Code Presentation Box */}
@@ -546,6 +574,25 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "900",
+  },
+  expirationRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginTop: 12,
+  },
+  expirationLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  expirationValue: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    fontWeight: "900",
+    textAlign: "left",
   },
   actionsGrid: {
     flexDirection: "row-reverse",

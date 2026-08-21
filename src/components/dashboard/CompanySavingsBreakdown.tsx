@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
   summaryRow: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     gap: 8,
     marginBottom: 14,
   },
@@ -319,11 +319,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     marginBottom: 3,
+    textAlign: "right",
   },
   summaryValue: {
     fontFamily: fonts.display,
     fontSize: 14,
     fontWeight: "900",
+    textAlign: "right",
   },
   couponCard: {
     borderWidth: 1,
@@ -359,9 +361,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     marginBottom: 2,
+    textAlign: "right",
   },
   metricValue: {
     fontSize: 12,
     fontWeight: "800",
+    textAlign: "right",
   },
 });

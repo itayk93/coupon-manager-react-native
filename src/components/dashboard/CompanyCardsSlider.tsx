@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
@@ -54,9 +55,12 @@ export function CompanyCardsSlider({
                 },
               ]}
             >
-              <View style={[styles.logoWrapper, { borderColor: theme.surfaceAlt }]}>
-                <Image source={logoUri} style={styles.logo} resizeMode="contain" />
-              </View>
+              <ShimmerLogo
+                source={logoUri}
+                size={72}
+                style={[styles.logoWrapper, { borderColor: theme.surfaceAlt }]}
+                imageStyle={styles.logo}
+              />
 
               <Text numberOfLines={1} style={[styles.companyName, { color: theme.text }]}>
                 {item.company}
@@ -100,8 +104,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoWrapper: {
-    width: 52,
-    height: 52,
+    width: 72,
+    height: 72,
     borderRadius: radii.xl,
     borderWidth: 1,
     alignItems: "center",
@@ -109,8 +113,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   logo: {
-    width: "78%",
-    height: "78%",
+    width: "80%",
+    height: "80%",
   },
   companyName: {
     fontFamily: fonts.bodyBold,

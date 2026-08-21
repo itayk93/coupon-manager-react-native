@@ -160,27 +160,33 @@ private struct CompanyLogoView: View {
 }
 
 private struct AppLogoView: View {
-    var fontSize: CGFloat = 11.5
-    var iconSize: CGFloat = 10
+    var height: CGFloat = 15
 
     var body: some View {
-        HStack(spacing: 4.5) {
-            Text("COUPON")
-                .couponFont(fontSize, .extraBold)
-                .foregroundColor(.white)
-                .tracking(1.0)
+        if let uiImage = UIImage(named: "CouponLogo") {
+            Image(uiImage: uiImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: height)
+        } else {
+            HStack(spacing: 4.5) {
+                Text("COUPON")
+                    .couponFont(11.5, .extraBold)
+                    .foregroundColor(.white)
+                    .tracking(1.0)
 
-            Image(systemName: "ticket.fill")
-                .font(.system(size: iconSize, weight: .bold))
-                .foregroundColor(WidgetStyle.primaryLight)
-                .rotationEffect(.degrees(-15))
+                Image(systemName: "ticket.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(WidgetStyle.primaryLight)
+                    .rotationEffect(.degrees(-15))
 
-            Text("MASTER")
-                .couponFont(fontSize, .extraBold)
-                .foregroundColor(WidgetStyle.primaryLight)
-                .tracking(1.0)
+                Text("MASTER")
+                    .couponFont(11.5, .extraBold)
+                    .foregroundColor(WidgetStyle.primaryLight)
+                    .tracking(1.0)
+            }
+            .environment(\.layoutDirection, .leftToRight)
         }
-        .environment(\.layoutDirection, .leftToRight)
     }
 }
 
@@ -295,7 +301,7 @@ private struct CouponStatsSmallView: View {
                 Spacer()
 
                 VStack(spacing: 8) {
-                    AppLogoView()
+                    AppLogoView(height: 15)
                     Rectangle()
                         .fill(WidgetStyle.cardStroke)
                         .frame(height: 1)
@@ -439,7 +445,7 @@ private struct CouponLargeView: View {
 
             VStack(spacing: 4) {
                 HStack(spacing: 12) {
-                    AppLogoView(fontSize: 15, iconSize: 13)
+                    AppLogoView(height: 20)
 
                     VStack(alignment: .center, spacing: 2) {
                         Text("קופונים פעילים: \(payload.activeCouponsCount)")

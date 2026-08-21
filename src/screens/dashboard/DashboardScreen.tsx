@@ -28,6 +28,8 @@ export function DashboardScreen() {
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: tagsMap = {} } = useCouponTagsMap();
   const [isUsageOpen, setIsUsageOpen] = useState(false);
+  // Set when a coupon card is held: the usage modal opens on that coupon.
+  const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
 
@@ -145,6 +147,10 @@ export function DashboardScreen() {
               coupon={coupon}
               tags={tagsMap[coupon.id] || []}
               onPress={() => router.push(`/coupons/${coupon.id}`)}
+              onReportUsage={() => {
+                setUsageCoupon(coupon);
+                setIsUsageOpen(true);
+              }}
             />
           ))
         ) : (
@@ -161,8 +167,12 @@ export function DashboardScreen() {
       {/* Modals */}
       <QuickUsageModal
         visible={isUsageOpen}
-        onClose={() => setIsUsageOpen(false)}
+        onClose={() => {
+          setIsUsageOpen(false);
+          setUsageCoupon(null);
+        }}
         coupons={coupons}
+        preselectedCoupon={usageCoupon}
       />
 
       <CompanySheet

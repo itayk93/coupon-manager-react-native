@@ -23,6 +23,7 @@ type ModalProps = {
   title?: string;
   subtitle?: string;
   titleIcon?: React.ReactNode;
+  headerAction?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxHeight?: number | string;
@@ -42,6 +43,7 @@ export function Modal({
   title,
   subtitle,
   titleIcon,
+  headerAction,
   children,
   footer,
 }: ModalProps) {
@@ -139,15 +141,18 @@ export function Modal({
               </View>
 
               <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                <TouchableOpacity
-                  onPress={onClose}
-                  style={[
-                    styles.closeButton,
-                    { backgroundColor: theme.surfaceAlt },
-                  ]}
-                >
-                  <X size={18} color={theme.text} />
-                </TouchableOpacity>
+                <View style={styles.headerActionsGroup}>
+                  {headerAction ? headerAction : null}
+                  <TouchableOpacity
+                    onPress={onClose}
+                    style={[
+                      styles.closeButton,
+                      { backgroundColor: theme.surfaceAlt },
+                    ]}
+                  >
+                    <X size={18} color={theme.text} />
+                  </TouchableOpacity>
+                </View>
 
                 <View style={styles.headerTitleContainer}>
                   {title ? (
@@ -248,10 +253,16 @@ const styles = StyleSheet.create({
   },
   headerTitleContainer: {
     flex: 1,
+    alignItems: "flex-end",
     marginLeft: 12,
   },
+  headerActionsGroup: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+  },
   titleRow: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "flex-start",
     gap: 8,
