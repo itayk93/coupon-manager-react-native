@@ -1,0 +1,8 @@
+title = "Coupon Master gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "CocoaPods lockfile contains public 40-character source checksums"
+paths = ['''(^|/)Podfile\.lock$''']
