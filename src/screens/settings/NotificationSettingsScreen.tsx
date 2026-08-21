@@ -97,7 +97,6 @@ export function NotificationSettingsScreen() {
         if (pwa.isSupported) await pwa.disable();
       }
       await updatePrefs.mutateAsync({ push: next });
-      notify.success(next ? "התראות Push הופעלו" : "התראות Push בוטלו");
     } catch (error: any) {
       notify.error("שגיאה בהפעלת Push", error.message);
     }

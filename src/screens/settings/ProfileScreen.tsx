@@ -65,7 +65,6 @@ export function ProfileScreen() {
       });
       if (error) throw error;
 
-      notify.success("הסיסמה עודכנה בהצלחה!");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {

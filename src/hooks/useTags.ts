@@ -174,7 +174,6 @@ export function useRenameTag() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("התגית עודכנה בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["admin_tags"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
@@ -191,7 +190,6 @@ export function useDeleteTag() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("התגית נמחקה בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["admin_tags"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       queryClient.invalidateQueries({ queryKey: ["coupon_tags_map"] });

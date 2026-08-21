@@ -43,7 +43,6 @@ export function ForgotPasswordScreen() {
       if (resetError) throw resetError;
 
       setSent(true);
-      notify.success("הוראות שחזור נשלחו למייל!");
     } catch (err: any) {
       notify.error("שגיאה בשחזור סיסמה", err.message || "לא הצלחנו לשלוח הוראות שחזור");
     } finally {

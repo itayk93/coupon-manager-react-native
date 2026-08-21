@@ -39,7 +39,6 @@ export function SettingsScreen() {
   const handleToggleBiometric = async (next: boolean) => {
     if (!next) {
       await biometric.disable();
-      notify.success("נעילה ביומטרית בוטלה");
       return;
     }
     // Prove the device can actually authenticate before turning the lock on,
@@ -47,7 +46,6 @@ export function SettingsScreen() {
     const ok = await biometric.authenticate("הפעלת נעילה ביומטרית");
     if (!ok) return;
     await biometric.enable(user?.email || "");
-    notify.success(`${biometric.label} הופעל`);
   };
 
   const handleSignOut = () => {

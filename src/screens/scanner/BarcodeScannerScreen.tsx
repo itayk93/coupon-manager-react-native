@@ -57,8 +57,6 @@ export function BarcodeScannerScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
 
-    notify.success("הקוד נסרק בהצלחה!", data);
-
     // Navigate to Add Coupon prefilled with scanned code
     router.push({
       pathname: "/coupons/add",

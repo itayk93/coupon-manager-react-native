@@ -14,12 +14,12 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { Check } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
+import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
-import { notify } from "@/lib/notify";
+
 
 type CouponCardProps = {
   coupon: DecryptedCoupon;
@@ -76,6 +76,9 @@ export function CouponCard({
 
   const brand = getCompanyColor(coupon.company || "");
   const headerColor = isFullyUsed || isExpired ? theme.textSubtle : brand;
+  const headerText = getContrastText(headerColor);
+  const headerTextSoft = headerText === "#ffffff" ? "rgba(255,255,255,0.75)" : "rgba(31,41,55,0.7)";
+  const headerPill = headerText === "#ffffff" ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.12)";
 
   const statusLabel = isExpired
     ? "פג תוקף"
@@ -107,7 +110,6 @@ export function CouponCard({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     setCopied(true);
-    notify.success("הקוד הועתק ללוח!", coupon.code);
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -145,6 +147,9 @@ export function CouponCard({
   const tear = React.useRef(new Animated.Value(0)).current;
   const tearArmed = React.useRef(false);
   const touchStartedAt = React.useRef(0);
+  // The tear gesture must never steal the touch while a hold is filling up.
+  const holdingRef = React.useRef(false);
+  holdingRef.current = hold.holding;
 
   const panResponder = React.useMemo(
     () =>
@@ -156,7 +161,8 @@ export function CouponCard({
         // Claim the gesture only for a deliberate downward pull that starts
         // after a short hold, so list scrolling is never stolen.
         onMoveShouldSetPanResponder: (_evt, gesture) =>
-          gesture.dy > 10 &&
+          !holdingRef.current &&
+          gesture.dy > 24 &&
           Math.abs(gesture.dx) < 10 &&
           Date.now() - touchStartedAt.current > 220,
         onPanResponderGrant: () => {
@@ -295,18 +301,18 @@ export function CouponCard({
       {/* Brand header */}
       <View style={[styles.header, { backgroundColor: headerColor }]}>
         <View style={styles.headerTitleGroup}>
-          <Text numberOfLines={1} style={styles.company}>
+          <Text numberOfLines={1} style={[styles.company, { color: headerText }]}>
             {coupon.company || "ללא חברה"}
           </Text>
           {coupon.description ? (
-            <Text numberOfLines={1} style={styles.category}>
+            <Text numberOfLines={1} style={[styles.category, { color: headerTextSoft }]}>
               {coupon.description}
             </Text>
           ) : null}
         </View>
 
-        <View style={styles.statusPill}>
-          <Text style={styles.statusPillText}>{statusLabel}</Text>
+        <View style={[styles.statusPill, { backgroundColor: headerPill }]}>
+          <Text style={[styles.statusPillText, { color: headerText }]}>{statusLabel}</Text>
         </View>
 
         <ShimmerLogo
@@ -386,7 +392,7 @@ export function CouponCard({
             onPress={handleSecondaryAction}
             style={[styles.actionBtn, { backgroundColor: headerColor }]}
           >
-            <Text style={[styles.actionText, styles.actionTextOnBrand]}>
+            <Text style={[styles.actionText, styles.actionTextOnBrand, { color: headerText }]}>
               {isInactive ? "עריכת קופון" : "דיווח שימוש"}
             </Text>
           </TouchableOpacity>

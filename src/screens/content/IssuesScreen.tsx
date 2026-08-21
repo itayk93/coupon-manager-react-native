@@ -36,7 +36,6 @@ export function IssuesScreen() {
     try {
       // Simulate submission / send
       await new Promise((resolve) => setTimeout(resolve, 800));
-      notify.success("הפנייה נשלחה בהצלחה!", "צוות התמיכה יבדוק את הפנייה בהקדם.");
       router.back();
     } catch (e: any) {
       notify.error("שגיאה בשליחת הפנייה", e.message);

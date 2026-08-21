@@ -154,8 +154,9 @@ export async function decrypt(ciphertext: string | null | undefined): Promise<st
       }
     );
 
-    const result = CryptoJS.enc.Utf8.stringify(decrypted);
-    return result || ciphertext;
+    // Utf8.stringify throws on garbage, so an empty string here means the
+    // stored plaintext really was empty - don't fall back to the ciphertext.
+    return CryptoJS.enc.Utf8.stringify(decrypted);
   } catch (error) {
     console.error("Decryption error:", error);
     return ciphertext;

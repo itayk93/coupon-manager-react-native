@@ -176,7 +176,6 @@ export function useAddCoupon() {
       return data;
     },
     onSuccess: () => {
-      notify.success("הקופון נוסף בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {
@@ -231,7 +230,6 @@ export function useUpdateCoupon() {
       return data;
     },
     onSuccess: (data) => {
-      notify.success("הקופון עודכן בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       queryClient.invalidateQueries({ queryKey: ["coupon", data.id] });
     },
@@ -259,7 +257,6 @@ export function useDeleteCoupon() {
       return true;
     },
     onSuccess: () => {
-      notify.success("הקופון נמחק בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {
@@ -287,7 +284,6 @@ export function useBulkDeleteCoupons() {
       return count ?? ids.length;
     },
     onSuccess: (deletedCount) => {
-      notify.success(`נמחקו ${deletedCount} קופונים`);
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {

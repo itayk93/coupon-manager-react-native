@@ -181,7 +181,6 @@ export function useCreateShare() {
       return true;
     },
     onSuccess: () => {
-      notify.success("הקופון שותף בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["my_shares"] });
     },
     onError: (error: any) => {
@@ -216,7 +215,6 @@ export function useRevokeShare() {
       return true;
     },
     onSuccess: () => {
-      notify.success("השיתוף בוטל בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["my_shares"] });
     },
     onError: (error: any) => {

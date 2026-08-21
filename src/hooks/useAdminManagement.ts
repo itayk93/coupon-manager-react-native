@@ -50,7 +50,6 @@ export function useUpdateUser() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("המשתמש עודכן בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["manage_users"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
@@ -87,7 +86,6 @@ export function useUpsertCompany() {
       }
     },
     onSuccess: () => {
-      notify.success("החברה נשמרה בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["companies"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
@@ -102,7 +100,6 @@ export function useDeleteCompany() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("החברה נמחקה בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["companies"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
@@ -152,7 +149,6 @@ export function useToggleTask() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("סטטוס המשימה עודכן!");
       queryClient.invalidateQueries({ queryKey: ["scheduled_tasks"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
@@ -196,7 +192,6 @@ export function useUpsertNewsletter() {
       }
     },
     onSuccess: () => {
-      notify.success("הניוזלטר נשמר בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
@@ -211,7 +206,6 @@ export function useDeleteNewsletter() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("הניוזלטר נמחק בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
@@ -243,7 +237,6 @@ export function useCreateAdminMessage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("ההודעה נשלחה בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["admin_messages"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),

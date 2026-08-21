@@ -19,7 +19,7 @@ import { useRouter } from "expo-router";
 import { Check, Copy, Pencil, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
-import { getCompanyColor, getCompanyLogoSource } from "@/lib/companyLogos";
+import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -152,6 +152,9 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   );
 
   const brand = getCompanyColor(shown || "");
+  const headText = getContrastText(brand);
+  const headTextSoft =
+    headText === "#ffffff" ? "rgba(255,255,255,0.8)" : "rgba(31,41,55,0.7)";
 
   // Set when a row is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = React.useState<DecryptedCoupon | null>(null);
@@ -169,7 +172,6 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     setCopied(true);
-    notify.success("הקוד הועתק ללוח!");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -239,7 +241,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             <View style={styles.handle} />
 
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityLabel="סגירה">
-              <X size={15} color="#ffffff" />
+              <X size={15} color={headText} />
             </TouchableOpacity>
 
             <View style={styles.headRow}>
@@ -250,12 +252,12 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                   resizeMode="contain"
                 />
               </View>
-              <Text numberOfLines={1} style={styles.headTitle}>
+              <Text numberOfLines={1} style={[styles.headTitle, { color: headText }]}>
                 {shown}
               </Text>
             </View>
 
-            <Text style={styles.headMeta}>
+            <Text style={[styles.headMeta, { color: headTextSoft }]}>
               {rows.length} קופונים · יתרה {formatIls(total)}
             </Text>
           </View>

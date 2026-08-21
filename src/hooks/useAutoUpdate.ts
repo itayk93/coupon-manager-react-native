@@ -19,7 +19,6 @@ export function useTriggerAutoUpdate() {
       return data as { updated: number; failed: number; skipped: number };
     },
     onSuccess: (result) => {
-      notify.success(`עדכון הסתיים: ${result.updated} עודכנו, ${result.failed} נכשלו`);
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       queryClient.invalidateQueries({ queryKey: ["auto_update_runs"] });
     },

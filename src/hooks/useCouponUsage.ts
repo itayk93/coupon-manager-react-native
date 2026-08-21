@@ -5,6 +5,17 @@ import { notify } from "@/lib/notify";
 import { COUPON_TRANSACTION_COLUMNS, COUPON_USAGE_COLUMNS } from "@/lib/tableColumns";
 import { DecryptedCoupon } from "./useCoupons";
 
+const HIDDEN_AUTO_USAGE_DETAILS = new Set([
+  "עדכון אוטומטי via Multipass daily flow",
+]);
+
+function shouldHideHistoryDetails(details: string) {
+  const normalized = details.trim();
+  if (!normalized) return false;
+  if (HIDDEN_AUTO_USAGE_DETAILS.has(normalized)) return true;
+  return normalized.toLowerCase().includes("multipass daily flow");
+}
+
 export type ConsolidatedRow = {
   id: number | string;
   coupon_id: number;
@@ -39,12 +50,14 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
 
       // Map coupon_usage
       (usageData || []).forEach((u) => {
+        const details = u.details || u.action || "שימוש בקופון";
+        if (shouldHideHistoryDetails(details)) return;
         rows.push({
           id: u.id,
           coupon_id: u.coupon_id,
           timestamp: u.timestamp,
           transaction_amount: -Math.abs(u.used_amount),
-          details: u.details || u.action || "שימוש בקופון",
+          details,
           source_table: "coupon_usage",
         });
       });
@@ -54,12 +67,14 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
         const usage = t.usage_amount || 0;
         const recharge = t.recharge_amount || 0;
         const amount = recharge - usage;
+        const details = t.location || t.source || "עסקת קופון";
+        if (shouldHideHistoryDetails(details)) return;
         rows.push({
           id: t.id,
           coupon_id: t.coupon_id,
           timestamp: t.transaction_date || new Date().toISOString(),
           transaction_amount: amount,
-          details: t.location || t.source || "עסקת קופון",
+          details,
           source_table: "coupon_transaction",
         });
       });
@@ -158,7 +173,6 @@ export function useRecordUsage() {
       return { newUsed, fullyUsed };
     },
     onSuccess: (_data, variables) => {
-      notify.success("השימוש נרשם בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       queryClient.invalidateQueries({ queryKey: ["coupon", variables.couponId] });
@@ -191,10 +205,49 @@ export function useDeleteTransactionRecord() {
         const { error } = await supabase.from("coupon_transaction").delete().eq("id", recordId);
         if (error) throw error;
       }
+
+      // Recalculate the coupon balance from the remaining records
+      const { data: usageRows } = await supabase
+        .from("coupon_usage")
+        .select("used_amount")
+        .eq("coupon_id", couponId);
+
+      const { data: txRows } = await supabase
+        .from("coupon_transaction")
+        .select("usage_amount")
+        .eq("coupon_id", couponId);
+
+      const newUsed =
+        (usageRows || []).reduce((sum, r) => sum + Math.abs(r.used_amount || 0), 0) +
+        (txRows || []).reduce((sum, r) => sum + Math.abs(r.usage_amount || 0), 0);
+
+      const { data: couponRow } = await supabase
+        .from("coupon")
+        .select("value, status")
+        .eq("id", couponId)
+        .single();
+
+      if (couponRow) {
+        const capped = Math.min(couponRow.value, newUsed);
+        const fullyUsed = capped >= couponRow.value;
+        const keepStatus =
+          couponRow.status === "נוצל" || couponRow.status === "פעיל"
+            ? null
+            : couponRow.status;
+
+        const { error: updateErr } = await supabase
+          .from("coupon")
+          .update({
+            used_value: capped,
+            status: keepStatus ?? (fullyUsed ? "נוצל" : "פעיל"),
+          })
+          .eq("id", couponId);
+        if (updateErr) throw updateErr;
+      }
+
       return { couponId };
     },
     onSuccess: (_data, variables) => {
-      notify.success("הרשומה נמחקה בהצלחה!");
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       queryClient.invalidateQueries({ queryKey: ["coupon", variables.couponId] });

@@ -48,7 +48,6 @@ export function useUpdateProfile() {
       return data;
     },
     onSuccess: (data) => {
-      notify.success("הפרופיל עודכן בהצלחה!");
       queryClient.setQueryData(["profile", user?.id], data);
       refreshUser?.();
     },

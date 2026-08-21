@@ -77,6 +77,8 @@ export function CouponDetailScreen() {
   const deleteTx = useDeleteTransactionRecord();
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
+  const [isEditingHistory, setIsEditingHistory] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Feeds the automatic balance updater, same as the legacy app.
   const { markDetailViewed } = useCouponViewTracking();
@@ -415,12 +417,39 @@ export function CouponDetailScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               היסטוריית שימושים וטעינות
             </Text>
-            <History size={16} color={theme.primary} />
+            <View style={styles.historyHeaderActions}>
+              {history.some((h) => h.source_table !== "sum_row" && typeof h.id === "number") ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    setPendingDeleteId(null);
+                    setIsEditingHistory((prev) => !prev);
+                  }}
+                  style={[
+                    styles.historyEditToggle,
+                    {
+                      backgroundColor: isEditingHistory ? theme.primary : theme.neutralBg,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.historyEditToggleText,
+                      { color: isEditingHistory ? "#fff" : theme.text },
+                    ]}
+                  >
+                    {isEditingHistory ? "סיום" : "עריכה"}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              <History size={16} color={theme.primary} />
+            </View>
           </View>
 
           {history.length > 0 ? (
             history.map((h) => {
               const isNegative = h.transaction_amount < 0;
+              const canDelete = h.source_table !== "sum_row" && typeof h.id === "number";
+              const isPendingDelete = pendingDeleteId === String(h.id);
               return (
                 <View
                   key={String(h.id)}
@@ -456,6 +485,59 @@ export function CouponDetailScreen() {
                       </Text>
                     ) : null}
                   </View>
+
+                  {isEditingHistory && canDelete ? (
+                    isPendingDelete ? (
+                      <View style={styles.historyConfirmRow}>
+                        <TouchableOpacity
+                          disabled={deleteTx.isPending}
+                          onPress={() => {
+                            setPendingDeleteId(null);
+                            deleteTx.mutate(
+                              {
+                                recordId: h.id,
+                                sourceTable: h.source_table,
+                                couponId: coupon.id,
+                              },
+                              {
+                                onSuccess: () =>
+                                  notify.success("הרשומה נמחקה", "יתרת הקופון עודכנה"),
+                              }
+                            );
+                          }}
+                          style={[
+                            styles.historyConfirmBtn,
+                            { backgroundColor: theme.danger },
+                          ]}
+                        >
+                          <Text style={[styles.historyConfirmText, { color: "#fff" }]}>
+                            מחק
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setPendingDeleteId(null)}
+                          style={[
+                            styles.historyConfirmBtn,
+                            { backgroundColor: theme.neutralBg },
+                          ]}
+                        >
+                          <Text style={[styles.historyConfirmText, { color: theme.text }]}>
+                            ביטול
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => setPendingDeleteId(String(h.id))}
+                        style={[
+                          styles.historyDeleteBtn,
+                          { backgroundColor: theme.dangerBg },
+                        ]}
+                      >
+                        <Trash2 size={16} color={theme.danger} />
+                      </TouchableOpacity>
+                    )
+                  ) : null}
                 </View>
               );
             })
@@ -711,5 +793,39 @@ const styles = StyleSheet.create({
   historyDate: {
     fontSize: 11,
     marginTop: 2,
+  },
+  historyHeaderActions: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+  },
+  historyEditToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  historyEditToggleText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  historyDeleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  historyConfirmRow: {
+    flexDirection: "row-reverse",
+    gap: 6,
+  },
+  historyConfirmBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  historyConfirmText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

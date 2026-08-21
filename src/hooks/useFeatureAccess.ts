@@ -122,7 +122,6 @@ export function useUpsertFeatureAccess() {
       if (error) throw error;
     },
     onSuccess: () => {
-      notify.success("ברירת המחדל לפיצ׳ר נשמרה");
       queryClient.invalidateQueries({ queryKey: ["feature_catalog"] });
     },
     onError: (error: any) => {
@@ -158,7 +157,6 @@ export function useUpsertUserFeatureOverride() {
       if (error) throw error;
     },
     onSuccess: (_data, variables) => {
-      notify.success("הרשאת הפיצ׳ר נשמרה");
       queryClient.invalidateQueries({ queryKey: ["user_feature_overrides", variables.userId] });
     },
     onError: (error: any) => {

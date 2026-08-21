@@ -65,7 +65,6 @@ export function BulkImportScreen() {
         imported++;
       }
 
-      notify.success(`יובאו בהצלחה ${imported} קופונים!`);
       router.back();
     } catch (e: any) {
       notify.error("שגיאה בייבוא מרובה", e.message);

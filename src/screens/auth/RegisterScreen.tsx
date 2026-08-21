@@ -109,7 +109,6 @@ export function RegisterScreen() {
 
       await storeLegacyUser(sessionUser);
       setLegacySession(sessionUser);
-      notify.success("נרשמת בהצלחה!", "ברוך הבא לארנק הקופונים");
     } catch (err: any) {
       notify.error("שגיאה בהרשמה", err.message || "אירעה שגיאה בעת ההרשמה");
     } finally {

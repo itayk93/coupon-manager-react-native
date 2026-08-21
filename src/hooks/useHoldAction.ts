@@ -2,7 +2,10 @@ import React from "react";
 import { Animated, Easing, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 
-const DEFAULT_DURATION = 750;
+const DEFAULT_DURATION = 550;
+// If the touch is cancelled (scroll steal, slight finger drift) after this
+// much of the hold already filled, the intent was clearly a hold — honor it.
+const CANCEL_TOLERANCE = 0.65;
 // Haptic ticks along the way, so the finger feels the hold filling up.
 const TICKS = [0.25, 0.5, 0.75];
 
@@ -31,9 +34,12 @@ export function useHoldAction({
   const completedRef = React.useRef(false);
   // onHold has already been fired, so a tap handler should stand down.
   const heldRef = React.useRef(false);
+  // Latest progress value, so a cancelled touch can still count as a hold.
+  const valueRef = React.useRef(0);
 
   React.useEffect(() => {
     const id = progress.addListener(({ value }) => {
+      valueRef.current = value;
       if (Platform.OS === "web") return;
       TICKS.forEach((tick) => {
         if (value >= tick && !firedTicks.current.has(tick)) {
@@ -75,6 +81,7 @@ export function useHoldAction({
     if (!enabled) return;
     heldRef.current = false;
     completedRef.current = false;
+    valueRef.current = 0;
     firedTicks.current.clear();
     setHolding(true);
 
@@ -95,8 +102,10 @@ export function useHoldAction({
 
   const onPressOut = React.useCallback(() => {
     setHolding(false);
-    if (completedRef.current) {
+    if (completedRef.current || valueRef.current >= CANCEL_TOLERANCE) {
+      progress.stopAnimation();
       fireHold();
+      reset();
       return;
     }
     progress.stopAnimation(() => reset());

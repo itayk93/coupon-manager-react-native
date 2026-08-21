@@ -14,7 +14,7 @@ import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette } from "@/lib/theme";
-import { notify } from "@/lib/notify";
+
 
 type CouponBarcodeViewProps = {
   coupon: DecryptedCoupon;
@@ -34,7 +34,6 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     setCopied(true);
-    notify.success("קוד הקופון הועתק!");
     setTimeout(() => setCopied(false), 2000);
   };
 
