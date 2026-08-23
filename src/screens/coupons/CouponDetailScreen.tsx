@@ -24,6 +24,9 @@ import {
   Tag,
   History,
   AlertTriangle,
+  LayoutGrid,
+  Minus,
+  Plus,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -43,6 +46,7 @@ import {
   useDeleteTransactionRecord,
 } from "@/hooks/useCouponUsage";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
+import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -144,6 +148,7 @@ export function CouponDetailScreen() {
   const deleteCoupon = useDeleteCoupon();
   const updateCoupon = useUpdateCoupon();
   const deleteTx = useDeleteTransactionRecord();
+  const widget = useWidgetToggle(coupon);
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
@@ -434,6 +439,48 @@ export function CouponDetailScreen() {
             <Text style={[styles.externalLinkText, { color: theme.secondary }]}>
               פתיחת שובר מקוון באתר החברה
             </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Home-screen widget */}
+        {widget.canToggle ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={
+              widget.inWidget
+                ? `הסר את ${coupon.company} מהווידג'ט`
+                : `הוסף את ${coupon.company} לווידג'ט`
+            }
+            activeOpacity={0.85}
+            disabled={widget.disabled}
+            onPress={widget.toggle}
+            style={[
+              styles.widgetRow,
+              {
+                backgroundColor: widget.inWidget ? theme.primaryTint : theme.card,
+                borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
+                opacity: widget.disabled ? 0.5 : 1,
+              },
+            ]}
+          >
+            <LayoutGrid size={18} color={theme.primary} />
+            <View style={styles.widgetRowText}>
+              <Text style={[styles.widgetRowTitle, { color: theme.text }]}>
+                {widget.inWidget ? "מוצג בווידג'ט מסך הבית" : "הצג בווידג'ט מסך הבית"}
+              </Text>
+              <Text style={[styles.widgetRowSubtitle, { color: theme.textMuted }]}>
+                {widget.inWidget
+                  ? "לחץ כדי להסיר מהווידג'ט"
+                  : widget.isFull
+                    ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
+                    : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
+              </Text>
+            </View>
+            {widget.inWidget ? (
+              <Minus size={18} color={theme.danger} />
+            ) : (
+              <Plus size={18} color={widget.isFull ? theme.textSubtle : theme.primary} />
+            )}
           </TouchableOpacity>
         ) : null}
 
@@ -809,6 +856,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     marginBottom: 12,
+  },
+  widgetRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  widgetRowText: { flex: 1, gap: 2 },
+  widgetRowTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    textAlign: "right",
+  },
+  widgetRowSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    textAlign: "right",
   },
   sectionHeader: {
     flexDirection: "row-reverse",

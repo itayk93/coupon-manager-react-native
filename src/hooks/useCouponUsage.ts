@@ -3,18 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { COUPON_TRANSACTION_COLUMNS, COUPON_USAGE_COLUMNS } from "@/lib/tableColumns";
+import {
+  isHiddenLedgerRow,
+  ledgerAmountFromTransaction,
+  ledgerAmountFromUsage,
+  usedValueFromLedger,
+} from "@/lib/couponLedger";
 import { DecryptedCoupon } from "./useCoupons";
-
-const HIDDEN_AUTO_USAGE_DETAILS = new Set([
-  "עדכון אוטומטי via Multipass daily flow",
-]);
-
-function shouldHideHistoryDetails(details: string) {
-  const normalized = details.trim();
-  if (!normalized) return false;
-  if (HIDDEN_AUTO_USAGE_DETAILS.has(normalized)) return true;
-  return normalized.toLowerCase().includes("multipass daily flow");
-}
 
 export type ConsolidatedRow = {
   id: number | string;
@@ -51,12 +46,12 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
       // Map coupon_usage
       (usageData || []).forEach((u) => {
         const details = u.details || u.action || "שימוש בקופון";
-        if (shouldHideHistoryDetails(details)) return;
+        if (isHiddenLedgerRow(details)) return;
         rows.push({
           id: u.id,
           coupon_id: u.coupon_id,
           timestamp: u.timestamp,
-          transaction_amount: -Math.abs(u.used_amount),
+          transaction_amount: ledgerAmountFromUsage(u.used_amount),
           details,
           source_table: "coupon_usage",
         });
@@ -64,11 +59,9 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
 
       // Map coupon_transaction
       (txData || []).forEach((t) => {
-        const usage = t.usage_amount || 0;
-        const recharge = t.recharge_amount || 0;
-        const amount = recharge - usage;
+        const amount = ledgerAmountFromTransaction(t.recharge_amount, t.usage_amount);
         const details = t.location || t.source || "עסקת קופון";
-        if (shouldHideHistoryDetails(details)) return;
+        if (isHiddenLedgerRow(details)) return;
         rows.push({
           id: t.id,
           coupon_id: t.coupon_id,
@@ -209,17 +202,24 @@ export function useDeleteTransactionRecord() {
       // Recalculate the coupon balance from the remaining records
       const { data: usageRows } = await supabase
         .from("coupon_usage")
-        .select("used_amount")
+        .select("used_amount, action, details")
         .eq("coupon_id", couponId);
 
       const { data: txRows } = await supabase
         .from("coupon_transaction")
-        .select("usage_amount")
+        .select("usage_amount, recharge_amount, location, source")
         .eq("coupon_id", couponId);
 
-      const newUsed =
-        (usageRows || []).reduce((sum, r) => sum + Math.abs(r.used_amount || 0), 0) +
-        (txRows || []).reduce((sum, r) => sum + Math.abs(r.usage_amount || 0), 0);
+      // Same rows, same rule as the history list: anything hidden there is a
+      // duplicate of a row that is shown, so counting it would spend twice.
+      const ledger = [
+        ...(usageRows || [])
+          .filter((r) => !isHiddenLedgerRow(r.details || r.action || ""))
+          .map((r) => ledgerAmountFromUsage(r.used_amount)),
+        ...(txRows || [])
+          .filter((r) => !isHiddenLedgerRow(r.location || r.source || ""))
+          .map((r) => ledgerAmountFromTransaction(r.recharge_amount, r.usage_amount)),
+      ];
 
       const { data: couponRow } = await supabase
         .from("coupon")
@@ -228,7 +228,7 @@ export function useDeleteTransactionRecord() {
         .single();
 
       if (couponRow) {
-        const capped = Math.min(couponRow.value, newUsed);
+        const capped = usedValueFromLedger(couponRow.value, ledger);
         const fullyUsed = capped >= couponRow.value;
         const keepStatus =
           couponRow.status === "נוצל" || couponRow.status === "פעיל"

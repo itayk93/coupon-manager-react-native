@@ -1,18 +1,14 @@
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { prepareWidgetLogos } from "@/lib/widgetLogos";
-import {
-  couponRemainingValue,
-  isSpendableCoupon,
-  totalRemainingValue,
-} from "@/lib/couponTotals";
+import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
+import { MAX_WIDGET_COUPONS, widgetSelection } from "@/lib/widgetSelection";
 import {
   setWidgetData,
   type WidgetPayload,
   type WidgetCouponPayload,
 } from "../../modules/coupon-widget";
 
-/** The home-screen widget never shows more than this many cards, even on Large. */
-export const MAX_WIDGET_COUPONS = 4;
+export { MAX_WIDGET_COUPONS } from "@/lib/widgetSelection";
 
 /**
  * Precomputes everything the native widgets render, so neither platform has to
@@ -24,10 +20,7 @@ export const MAX_WIDGET_COUPONS = 4;
 export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
   const spendable = coupons.filter(isSpendableCoupon);
 
-  const chosen = spendable
-    .filter((coupon) => coupon.show_in_widget === true && couponRemainingValue(coupon) > 0)
-    .sort((a, b) => (a.widget_display_order ?? 999) - (b.widget_display_order ?? 999))
-    .slice(0, MAX_WIDGET_COUPONS);
+  const chosen = widgetSelection(spendable).slice(0, MAX_WIDGET_COUPONS);
 
   const selected: WidgetCouponPayload[] = chosen.map((coupon) => ({
     id: coupon.id,
