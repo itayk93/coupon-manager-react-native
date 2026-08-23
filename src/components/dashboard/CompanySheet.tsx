@@ -16,7 +16,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { Check, Copy, Pencil, ReceiptText, X } from "lucide-react-native";
+import { Check, Copy, LayoutGrid, Pencil, ReceiptText, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
@@ -25,6 +25,8 @@ import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
+import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -163,6 +165,8 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
 
   // Set when a row is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = React.useState<DecryptedCoupon | null>(null);
+
+  const widget = useWidgetToggle(openCode);
 
   const handleOpenCode = (coupon: DecryptedCoupon) => {
     setOpenCode(coupon);
@@ -337,11 +341,13 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               </View>
 
               <View style={styles.codeBody}>
-                <Text style={[styles.codeLabel, { color: theme.textMuted }]}>קוד הקופון</Text>
-
-                <Text selectable style={[styles.codeBig, { color: theme.text }]}>
-                  {openCode.code || "—"}
-                </Text>
+                <CouponCodeBox
+                  code={openCode.code || ""}
+                  cardExp={openCode.card_exp}
+                  cvv={openCode.cvv}
+                  label="קוד הקופון"
+                  onPress={handleCopy}
+                />
 
                 <View style={[styles.codeBalance, { backgroundColor: theme.inputBg }]}>
                   <Text style={[styles.codeBalanceLabel, { color: theme.textMuted }]}>
@@ -386,6 +392,32 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+                {widget.canToggle ? (
+                  <TouchableOpacity
+                    onPress={widget.toggle}
+                    disabled={widget.disabled}
+                    style={[
+                      styles.codeWidgetBtn,
+                      {
+                        backgroundColor: widget.inWidget ? theme.primaryTint : theme.inputBg,
+                        opacity: widget.disabled ? 0.5 : 1,
+                      },
+                    ]}
+                    accessibilityLabel={
+                      widget.inWidget ? "הסרה מהווידג'ט" : "הוספה לווידג'ט"
+                    }
+                  >
+                    <LayoutGrid size={16} color={theme.primary} />
+                    <Text style={[styles.codeWidgetText, { color: theme.label }]}>
+                      {widget.inWidget
+                        ? "מוצג בווידג'ט - הסר"
+                        : widget.isFull
+                          ? `הווידג'ט מלא (${widget.maxCoupons})`
+                          : "הצג בווידג'ט"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
 
                 <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
                   <Text style={[styles.codeCloseText, { color: theme.textMuted }]}>סגירה</Text>
@@ -560,17 +592,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  codeLabel: {
-    fontFamily: fonts.body,
-    fontSize: 12,
+  codeWidgetBtn: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    width: "100%",
+    height: 40,
+    borderRadius: radii.md,
   },
-  codeBig: {
-    fontFamily: fonts.display,
-    fontSize: 34,
-    fontWeight: "800",
-    letterSpacing: 1,
-    textAlign: "center",
-    writingDirection: "ltr",
+  codeWidgetText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "700",
   },
   codeBalance: {
     flexDirection: "row-reverse",

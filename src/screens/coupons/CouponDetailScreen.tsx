@@ -35,7 +35,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   useCoupon,
-  useCoupons,
   useDeleteCoupon,
   useUpdateCoupon,
   DecryptedCoupon,
@@ -47,13 +46,7 @@ import {
   useDeleteTransactionRecord,
 } from "@/hooks/useCouponUsage";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
-import {
-  MAX_WIDGET_COUPONS,
-  isInWidget,
-  isWidgetEligible,
-  isWidgetFull,
-  nextWidgetOrder,
-} from "@/lib/widgetSelection";
+import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -150,12 +143,12 @@ export function CouponDetailScreen() {
   const { theme } = useAppTheme();
 
   const { data: coupon, isLoading } = useCoupon(couponId);
-  const { data: allCoupons = [] } = useCoupons();
   const { data: tags = [] } = useCouponTags(couponId);
   const { data: history = [] } = useCouponUsageHistory(coupon || null);
   const deleteCoupon = useDeleteCoupon();
   const updateCoupon = useUpdateCoupon();
   const deleteTx = useDeleteTransactionRecord();
+  const widget = useWidgetToggle(coupon);
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
@@ -212,34 +205,6 @@ export function CouponDetailScreen() {
       },
       "סמן כנוצל"
     );
-  };
-
-  const inWidget = isInWidget(coupon);
-  const canJoinWidget = isWidgetEligible(coupon);
-  // Capacity is read from the wallet, not from this coupon, so the button says
-  // "full" for the same reason the widget settings screen greys the row out.
-  const widgetIsFull = isWidgetFull(allCoupons);
-
-  const handleToggleWidget = async () => {
-    if (inWidget) {
-      await updateCoupon.mutateAsync({
-        id: coupon.id,
-        updates: { show_in_widget: false, widget_display_order: null },
-      });
-      notify.success("הקופון הוסר מהווידג'ט");
-      return;
-    }
-
-    if (widgetIsFull) {
-      notify.error(`ניתן לבחור עד ${MAX_WIDGET_COUPONS} קופונים בווידג'ט`);
-      return;
-    }
-
-    await updateCoupon.mutateAsync({
-      id: coupon.id,
-      updates: { show_in_widget: true, widget_display_order: nextWidgetOrder(allCoupons) },
-    });
-    notify.success("הקופון נוסף לווידג'ט");
   };
 
   const handleOpenUrl = async () => {
@@ -478,43 +443,43 @@ export function CouponDetailScreen() {
         ) : null}
 
         {/* Home-screen widget */}
-        {canJoinWidget || inWidget ? (
+        {widget.canToggle ? (
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={
-              inWidget
+              widget.inWidget
                 ? `הסר את ${coupon.company} מהווידג'ט`
                 : `הוסף את ${coupon.company} לווידג'ט`
             }
             activeOpacity={0.85}
-            disabled={!inWidget && widgetIsFull}
-            onPress={handleToggleWidget}
+            disabled={widget.disabled}
+            onPress={widget.toggle}
             style={[
               styles.widgetRow,
               {
-                backgroundColor: inWidget ? theme.primaryTint : theme.card,
-                borderColor: inWidget ? theme.primary : theme.cardBorder,
-                opacity: !inWidget && widgetIsFull ? 0.5 : 1,
+                backgroundColor: widget.inWidget ? theme.primaryTint : theme.card,
+                borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
+                opacity: widget.disabled ? 0.5 : 1,
               },
             ]}
           >
             <LayoutGrid size={18} color={theme.primary} />
             <View style={styles.widgetRowText}>
               <Text style={[styles.widgetRowTitle, { color: theme.text }]}>
-                {inWidget ? "מוצג בווידג'ט מסך הבית" : "הצג בווידג'ט מסך הבית"}
+                {widget.inWidget ? "מוצג בווידג'ט מסך הבית" : "הצג בווידג'ט מסך הבית"}
               </Text>
               <Text style={[styles.widgetRowSubtitle, { color: theme.textMuted }]}>
-                {inWidget
+                {widget.inWidget
                   ? "לחץ כדי להסיר מהווידג'ט"
-                  : widgetIsFull
-                    ? `הווידג'ט מלא - עד ${MAX_WIDGET_COUPONS} קופונים`
+                  : widget.isFull
+                    ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
                     : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
               </Text>
             </View>
-            {inWidget ? (
+            {widget.inWidget ? (
               <Minus size={18} color={theme.danger} />
             ) : (
-              <Plus size={18} color={widgetIsFull ? theme.textSubtle : theme.primary} />
+              <Plus size={18} color={widget.isFull ? theme.textSubtle : theme.primary} />
             )}
           </TouchableOpacity>
         ) : null}
