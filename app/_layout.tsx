@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   I18nManager,
@@ -29,7 +29,6 @@ import {
 import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outfit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BiometricGate } from "@/components/layout/BiometricGate";
-import { BrandLaunchScreen } from "@/components/layout/BrandLaunchScreen";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
@@ -110,7 +109,6 @@ function RootLayoutNav() {
   useWidgetSync();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > 480;
-  const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web");
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
   // for headings and figures in the redesign.
@@ -127,10 +125,10 @@ function RootLayoutNav() {
   const isReady = authReady && (fontsLoaded || Boolean(fontError));
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (isReady) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontError, fontsLoaded]);
+  }, [isReady]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 
@@ -171,14 +169,7 @@ function RootLayoutNav() {
           <ConfirmHost />
           <ToastHost />
 
-          {launchVisible ? (
-            <BrandLaunchScreen
-              appReady={isReady}
-              onFinish={() => setLaunchVisible(false)}
-            />
-          ) : null}
-
-          {!isReady && !launchVisible ? (
+          {!isReady ? (
             <View
               style={[styles.loadingOverlay, { backgroundColor: theme.background }]}
               pointerEvents="auto"
