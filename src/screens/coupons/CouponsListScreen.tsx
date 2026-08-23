@@ -33,6 +33,7 @@ import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { matchesCouponSearch } from "@/lib/couponSearch";
 
 type FilterStatus = "all" | "active" | "used" | "expired";
 
@@ -93,14 +94,7 @@ export function CouponsListScreen() {
   const matchedCoupons = useMemo(() => {
     return coupons.filter((coupon) => {
       // Search
-      const term = search.trim().toLowerCase();
-      const matchSearch =
-        !term ||
-        (coupon.company || "").toLowerCase().includes(term) ||
-        (coupon.description || "").toLowerCase().includes(term) ||
-        (coupon.code || "").toLowerCase().includes(term);
-
-      if (!matchSearch) return false;
+      if (!matchesCouponSearch(coupon, search)) return false;
 
       if (!isCompanyFiltered(coupon)) return false;
 
@@ -255,7 +249,7 @@ export function CouponsListScreen() {
             <Search size={18} color={theme.textMuted} />
           )}
           <TextInput
-            placeholder="חיפוש לפי חברה, תיאור או קוד"
+            placeholder="חיפוש לפי חברה, תיאור או מספר קופון"
             placeholderTextColor={theme.textMuted}
             value={search}
             onChangeText={setSearch}
