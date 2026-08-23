@@ -80,7 +80,7 @@ export function BrandLaunchVideo({
       <VideoView
         player={player}
         style={styles.video}
-        contentFit="cover"
+        contentFit="contain"
         nativeControls={false}
         allowsPictureInPicture={false}
         onFirstFrameRender={() => setFirstFrameReady(true)}
@@ -97,10 +97,13 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     zIndex: 1000,
     elevation: 1000,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#faf9f6",
   },
   video: {
-    ...StyleSheet.absoluteFill,
+    width: "82%",
+    height: "82%",
   },
   loader: {
     position: "absolute",
