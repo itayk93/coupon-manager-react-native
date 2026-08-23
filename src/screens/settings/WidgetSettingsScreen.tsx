@@ -15,30 +15,25 @@ import { useCoupons, useUpdateCoupon, type DecryptedCoupon } from "@/hooks/useCo
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { notify } from "@/lib/notify";
 import { fonts, radii } from "@/lib/theme";
-import { MAX_WIDGET_COUPONS } from "@/lib/widgetSync";
-
-const ACTIVE_STATUS = "פעיל";
-
-function remaining(coupon: DecryptedCoupon) {
-  return (coupon.value ?? 0) - (coupon.used_value ?? 0);
-}
+import { couponRemainingValue } from "@/lib/couponTotals";
+import {
+  MAX_WIDGET_COUPONS,
+  isInWidget,
+  isWidgetEligible,
+  isWidgetFull,
+  nextWidgetOrder,
+  widgetSelection,
+} from "@/lib/widgetSelection";
 
 export function WidgetSettingsScreen() {
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading } = useCoupons();
   const updateCoupon = useUpdateCoupon();
 
-  const eligible = coupons.filter(
-    (coupon) => coupon.status === ACTIVE_STATUS && remaining(coupon) > 0
-  );
-
-  const selected = eligible
-    .filter((coupon) => coupon.show_in_widget === true)
-    .sort((a, b) => (a.widget_display_order ?? 999) - (b.widget_display_order ?? 999));
-
-  const available = eligible.filter((coupon) => coupon.show_in_widget !== true);
-
-  const isFull = selected.length >= MAX_WIDGET_COUPONS;
+  const eligible = coupons.filter(isWidgetEligible);
+  const selected = widgetSelection(coupons);
+  const available = eligible.filter((coupon) => !isInWidget(coupon));
+  const isFull = isWidgetFull(coupons);
 
   const add = (coupon: DecryptedCoupon) => {
     if (isFull) {
@@ -47,7 +42,7 @@ export function WidgetSettingsScreen() {
     }
     updateCoupon.mutate({
       id: coupon.id,
-      updates: { show_in_widget: true, widget_display_order: selected.length },
+      updates: { show_in_widget: true, widget_display_order: nextWidgetOrder(coupons) },
     });
   };
 
@@ -93,7 +88,7 @@ export function WidgetSettingsScreen() {
           {coupon.company}
         </Text>
         <Text style={[styles.rowSubtitle, { color: theme.textMuted }]}>
-          נותרו {Math.round(remaining(coupon))} ₪
+          נותרו {Math.round(couponRemainingValue(coupon))} ₪
         </Text>
       </View>
 

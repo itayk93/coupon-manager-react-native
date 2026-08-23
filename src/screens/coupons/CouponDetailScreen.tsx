@@ -24,6 +24,9 @@ import {
   Tag,
   History,
   AlertTriangle,
+  LayoutGrid,
+  Minus,
+  Plus,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -32,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   useCoupon,
+  useCoupons,
   useDeleteCoupon,
   useUpdateCoupon,
   DecryptedCoupon,
@@ -43,6 +47,13 @@ import {
   useDeleteTransactionRecord,
 } from "@/hooks/useCouponUsage";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
+import {
+  MAX_WIDGET_COUPONS,
+  isInWidget,
+  isWidgetEligible,
+  isWidgetFull,
+  nextWidgetOrder,
+} from "@/lib/widgetSelection";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -139,6 +150,7 @@ export function CouponDetailScreen() {
   const { theme } = useAppTheme();
 
   const { data: coupon, isLoading } = useCoupon(couponId);
+  const { data: allCoupons = [] } = useCoupons();
   const { data: tags = [] } = useCouponTags(couponId);
   const { data: history = [] } = useCouponUsageHistory(coupon || null);
   const deleteCoupon = useDeleteCoupon();
@@ -200,6 +212,34 @@ export function CouponDetailScreen() {
       },
       "סמן כנוצל"
     );
+  };
+
+  const inWidget = isInWidget(coupon);
+  const canJoinWidget = isWidgetEligible(coupon);
+  // Capacity is read from the wallet, not from this coupon, so the button says
+  // "full" for the same reason the widget settings screen greys the row out.
+  const widgetIsFull = isWidgetFull(allCoupons);
+
+  const handleToggleWidget = async () => {
+    if (inWidget) {
+      await updateCoupon.mutateAsync({
+        id: coupon.id,
+        updates: { show_in_widget: false, widget_display_order: null },
+      });
+      notify.success("הקופון הוסר מהווידג'ט");
+      return;
+    }
+
+    if (widgetIsFull) {
+      notify.error(`ניתן לבחור עד ${MAX_WIDGET_COUPONS} קופונים בווידג'ט`);
+      return;
+    }
+
+    await updateCoupon.mutateAsync({
+      id: coupon.id,
+      updates: { show_in_widget: true, widget_display_order: nextWidgetOrder(allCoupons) },
+    });
+    notify.success("הקופון נוסף לווידג'ט");
   };
 
   const handleOpenUrl = async () => {
@@ -434,6 +474,48 @@ export function CouponDetailScreen() {
             <Text style={[styles.externalLinkText, { color: theme.secondary }]}>
               פתיחת שובר מקוון באתר החברה
             </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Home-screen widget */}
+        {canJoinWidget || inWidget ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={
+              inWidget
+                ? `הסר את ${coupon.company} מהווידג'ט`
+                : `הוסף את ${coupon.company} לווידג'ט`
+            }
+            activeOpacity={0.85}
+            disabled={!inWidget && widgetIsFull}
+            onPress={handleToggleWidget}
+            style={[
+              styles.widgetRow,
+              {
+                backgroundColor: inWidget ? theme.primaryTint : theme.card,
+                borderColor: inWidget ? theme.primary : theme.cardBorder,
+                opacity: !inWidget && widgetIsFull ? 0.5 : 1,
+              },
+            ]}
+          >
+            <LayoutGrid size={18} color={theme.primary} />
+            <View style={styles.widgetRowText}>
+              <Text style={[styles.widgetRowTitle, { color: theme.text }]}>
+                {inWidget ? "מוצג בווידג'ט מסך הבית" : "הצג בווידג'ט מסך הבית"}
+              </Text>
+              <Text style={[styles.widgetRowSubtitle, { color: theme.textMuted }]}>
+                {inWidget
+                  ? "לחץ כדי להסיר מהווידג'ט"
+                  : widgetIsFull
+                    ? `הווידג'ט מלא - עד ${MAX_WIDGET_COUPONS} קופונים`
+                    : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
+              </Text>
+            </View>
+            {inWidget ? (
+              <Minus size={18} color={theme.danger} />
+            ) : (
+              <Plus size={18} color={widgetIsFull ? theme.textSubtle : theme.primary} />
+            )}
           </TouchableOpacity>
         ) : null}
 
@@ -809,6 +891,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     marginBottom: 12,
+  },
+  widgetRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  widgetRowText: { flex: 1, gap: 2 },
+  widgetRowTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    textAlign: "right",
+  },
+  widgetRowSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    textAlign: "right",
   },
   sectionHeader: {
     flexDirection: "row-reverse",
