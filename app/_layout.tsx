@@ -127,7 +127,7 @@ function RootLayoutNav() {
   const isReady = authReady && (fontsLoaded || Boolean(fontError));
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (Platform.OS === "web" && (fontsLoaded || fontError)) {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontError, fontsLoaded]);
@@ -174,6 +174,7 @@ function RootLayoutNav() {
           {launchVisible ? (
             <BrandLaunchVideo
               appReady={isReady}
+              canReveal={fontsLoaded || Boolean(fontError)}
               onFinish={() => setLaunchVisible(false)}
             />
           ) : null}

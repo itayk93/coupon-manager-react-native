@@ -1,34 +1,70 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useEventListener } from "expo";
+import * as SplashScreen from "expo-splash-screen";
 import { useVideoPlayer, VideoView } from "expo-video";
 
 const launchVideo = require("../../../assets/brand-logo-reveal.mp4");
 
 type BrandLaunchVideoProps = {
   appReady: boolean;
+  canReveal: boolean;
   onFinish: () => void;
 };
 
 /** Plays the approved brand reveal once, without exposing player controls. */
-export function BrandLaunchVideo({ appReady, onFinish }: BrandLaunchVideoProps) {
+export function BrandLaunchVideo({
+  appReady,
+  canReveal,
+  onFinish,
+}: BrandLaunchVideoProps) {
   const [videoEnded, setVideoEnded] = useState(false);
+  const [firstFrameReady, setFirstFrameReady] = useState(false);
+  const revealStarted = useRef(false);
   const player = useVideoPlayer(launchVideo, (instance) => {
     instance.loop = false;
     instance.muted = true;
-    instance.play();
   });
 
   useEventListener(player, "playToEnd", () => setVideoEnded(true));
   useEventListener(player, "statusChange", ({ status }) => {
-    if (status === "error") setVideoEnded(true);
+    if (status === "error") {
+      SplashScreen.hideAsync().catch(() => {});
+      setVideoEnded(true);
+    }
   });
 
-  // Never trap the user behind the launch layer if a device fails to decode it.
+  // Keep the native splash above the prepared video. Start from frame zero only
+  // after the native layer has actually disappeared.
   useEffect(() => {
-    const fallback = setTimeout(() => setVideoEnded(true), 3500);
+    if (!canReveal || !firstFrameReady || revealStarted.current) return;
+
+    let mounted = true;
+    revealStarted.current = true;
+
+    SplashScreen.hideAsync()
+      .catch(() => {})
+      .then(() => {
+        if (!mounted) return;
+        player.currentTime = 0;
+        player.play();
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [canReveal, firstFrameReady, player]);
+
+  // Never trap the user behind the native splash if video preparation fails.
+  useEffect(() => {
+    if (!canReveal || videoEnded) return;
+
+    const fallback = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      setVideoEnded(true);
+    }, 5000);
     return () => clearTimeout(fallback);
-  }, []);
+  }, [canReveal, videoEnded]);
 
   useEffect(() => {
     if (appReady && videoEnded) onFinish();
@@ -47,6 +83,7 @@ export function BrandLaunchVideo({ appReady, onFinish }: BrandLaunchVideoProps) 
         contentFit="cover"
         nativeControls={false}
         allowsPictureInPicture={false}
+        onFirstFrameRender={() => setFirstFrameReady(true)}
       />
       {videoEnded && !appReady ? (
         <ActivityIndicator style={styles.loader} color="#1f6fd1" />
