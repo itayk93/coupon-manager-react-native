@@ -114,7 +114,8 @@ export function QuickUsageModal({
         setPlaceSearchMessage("המקום נמצא והמפה עודכנה");
       } else {
         setLocation(null);
-        setPlaceSearchMessage("הכתובת נמצאה. בחר נקודה במפה.");
+        const diagnostics = Array.isArray(data?.diagnostics) ? ` (${data.diagnostics.join(", ")})` : "";
+        setPlaceSearchMessage(`הכתובת נמצאה, אבל Google לא החזיר קואורדינטות${diagnostics}`);
       }
     }, 650);
 

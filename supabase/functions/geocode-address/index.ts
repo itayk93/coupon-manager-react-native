@@ -198,7 +198,7 @@ Deno.serve(async (req: Request) => {
           latitude: null,
           longitude: null,
           source: 'local_database',
-        } });
+        }, diagnostics });
       }
       return jsonResponseFor(req, {
         result: null,
