@@ -496,8 +496,11 @@ export function WhereBoughtScreen() {
     <View style={S.shell}>
       {Platform.OS === "web" ? (
         React.createElement("iframe", {
+          /* Changing only `src` left the old frame on screen, so picking a place
+             never moved the map. The key remounts the iframe instead. */
+          key: webCenter ? `${webCenter.latitude},${webCenter.longitude}` : "home",
           title: "מפת המקומות",
-          src: `https://www.google.com/maps?q=${webCenter?.latitude ?? HOME.latitude},${webCenter?.longitude ?? HOME.longitude}&z=${webCenter ? 14 : 8}&output=embed`,
+          src: `https://www.google.com/maps?q=${webCenter?.latitude ?? HOME.latitude},${webCenter?.longitude ?? HOME.longitude}&z=${webCenter ? 16 : 8}&output=embed`,
           style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 },
           loading: "lazy",
         })
