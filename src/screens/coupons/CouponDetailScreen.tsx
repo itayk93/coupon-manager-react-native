@@ -29,7 +29,6 @@ import {
   LayoutGrid,
   MapPin,
   Navigation,
-  Maximize2,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -662,37 +661,34 @@ export function CouponDetailScreen() {
 
                     <View style={styles.historyDetailsCol}>
                       {!h.place_name ? (
-                        <Text style={[styles.historyDetails, { color: theme.text }]}>{h.details}
-                        </Text>
+                        <Text style={[styles.historyDetails, { color: theme.text }]}>{h.details}</Text>
                       ) : null}
                       {h.place_name ? (
-                        <Text style={[styles.historyPlace, { color: theme.text }]}>
-                          {h.place_name}
-                        </Text>
-                      ) : null}
-                      {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          accessibilityRole="button"
-                          accessibilityLabel={`הצגת מפה עבור ${h.place_name || "מיקום השימוש"}`}
-                          accessibilityHint="פותח מפה גדולה שאפשר להזיז ולהגדיל"
-                          style={[
-                            styles.showMapButton,
-                            {
-                              backgroundColor: theme.neutralBg,
-                              borderColor: theme.border,
-                            },
-                          ]}
-                          onPress={() =>
-                            setSelectedMapLocation({
-                              latitude: h.latitude as number,
-                              longitude: h.longitude as number,
-                              title: h.place_name || "מיקום השימוש",
-                            })
-                          }
-                        >
-                          <Maximize2 size={16} color={theme.primary} />
-                        </TouchableOpacity>
+                        <View style={styles.historyPlaceRow}>
+                          <Text style={[styles.historyPlace, { color: theme.text }]}>{h.place_name}</Text>
+                          {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
+                            <TouchableOpacity
+                              activeOpacity={0.75}
+                              accessibilityRole="button"
+                              accessibilityLabel={`הצגת מפה עבור ${h.place_name}`}
+                              accessibilityHint="פותח מפה גדולה שאפשר להזיז ולהגדיל"
+                              hitSlop={4}
+                              style={[
+                                styles.showMapButton,
+                                { backgroundColor: theme.neutralBg },
+                              ]}
+                              onPress={() =>
+                                setSelectedMapLocation({
+                                  latitude: h.latitude as number,
+                                  longitude: h.longitude as number,
+                                  title: h.place_name as string,
+                                })
+                              }
+                            >
+                              <MapPin size={19} color={theme.primary} strokeWidth={2.2} />
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
                       ) : null}
                       {h.timestamp ? (
                         <Text style={[styles.historyDate, { color: theme.textMuted }]}>
@@ -1048,18 +1044,22 @@ const styles = StyleSheet.create({
   historyPlace: {
     fontSize: 13,
     fontWeight: "700",
-    marginTop: 4,
     textAlign: "right",
+    flexShrink: 1,
+  },
+  historyPlaceRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 8,
+    marginTop: 4,
   },
   showMapButton: {
-    alignSelf: "flex-end",
     width: 44,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderRadius: 12,
-    marginTop: 8,
+    borderRadius: 22,
   },
   mapModalHint: {
     fontFamily: fonts.body,
