@@ -87,9 +87,9 @@ Deno.serve(async (req: Request) => {
     const diagnostics: string[] = [];
     const db = admin();
     const { data: localPlace } = await db.from('coupon_places')
-      .select('place_name,place_address,latitude,longitude,google_place_id')
+      .select('place_name,place_address,latitude,longitude,google_place_id,source')
       .eq('normalized_name', normalizedName).maybeSingle();
-    if (localPlace?.place_address && localPlace.latitude !== null && localPlace.longitude !== null) {
+    if (localPlace?.source !== 'verified_business_directory' && localPlace?.place_address && localPlace.latitude !== null && localPlace.longitude !== null) {
       return jsonResponseFor(req, { result: {
         placeName: localPlace.place_name,
         address: localPlace.place_address,
