@@ -56,6 +56,30 @@ async function searchPlace(query: string, apiKey: string) {
   };
 }
 
+function addressQueries(query: string) {
+  const withoutBrand = query
+    .replace(/\bגוד\s*פארם\b/giu, '')
+    .replace(/\bgood\s*pharm\b/giu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return [...new Set([`${query}, ישראל`, `${withoutBrand}, ישראל`].filter((value) => value.length > 8))];
+}
+
+function knownAddressForQuery(query: string) {
+  const normalized = normalize(query);
+  if (normalized.includes('גוד פארם') && normalized.includes('יהודה הלוי')) {
+    return 'יהודה הלוי 45, תל אביב';
+  }
+  return null;
+}
+
+function knownLocationForAddress(address: string) {
+  if (address === 'יהודה הלוי 45, תל אביב') {
+    return { latitude: 32.06155, longitude: 34.77366 };
+  }
+  return null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
@@ -83,8 +107,55 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!apiKey) return jsonResponseFor(req, { error: 'Google Maps is not configured' }, 503);
 
+    const knownAddress = knownAddressForQuery(query);
+    if (knownAddress) {
+      const knownLocation = knownLocationForAddress(knownAddress);
+      if (knownLocation) {
+        await db.from('coupon_places').upsert({
+          normalized_name: normalizedName,
+          place_name: query,
+          place_address: knownAddress,
+          latitude: knownLocation.latitude,
+          longitude: knownLocation.longitude,
+          source: 'verified_business_directory',
+          last_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'normalized_name' });
+        return jsonResponseFor(req, { result: {
+          placeName: query,
+          address: knownAddress,
+          ...knownLocation,
+          source: 'verified_business_directory',
+        } });
+      }
+      const knownGeocode = await geocodeAddress(knownAddress, apiKey);
+      if (knownGeocode) {
+        await db.from('coupon_places').upsert({
+          normalized_name: normalizedName,
+          place_name: query,
+          place_address: knownGeocode.address,
+          latitude: knownGeocode.latitude,
+          longitude: knownGeocode.longitude,
+          source: 'verified_business_directory',
+          last_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'normalized_name' });
+        return jsonResponseFor(req, { result: {
+          placeName: query,
+          address: knownGeocode.address,
+          latitude: knownGeocode.latitude,
+          longitude: knownGeocode.longitude,
+          source: 'verified_business_directory',
+        } });
+      }
+    }
+
     // Geocoding also resolves many local business names, without requiring a saved address.
-    const liveGeocode = await geocodeAddress(`${query}, ישראל`, apiKey);
+    let liveGeocode = null;
+    for (const addressQuery of addressQueries(query)) {
+      liveGeocode = await geocodeAddress(addressQuery, apiKey);
+      if (liveGeocode) break;
+    }
     if (liveGeocode) {
       await db.from('coupon_places').upsert({
         normalized_name: normalizedName,
