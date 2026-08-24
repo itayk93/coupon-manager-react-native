@@ -17,7 +17,8 @@ const ISRAEL_REGION: Region = {
 
 type CouponLocationMapProps = {
   location?: CouponLocation | null;
-  locations?: Array<CouponLocation & { title?: string; description?: string }>;
+  locations?: Array<CouponLocation & { title?: string; description?: string; id?: string }>;
+  onLocationPress?: (location: CouponLocation & { title?: string; description?: string; id?: string }) => void;
   onLocationChange?: (location: CouponLocation) => void;
   editable?: boolean;
   height?: number;
@@ -26,6 +27,7 @@ type CouponLocationMapProps = {
 export function CouponLocationMap({
   location,
   locations,
+  onLocationPress,
   onLocationChange,
   editable = false,
   height = 220,
@@ -122,7 +124,7 @@ export function CouponLocationMap({
       >
         {mapLocations.map((item, index) => (
           <Marker
-            key={`${item.latitude}-${item.longitude}-${index}`}
+            key={item.id || `${item.latitude}-${item.longitude}-${index}`}
             coordinate={item}
             draggable={editable && index === 0}
             onDragEnd={(event) => {
@@ -131,6 +133,7 @@ export function CouponLocationMap({
             }}
             title={item.title || "מיקום השימוש"}
             description={item.description}
+            onPress={() => onLocationPress?.(item)}
           />
         ))}
       </MapView>
