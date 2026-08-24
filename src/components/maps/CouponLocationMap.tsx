@@ -1,5 +1,6 @@
-import React from "react";
-import { Linking, Platform, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Linking, Platform, StyleSheet, Text } from "react-native";
+import { Animated, Easing } from "react-native";
 import MapView, { MapPressEvent, Marker, Region } from "react-native-maps";
 
 export type CouponLocation = {
@@ -29,6 +30,32 @@ export function CouponLocationMap({
   editable = false,
   height = 220,
 }: CouponLocationMapProps) {
+  const mapRef = useRef<MapView>(null);
+  const reveal = useRef(new Animated.Value(1)).current;
+  const locationKey = location ? `${location.latitude},${location.longitude}` : "empty";
+
+  useEffect(() => {
+    if (!location) return;
+    reveal.setValue(0.92);
+    Animated.timing(reveal, {
+      toValue: 1,
+      duration: 520,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+    if (Platform.OS !== "web") {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        700,
+      );
+    }
+  }, [locationKey, reveal, location]);
+
   if (Platform.OS === "web") {
     const webLocations = locations?.length ? locations : location ? [{ ...location }] : [];
     const firstWebLocation = webLocations[0];
@@ -40,7 +67,7 @@ export function CouponLocationMap({
       ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
       : null;
     return (
-      <View style={[styles.container, { height }]}>
+      <Animated.View style={[styles.container, { height, opacity: reveal, transform: [{ scale: reveal }] }]}>
         {React.createElement("iframe", {
           title: "מפת מיקום שימוש בקופון",
           src: mapUrl,
@@ -62,7 +89,7 @@ export function CouponLocationMap({
             פתיחה לניווט ב־Google Maps
           </Text>
         ) : null}
-      </View>
+      </Animated.View>
     );
   }
 
@@ -84,8 +111,9 @@ export function CouponLocationMap({
   };
 
   return (
-    <View style={[styles.container, { height }]}>
+    <Animated.View style={[styles.container, { height, opacity: reveal, transform: [{ scale: reveal }] }]}>
       <MapView
+        ref={mapRef}
         style={StyleSheet.absoluteFill}
         initialRegion={initialRegion}
         onPress={handlePress}
@@ -106,7 +134,7 @@ export function CouponLocationMap({
           />
         ))}
       </MapView>
-    </View>
+    </Animated.View>
   );
 }
 
