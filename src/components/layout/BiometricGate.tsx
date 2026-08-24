@@ -3,6 +3,7 @@ import { AppState, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { shouldRelockAfterBackground } from "@/lib/biometricLock";
 
 /**
  * Face ID / Touch ID lock over the signed-in app.
@@ -27,6 +28,7 @@ export function BiometricGate() {
   const [isActive, setIsActive] = React.useState(
     AppState.currentState === "active"
   );
+  const backgroundedAt = React.useRef<number | null>(null);
 
   const runPrompt = React.useCallback(async () => {
     if (prompting) return;
@@ -49,20 +51,34 @@ export function BiometricGate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldLock, unlocked, isActive]);
 
-  // Re-lock when the app is sent to the background, and only prompt again when
-  // it returns to the foreground.
+  // A quick device lock/unlock already authenticated the user at OS level.
+  // Keep the app open during a short background interval, but require fresh
+  // authentication after ten minutes away.
   React.useEffect(() => {
     if (!shouldLock) return;
     const sub = AppState.addEventListener("change", (state) => {
       setIsActive(state === "active");
-      if (state === "background") setUnlocked(false);
+      if (state === "background") {
+        backgroundedAt.current = Date.now();
+        return;
+      }
+
+      if (state === "active") {
+        if (shouldRelockAfterBackground(backgroundedAt.current, Date.now())) {
+          setUnlocked(false);
+        }
+        backgroundedAt.current = null;
+      }
     });
     return () => sub.remove();
   }, [shouldLock]);
 
   // Signing out clears the lock so the next sign-in starts fresh.
   React.useEffect(() => {
-    if (!session) setUnlocked(false);
+    if (!session) {
+      setUnlocked(false);
+      backgroundedAt.current = null;
+    }
   }, [session]);
 
   if (!shouldLock || unlocked) return null;
