@@ -453,43 +453,49 @@ export function CouponDetailScreen() {
         ) : null}
 
         {/* Home-screen widget is available only in native app builds. */}
-        {isWidgetSupported ? <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={widget.toggle}
-          style={[
-            styles.widgetCard,
-            {
-              backgroundColor: theme.card,
-              borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
-              opacity: !widget.canToggle && !widget.inWidget ? 0.6 : 1,
-            },
-          ]}
-        >
-          <Switch
-            value={widget.inWidget}
-            onValueChange={widget.toggle}
-            disabled={!widget.canToggle && !widget.inWidget}
-            trackColor={{ false: theme.inputBorder, true: theme.primary }}
-            thumbColor="#ffffff"
-          />
-          <View style={styles.widgetCardContent}>
-            <View style={styles.widgetCardHeader}>
-              <Text style={[styles.widgetCardTitle, { color: theme.text }]}>
-                הצג בווידג'ט מסך הבית
+        {isWidgetSupported ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={widget.toggle}
+            style={[
+              styles.widgetCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
+                opacity: !widget.canToggle && !widget.inWidget ? 0.6 : 1,
+              },
+            ]}
+          >
+            <Switch
+              value={widget.inWidget}
+              onValueChange={widget.toggle}
+              disabled={!widget.canToggle && !widget.inWidget}
+              trackColor={{ false: theme.inputBorder, true: theme.primary }}
+              thumbColor="#ffffff"
+            />
+            <View style={styles.widgetCardContent}>
+              <View style={styles.widgetCardHeader}>
+                <Text
+                  style={[styles.widgetCardTitle, { color: theme.text }]}
+                >
+                  הצג בווידג'ט מסך הבית
+                </Text>
+                <LayoutGrid size={18} color={theme.primary} />
+              </View>
+              <Text
+                style={[styles.widgetCardSubtitle, { color: theme.textMuted }]}
+              >
+                {widget.inWidget
+                  ? "הקופון מוצג בווידג'ט לגישה מהירה מהמסך הראשי"
+                  : widget.isFull
+                  ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
+                  : !widget.canToggle
+                  ? "קופון זה אינו זמין להצגה בווידג'ט"
+                  : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
               </Text>
-              <LayoutGrid size={18} color={theme.primary} />
             </View>
-            <Text style={[styles.widgetCardSubtitle, { color: theme.textMuted }]}>
-              {widget.inWidget
-                ? "הקופון מוצג בווידג'ט לגישה מהירה מהמסך הראשי"
-                : widget.isFull
-                ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
-                : !widget.canToggle
-                ? "קופון זה אינו זמין להצגה בווידג'ט"
-                : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
-            </Text>
-          </View>
-        </TouchableOpacity> : null}
+          </TouchableOpacity>
+        ) : null}
 
         {/* Tags */}
         <View
