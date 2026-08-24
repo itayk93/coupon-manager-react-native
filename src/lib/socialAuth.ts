@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 WebBrowser.maybeCompleteAuthSession();
 
 const REDIRECT_PATH = "auth/callback";
+const NATIVE_REDIRECT_URL = `couponmaster://${REDIRECT_PATH}`;
 
 export type SocialProvider = Extract<Provider, "google" | "apple">;
 
@@ -46,7 +47,7 @@ async function completeNativeOAuth(url: string | null, redirectTo: string) {
 
 export async function signInWithSocialProvider(provider: SocialProvider) {
   const isWeb = Platform.OS === "web";
-  const redirectTo = Linking.createURL(isWeb ? "login" : REDIRECT_PATH);
+  const redirectTo = isWeb ? Linking.createURL("login") : NATIVE_REDIRECT_URL;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -63,7 +64,7 @@ export async function signInWithSocialProvider(provider: SocialProvider) {
 /** Links another verified provider to the signed-in user instead of creating a second account. */
 export async function linkSocialProvider(provider: SocialProvider) {
   const isWeb = Platform.OS === "web";
-  const redirectTo = Linking.createURL(isWeb ? "profile" : REDIRECT_PATH);
+  const redirectTo = isWeb ? Linking.createURL("profile") : NATIVE_REDIRECT_URL;
   const { data, error } = await supabase.auth.linkIdentity({
     provider,
     options: {
