@@ -32,6 +32,22 @@ export type CouponUsageStats = {
   latestUsageByCompany: Record<string, number>;
 };
 
+type CachedCouponPlace = {
+  normalized_name: string | null;
+  place_name: string | null;
+  place_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+function normalizePlaceName(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("he-IL")
+    .replace(/["'׳״.,()\-]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
 /**
  * Aggregates actual coupon usage counts and latest usage timestamps
  * across coupon_usage and coupon_transaction for all coupons belonging to the user.
@@ -139,17 +155,31 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
 
       const couponId = coupon.id;
 
-      // Fetch from coupon_usage
-      const { data: usageData } = await supabase
-        .from("coupon_usage")
-        .select(COUPON_USAGE_COLUMNS)
-        .eq("coupon_id", couponId);
+      const [usageResult, transactionResult, placesResult] = await Promise.all([
+        supabase
+          .from("coupon_usage")
+          .select(COUPON_USAGE_COLUMNS)
+          .eq("coupon_id", couponId),
+        supabase
+          .from("coupon_transaction")
+          .select(COUPON_TRANSACTION_COLUMNS)
+          .eq("coupon_id", couponId),
+        (supabase as any)
+          .from("coupon_places")
+          .select("normalized_name,place_name,place_address,latitude,longitude"),
+      ]);
 
-      // Fetch from coupon_transaction
-      const { data: txData } = await supabase
-        .from("coupon_transaction")
-        .select(COUPON_TRANSACTION_COLUMNS)
-        .eq("coupon_id", couponId);
+      if (usageResult.error) throw usageResult.error;
+      if (transactionResult.error) throw transactionResult.error;
+      if (placesResult.error) throw placesResult.error;
+
+      const usageData = usageResult.data;
+      const txData = transactionResult.data;
+      const placesByName = new Map<string, CachedCouponPlace>();
+      ((placesResult.data || []) as CachedCouponPlace[]).forEach((place) => {
+        if (place.normalized_name) placesByName.set(normalizePlaceName(place.normalized_name), place);
+        if (place.place_name) placesByName.set(normalizePlaceName(place.place_name), place);
+      });
 
       const rows: ConsolidatedRow[] = [];
       const ledgerAmounts: number[] = [];
@@ -179,6 +209,9 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
         const amount = ledgerAmountFromTransaction(t.recharge_amount, t.usage_amount);
         const details = t.location || t.source || "עסקת קופון";
         if (isHiddenLedgerRow(details)) return;
+        const cachedPlace = t.location
+          ? placesByName.get(normalizePlaceName(t.location))
+          : undefined;
         ledgerAmounts.push(amount);
         rows.push({
           id: t.id,
@@ -186,10 +219,10 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
           timestamp: t.transaction_date || new Date().toISOString(),
           transaction_amount: amount,
           details,
-          place_name: null,
-          place_address: t.location || null,
-          latitude: null,
-          longitude: null,
+          place_name: cachedPlace?.place_name || t.location || null,
+          place_address: cachedPlace?.place_address || t.location || null,
+          latitude: cachedPlace?.latitude ?? null,
+          longitude: cachedPlace?.longitude ?? null,
           source_table: "coupon_transaction",
         });
       });
