@@ -163,7 +163,6 @@ export function CouponDetailScreen() {
     latitude: number;
     longitude: number;
     title: string;
-    address: string | null;
   } | null>(null);
 
   // Feeds the automatic balance updater, same as the legacy app.
@@ -662,17 +661,13 @@ export function CouponDetailScreen() {
                     </Text>
 
                     <View style={styles.historyDetailsCol}>
-                      <Text style={[styles.historyDetails, { color: theme.text }]}>
-                        {h.details}
-                      </Text>
+                      {!h.place_name ? (
+                        <Text style={[styles.historyDetails, { color: theme.text }]}>{h.details}
+                        </Text>
+                      ) : null}
                       {h.place_name ? (
                         <Text style={[styles.historyPlace, { color: theme.text }]}>
                           {h.place_name}
-                        </Text>
-                      ) : null}
-                      {h.place_address ? (
-                        <Text style={[styles.historyAddress, { color: theme.textMuted }] }>
-                          {h.place_address}
                         </Text>
                       ) : null}
                       {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
@@ -693,13 +688,10 @@ export function CouponDetailScreen() {
                               latitude: h.latitude as number,
                               longitude: h.longitude as number,
                               title: h.place_name || "מיקום השימוש",
-                              address: h.place_address,
                             })
                           }
                         >
                           <Maximize2 size={16} color={theme.primary} />
-                          <Text style={[styles.showMapText, { color: theme.primary }]}>הצגת מפה</Text>
-                          <MapPin size={16} color={theme.primary} />
                         </TouchableOpacity>
                       ) : null}
                       {h.timestamp ? (
@@ -753,7 +745,6 @@ export function CouponDetailScreen() {
         visible={selectedMapLocation !== null}
         onClose={() => setSelectedMapLocation(null)}
         title={selectedMapLocation?.title || "מיקום השימוש"}
-        subtitle={selectedMapLocation?.address || "אפשר לגרור ולהגדיל את המפה"}
         titleIcon={<MapPin size={18} color={theme.primary} />}
         footer={
           selectedMapLocation ? (
@@ -1060,27 +1051,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: "right",
   },
-  historyAddress: {
-    fontSize: 12,
-    marginTop: 2,
-    textAlign: "right",
-  },
   showMapButton: {
     alignSelf: "flex-end",
-    minHeight: 44,
-    flexDirection: "row-reverse",
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
     borderWidth: 1,
     borderRadius: 12,
-    paddingHorizontal: 14,
     marginTop: 8,
-  },
-  showMapText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    fontWeight: "700",
   },
   mapModalHint: {
     fontFamily: fonts.body,
