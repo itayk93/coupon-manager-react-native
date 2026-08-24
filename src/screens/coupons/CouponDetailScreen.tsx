@@ -29,6 +29,7 @@ import {
   LayoutGrid,
   MapPin,
   Navigation,
+  Maximize2,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -36,6 +37,7 @@ import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/Modal";
 import {
   useCoupon,
   useDeleteCoupon,
@@ -157,6 +159,12 @@ export function CouponDetailScreen() {
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [selectedMapLocation, setSelectedMapLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    title: string;
+    address: string | null;
+  } | null>(null);
 
   // Feeds the automatic balance updater, same as the legacy app.
   const { markDetailViewed } = useCouponViewTracking();
@@ -668,22 +676,31 @@ export function CouponDetailScreen() {
                         </Text>
                       ) : null}
                       {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
-                        <>
-                          <CouponLocationMap
-                            location={{ latitude: h.latitude, longitude: h.longitude }}
-                            height={130}
-                          />
-                          <TouchableOpacity
-                            style={[styles.navigationButton, { borderColor: theme.border }]}
-                            onPress={() => {
-                              const url = `https://www.google.com/maps/search/?api=1&query=${h.latitude},${h.longitude}`;
-                              void Linking.openURL(url);
-                            }}
-                          >
-                            <Navigation size={14} color={theme.primary} />
-                            <Text style={[styles.navigationText, { color: theme.primary }]}>פתיחת ניווט</Text>
-                          </TouchableOpacity>
-                        </>
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`הצגת מפה עבור ${h.place_name || "מיקום השימוש"}`}
+                          accessibilityHint="פותח מפה גדולה שאפשר להזיז ולהגדיל"
+                          style={[
+                            styles.showMapButton,
+                            {
+                              backgroundColor: theme.neutralBg,
+                              borderColor: theme.border,
+                            },
+                          ]}
+                          onPress={() =>
+                            setSelectedMapLocation({
+                              latitude: h.latitude as number,
+                              longitude: h.longitude as number,
+                              title: h.place_name || "מיקום השימוש",
+                              address: h.place_address,
+                            })
+                          }
+                        >
+                          <Maximize2 size={16} color={theme.primary} />
+                          <Text style={[styles.showMapText, { color: theme.primary }]}>הצגת מפה</Text>
+                          <MapPin size={16} color={theme.primary} />
+                        </TouchableOpacity>
                       ) : null}
                       {h.timestamp ? (
                         <Text style={[styles.historyDate, { color: theme.textMuted }]}>
@@ -731,6 +748,38 @@ export function CouponDetailScreen() {
         coupons={[coupon]}
         preselectedCoupon={coupon}
       />
+
+      <Modal
+        visible={selectedMapLocation !== null}
+        onClose={() => setSelectedMapLocation(null)}
+        title={selectedMapLocation?.title || "מיקום השימוש"}
+        subtitle={selectedMapLocation?.address || "אפשר לגרור ולהגדיל את המפה"}
+        titleIcon={<MapPin size={18} color={theme.primary} />}
+        footer={
+          selectedMapLocation ? (
+            <Button
+              title="פתיחת ניווט"
+              icon={<Navigation size={17} color="#ffffff" />}
+              onPress={() => {
+                const url = `https://www.google.com/maps/search/?api=1&query=${selectedMapLocation.latitude},${selectedMapLocation.longitude}`;
+                void Linking.openURL(url);
+              }}
+            />
+          ) : null
+        }
+      >
+        {selectedMapLocation ? (
+          <View>
+            <CouponLocationMap
+              location={selectedMapLocation}
+              height={400}
+            />
+            <Text style={[styles.mapModalHint, { color: theme.textMuted }]}>
+              צביטה בשתי אצבעות להגדלה • גרירה לתנועה במפה
+            </Text>
+          </View>
+        ) : null}
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1016,20 +1065,29 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: "right",
   },
-  navigationButton: {
+  showMapButton: {
     alignSelf: "flex-end",
-    flexDirection: "row",
+    minHeight: 44,
+    flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
+    gap: 8,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 12,
+    paddingHorizontal: 14,
     marginTop: 8,
   },
-  navigationText: {
-    fontSize: 12,
+  showMapText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
     fontWeight: "700",
+  },
+  mapModalHint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+    marginTop: 10,
   },
   historyHeaderActions: {
     flexDirection: "row-reverse",
