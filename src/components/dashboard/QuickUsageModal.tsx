@@ -386,7 +386,7 @@ export function QuickUsageModal({
 
         <Input
           label="שם המקום (אופציונלי)"
-          placeholder="למשל: גוד פארם קרית רבין"
+          placeholder="למשל: בית קפה דיזנגוף תל אביב"
           value={placeName}
           onChangeText={(value) => {
             setPlaceName(value);
