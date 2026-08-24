@@ -59,20 +59,34 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים."
+          "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
           "photosPermission": "אפליקציה זו זקוקה לגישה לתמונות כדי לזהות פרטי שובר מצילום מסך.",
-          "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לצלם שובר ולזהות את פרטיו."
+          "cameraPermission": "אפליקציה זו זקוקה לגישה למצלמה כדי לצלם שובר ולזהות את פרטיו.",
+          "microphonePermission": false
         }
       ],
       [
         "expo-local-authentication",
         {
           "faceIDPermission": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "האפליקציה משתמשת במיקום שלך רק לאחר לחיצה על 'המיקום שלי', כדי לרשום היכן השתמשת בקופון.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false,
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
         }
       ],
       "expo-asset",
