@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ArrowRight, Crosshair, Search } from "lucide-react-native";
+import { ArrowRight, Crosshair, MapPin, Search } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
 
@@ -46,6 +46,8 @@ const SHEET_STOPS = [
 const SHEET_RATIO_KEY = "where-bought-sheet-ratio";
 const CORRECTIONS_KEY = "where-bought-corrections";
 const SWIPE_MIN = 48;
+/* Web has no real map, only an embed; it fills the strip left above the sheet. */
+const WEB_MAP_HEIGHT = SCREEN.height - SHEET_STOPS[1];
 
 const money = (n: number) => "₪" + Math.round(n).toLocaleString("he-IL");
 const monthOf = (iso: string) => (iso || "").slice(0, 7);
@@ -495,19 +497,32 @@ export function WhereBoughtScreen() {
   return (
     <View style={S.shell}>
       {Platform.OS === "web" ? (
-        React.createElement("iframe", {
+        <>
+        {React.createElement("iframe", {
           /* Changing only `src` left the old frame on screen, so picking a place
              never moved the map. The key remounts the iframe instead. */
           key: webCenter ? `${webCenter.latitude},${webCenter.longitude}` : "home",
           title: "מפת המקומות",
-          /* `q=lat,lng(label)` is what makes the embed drop a pin — a bare
-             centre point renders a plain map with nothing marked. */
+          /* The keyless embed only drops Google's own red pin for a *search*,
+             not for a bare centre point, so the query is the place's name and
+             address with the coordinates as the fallback. */
           src: webCenter
-            ? `https://maps.google.com/maps?q=${webCenter.latitude},${webCenter.longitude}(${encodeURIComponent(webCenter.name)})&z=16&hl=iw&output=embed`
+            ? `https://maps.google.com/maps?q=${encodeURIComponent([webCenter.name, webCenter.address].filter(Boolean).join(", ") || `${webCenter.latitude},${webCenter.longitude}`)}&ll=${webCenter.latitude},${webCenter.longitude}&z=16&hl=iw&output=embed`
             : `https://maps.google.com/maps?q=${HOME.latitude},${HOME.longitude}&z=8&hl=iw&output=embed`,
-          style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 },
+          /* Only the strip above the sheet is visible, so the frame stops there.
+             Otherwise Google centres the map behind the panel. */
+          style: { position: "absolute", top: 0, left: 0, width: "100%", height: WEB_MAP_HEIGHT, border: 0 },
           loading: "lazy",
-        })
+        })}
+        {/* Google's own pin depends on its search matching the business, which it
+            does not always do. This one sits on the frame's centre — the exact
+            coordinates we asked for — so a place is always marked. */}
+        {webCenter ? (
+          <View pointerEvents="none" style={[S.webPin, { top: WEB_MAP_HEIGHT / 2 - 34 }]}>
+            <MapPin size={38} color="#ea4335" fill="#ea4335" strokeWidth={1.4} />
+          </View>
+        ) : null}
+        </>
       ) : (
       <MapView
         ref={mapRef}
@@ -876,6 +891,8 @@ export function WhereBoughtScreen() {
 
 const S = StyleSheet.create({
   shell: { flex: 1, backgroundColor: "#05070d" },
+
+  webPin: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 5 },
 
   markerWrap: { alignItems: "center", width: 120 },
   marker: { borderColor: "rgba(255,255,255,0.7)", opacity: 0.85 },
