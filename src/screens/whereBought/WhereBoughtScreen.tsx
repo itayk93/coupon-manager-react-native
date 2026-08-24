@@ -15,6 +15,8 @@ import {
 import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
+import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ArrowRight, Crosshair, Search } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
@@ -35,9 +37,15 @@ const BUCKETS = [
 const HOME: Region = { latitude: 32.07, longitude: 34.78, latitudeDelta: 1.6, longitudeDelta: 1.6 };
 const PAGE_SIZE = 5;
 const SCREEN = Dimensions.get("window");
-const SHEET_MIN = 96;
-const SHEET_MAX = Math.round(SCREEN.height * 0.82);
-const SHEET_DEFAULT = Math.round(SCREEN.height * 0.42);
+/* The web page's three stops: a peek, a working height, and near-full. */
+const SHEET_STOPS = [
+  Math.max(132, Math.round(SCREEN.height * 0.22)),
+  Math.round(SCREEN.height * 0.56),
+  Math.round(SCREEN.height * 0.9),
+];
+const SHEET_RATIO_KEY = "where-bought-sheet-ratio";
+const CORRECTIONS_KEY = "where-bought-corrections";
+const SWIPE_MIN = 48;
 
 const money = (n: number) => "₪" + Math.round(n).toLocaleString("he-IL");
 const monthOf = (iso: string) => (iso || "").slice(0, 7);
@@ -88,15 +96,41 @@ function monthlySpend(place: Derived) {
   return [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-function usePagination<T>(items: T[], pageSize = PAGE_SIZE) {
+/* Same deal as the web page: a page of five rows, swiped sideways. The web
+   version reads raw touch deltas; here a PanResponder claims the gesture only
+   once it is clearly horizontal, so the sheet's vertical scroll still wins. */
+function useSwipePagination<T>(items: T[], pageSize = PAGE_SIZE) {
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const pageRef = useRef(0);
+  const totalRef = useRef(totalPages);
+  pageRef.current = page;
+  totalRef.current = totalPages;
+
   useEffect(() => { setPage(0); }, [items]);
+
+  const responder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_event, gesture) =>
+        Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
+      onPanResponderRelease: (_event, gesture) => {
+        if (Math.abs(gesture.dx) < SWIPE_MIN || Math.abs(gesture.dx) <= Math.abs(gesture.dy) * 1.2) return;
+        // Same direction as the web page: swiping left steps back a page.
+        const next = gesture.dx < 0 ? pageRef.current - 1 : pageRef.current + 1;
+        const clamped = Math.max(0, Math.min(totalRef.current - 1, next));
+        if (clamped === pageRef.current) return;
+        setPage(clamped);
+        void Haptics.selectionAsync();
+      },
+    }),
+  ).current;
+
   return {
     page,
     totalPages,
     setPage,
     items: items.slice(page * pageSize, (page + 1) * pageSize),
+    panHandlers: responder.panHandlers,
   };
 }
 
@@ -156,31 +190,108 @@ export function WhereBoughtScreen() {
   const [areaFeedback, setAreaFeedback] = useState<string | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  const sheetHeight = useRef(new Animated.Value(SHEET_DEFAULT)).current;
-  const sheetHeightValue = useRef(SHEET_DEFAULT);
+  const [correctionOpen, setCorrectionOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editLat, setEditLat] = useState("");
+  const [editLng, setEditLng] = useState("");
+  const [corrections, setCorrections] = useState<Record<string, Partial<BoughtPlace>>>({});
+
+  const scrollRef = useRef<ScrollView>(null);
+  const resultsOffset = useRef(0);
+  const previousRegion = useRef<Region | null>(null);
+
+  const sheetHeight = useRef(new Animated.Value(SHEET_STOPS[1])).current;
+  const sheetHeightValue = useRef(SHEET_STOPS[1]);
+  const [isPeek, setIsPeek] = useState(false);
+  const didDragSheet = useRef(false);
+
   useEffect(() => {
-    const id = sheetHeight.addListener(({ value }) => { sheetHeightValue.current = value; });
+    const id = sheetHeight.addListener(({ value }) => {
+      sheetHeightValue.current = value;
+      setIsPeek(value <= SHEET_STOPS[0] + 12);
+    });
     return () => sheetHeight.removeListener(id);
   }, [sheetHeight]);
 
+  /* The last height the user chose is remembered between visits, the way the
+     web page keeps it in localStorage. */
+  useEffect(() => {
+    void (async () => {
+      const [ratio, saved] = await Promise.all([
+        AsyncStorage.getItem(SHEET_RATIO_KEY),
+        AsyncStorage.getItem(CORRECTIONS_KEY),
+      ]);
+      if (ratio) {
+        const height = Math.max(SHEET_STOPS[0], Math.min(SHEET_STOPS[2], Math.round(SCREEN.height * Number(ratio))));
+        sheetHeight.setValue(height);
+      }
+      if (saved) {
+        try { setCorrections(JSON.parse(saved) as Record<string, Partial<BoughtPlace>>); } catch { /* ignore bad cache */ }
+      }
+    })();
+  }, [sheetHeight]);
+
+  const setSheetStop = (stop: number) => {
+    void AsyncStorage.setItem(SHEET_RATIO_KEY, String(stop / SCREEN.height));
+    void Haptics.selectionAsync();
+    Animated.spring(sheetHeight, { toValue: stop, useNativeDriver: false, bounciness: 2 }).start();
+  };
+
+  const collapseSheet = () => setSheetStop(SHEET_STOPS[0]);
+
+  const expandPeekSheet = () => {
+    if (sheetHeightValue.current <= SHEET_STOPS[0] + 12) setSheetStop(SHEET_STOPS[1]);
+  };
+
+  const cycleSheetHeight = () => {
+    if (didDragSheet.current) {
+      didDragSheet.current = false;
+      return;
+    }
+    const currentIndex = SHEET_STOPS.reduce((best, stop, index) =>
+      Math.abs(stop - sheetHeightValue.current) < Math.abs(SHEET_STOPS[best] - sheetHeightValue.current) ? index : best, 0);
+    setSheetStop(SHEET_STOPS[(currentIndex + 1) % SHEET_STOPS.length]);
+  };
+
   const sheetPan = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dy) > 4,
+      onPanResponderGrant: () => { didDragSheet.current = false; },
       onPanResponderMove: (_event, gesture) => {
-        const next = Math.min(SHEET_MAX, Math.max(SHEET_MIN, sheetHeightValue.current - gesture.dy));
+        if (Math.abs(gesture.dy) > 4) didDragSheet.current = true;
+        const next = Math.min(SHEET_STOPS[2], Math.max(SHEET_STOPS[0], sheetHeightValue.current - gesture.dy));
         sheetHeight.setValue(next);
       },
-      onPanResponderRelease: () => {
-        // Snap to whichever of the three stops the drag ended nearest.
-        const stops = [SHEET_MIN, SHEET_DEFAULT, SHEET_MAX];
-        const target = stops.reduce((best, stop) =>
+      onPanResponderRelease: (_event, gesture) => {
+        if (!didDragSheet.current && Math.abs(gesture.dy) <= 4) {
+          // A tap on the grabber cycles peek → working → full, as on the web.
+          cycleSheetHeight();
+          return;
+        }
+        const target = SHEET_STOPS.reduce((best, stop) =>
           Math.abs(stop - sheetHeightValue.current) < Math.abs(best - sheetHeightValue.current) ? stop : best);
-        Animated.spring(sheetHeight, { toValue: target, useNativeDriver: false, bounciness: 2 }).start();
+        setSheetStop(target);
+        didDragSheet.current = false;
       },
     }),
   ).current;
 
-  const places = useMemo(() => rawPlaces.map(derive), [rawPlaces]);
+  /* While the sheet is peeking its list does not scroll; a swipe up on the body
+     opens it instead — the web page's onPanelTouchMove/onPanelWheel pair. */
+  const peekPan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_event, gesture) =>
+        sheetHeightValue.current <= SHEET_STOPS[0] + 12 && gesture.dy < -16,
+      onPanResponderRelease: () => expandPeekSheet(),
+    }),
+  ).current;
+
+  const places = useMemo(
+    () => rawPlaces.map((place) => derive({ ...place, ...(corrections[place.id] || {}) })),
+    [rawPlaces, corrections],
+  );
 
   const filteredBeforeViewport = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("he-IL");
@@ -225,8 +336,8 @@ export function WhereBoughtScreen() {
 
   const maxCityTotal = Math.max(1, ...cityRows.map((row) => row.total));
   const topSpots = useMemo(() => [...visible].sort((a, b) => b.total - a.total), [visible]);
-  const cityPager = usePagination(cityRows);
-  const spotPager = usePagination(topSpots);
+  const cityPager = useSwipePagination(cityRows);
+  const spotPager = useSwipePagination(topSpots);
 
   const insights = useMemo(() => {
     if (!visible.length) return null;
@@ -250,25 +361,51 @@ export function WhereBoughtScreen() {
   const focusPlace = (place: Derived) => {
     setSelected(place);
     setDrillOpen(false);
+    setCorrectionOpen(false);
+    setSheetStop(SHEET_STOPS[1]);
     callMap(mapRef.current, "animateToRegion",
       { latitude: place.latitude, longitude: place.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
       600,
     );
   };
 
-  const focusCity = (city: string) => {
-    const next = cityFilter === city ? null : city;
-    setCityFilter(next);
-    const cityPlaces = next ? places.filter((place) => place.city === next) : places;
-    if (cityPlaces.length) fitTo(cityPlaces);
-  };
-
-  const fitTo = (list: Derived[]) => {
+  const fitTo = (list: Derived[], maxSpan = 0) => {
     if (!list.length) return;
+    if (list.length === 1 || maxSpan) {
+      const span = maxSpan || 0.02;
+      callMap(mapRef.current, "animateToRegion", {
+        latitude: list.reduce((sum, place) => sum + place.latitude, 0) / list.length,
+        longitude: list.reduce((sum, place) => sum + place.longitude, 0) / list.length,
+        latitudeDelta: Math.max(span, (Math.max(...list.map((p) => p.latitude)) - Math.min(...list.map((p) => p.latitude))) * 1.6),
+        longitudeDelta: Math.max(span, (Math.max(...list.map((p) => p.longitude)) - Math.min(...list.map((p) => p.longitude))) * 1.6),
+      }, 800);
+      return;
+    }
     callMap(mapRef.current, "fitToCoordinates",
       list.map((place) => ({ latitude: place.latitude, longitude: place.longitude })),
-      { edgePadding: { top: 90, right: 60, bottom: Math.round(SCREEN.height * 0.5), left: 60 }, animated: true },
+      {
+        edgePadding: { top: 90, right: 40, bottom: Math.min(sheetHeightValue.current + 40, 460), left: 40 },
+        animated: true,
+      },
     );
+  };
+
+  const focusCity = (city: string) => {
+    const cityPlaces = visible.filter((place) => place.city === city);
+    if (!cityPlaces.length) return;
+    // Remember where the map was so "חזרה לכל הערים" can put it back.
+    if (!cityFilter) previousRegion.current = regionRef.current;
+    setCityFilter(city);
+    setSelected(null);
+    fitTo(cityPlaces, cityPlaces.length === 1 ? 0.02 : 0);
+  };
+
+  const clearCityFocus = () => {
+    setCityFilter(null);
+    setSelected(null);
+    const previous = previousRegion.current;
+    previousRegion.current = null;
+    callMap(mapRef.current, "animateToRegion", previous || HOME, 700);
   };
 
   const applySearchArea = () => {
@@ -277,13 +414,50 @@ export function WhereBoughtScreen() {
       Math.abs(place.latitude - region.latitude) <= region.latitudeDelta / 2 &&
       Math.abs(place.longitude - region.longitude) <= region.longitudeDelta / 2);
     setViewportKeys(inView.map((place) => place.id));
+    setCityFilter(null);
+    previousRegion.current = null;
+    setSelected(null);
     setSearchAreaVisible(false);
-    setAreaFeedback(inView.length ? `${inView.length} מקומות באזור הזה` : "אין מקומות באזור הזה");
+    setAreaFeedback(inView.length ? `נמצאו ${inView.length} מקומות באזור` : "לא נמצאו מקומות באזור הזה");
+    setSheetStop(SHEET_STOPS[1]);
   };
 
   const clearViewportFilter = () => {
     setViewportKeys(null);
+    setSearchAreaVisible(false);
     setAreaFeedback(null);
+  };
+
+  /* Tapping the "נמצאו N מקומות" pill opens the sheet on the results list. */
+  const showAreaResults = () => {
+    if (!viewportKeys?.length) return;
+    setAreaFeedback(null);
+    setTab("spots");
+    setSheetStop(SHEET_STOPS[2]);
+    setTimeout(() => scrollRef.current?.scrollTo({ y: resultsOffset.current, animated: true }), 240);
+  };
+
+  const openCorrection = (place: Derived) => {
+    setCorrectionOpen(true);
+    setEditName(place.name);
+    setEditCity(place.city);
+    setEditLat(String(place.latitude));
+    setEditLng(String(place.longitude));
+  };
+
+  const saveCorrection = () => {
+    if (!selected) return;
+    const patch: Partial<BoughtPlace> = {
+      name: editName.trim() || selected.name,
+      address: editCity.trim() ? [editCity.trim()].join(", ") : selected.address,
+      latitude: Number(editLat) || selected.latitude,
+      longitude: Number(editLng) || selected.longitude,
+    };
+    const next = { ...corrections, [selected.id]: patch };
+    setCorrections(next);
+    void AsyncStorage.setItem(CORRECTIONS_KEY, JSON.stringify(next));
+    setSelected(derive({ ...selected, ...patch }));
+    setCorrectionOpen(false);
   };
 
   const locateMe = async () => {
@@ -337,7 +511,7 @@ export function WhereBoughtScreen() {
           regionRef.current = region;
           setSearchAreaVisible(true);
         }}
-        onPress={() => { setSelected(null); setDrillOpen(false); }}
+        onPress={() => { setSelected(null); setDrillOpen(false); collapseSheet(); }}
       >
         {tab === "heat"
           ? visible.map((place) => (
@@ -402,9 +576,13 @@ export function WhereBoughtScreen() {
       ) : null}
 
       {areaFeedback ? (
-        <View style={[S.areaFeedback, { top: Math.max(insets.top, 12) + 110 }]}>
+        <TouchableOpacity
+          onPress={showAreaResults}
+          disabled={!viewportKeys?.length}
+          style={[S.areaFeedback, { top: Math.max(insets.top, 12) + 110 }]}
+        >
           <Text style={S.areaFeedbackText}>{areaFeedback}</Text>
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       {locationError ? (
@@ -424,10 +602,17 @@ export function WhereBoughtScreen() {
           <View style={S.sheetHandleBar} />
         </View>
 
-        <ScrollView style={S.panelScroll} contentContainerStyle={S.panelContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollRef}
+          style={S.panelScroll}
+          contentContainerStyle={S.panelContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!isPeek}
+          {...(isPeek ? peekPan.panHandlers : {})}
+        >
           <View style={S.head}>
             {cityFilter ? (
-              <TouchableOpacity onPress={() => setCityFilter(null)} style={S.cityBack}>
+              <TouchableOpacity onPress={clearCityFocus} style={S.cityBack}>
                 <Text style={S.cityBackText}>← חזרה לכל הערים</Text>
               </TouchableOpacity>
             ) : null}
@@ -491,7 +676,7 @@ export function WhereBoughtScreen() {
                 <Text style={[S.filterChipText, highSpendOnly && S.filterChipTextOn]}>מעל ₪500</Text>
               </TouchableOpacity>
               {cityFilter ? (
-                <TouchableOpacity onPress={() => setCityFilter(null)} style={[S.filterChip, S.filterChipOn]}>
+                <TouchableOpacity onPress={clearCityFocus} style={[S.filterChip, S.filterChipOn]}>
                   <Text style={[S.filterChipText, S.filterChipTextOn]}>{cityFilter} ×</Text>
                 </TouchableOpacity>
               ) : null}
@@ -537,7 +722,7 @@ export function WhereBoughtScreen() {
           {!viewportKeys ? (
             <>
               <Text style={S.sectionCap}>ערים</Text>
-              <View>
+              <View {...cityPager.panHandlers}>
                 {cityPager.items.map((row) => (
                   <TouchableOpacity key={row.city} onPress={() => focusCity(row.city)} style={[S.cityRow, cityFilter === row.city && S.cityRowOn]}>
                     <View style={S.cityTop}>
@@ -559,7 +744,10 @@ export function WhereBoughtScreen() {
             {viewportKeys ? `${visible.length} תוצאות באזור` : "המקומות המובילים"}
             <Text style={S.sectionCapDim}> · לפי סה״כ הוצאה</Text>
           </Text>
-          <View>
+          <View
+            onLayout={(event) => { resultsOffset.current = event.nativeEvent.layout.y; }}
+            {...spotPager.panHandlers}
+          >
             {spotPager.items.map((place, index) => (
               <TouchableOpacity key={place.id} onPress={() => focusPlace(place)} style={[S.spotRow, selected?.id === place.id && S.spotRowOn]}>
                 <Text style={S.spotRank}>{spotPager.page * PAGE_SIZE + index + 1}</Text>
@@ -627,13 +815,29 @@ export function WhereBoughtScreen() {
                 >
                   <Text style={S.detailActionText}>פתיחה במפות</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${selected.latitude},${selected.longitude}`)}
-                  style={S.detailAction}
-                >
-                  <Text style={S.detailActionText}>ניווט</Text>
+                <TouchableOpacity onPress={() => openCorrection(selected)} style={S.detailAction}>
+                  <Text style={S.detailActionText}>תיקון פרטים</Text>
                 </TouchableOpacity>
               </View>
+
+              {correctionOpen ? (
+                <View style={S.correctionForm}>
+                  <TextInput value={editName} onChangeText={setEditName} placeholder="שם המקום" placeholderTextColor="#9aa1ac" style={S.correctionInput} />
+                  <TextInput value={editCity} onChangeText={setEditCity} placeholder="עיר" placeholderTextColor="#9aa1ac" style={S.correctionInput} />
+                  <View style={S.correctionCoords}>
+                    <TextInput value={editLat} onChangeText={setEditLat} keyboardType="decimal-pad" placeholder="קו רוחב" placeholderTextColor="#9aa1ac" style={[S.correctionInput, S.correctionCoordInput]} />
+                    <TextInput value={editLng} onChangeText={setEditLng} keyboardType="decimal-pad" placeholder="קו אורך" placeholderTextColor="#9aa1ac" style={[S.correctionInput, S.correctionCoordInput]} />
+                  </View>
+                  <View style={S.correctionButtons}>
+                    <TouchableOpacity onPress={() => setCorrectionOpen(false)} style={S.correctionCancel}>
+                      <Text style={S.correctionCancelText}>ביטול</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={saveCorrection} style={S.correctionSave}>
+                      <Text style={S.correctionSaveText}>שמירה במכשיר</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : null}
 
               {selected.transactions.length ? (
                 <>
@@ -934,6 +1138,27 @@ const S = StyleSheet.create({
     justifyContent: "center",
   },
   detailActionText: { color: "#1a56c4", fontSize: 13, fontWeight: "800" },
+
+  correctionForm: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: "#f7f8fa" },
+  correctionInput: {
+    minHeight: 44,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#dfe4ec",
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    fontSize: 16,
+    color: "#12141a",
+    textAlign: "right",
+  },
+  correctionCoords: { flexDirection: "row-reverse", gap: 8 },
+  correctionCoordInput: { flex: 1 },
+  correctionButtons: { flexDirection: "row-reverse", justifyContent: "flex-start", gap: 8 },
+  correctionCancel: { minHeight: 40, justifyContent: "center", paddingHorizontal: 6 },
+  correctionCancelText: { color: "#6d7481", fontWeight: "700" },
+  correctionSave: { minHeight: 40, borderRadius: 9, backgroundColor: "#1a56c4", paddingHorizontal: 14, justifyContent: "center" },
+  correctionSaveText: { color: "#fff", fontWeight: "800" },
 
   drillToggle: {
     minHeight: 48,
