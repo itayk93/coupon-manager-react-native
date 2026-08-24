@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const GOOGLE_FIND_PLACE_URL = 'https://maps.googleapis.com/maps/api/place/findplacefromtext/json';
 const GOOGLE_GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
+const GOOGLE_PLACES_TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
 const normalize = (value: string) => value.trim().toLocaleLowerCase('he-IL').replace(/["'׳״.,()-]/g, ' ').replace(/\s+/g, ' ');
 const admin = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false } });
 
@@ -23,6 +24,35 @@ async function geocodeAddress(address: string, apiKey: string) {
     address: String(result.formatted_address || address).trim(),
     latitude: Number(location.lat),
     longitude: Number(location.lng),
+  };
+}
+
+async function searchPlace(query: string, apiKey: string) {
+  const response = await fetch(GOOGLE_PLACES_TEXT_SEARCH_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.id',
+    },
+    body: JSON.stringify({
+      textQuery: query,
+      languageCode: 'he',
+      regionCode: 'IL',
+      maxResultCount: 1,
+    }),
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const place = data?.places?.[0];
+  const location = place?.location;
+  if (!place || !location) return null;
+  return {
+    placeName: String(place.displayName?.text || query).trim(),
+    address: String(place.formattedAddress || '').trim(),
+    latitude: Number(location.latitude),
+    longitude: Number(location.longitude),
+    placeId: place.id || null,
   };
 }
 
@@ -98,6 +128,28 @@ Deno.serve(async (req: Request) => {
           source: 'google_geocoding',
         } });
       }
+    }
+
+    const livePlace = await searchPlace(query, apiKey);
+    if (livePlace) {
+      await db.from('coupon_places').upsert({
+        normalized_name: normalizedName,
+        place_name: livePlace.placeName,
+        place_address: livePlace.address,
+        latitude: livePlace.latitude,
+        longitude: livePlace.longitude,
+        google_place_id: livePlace.placeId,
+        source: 'google_places_new',
+        last_verified_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'normalized_name' });
+      return jsonResponseFor(req, { result: {
+        placeName: livePlace.placeName,
+        address: livePlace.address,
+        latitude: livePlace.latitude,
+        longitude: livePlace.longitude,
+        source: 'google_places_new',
+      } });
     }
 
     const url = new URL(GOOGLE_FIND_PLACE_URL);
