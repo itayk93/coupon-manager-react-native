@@ -500,7 +500,11 @@ export function WhereBoughtScreen() {
              never moved the map. The key remounts the iframe instead. */
           key: webCenter ? `${webCenter.latitude},${webCenter.longitude}` : "home",
           title: "מפת המקומות",
-          src: `https://www.google.com/maps?q=${webCenter?.latitude ?? HOME.latitude},${webCenter?.longitude ?? HOME.longitude}&z=${webCenter ? 16 : 8}&output=embed`,
+          /* `q=lat,lng(label)` is what makes the embed drop a pin — a bare
+             centre point renders a plain map with nothing marked. */
+          src: webCenter
+            ? `https://maps.google.com/maps?q=${webCenter.latitude},${webCenter.longitude}(${encodeURIComponent(webCenter.name)})&z=16&hl=iw&output=embed`
+            : `https://maps.google.com/maps?q=${HOME.latitude},${HOME.longitude}&z=8&hl=iw&output=embed`,
           style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 },
           loading: "lazy",
         })
