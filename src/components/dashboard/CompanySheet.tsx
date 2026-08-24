@@ -16,7 +16,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { Check, Copy, LayoutGrid, Pencil, ReceiptText, X } from "lucide-react-native";
+import { Check, Copy, ExternalLink, Pencil, ReceiptText, X } from "lucide-react-native";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
@@ -26,7 +26,6 @@ import { notify } from "@/lib/notify";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
-import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -83,13 +82,22 @@ type CompanySheetProps = {
   onClose: () => void;
 };
 
-/**
- * "₪ 35.10" with the shekel sign to the left of the number. The isolate marks
- * keep the pair intact inside RTL text instead of letting the bidi algorithm
- * flip the sign to the other side.
- */
 function formatIls(value: number) {
-  return `\u2066₪ ${value.toFixed(2)}\u2069`;
+  return `${value.toFixed(2)} ₪`;
+}
+
+function formatDateShort(dateStr: string | null) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return dateStr;
+  }
 }
 
 function daysUntil(expiration: string | null) {
@@ -166,8 +174,6 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   // Set when a row is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = React.useState<DecryptedCoupon | null>(null);
 
-  const widget = useWidgetToggle(openCode);
-
   const handleOpenCode = (coupon: DecryptedCoupon) => {
     setOpenCode(coupon);
     setCopied(false);
@@ -199,6 +205,11 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     setOpenCode(null);
     onClose();
     router.push(`/coupons/${coupon.id}`);
+  };
+
+  const handleReportUsage = (coupon: DecryptedCoupon) => {
+    setOpenCode(null);
+    setUsageCoupon(coupon);
   };
 
   const drag = React.useRef(new Animated.Value(0)).current;
@@ -279,39 +290,118 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
 
           <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body}>
             {rows.map((c) => {
+              const total = c.value || 0;
+              const used = c.used_value || 0;
+              const remaining = Math.max(0, total - used);
+              const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+
               const days = daysUntil(c.expiration);
-              const expired = days !== null && days < 0;
-              const soon = days !== null && days >= 0 && days <= 14;
+              const isFullyUsed = c.status === "נוצל" || remaining <= 0;
+              const isExpired = days !== null && days < 0;
+              const isExpiringSoon = days !== null && days >= 0 && days <= 14;
+
+              const formattedExpiry = formatDateShort(c.expiration);
+              const daysLabel = isExpired
+                ? "פג תוקף"
+                : isFullyUsed
+                  ? "נוצל במלואו"
+                  : isExpiringSoon
+                    ? `נותרו ${days} ימים`
+                    : formattedExpiry
+                      ? `בתוקף עד: ${formattedExpiry}`
+                      : "ללא תוקף";
+
+              const daysColor = isExpired || isFullyUsed
+                ? theme.danger
+                : isExpiringSoon
+                  ? theme.warning
+                  : theme.success;
+
+              const isInactive = isFullyUsed || isExpired;
+
               return (
                 <CouponRow
                   key={c.id}
                   coupon={c}
                   onOpenCode={() => handleOpenCode(c)}
                   onReportUsage={() => setUsageCoupon(c)}
-                  style={[styles.row, { borderBottomColor: theme.divider }]}
+                  style={[
+                    styles.couponCard,
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
+                    },
+                  ]}
                 >
-                  {/* Hebrew reads right-to-left: the code leads, the amount trails. */}
-                  <View style={styles.rowStart}>
-                    <Text style={[styles.code, { color: theme.text }]}>{c.code || "—"}</Text>
-                    <Text
-                      style={[
-                        styles.days,
-                        {
-                          color: expired
-                            ? theme.danger
-                            : soon
-                              ? theme.warning
-                              : theme.success,
-                        },
-                      ]}
-                    >
-                      {expired ? "פג תוקף" : soon ? `נותרו ${days} ימים` : "בתוקף"}
-                    </Text>
+                  <View>
+                    <View style={styles.amountRow}>
+                      <Text style={[styles.remaining, { color: theme.text }]}>
+                        {formatIls(remaining)}
+                      </Text>
+                      <Text style={[styles.ofTotal, { color: theme.textSubtle }]}>
+                        מתוך {formatIls(total)}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.track, { backgroundColor: theme.track }]}>
+                      <View
+                        style={[
+                          styles.fill,
+                          {
+                            width: `${usedPct}%`,
+                            backgroundColor: isInactive ? theme.textSubtle : brand,
+                          },
+                        ]}
+                      />
+                    </View>
                   </View>
 
-                  <Text style={[styles.remaining, { color: theme.text }]}>
-                    {formatIls(Math.max(0, (c.value || 0) - (c.used_value || 0)))}
-                  </Text>
+                  <View style={styles.metaRow}>
+                    <Text numberOfLines={1} style={[styles.code, { color: theme.label }]}>
+                      {c.code || "—"}
+                    </Text>
+                    <Text style={[styles.days, { color: daysColor }]}>{daysLabel}</Text>
+                  </View>
+
+                  {c.card_exp || c.cvv ? (
+                    <View
+                      style={[
+                        styles.cardDetailsRow,
+                        { backgroundColor: theme.surfaceAlt },
+                      ]}
+                    >
+                      {c.card_exp ? (
+                        <View style={styles.cardDetailItem}>
+                          <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
+                            תוקף כרטיס:
+                          </Text>
+                          <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
+                            {c.card_exp}
+                          </Text>
+                        </View>
+                      ) : null}
+
+                      {c.card_exp && c.cvv ? (
+                        <View
+                          style={[
+                            styles.cardDetailDivider,
+                            { backgroundColor: theme.divider },
+                          ]}
+                        />
+                      ) : null}
+
+                      {c.cvv ? (
+                        <View style={styles.cardDetailItem}>
+                          <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
+                            CVV:
+                          </Text>
+                          <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
+                            {c.cvv}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </CouponRow>
               );
             })}
@@ -371,13 +461,24 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
 
                 <View style={styles.codeSecondaryRow}>
                   <TouchableOpacity
+                    onPress={() => handleReportUsage(openCode)}
+                    style={[styles.codeSecondaryBtn, { backgroundColor: theme.inputBg }]}
+                    accessibilityLabel="דיווח שימוש"
+                  >
+                    <ReceiptText size={15} color={theme.label} />
+                    <Text numberOfLines={1} style={[styles.codeSecondaryText, { color: theme.label }]}>
+                      שימוש
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     onPress={() => handleOpenDetail(openCode)}
                     style={[styles.codeSecondaryBtn, { backgroundColor: theme.inputBg }]}
                     accessibilityLabel="מעבר לעמוד הקופון"
                   >
-                    <ReceiptText size={16} color={theme.label} />
-                    <Text style={[styles.codeSecondaryText, { color: theme.label }]}>
-                      לעמוד הקופון
+                    <ExternalLink size={15} color={theme.label} />
+                    <Text numberOfLines={1} style={[styles.codeSecondaryText, { color: theme.label }]}>
+                      פרטים
                     </Text>
                   </TouchableOpacity>
 
@@ -386,38 +487,12 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                     style={[styles.codeSecondaryBtn, { backgroundColor: theme.inputBg }]}
                     accessibilityLabel="עריכת קופון"
                   >
-                    <Pencil size={16} color={theme.label} />
-                    <Text style={[styles.codeSecondaryText, { color: theme.label }]}>
+                    <Pencil size={15} color={theme.label} />
+                    <Text numberOfLines={1} style={[styles.codeSecondaryText, { color: theme.label }]}>
                       עריכה
                     </Text>
                   </TouchableOpacity>
                 </View>
-
-                {widget.canToggle ? (
-                  <TouchableOpacity
-                    onPress={widget.toggle}
-                    disabled={widget.disabled}
-                    style={[
-                      styles.codeWidgetBtn,
-                      {
-                        backgroundColor: widget.inWidget ? theme.primaryTint : theme.inputBg,
-                        opacity: widget.disabled ? 0.5 : 1,
-                      },
-                    ]}
-                    accessibilityLabel={
-                      widget.inWidget ? "הסרה מהווידג'ט" : "הוספה לווידג'ט"
-                    }
-                  >
-                    <LayoutGrid size={16} color={theme.primary} />
-                    <Text style={[styles.codeWidgetText, { color: theme.label }]}>
-                      {widget.inWidget
-                        ? "מוצג בווידג'ט - הסר"
-                        : widget.isFull
-                          ? `הווידג'ט מלא (${widget.maxCoupons})`
-                          : "הצג בווידג'ט"}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
 
                 <TouchableOpacity onPress={() => setOpenCode(null)} style={styles.codeClose}>
                   <Text style={[styles.codeCloseText, { color: theme.textMuted }]}>סגירה</Text>
@@ -516,35 +591,85 @@ const styles = StyleSheet.create({
   },
   body: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 14,
     paddingBottom: 24,
+    gap: 12,
   },
-  row: {
+  couponCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+    overflow: "hidden",
+  },
+  amountRow: {
+    flexDirection: "row-reverse",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  remaining: {
+    fontFamily: fonts.display,
+    fontSize: 19,
+    fontWeight: "800",
+  },
+  ofTotal: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+  },
+  track: {
+    height: 10,
+    borderRadius: radii.pill,
+    overflow: "hidden",
+    flexDirection: "row-reverse",
+  },
+  fill: {
+    height: "100%",
+    borderRadius: radii.pill,
+  },
+  metaRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  rowStart: {
-    alignItems: "flex-end",
   },
   code: {
     fontFamily: fonts.display,
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: "700",
     writingDirection: "ltr",
   },
   days: {
     fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    fontWeight: "700",
+  },
+  cardDetailsRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: radii.sm,
+  },
+  cardDetailItem: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 4,
+  },
+  cardDetailLabel: {
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+  },
+  cardDetailVal: {
+    fontFamily: fonts.display,
     fontSize: 12,
     fontWeight: "700",
-    marginTop: 2,
+    writingDirection: "ltr",
   },
-  remaining: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    fontWeight: "800",
+  cardDetailDivider: {
+    width: 1,
+    height: 12,
   },
   codeOverlay: {
     ...StyleSheet.absoluteFill,
@@ -592,20 +717,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  codeWidgetBtn: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    width: "100%",
-    height: 40,
-    borderRadius: radii.md,
-  },
-  codeWidgetText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    fontWeight: "700",
-  },
   codeBalance: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -641,7 +752,7 @@ const styles = StyleSheet.create({
   },
   codeSecondaryRow: {
     flexDirection: "row-reverse",
-    gap: 10,
+    gap: 8,
     width: "100%",
   },
   codeSecondaryBtn: {
@@ -651,11 +762,12 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 5,
+    paddingHorizontal: 4,
   },
   codeSecondaryText: {
     fontFamily: fonts.bodyBold,
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "700",
   },
   codeClose: {

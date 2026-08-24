@@ -17,6 +17,7 @@ import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
@@ -26,6 +27,7 @@ export function DashboardScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
+  const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   // Set when a coupon card is held: the usage modal opens on that coupon.
@@ -33,19 +35,23 @@ export function DashboardScreen() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
 
-  const companyPriority = [
-    "Carrefour",
-    "קרפור",
-    "מגה ספורט",
-    "GoodPharm",
-    "XTRA",
-    "פולגת",
-    "BuyMe",
-    "Dream Card",
-    "Power Gift",
-  ];
+  const visibleCoupons = useMemo(() => {
+    const spendable = coupons.filter(isSpendableCoupon);
+    const couponUsage = usageStats?.usageCountByCoupon || {};
+    return spendable.sort((a, b) => {
+      const latestA = usageStats?.latestUsageByCoupon?.[a.id] || 0;
+      const latestB = usageStats?.latestUsageByCoupon?.[b.id] || 0;
+      if (latestA !== latestB) return latestB - latestA;
 
-  const visibleCoupons = useMemo(() => coupons.filter(isSpendableCoupon), [coupons]);
+      const usageA = couponUsage[a.id] || 0;
+      const usageB = couponUsage[b.id] || 0;
+      if (usageA !== usageB) return usageB - usageA;
+
+      const dateA = a.date_added ? new Date(a.date_added).getTime() : 0;
+      const dateB = b.date_added ? new Date(b.date_added).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [coupons, usageStats]);
 
   const companyCards = useMemo(() => {
     const map = visibleCoupons.reduce<Record<string, { company: string; count: number }>>(
@@ -58,15 +64,20 @@ export function DashboardScreen() {
       {}
     );
 
+    const companyUsage = usageStats?.usageCountByCompany || {};
+    const companyLatest = usageStats?.latestUsageByCompany || {};
+
     return Object.values(map).sort((a, b) => {
-      const priorityA = companyPriority.indexOf(a.company);
-      const priorityB = companyPriority.indexOf(b.company);
-      if (priorityA !== -1 || priorityB !== -1) {
-        return (priorityA === -1 ? 999 : priorityA) - (priorityB === -1 ? 999 : priorityB);
-      }
+      const latestDiff = (companyLatest[b.company] || 0) - (companyLatest[a.company] || 0);
+      if (latestDiff !== 0) return latestDiff;
+
+      const usageDiff = (companyUsage[b.company] || 0) - (companyUsage[a.company] || 0);
+      if (usageDiff !== 0) return usageDiff;
+
       return b.count - a.count || a.company.localeCompare(b.company, "he");
     });
-  }, [visibleCoupons]);
+  }, [visibleCoupons, usageStats]);
+
 
   const filteredCoupons = useMemo(() => {
     if (!selectedCompany) return visibleCoupons;

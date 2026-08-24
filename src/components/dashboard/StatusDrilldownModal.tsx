@@ -25,6 +25,12 @@ const STATUS_TITLES: Record<CouponStatusFilter, string> = {
   expired: "פגי תוקף",
 };
 
+const STATUS_DESCRIPTIONS: Record<CouponStatusFilter, string> = {
+  active: "קופונים שעדיין בתוקף ויש בהם יתרה שניתן לממש בחנויות ובאתרים.",
+  used: "קופונים שניצלת את מלוא הסכום שלהם עד תום.",
+  expired: "קופונים שעבר תאריך התוקף שלהם לפני שנוצלו במלואם.",
+};
+
 export function filterCouponsByStatus(
   coupons: DecryptedCoupon[],
   filter: CouponStatusFilter
@@ -75,6 +81,19 @@ export function StatusDrilldownModal({
       subtitle={`${filtered.length} קופונים`}
     >
       <View style={styles.container}>
+        {filter && STATUS_DESCRIPTIONS[filter] ? (
+          <View
+            style={[
+              styles.explainerBox,
+              { backgroundColor: theme.surfaceAlt, borderColor: theme.border },
+            ]}
+          >
+            <Text style={[styles.explainerText, { color: theme.textSubtle }]}>
+              {STATUS_DESCRIPTIONS[filter]}
+            </Text>
+          </View>
+        ) : null}
+
         <View
           style={[
             styles.totalBox,
@@ -110,6 +129,19 @@ export function StatusDrilldownModal({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 4,
+  },
+  explainerBox: {
+    borderRadius: radii.card,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  explainerText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "right",
   },
   totalBox: {
     borderRadius: radii.card,

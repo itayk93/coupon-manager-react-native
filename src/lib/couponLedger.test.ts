@@ -3,6 +3,7 @@ import {
   isHiddenLedgerRow,
   ledgerAmountFromTransaction,
   ledgerAmountFromUsage,
+  missingUsageFromLedger,
   usedValueFromLedger,
 } from "./couponLedger";
 
@@ -37,6 +38,23 @@ describe("usedValueFromLedger", () => {
     expect(usedValueFromLedger(100, [ledgerAmountFromUsage(250)])).toBe(100);
     expect(usedValueFromLedger(100, [ledgerAmountFromTransaction(400, 0)])).toBe(0);
     expect(usedValueFromLedger(100, [])).toBe(0);
+  });
+});
+
+describe("missingUsageFromLedger", () => {
+  it("keeps a Multipass balance adjustment beside a later manual usage", () => {
+    const amounts = [ledgerAmountFromUsage(19.9)];
+    expect(missingUsageFromLedger(100, 84.8, amounts)).toBeCloseTo(64.9, 2);
+  });
+
+  it("does not synthesize usage when ledger already matches coupon total", () => {
+    const amounts = [ledgerAmountFromUsage(64.9), ledgerAmountFromUsage(19.9)];
+    expect(missingUsageFromLedger(100, 84.8, amounts)).toBe(0);
+  });
+
+  it("ignores sub-cent floating point noise", () => {
+    const amounts = [ledgerAmountFromUsage(84.8)];
+    expect(missingUsageFromLedger(100, 84.8000000001, amounts)).toBe(0);
   });
 });
 

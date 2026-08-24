@@ -10,6 +10,8 @@ import {
   SafeAreaView,
   Image,
   Share,
+  Switch,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -25,12 +27,13 @@ import {
   History,
   AlertTriangle,
   LayoutGrid,
-  Minus,
-  Plus,
+  MapPin,
+  Navigation,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +50,7 @@ import {
 } from "@/hooks/useCouponUsage";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useWidgetToggle } from "@/hooks/useWidgetToggle";
+import { isWidgetSupported } from "../../../modules/coupon-widget";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -173,6 +177,12 @@ export function CouponDetailScreen() {
 
   const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
+  const usageLocations = history.filter(
+    (row) =>
+      row.source_table !== "sum_row" &&
+      typeof row.latitude === "number" &&
+      typeof row.longitude === "number"
+  );
 
   const daysLeft = coupon.expiration
     ? Math.ceil((new Date(coupon.expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -442,47 +452,44 @@ export function CouponDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {/* Home-screen widget */}
-        {widget.canToggle ? (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={
-              widget.inWidget
-                ? `הסר את ${coupon.company} מהווידג'ט`
-                : `הוסף את ${coupon.company} לווידג'ט`
-            }
-            activeOpacity={0.85}
-            disabled={widget.disabled}
-            onPress={widget.toggle}
-            style={[
-              styles.widgetRow,
-              {
-                backgroundColor: widget.inWidget ? theme.primaryTint : theme.card,
-                borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
-                opacity: widget.disabled ? 0.5 : 1,
-              },
-            ]}
-          >
-            <LayoutGrid size={18} color={theme.primary} />
-            <View style={styles.widgetRowText}>
-              <Text style={[styles.widgetRowTitle, { color: theme.text }]}>
-                {widget.inWidget ? "מוצג בווידג'ט מסך הבית" : "הצג בווידג'ט מסך הבית"}
+        {/* Home-screen widget is available only in native app builds. */}
+        {isWidgetSupported ? <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={widget.toggle}
+          style={[
+            styles.widgetCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
+              opacity: !widget.canToggle && !widget.inWidget ? 0.6 : 1,
+            },
+          ]}
+        >
+          <Switch
+            value={widget.inWidget}
+            onValueChange={widget.toggle}
+            disabled={!widget.canToggle && !widget.inWidget}
+            trackColor={{ false: theme.inputBorder, true: theme.primary }}
+            thumbColor="#ffffff"
+          />
+          <View style={styles.widgetCardContent}>
+            <View style={styles.widgetCardHeader}>
+              <Text style={[styles.widgetCardTitle, { color: theme.text }]}>
+                הצג בווידג'ט מסך הבית
               </Text>
-              <Text style={[styles.widgetRowSubtitle, { color: theme.textMuted }]}>
-                {widget.inWidget
-                  ? "לחץ כדי להסיר מהווידג'ט"
-                  : widget.isFull
-                    ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
-                    : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
-              </Text>
+              <LayoutGrid size={18} color={theme.primary} />
             </View>
-            {widget.inWidget ? (
-              <Minus size={18} color={theme.danger} />
-            ) : (
-              <Plus size={18} color={widget.isFull ? theme.textSubtle : theme.primary} />
-            )}
-          </TouchableOpacity>
-        ) : null}
+            <Text style={[styles.widgetCardSubtitle, { color: theme.textMuted }]}>
+              {widget.inWidget
+                ? "הקופון מוצג בווידג'ט לגישה מהירה מהמסך הראשי"
+                : widget.isFull
+                ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
+                : !widget.canToggle
+                ? "קופון זה אינו זמין להצגה בווידג'ט"
+                : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
+            </Text>
+          </View>
+        </TouchableOpacity> : null}
 
         {/* Tags */}
         <View
@@ -520,6 +527,30 @@ export function CouponDetailScreen() {
         </View>
 
         {/* Usage & Transaction History */}
+        {usageLocations.length > 0 ? (
+          <View
+            style={[
+              styles.sectionCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+            ]}
+          >
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>מפת מקומות שימוש</Text>
+              <MapPin size={16} color={theme.primary} />
+            </View>
+            <CouponLocationMap
+              locations={usageLocations.map((row) => ({
+                latitude: row.latitude as number,
+                longitude: row.longitude as number,
+                title: row.place_name || "מיקום שימוש",
+                description: row.place_address || row.details,
+              }))}
+              height={230}
+            />
+            <Text style={[styles.mapHint, { color: theme.textMuted }]}>כל נקודה היא שימוש בקופון</Text>
+          </View>
+        ) : null}
+
         <View
           style={[
             styles.sectionCard,
@@ -620,6 +651,34 @@ export function CouponDetailScreen() {
                       <Text style={[styles.historyDetails, { color: theme.text }]}>
                         {h.details}
                       </Text>
+                      {h.place_name ? (
+                        <Text style={[styles.historyPlace, { color: theme.text }]}>
+                          {h.place_name}
+                        </Text>
+                      ) : null}
+                      {h.place_address ? (
+                        <Text style={[styles.historyAddress, { color: theme.textMuted }] }>
+                          {h.place_address}
+                        </Text>
+                      ) : null}
+                      {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
+                        <>
+                          <CouponLocationMap
+                            location={{ latitude: h.latitude, longitude: h.longitude }}
+                            height={130}
+                          />
+                          <TouchableOpacity
+                            style={[styles.navigationButton, { borderColor: theme.border }]}
+                            onPress={() => {
+                              const url = `https://www.google.com/maps/search/?api=1&query=${h.latitude},${h.longitude}`;
+                              void Linking.openURL(url);
+                            }}
+                          >
+                            <Navigation size={14} color={theme.primary} />
+                            <Text style={[styles.navigationText, { color: theme.primary }]}>פתיחת ניווט</Text>
+                          </TouchableOpacity>
+                        </>
+                      ) : null}
                       {h.timestamp ? (
                         <Text style={[styles.historyDate, { color: theme.textMuted }]}>
                           {formatDate(h.timestamp)}
@@ -857,22 +916,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
-  widgetRow: {
-    flexDirection: "row-reverse",
+  widgetCard: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    borderRadius: 20,
+    justifyContent: "space-between",
     padding: 16,
+    borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,
   },
-  widgetRowText: { flex: 1, gap: 2 },
-  widgetRowTitle: {
+  widgetCardContent: {
+    flex: 1,
+    alignItems: "flex-end",
+    marginLeft: 14,
+    gap: 2,
+  },
+  widgetCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  widgetCardTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 15,
     textAlign: "right",
   },
-  widgetRowSubtitle: {
+  widgetCardSubtitle: {
     fontFamily: fonts.body,
     fontSize: 12,
     textAlign: "right",
@@ -924,6 +993,37 @@ const styles = StyleSheet.create({
   historyDate: {
     fontSize: 11,
     marginTop: 2,
+  },
+  mapHint: {
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: "right",
+  },
+  historyPlace: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 4,
+    textAlign: "right",
+  },
+  historyAddress: {
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: "right",
+  },
+  navigationButton: {
+    alignSelf: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 8,
+  },
+  navigationText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
   historyHeaderActions: {
     flexDirection: "row-reverse",

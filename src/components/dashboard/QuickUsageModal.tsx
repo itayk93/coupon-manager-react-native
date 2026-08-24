@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   FlatList,
   Image,
 } from "react-native";
-import { CheckCheck, Check, ChevronDown } from "lucide-react-native";
+import { CheckCheck, Check, ChevronDown, MapPin } from "lucide-react-native";
+import * as Location from "expo-location";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useRecordUsage } from "@/hooks/useCouponUsage";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
+import { supabase } from "@/integrations/supabase/client";
 
 type QuickUsageModalProps = {
   visible: boolean;
@@ -45,9 +48,16 @@ export function QuickUsageModal({
   );
   const [amount, setAmount] = useState("");
   const [details, setDetails] = useState("");
+  const [placeName, setPlaceName] = useState("");
+  const [placeAddress, setPlaceAddress] = useState("");
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isSearchingPlace, setIsSearchingPlace] = useState(false);
+  const [placeSearchMessage, setPlaceSearchMessage] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [isConfirmingFullUse, setIsConfirmingFullUse] = useState(false);
+  const resolvedPlaceQuery = useRef("");
 
   useEffect(() => {
     if (!visible) return;
@@ -56,11 +66,86 @@ export function QuickUsageModal({
     );
     setAmount("");
     setDetails("");
+    setPlaceName("");
+    resolvedPlaceQuery.current = "";
+    setPlaceAddress("");
+    setLocation(null);
+    setIsSearchingPlace(false);
+    setPlaceSearchMessage("");
     setError("");
     setIsPickerOpen(false);
     setIsConfirmingFullUse(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, preselectedCoupon?.id]);
+
+  useEffect(() => {
+    const query = placeName.trim();
+    if (!visible || query.length < 3) {
+      setPlaceSearchMessage("");
+      return;
+    }
+    if (resolvedPlaceQuery.current === query) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setIsSearchingPlace(true);
+      setPlaceSearchMessage("");
+      const { data, error } = await supabase.functions.invoke("geocode-address", {
+        body: { query },
+      });
+      if (cancelled) return;
+      setIsSearchingPlace(false);
+      if (error || !data?.result) {
+        setPlaceSearchMessage("לא נמצא מקום מדויק. אפשר לבחור נקודה ידנית במפה.");
+        return;
+      }
+      const result = data.result as {
+        placeName: string;
+        address: string;
+        latitude: number | null;
+        longitude: number | null;
+      };
+      resolvedPlaceQuery.current = result.placeName || query;
+      if (result.placeName && result.placeName !== query) setPlaceName(result.placeName);
+      setPlaceAddress(result.address || "");
+      if (result.latitude !== null && result.longitude !== null) {
+        setLocation({ latitude: result.latitude, longitude: result.longitude });
+        setPlaceSearchMessage("המקום נמצא והמפה עודכנה");
+      } else {
+        setLocation(null);
+        setPlaceSearchMessage("הכתובת נמצאה. בחר נקודה במפה.");
+      }
+    }, 650);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [placeName, visible]);
+
+  const useCurrentLocation = async () => {
+    setIsLocating(true);
+    setPlaceSearchMessage("");
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.status !== "granted") {
+        setPlaceSearchMessage("צריך לאפשר גישה למיקום כדי לרשום את המקום הנוכחי.");
+        return;
+      }
+      const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const nextLocation = { latitude: current.coords.latitude, longitude: current.coords.longitude };
+      setLocation(nextLocation);
+      const [address] = await Location.reverseGeocodeAsync(nextLocation);
+      const formattedAddress = [address?.street, address?.streetNumber, address?.city].filter(Boolean).join(", ");
+      if (formattedAddress) setPlaceAddress(formattedAddress);
+      setPlaceName("המקום שבו אני נמצא");
+      setPlaceSearchMessage("המיקום הנוכחי נרשם");
+    } catch {
+      setPlaceSearchMessage("לא הצלחתי לקרוא את המיקום. אפשר לבחור נקודה במפה.");
+    } finally {
+      setIsLocating(false);
+    }
+  };
 
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId);
   const remaining = selectedCoupon
@@ -72,9 +157,16 @@ export function QuickUsageModal({
       couponId: selectedCouponId as number,
       usedAmount: numAmount,
       details: usageDetails,
+      placeName,
+      placeAddress,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
     });
     setAmount("");
     setDetails("");
+    setPlaceName("");
+    setPlaceAddress("");
+    setLocation(null);
     setError("");
     onClose();
   };
@@ -284,11 +376,55 @@ export function QuickUsageModal({
 
         {/* Details Input */}
         <Input
-          label="פרטים / מיקום (אופציונלי)"
-          placeholder="למשל: סניף קניון עזריאלי"
+          label="פרטים נוספים (אופציונלי)"
+          placeholder="הערה על השימוש"
           value={details}
           onChangeText={setDetails}
         />
+
+        <Input
+          label="שם המקום (אופציונלי)"
+          placeholder="למשל: גוד פארם קרית רבין"
+          value={placeName}
+          onChangeText={(value) => {
+            setPlaceName(value);
+            resolvedPlaceQuery.current = "";
+            setPlaceSearchMessage("");
+          }}
+        />
+        {isSearchingPlace || placeSearchMessage ? (
+          <Text style={[styles.placeSearchMessage, { color: theme.textMuted }]}>
+            {isSearchingPlace ? "מחפש את המקום..." : placeSearchMessage}
+          </Text>
+        ) : null}
+
+        <Input
+          label="כתובת המקום (אופציונלי)"
+          placeholder="רחוב, מספר, עיר"
+          value={placeAddress}
+          onChangeText={setPlaceAddress}
+        />
+
+        <Text style={[styles.mapLabel, { color: theme.text }]}>מיקום במפה (אופציונלי)</Text>
+        <Button
+          title={isLocating ? "מאתר אותי..." : "רשום את המקום שבו אני נמצא"}
+          onPress={useCurrentLocation}
+          variant="outline"
+          icon={<MapPin size={18} color={theme.primary} />}
+          disabled={isLocating}
+          style={styles.currentLocationButton}
+        />
+        <CouponLocationMap
+          location={location}
+          editable
+          onLocationChange={setLocation}
+          height={180}
+        />
+        {location ? (
+          <Text style={[styles.coordinates, { color: theme.textMuted }]}>
+            {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+          </Text>
+        ) : null}
 
         <Button
           title="רשום שימוש ועדכן יתרה"
@@ -304,6 +440,27 @@ export function QuickUsageModal({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 4,
+  },
+  mapLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 14,
+    marginBottom: 6,
+    textAlign: "right",
+  },
+  coordinates: {
+    fontSize: 12,
+    marginTop: 6,
+    textAlign: "right",
+  },
+  placeSearchMessage: {
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 8,
+    textAlign: "right",
+  },
+  currentLocationButton: {
+    marginBottom: 10,
   },
   label: {
     fontSize: 14,

@@ -502,6 +502,10 @@ export type Database = {
           coupon_id: number
           details: string | null
           id: number
+          latitude: number | null
+          longitude: number | null
+          place_address: string | null
+          place_name: string | null
           timestamp: string | null
           used_amount: number
         }
@@ -510,6 +514,10 @@ export type Database = {
           coupon_id: number
           details?: string | null
           id?: number
+          latitude?: number | null
+          longitude?: number | null
+          place_address?: string | null
+          place_name?: string | null
           timestamp?: string | null
           used_amount: number
         }
@@ -518,6 +526,10 @@ export type Database = {
           coupon_id?: number
           details?: string | null
           id?: number
+          latitude?: number | null
+          longitude?: number | null
+          place_address?: string | null
+          place_name?: string | null
           timestamp?: string | null
           used_amount?: number
         }

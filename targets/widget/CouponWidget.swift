@@ -211,7 +211,7 @@ private struct CouponCardView: View {
                     size: compact ? 40 : 48
                 )
 
-                VStack(alignment: .leading, spacing: compact ? 3 : 4) {
+                VStack(alignment: .leading, spacing: compact ? 2 : 3) {
                     Text(coupon.company)
                         .couponFont(compact ? 13 : 15, .bold)
                         .foregroundColor(.white)
@@ -220,6 +220,21 @@ private struct CouponCardView: View {
                     Text("יתרה: " + formatShekels(coupon.remainingValue))
                         .couponFont(compact ? 10 : 12, .bold)
                         .foregroundColor(.white)
+
+                    if coupon.cardExp != nil || coupon.cvv != nil {
+                        HStack(spacing: 5) {
+                            if let exp = coupon.cardExp, !exp.isEmpty {
+                                Text("תוקף: \(exp)")
+                                    .couponFont(compact ? 8 : 9, .medium)
+                                    .foregroundColor(WidgetStyle.textSubtle)
+                            }
+                            if let cvv = coupon.cvv, !cvv.isEmpty {
+                                Text("CVV: \(cvv)")
+                                    .couponFont(compact ? 8 : 9, .medium)
+                                    .foregroundColor(WidgetStyle.textSubtle)
+                            }
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 

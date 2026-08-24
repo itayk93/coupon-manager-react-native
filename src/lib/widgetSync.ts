@@ -29,6 +29,8 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     remainingValue: couponRemainingValue(coupon),
     expiration: coupon.expiration ?? null,
     logoFile: null,
+    cardExp: coupon.card_exp ?? null,
+    cvv: coupon.cvv ?? null,
   }));
 
   return {

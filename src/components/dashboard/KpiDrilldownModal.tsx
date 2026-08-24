@@ -17,6 +17,13 @@ export type KpiConfig = {
   title: string;
 };
 
+export const KPI_DESCRIPTIONS: Record<KpiMetric, string> = {
+  remaining: "סך הכסף שנשאר לך למימוש בכל הקופונים הפעילים שלך.",
+  savings: "כמה כסף חסכת בפועל (ההפרש בין שווי הקופונים למחיר ששילמת עליהם).",
+  used: "סך כל הסכום שכבר מימשת וקנית איתו עד היום.",
+  value: "השווי הכולל של כל הקופונים שנוספו לחשבון שלך במצטבר.",
+};
+
 export type KpiMonthSelection = {
   key: string;
   label: string;
@@ -207,6 +214,19 @@ export function KpiDrilldownModal({
         renderCouponList()
       ) : (
         <View style={styles.container}>
+          {config && KPI_DESCRIPTIONS[config.key] ? (
+            <View
+              style={[
+                styles.explainerBox,
+                { backgroundColor: theme.surfaceAlt, borderColor: theme.border },
+              ]}
+            >
+              <Text style={[styles.explainerText, { color: theme.textSubtle }]}>
+                {KPI_DESCRIPTIONS[config.key]}
+              </Text>
+            </View>
+          ) : null}
+
           <View
             style={[
               styles.totalBox,
@@ -323,6 +343,19 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
+  },
+  explainerBox: {
+    borderRadius: radii.card,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  explainerText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "right",
   },
   totalBox: {
     borderRadius: radii.card,

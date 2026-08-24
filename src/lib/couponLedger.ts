@@ -59,3 +59,14 @@ export function usedValueFromLedger(value: number, amounts: number[]): number {
   const used = credits > 0 ? value - (credits - debits) : debits;
   return Math.min(value, Math.max(0, used));
 }
+
+/** Spending already reflected in the coupon total but missing from its ledger. */
+export function missingUsageFromLedger(
+  value: number,
+  usedValue: number,
+  amounts: number[]
+): number {
+  const recorded = usedValueFromLedger(value, amounts);
+  const missing = Math.max(0, usedValue - recorded);
+  return missing < 0.005 ? 0 : Math.round(missing * 100) / 100;
+}

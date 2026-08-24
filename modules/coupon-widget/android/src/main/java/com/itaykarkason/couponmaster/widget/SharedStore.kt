@@ -51,6 +51,8 @@ object SharedStore {
         remainingValue = item.optDouble("remainingValue", 0.0),
         expiration = item.optString("expiration", "").ifBlank { null },
         logoFile = item.optString("logoFile", "").ifBlank { null },
+        cardExp = item.optString("cardExp", "").ifBlank { null },
+        cvv = item.optString("cvv", "").ifBlank { null },
       )
     }
   }
@@ -67,6 +69,8 @@ data class WidgetCoupon(
    * cannot reach Metro-bundled assets, so it reads from disk.
    */
   val logoFile: String?,
+  val cardExp: String? = null,
+  val cvv: String? = null,
 )
 
 data class WidgetPayload(

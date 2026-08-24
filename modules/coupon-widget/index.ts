@@ -15,6 +15,9 @@ export type WidgetCouponPayload = {
    * assets, so the app copies the file across. See src/lib/widgetLogos.ts.
    */
   logoFile: string | null;
+  /** Optional prepaid card details */
+  cardExp?: string | null;
+  cvv?: string | null;
 };
 
 /**

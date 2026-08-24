@@ -25,15 +25,20 @@ export function useWidgetToggle(coupon: DecryptedCoupon | null | undefined) {
   // still had a balance.
   const canToggle = coupon ? isWidgetEligible(coupon) || inWidget : false;
 
-  const toggle = async () => {
+  const toggle = () => {
     if (!coupon) return;
 
     if (inWidget) {
-      await updateCoupon.mutateAsync({
+      updateCoupon.mutate({
         id: coupon.id,
         updates: { show_in_widget: false, widget_display_order: null },
       });
       notify.success("הקופון הוסר מהווידג'ט");
+      return;
+    }
+
+    if (!canToggle) {
+      notify.error("קופון זה אינו זמין להצגה בווידג'ט");
       return;
     }
 
@@ -42,7 +47,7 @@ export function useWidgetToggle(coupon: DecryptedCoupon | null | undefined) {
       return;
     }
 
-    await updateCoupon.mutateAsync({
+    updateCoupon.mutate({
       id: coupon.id,
       updates: { show_in_widget: true, widget_display_order: nextWidgetOrder(allCoupons) },
     });

@@ -14,6 +14,8 @@ struct WidgetCoupon: Codable, Identifiable {
     /// Absolute path to a file the app copied into the App Group container.
     /// The widget cannot reach Metro-bundled assets, so it reads from disk.
     let logoFile: String?
+    let cardExp: String?
+    let cvv: String?
 
     var expirationDate: Date? {
         guard let expiration else { return nil }

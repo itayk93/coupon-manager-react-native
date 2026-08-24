@@ -99,9 +99,17 @@ class CouponWidgetProvider : AppWidgetProvider() {
         return@forEachIndexed
       }
 
-      setViewVisibility(cardId.root, View.VISIBLE)
-      setTextViewText(cardId.company, coupon.company)
-      setTextViewText(cardId.balance, "יתרה: " + formatShekels(coupon.remainingValue))
+      val extraDetails = buildList {
+        coupon.cardExp?.takeIf { it.isNotBlank() }?.let { add("תוקף: $it") }
+        coupon.cvv?.takeIf { it.isNotBlank() }?.let { add("CVV: $it") }
+      }.joinToString(" • ")
+
+      val balanceText = if (extraDetails.isNotBlank()) {
+        "יתרה: ${formatShekels(coupon.remainingValue)} | $extraDetails"
+      } else {
+        "יתרה: " + formatShekels(coupon.remainingValue)
+      }
+      setTextViewText(cardId.balance, balanceText)
       setTextViewText(cardId.code, formatCouponCode(coupon.code))
 
       val logo = logos[coupon.id]
