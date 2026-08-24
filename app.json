@@ -89,6 +89,12 @@
           "isAndroidBackgroundLocationEnabled": false
         }
       ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": false
+        }
+      ],
       "expo-asset",
       "@react-native-community/datetimepicker",
       "@bacons/apple-targets",
