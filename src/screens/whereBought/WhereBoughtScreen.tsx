@@ -45,6 +45,15 @@ const dateLabel = (iso: string) => (iso ? iso.slice(0, 10).split("-").reverse().
 /* Weak-directional lines like "₪498 · 2×" flip inside RTL context; a leading LRM pins them. */
 const ltr = (s: string) => `‎${s}`;
 
+/* On web react-native-maps is a View shim (src/web/react-native-maps.js): it
+   accepts a ref but has none of the imperative methods. Calling one there threw
+   and took the whole screen down, so every call goes through this guard. */
+function callMap<K extends keyof MapView>(map: MapView | null, method: K, ...args: any[]) {
+  const fn = map?.[method] as unknown;
+  if (typeof fn !== "function") return;
+  (fn as (...rest: any[]) => void).apply(map, args);
+}
+
 function bucketColor(total: number) {
   let color = BUCKETS[0].color;
   for (const bucket of BUCKETS) if (total >= bucket.min) color = bucket.color;
@@ -241,7 +250,7 @@ export function WhereBoughtScreen() {
   const focusPlace = (place: Derived) => {
     setSelected(place);
     setDrillOpen(false);
-    mapRef.current?.animateToRegion(
+    callMap(mapRef.current, "animateToRegion",
       { latitude: place.latitude, longitude: place.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
       600,
     );
@@ -256,7 +265,7 @@ export function WhereBoughtScreen() {
 
   const fitTo = (list: Derived[]) => {
     if (!list.length) return;
-    mapRef.current?.fitToCoordinates(
+    callMap(mapRef.current, "fitToCoordinates",
       list.map((place) => ({ latitude: place.latitude, longitude: place.longitude })),
       { edgePadding: { top: 90, right: 60, bottom: Math.round(SCREEN.height * 0.5), left: 60 }, animated: true },
     );
@@ -286,7 +295,7 @@ export function WhereBoughtScreen() {
       }
       const position = await Location.getCurrentPositionAsync({});
       setLocationError(null);
-      mapRef.current?.animateToRegion({
+      callMap(mapRef.current, "animateToRegion", {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         latitudeDelta: 0.08,
@@ -305,8 +314,20 @@ export function WhereBoughtScreen() {
 
   const showLabels = regionRef.current.latitudeDelta < 0.08;
 
+  /* The web build has no real map (the shim above), so it gets the same Google
+     embed the coupon detail screen uses. Everything else on the page is shared. */
+  const webCenter = selected || visible[0] || places[0] || null;
+
   return (
     <View style={S.shell}>
+      {Platform.OS === "web" ? (
+        React.createElement("iframe", {
+          title: "מפת המקומות",
+          src: `https://www.google.com/maps?q=${webCenter?.latitude ?? HOME.latitude},${webCenter?.longitude ?? HOME.longitude}&z=${webCenter ? 14 : 8}&output=embed`,
+          style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 },
+          loading: "lazy",
+        })
+      ) : (
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
@@ -362,6 +383,7 @@ export function WhereBoughtScreen() {
             );
           })}
       </MapView>
+      )}
 
       <TouchableOpacity
         onPress={() => router.back()}
