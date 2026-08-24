@@ -672,7 +672,7 @@ export function CouponDetailScreen() {
                               accessibilityRole="button"
                               accessibilityLabel={`הצגת מפה עבור ${h.place_name}`}
                               accessibilityHint="פותח מפה גדולה שאפשר להזיז ולהגדיל"
-                              hitSlop={4}
+                              hitSlop={7}
                               style={[
                                 styles.showMapButton,
                                 { backgroundColor: theme.neutralBg },
@@ -685,7 +685,7 @@ export function CouponDetailScreen() {
                                 })
                               }
                             >
-                              <MapPin size={19} color={theme.primary} strokeWidth={2.2} />
+                              <MapPin size={16} color={theme.primary} strokeWidth={2.2} />
                             </TouchableOpacity>
                           ) : null}
                         </View>
@@ -1055,11 +1055,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   showMapButton: {
-    width: 44,
-    height: 44,
+    width: 30,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 22,
+    borderRadius: 15,
   },
   mapModalHint: {
     fontFamily: fonts.body,
