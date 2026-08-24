@@ -29,3 +29,12 @@ export const freezeEnabled = () => false;
 export const isSearchBarAvailableForCurrentPlatform = false;
 export const executeNativeBackPress = () => false;
 export const useTransitionProgress = () => ({ progress: null, closing: null });
+export const featureFlags = {
+  experiment: {
+    synchronousScreenUpdatesEnabled: false,
+    synchronousHeaderConfigUpdatesEnabled: false,
+    synchronousHeaderSubviewUpdatesEnabled: false,
+    iosPreventReattachmentOfDismissedScreens: false,
+  },
+};
+export const compatibilityFlags = {};
