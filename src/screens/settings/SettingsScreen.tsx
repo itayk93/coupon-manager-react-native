@@ -29,6 +29,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { isWidgetSupported } from "../../../modules/coupon-widget";
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -206,19 +207,27 @@ export function SettingsScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Home-screen widget */}
-            <TouchableOpacity
-              onPress={() => router.push("/widget-settings")}
-              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
-            >
-              <ChevronLeft size={18} color={theme.textMuted} />
-              <View style={styles.menuItemLabelGroup}>
-                <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  ווידג'ט מסך הבית
-                </Text>
-                <LayoutGrid size={20} color={theme.textMuted} />
-              </View>
-            </TouchableOpacity>
+            {/* Home-screen widget is available only in native app builds. */}
+            {isWidgetSupported ? (
+              <TouchableOpacity
+                onPress={() => router.push("/widget-settings")}
+                style={[
+                  styles.menuItem,
+                  {
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: theme.border,
+                  },
+                ]}
+              >
+                <ChevronLeft size={18} color={theme.textMuted} />
+                <View style={styles.menuItemLabelGroup}>
+                  <Text style={[styles.menuItemText, { color: theme.text }]}>
+                    ווידג'ט מסך הבית
+                  </Text>
+                  <LayoutGrid size={20} color={theme.textMuted} />
+                </View>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 
