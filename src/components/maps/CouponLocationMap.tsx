@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, StyleSheet, Text, View } from "react-native";
 import MapView, { MapPressEvent, Marker, Region } from "react-native-maps";
 
 export type CouponLocation = {
@@ -30,11 +30,38 @@ export function CouponLocationMap({
   height = 220,
 }: CouponLocationMapProps) {
   if (Platform.OS === "web") {
+    const webLocations = locations?.length ? locations : location ? [{ ...location }] : [];
+    const firstWebLocation = webLocations[0];
+    const latitude = firstWebLocation?.latitude ?? ISRAEL_REGION.latitude;
+    const longitude = firstWebLocation?.longitude ?? ISRAEL_REGION.longitude;
+    const zoom = firstWebLocation ? 16 : 8;
+    const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}&z=${zoom}&output=embed`;
+    const navigationUrl = firstWebLocation
+      ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+      : null;
     return (
-      <View style={[styles.webFallback, { height }]}>
-        <Text style={styles.webFallbackText}>
-          תצוגת מפה זמינה באפליקציית Android וב־iPhone
-        </Text>
+      <View style={[styles.container, { height }]}>
+        {React.createElement("iframe", {
+          title: "מפת מיקום שימוש בקופון",
+          src: mapUrl,
+          style: styles.webMap,
+          loading: "lazy",
+          referrerPolicy: "no-referrer-when-downgrade",
+        })}
+        {editable && onLocationChange ? (
+          <Text style={styles.webHint}>
+            לבחירת נקודה מדויקת בדפדפן, השתמש בכפתור המיקום הנוכחי או הזן כתובת.
+          </Text>
+        ) : null}
+        {navigationUrl ? (
+          <Text
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL(navigationUrl)}
+            style={styles.navigationLink}
+          >
+            פתיחה לניווט ב־Google Maps
+          </Text>
+        ) : null}
       </View>
     );
   }
@@ -89,17 +116,28 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 16,
   },
-  webFallback: {
+  webMap: {
     width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: "#e9eef3",
-    paddingHorizontal: 20,
+    height: "100%",
+    borderWidth: 0,
   },
-  webFallbackText: {
+  webHint: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    right: 8,
+    padding: 6,
+    backgroundColor: "rgba(255,255,255,0.9)",
     color: "#52606d",
     fontSize: 13,
     textAlign: "center",
+  },
+  navigationLink: {
+    color: "#1769d1",
+    fontSize: 13,
+    fontWeight: "600",
+    paddingTop: 8,
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
 });
