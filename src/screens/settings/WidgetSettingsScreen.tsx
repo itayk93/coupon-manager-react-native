@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
+  Animated,
   View,
   Text,
   StyleSheet,
@@ -24,6 +25,74 @@ import {
   nextWidgetOrder,
   widgetSelection,
 } from "@/lib/widgetSelection";
+
+function WidgetLoadingState() {
+  const { theme } = useAppTheme();
+  const pulse = useRef(new Animated.Value(0)).current;
+  const dots = useRef([
+    new Animated.Value(0.25),
+    new Animated.Value(0.25),
+    new Animated.Value(0.25),
+  ]).current;
+
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 750, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 750, useNativeDriver: true }),
+      ])
+    );
+    const dotsAnimation = Animated.loop(
+      Animated.stagger(
+        180,
+        dots.map((dot) =>
+          Animated.sequence([
+            Animated.timing(dot, { toValue: 1, duration: 360, useNativeDriver: true }),
+            Animated.timing(dot, { toValue: 0.25, duration: 360, useNativeDriver: true }),
+          ])
+        )
+      )
+    );
+
+    pulseAnimation.start();
+    dotsAnimation.start();
+
+    return () => {
+      pulseAnimation.stop();
+      dotsAnimation.stop();
+    };
+  }, [dots, pulse]);
+
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.06] });
+
+  return (
+    <View
+      accessibilityLabel="טוען ומכין את הקופונים לווידג'ט"
+      accessibilityRole="progressbar"
+      style={styles.loadingContainer}
+    >
+      <Animated.View
+        style={[
+          styles.loadingIcon,
+          { backgroundColor: theme.primaryTint, opacity: pulse, transform: [{ scale }] },
+        ]}
+      >
+        <LayoutGrid size={34} color={theme.primary} />
+      </Animated.View>
+      <ActivityIndicator size="large" color={theme.primary} />
+      <Text style={[styles.loadingTitle, { color: theme.text }]}>טוען ומכין את הקופונים</Text>
+      <View style={styles.loadingDots} accessible={false}>
+        {dots.map((opacity, index) => (
+          <Animated.View
+            key={index}
+            style={[styles.loadingDot, { backgroundColor: theme.primary, opacity }]}
+          />
+        ))}
+      </View>
+      <Text style={[styles.loadingSubtitle, { color: theme.textMuted }]}>זה עשוי לקחת כמה רגעים</Text>
+    </View>
+  );
+}
 
 export function WidgetSettingsScreen() {
   const { theme } = useAppTheme();
@@ -101,7 +170,7 @@ export function WidgetSettingsScreen() {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ווידג'ט מסך הבית" />
-        <ActivityIndicator style={styles.loader} size="large" color={theme.primary} />
+        <WidgetLoadingState />
       </SafeAreaView>
     );
   }
@@ -192,7 +261,30 @@ export function WidgetSettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  loader: { marginTop: 40 },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    paddingBottom: 72,
+  },
+  loadingIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  loadingTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 17,
+    textAlign: "center",
+    marginTop: 16,
+  },
+  loadingDots: { flexDirection: "row", gap: 7, marginTop: 12 },
+  loadingDot: { width: 7, height: 7, borderRadius: 4 },
+  loadingSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "center", marginTop: 12 },
   content: { padding: 16, paddingBottom: 120, gap: 8 },
   intro: {
     flexDirection: "row-reverse",
