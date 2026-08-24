@@ -7,6 +7,9 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === "web" && moduleName === "react-native-screens") {
     return { type: "sourceFile", filePath: `${__dirname}/src/web/react-native-screens.js` };
   }
+  if (platform === "web" && moduleName === "react-native-maps") {
+    return { type: "sourceFile", filePath: `${__dirname}/src/web/react-native-maps.js` };
+  }
   return defaultResolveRequest
     ? defaultResolveRequest(context, moduleName, platform)
     : context.resolveRequest(context, moduleName, platform);
