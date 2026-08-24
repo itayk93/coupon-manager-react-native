@@ -85,21 +85,26 @@ function useAuthGuard() {
   const navigatorReady = Boolean(rootNavigationState?.key);
 
   const inAuthGroup = segments[0] === "(auth)";
+  const inPublicContent = ["about", "faq", "privacy", "issues"].includes(
+    String(segments[0] ?? ""),
+  );
 
   useEffect(() => {
     if (isLoading || !navigatorReady) return;
 
-    if (!session && !inAuthGroup) {
+    if (!session && !inAuthGroup && !inPublicContent) {
       router.replace("/(auth)/login");
     } else if (session && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [session, isLoading, navigatorReady, inAuthGroup, router]);
+  }, [session, isLoading, navigatorReady, inAuthGroup, inPublicContent, router]);
 
   // Stay covered until the tree on screen matches the session, so the wrong
   // side of the guard is never briefly visible.
   const settled =
-    !isLoading && navigatorReady && (session ? !inAuthGroup : inAuthGroup);
+    !isLoading &&
+    navigatorReady &&
+    (session ? !inAuthGroup : inAuthGroup || inPublicContent);
 
   return { isReady: settled };
 }
