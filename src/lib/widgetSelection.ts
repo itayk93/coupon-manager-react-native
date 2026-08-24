@@ -1,5 +1,5 @@
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
-import { couponRemainingValue } from "./couponTotals";
+import { couponRemainingValue, isSpendableCoupon } from "./couponTotals";
 
 /** The home-screen widget never shows more than this many cards, even on Large. */
 export const MAX_WIDGET_COUPONS = 4;
@@ -12,10 +12,8 @@ export const MAX_WIDGET_COUPONS = 4;
  * a coupon can never be addable on one screen and invisible on another.
  */
 
-const ACTIVE_STATUS = "פעיל";
-
 export function isWidgetEligible(coupon: DecryptedCoupon): boolean {
-  return coupon.status === ACTIVE_STATUS && couponRemainingValue(coupon) > 0;
+  return isSpendableCoupon(coupon) && couponRemainingValue(coupon) > 0;
 }
 
 export function isInWidget(coupon: DecryptedCoupon): boolean {

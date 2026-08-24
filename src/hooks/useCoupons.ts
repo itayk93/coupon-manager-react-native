@@ -150,12 +150,41 @@ export function useUpdateCoupon() {
 
       return couponVault<DecryptedCoupon>({ action: "update", id, updates: normalizedUpdates });
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      queryClient.invalidateQueries({ queryKey: ["coupon", data.id] });
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["coupons"] });
+      await queryClient.cancelQueries({ queryKey: ["coupon", id] });
+
+      const previousCoupons = queryClient.getQueryData<DecryptedCoupon[]>(["coupons", user?.id]);
+      const previousCoupon = queryClient.getQueryData<DecryptedCoupon>(["coupon", id]);
+
+      if (previousCoupons) {
+        queryClient.setQueryData<DecryptedCoupon[]>(
+          ["coupons", user?.id],
+          previousCoupons.map((c) => (c.id === id ? { ...c, ...updates } : c))
+        );
+      }
+
+      if (previousCoupon) {
+        queryClient.setQueryData<DecryptedCoupon>(["coupon", id], {
+          ...previousCoupon,
+          ...updates,
+        });
+      }
+
+      return { previousCoupons, previousCoupon };
     },
-    onError: (error: any) => {
+    onError: (error: any, { id }, context) => {
+      if (context?.previousCoupons) {
+        queryClient.setQueryData(["coupons", user?.id], context.previousCoupons);
+      }
+      if (context?.previousCoupon) {
+        queryClient.setQueryData(["coupon", id], context.previousCoupon);
+      }
       notify.error("שגיאה בעדכון הקופון", error.message);
+    },
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      queryClient.invalidateQueries({ queryKey: ["coupon", id] });
     },
   });
 }

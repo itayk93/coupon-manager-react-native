@@ -27,6 +27,7 @@ import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
@@ -48,6 +49,7 @@ export function CouponsListScreen() {
   const params = useLocalSearchParams<{ initialFilterTag?: string; initialCompany?: string }>();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
+  const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const bulkDelete = useBulkDeleteCoupons();
   const triggerAutoUpdate = useTriggerAutoUpdate();
@@ -68,19 +70,29 @@ export function CouponsListScreen() {
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
 
-  // Company chips — ordered left-to-right from fewest to most coupons, so the
-  // right edge (where the row lands after scrollToEnd) is the highest-count
-  // company and the left edge is the lowest-count company.
+  // Company chips — ordered left-to-right from lowest usage/recency to highest usage/recency, so
+  // the right edge (where the row lands after scrollToEnd) is the most recently used/highest-usage company.
   const companyChips = useMemo(() => {
     const counts = coupons.reduce<Record<string, number>>((acc, coupon) => {
       const company = (coupon.company || "").trim();
       if (company) acc[company] = (acc[company] || 0) + 1;
       return acc;
     }, {});
+    const companyUsage = usageStats?.usageCountByCompany || {};
+    const companyLatest = usageStats?.latestUsageByCompany || {};
+
     return Object.entries(counts)
-      .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "he"))
+      .sort((a, b) => {
+        const latestDiff = (companyLatest[a[0]] || 0) - (companyLatest[b[0]] || 0);
+        if (latestDiff !== 0) return latestDiff;
+
+        const usageDiff = (companyUsage[a[0]] || 0) - (companyUsage[b[0]] || 0);
+        if (usageDiff !== 0) return usageDiff;
+
+        return a[1] - b[1] || a[0].localeCompare(b[0], "he");
+      })
       .map(([company]) => company);
-  }, [coupons]);
+  }, [coupons, usageStats]);
 
   const isCompanyFiltered = (coupon: DecryptedCoupon) =>
     !selectedCompany || (coupon.company || "").trim() === selectedCompany;
@@ -112,6 +124,7 @@ export function CouponsListScreen() {
     const active: DecryptedCoupon[] = [];
     const expired: DecryptedCoupon[] = [];
     const used: DecryptedCoupon[] = [];
+    const couponUsage = usageStats?.usageCountByCoupon || {};
 
     for (const coupon of matchedCoupons) {
       const remaining = (coupon.value || 0) - (coupon.used_value || 0);
@@ -127,6 +140,25 @@ export function CouponsListScreen() {
         active.push(coupon);
       }
     }
+
+    // Sort coupons in each section descending by latest usage timestamp, then usage frequency, then date_added
+    const sortByUsage = (a: DecryptedCoupon, b: DecryptedCoupon) => {
+      const latestA = usageStats?.latestUsageByCoupon?.[a.id] || 0;
+      const latestB = usageStats?.latestUsageByCoupon?.[b.id] || 0;
+      if (latestA !== latestB) return latestB - latestA;
+
+      const usageA = couponUsage[a.id] || 0;
+      const usageB = couponUsage[b.id] || 0;
+      if (usageA !== usageB) return usageB - usageA;
+
+      const dateA = a.date_added ? new Date(a.date_added).getTime() : 0;
+      const dateB = b.date_added ? new Date(b.date_added).getTime() : 0;
+      return dateB - dateA;
+    };
+
+    active.sort(sortByUsage);
+    expired.sort(sortByUsage);
+    used.sort(sortByUsage);
 
     const list: CouponSection[] = [];
 
@@ -147,7 +179,8 @@ export function CouponsListScreen() {
     }
 
     return list;
-  }, [matchedCoupons, statusFilter]);
+  }, [matchedCoupons, statusFilter, usageStats]);
+
 
   const toggleSelect = (id: number) => {
     if (selectedIds.includes(id)) {

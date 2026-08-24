@@ -18,7 +18,8 @@
       },
       "infoPlist": {
         "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.",
-        "NSFaceIDUsageDescription": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת."
+        "NSFaceIDUsageDescription": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת.",
+        "NSLocationWhenInUseUsageDescription": "האפליקציה משתמשת במיקום שלך כדי לרשום את המקום שבו השתמשת בקופון."
       }
     },
     "android": {
@@ -29,7 +30,9 @@
       "package": "com.itaykarkason.couponmaster",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {

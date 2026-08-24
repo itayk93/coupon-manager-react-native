@@ -38,6 +38,20 @@ function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
 }
 
+function formatDateShort(dateStr: string | null) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 function daysUntil(expiration: string | null) {
   if (!expiration) return null;
   const ms = new Date(expiration).getTime() - Date.now();
@@ -88,13 +102,16 @@ export function CouponCard({
         ? "עומד לפוג"
         : "פעיל";
 
+  const formattedExpiry = formatDateShort(coupon.expiration);
   const daysLabel = isExpired
     ? "פג תוקף"
     : isFullyUsed
       ? "נוצל במלואו"
       : isExpiringSoon
         ? `נותרו ${days} ימים`
-        : "בתוקף";
+        : formattedExpiry
+          ? `בתוקף עד: ${formattedExpiry}`
+          : "ללא תוקף";
 
   const daysColor = isExpired || isFullyUsed
     ? theme.danger
@@ -365,6 +382,36 @@ export function CouponCard({
           <Text style={[styles.days, { color: daysColor }]}>{daysLabel}</Text>
         </View>
 
+        {coupon.card_exp || coupon.cvv ? (
+          <View style={styles.cardDetailsRow}>
+            {coupon.card_exp ? (
+              <View style={styles.cardDetailItem}>
+                <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
+                  תוקף כרטיס:
+                </Text>
+                <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
+                  {coupon.card_exp}
+                </Text>
+              </View>
+            ) : null}
+
+            {coupon.card_exp && coupon.cvv ? (
+              <View style={[styles.cardDetailDivider, { backgroundColor: theme.divider }]} />
+            ) : null}
+
+            {coupon.cvv ? (
+              <View style={styles.cardDetailItem}>
+                <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
+                  CVV:
+                </Text>
+                <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
+                  {coupon.cvv}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
         {tags.length > 0 ? (
           <View style={styles.tagsRow}>
             {tags.slice(0, 3).map((tag) => (
@@ -529,6 +576,35 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  cardDetailsRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(0,0,0,0.03)",
+    borderRadius: radii.sm,
+  },
+  cardDetailItem: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 4,
+  },
+  cardDetailLabel: {
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+  },
+  cardDetailVal: {
+    fontFamily: fonts.display,
+    fontSize: 12,
+    fontWeight: "700",
+    writingDirection: "ltr",
+  },
+  cardDetailDivider: {
+    width: 1,
+    height: 12,
   },
   code: {
     fontFamily: fonts.display,

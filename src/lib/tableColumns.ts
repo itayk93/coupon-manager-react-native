@@ -17,7 +17,7 @@ export const AUTO_UPDATE_RUNS_COLUMNS = 'id,user_id,run_type,triggered_by_user_i
 
 export const TAG_COLUMNS = 'id,name,count' as const;
 
-export const COUPON_USAGE_COLUMNS = 'id,coupon_id,used_amount,action,details,timestamp' as const;
+export const COUPON_USAGE_COLUMNS = 'id,coupon_id,used_amount,action,details,timestamp,place_name,place_address,latitude,longitude' as const;
 
 export const COUPON_TRANSACTION_COLUMNS = 'id,coupon_id,usage_amount,recharge_amount,transaction_date,source,location,reference_number' as const;
 
