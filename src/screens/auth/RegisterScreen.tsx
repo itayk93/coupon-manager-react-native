@@ -16,7 +16,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Mail, Lock, User } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { storeLegacyUser, LegacyUser } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette, radii } from "@/lib/theme";
@@ -25,7 +24,7 @@ import { notify } from "@/lib/notify";
 export function RegisterScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
-  const { setLegacySession } = useAuth();
+  const { refreshUser } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -78,37 +77,17 @@ export function RegisterScreen() {
       });
 
       if (authError) throw authError;
-
-      // 2. Insert or update public.users
-      const { data: newUser, error: dbError } = await supabase
-        .from("users")
-        .insert({
-          email: normalizedEmail,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          password_hash: "supabase_managed",
-          is_admin: false,
-          is_confirmed: true,
-          created_at: new Date().toISOString(),
-        } as any)
-        .select()
-        .single();
-
-      if (dbError && !dbError.message.includes("duplicate")) {
-        console.warn("DB user sync notice:", dbError.message);
+      if (!authData.user?.identities?.length) {
+        throw new Error("כבר קיים חשבון עם האימייל הזה. התחברו בשיטה הקיימת וקשרו שיטה נוספת מהפרופיל.");
       }
 
-      const sessionUser: LegacyUser = {
-        id: (newUser as any)?.id || 0,
-        email: normalizedEmail,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        is_admin: false,
-        is_confirmed: true,
-      };
+      if (!authData.session) {
+        notify.success("נשלח אליכם אימייל לאישור החשבון");
+        router.replace("/(auth)/login");
+        return;
+      }
 
-      await storeLegacyUser(sessionUser);
-      setLegacySession(sessionUser);
+      await refreshUser();
     } catch (err: any) {
       notify.error("שגיאה בהרשמה", err.message || "אירעה שגיאה בעת ההרשמה");
     } finally {

@@ -28,6 +28,10 @@
       "channel": "preview"
     },
     "production": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
       "ios": {
         "simulator": false
       },
@@ -35,6 +39,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }
