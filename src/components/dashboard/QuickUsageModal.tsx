@@ -86,15 +86,6 @@ export function QuickUsageModal({
     }
     if (resolvedPlaceQuery.current === query) return;
 
-    const normalizedQuery = query.toLocaleLowerCase("he-IL");
-    if (normalizedQuery.includes("גוד פארם") && normalizedQuery.includes("יהודה הלוי")) {
-      resolvedPlaceQuery.current = query;
-      setPlaceAddress("יהודה הלוי 45, תל אביב");
-      setLocation({ latitude: 32.06155, longitude: 34.77366 });
-      setPlaceSearchMessage("המקום נמצא והמפה עודכנה");
-      return;
-    }
-
     let cancelled = false;
     const timer = setTimeout(async () => {
       setIsSearchingPlace(true);
@@ -105,7 +96,8 @@ export function QuickUsageModal({
       if (cancelled) return;
       setIsSearchingPlace(false);
       if (error || !data?.result) {
-        setPlaceSearchMessage("לא נמצא מקום מדויק. אפשר לבחור נקודה ידנית במפה.");
+        const diagnostics = Array.isArray(data?.diagnostics) ? data.diagnostics.join(", ") : "אין תשובת Google";
+        setPlaceSearchMessage(`Google לא מצא את המקום (${diagnostics})`);
         return;
       }
       const result = data.result as {

@@ -8,15 +8,19 @@ const GOOGLE_PLACES_TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:s
 const normalize = (value: string) => value.trim().toLocaleLowerCase('he-IL').replace(/["'׳״.,()-]/g, ' ').replace(/\s+/g, ' ');
 const admin = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false } });
 
-async function geocodeAddress(address: string, apiKey: string) {
+async function geocodeAddress(address: string, apiKey: string, diagnostics: string[]) {
   const url = new URL(GOOGLE_GEOCODE_URL);
   url.searchParams.set('address', address);
   url.searchParams.set('region', 'il');
   url.searchParams.set('language', 'iw');
   url.searchParams.set('key', apiKey);
   const response = await fetch(url, { redirect: 'error' });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    diagnostics.push(`geocoding:http_${response.status}`);
+    return null;
+  }
   const data = await response.json();
+  diagnostics.push(`geocoding:${data?.status || 'UNKNOWN'}`);
   const result = data?.results?.[0];
   const location = result?.geometry?.location;
   if (data?.status !== 'OK' || !result || !location) return null;
@@ -27,7 +31,7 @@ async function geocodeAddress(address: string, apiKey: string) {
   };
 }
 
-async function searchPlace(query: string, apiKey: string) {
+async function searchPlace(query: string, apiKey: string, diagnostics: string[]) {
   const response = await fetch(GOOGLE_PLACES_TEXT_SEARCH_URL, {
     method: 'POST',
     headers: {
@@ -42,8 +46,13 @@ async function searchPlace(query: string, apiKey: string) {
       maxResultCount: 1,
     }),
   });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    diagnostics.push(`places_new:http_${response.status}`);
+    return null;
+  }
   const data = await response.json();
+  if (data?.error?.status) diagnostics.push(`places_new:${data.error.status}`);
+  else diagnostics.push(`places_new:${data?.places?.length ? 'OK' : 'ZERO_RESULTS'}`);
   const place = data?.places?.[0];
   const location = place?.location;
   if (!place || !location) return null;
@@ -65,21 +74,6 @@ function addressQueries(query: string) {
   return [...new Set([`${query}, ישראל`, `${withoutBrand}, ישראל`].filter((value) => value.length > 8))];
 }
 
-function knownAddressForQuery(query: string) {
-  const normalized = normalize(query);
-  if (normalized.includes('גוד פארם') && normalized.includes('יהודה הלוי')) {
-    return 'יהודה הלוי 45, תל אביב';
-  }
-  return null;
-}
-
-function knownLocationForAddress(address: string) {
-  if (address === 'יהודה הלוי 45, תל אביב') {
-    return { latitude: 32.06155, longitude: 34.77366 };
-  }
-  return null;
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
@@ -90,6 +84,7 @@ Deno.serve(async (req: Request) => {
     if (query.length < 3) return jsonResponseFor(req, { result: null });
 
     const normalizedName = normalize(query);
+    const diagnostics: string[] = [];
     const db = admin();
     const { data: localPlace } = await db.from('coupon_places')
       .select('place_name,place_address,latitude,longitude,google_place_id')
@@ -107,53 +102,10 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!apiKey) return jsonResponseFor(req, { error: 'Google Maps is not configured' }, 503);
 
-    const knownAddress = knownAddressForQuery(query);
-    if (knownAddress) {
-      const knownLocation = knownLocationForAddress(knownAddress);
-      if (knownLocation) {
-        await db.from('coupon_places').upsert({
-          normalized_name: normalizedName,
-          place_name: query,
-          place_address: knownAddress,
-          latitude: knownLocation.latitude,
-          longitude: knownLocation.longitude,
-          source: 'verified_business_directory',
-          last_verified_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'normalized_name' });
-        return jsonResponseFor(req, { result: {
-          placeName: query,
-          address: knownAddress,
-          ...knownLocation,
-          source: 'verified_business_directory',
-        } });
-      }
-      const knownGeocode = await geocodeAddress(knownAddress, apiKey);
-      if (knownGeocode) {
-        await db.from('coupon_places').upsert({
-          normalized_name: normalizedName,
-          place_name: query,
-          place_address: knownGeocode.address,
-          latitude: knownGeocode.latitude,
-          longitude: knownGeocode.longitude,
-          source: 'verified_business_directory',
-          last_verified_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'normalized_name' });
-        return jsonResponseFor(req, { result: {
-          placeName: query,
-          address: knownGeocode.address,
-          latitude: knownGeocode.latitude,
-          longitude: knownGeocode.longitude,
-          source: 'verified_business_directory',
-        } });
-      }
-    }
-
     // Geocoding also resolves many local business names, without requiring a saved address.
     let liveGeocode = null;
     for (const addressQuery of addressQueries(query)) {
-      liveGeocode = await geocodeAddress(addressQuery, apiKey);
+      liveGeocode = await geocodeAddress(addressQuery, apiKey, diagnostics);
       if (liveGeocode) break;
     }
     if (liveGeocode) {
@@ -178,7 +130,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (localPlace?.place_address) {
-      const geocoded = await geocodeAddress(localPlace.place_address, apiKey);
+      const geocoded = await geocodeAddress(localPlace.place_address, apiKey, diagnostics);
       if (geocoded) {
         await db.from('coupon_places').upsert({
           normalized_name: normalizedName,
@@ -201,7 +153,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const livePlace = await searchPlace(query, apiKey);
+    const livePlace = await searchPlace(query, apiKey, diagnostics);
     if (livePlace) {
       await db.from('coupon_places').upsert({
         normalized_name: normalizedName,
@@ -237,6 +189,7 @@ Deno.serve(async (req: Request) => {
     const candidate = googleData?.candidates?.[0];
     const location = candidate?.geometry?.location;
 
+    diagnostics.push(`places_legacy:${googleData?.status || 'UNKNOWN'}`);
     if (googleData?.status !== 'OK' || !candidate || !location) {
       if (localPlace?.place_address) {
         return jsonResponseFor(req, { result: {
@@ -247,7 +200,11 @@ Deno.serve(async (req: Request) => {
           source: 'local_database',
         } });
       }
-      return jsonResponseFor(req, { result: null, errorCode: googleData?.status || 'PLACE_NOT_FOUND' });
+      return jsonResponseFor(req, {
+        result: null,
+        errorCode: googleData?.status || 'PLACE_NOT_FOUND',
+        diagnostics,
+      });
     }
 
     await db.from('coupon_places').upsert({
