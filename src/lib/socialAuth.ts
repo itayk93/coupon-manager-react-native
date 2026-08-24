@@ -8,6 +8,8 @@ WebBrowser.maybeCompleteAuthSession();
 
 const REDIRECT_PATH = "auth/callback";
 
+export type SocialProvider = Extract<Provider, "google" | "apple">;
+
 function readOAuthTokens(url: string) {
   const fragment = url.split("#")[1] ?? "";
   const query = url.split("?")[1]?.split("#")[0] ?? "";
@@ -22,7 +24,27 @@ function readOAuthTokens(url: string) {
   };
 }
 
-export async function signInWithSocialProvider(provider: Extract<Provider, "google" | "apple">) {
+async function completeNativeOAuth(url: string | null, redirectTo: string) {
+  if (!url) throw new Error("לא התקבל קישור התחברות. נסו שוב.");
+
+  const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
+  if (result.type === "cancel" || result.type === "dismiss") return false;
+  if (result.type !== "success") throw new Error("ההתחברות לא הושלמה. נסו שוב.");
+
+  const { accessToken, refreshToken } = readOAuthTokens(result.url);
+  if (!accessToken || !refreshToken) {
+    throw new Error("לא התקבלו פרטי התחברות תקינים. נסו שוב.");
+  }
+
+  const { error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (error) throw error;
+  return true;
+}
+
+export async function signInWithSocialProvider(provider: SocialProvider) {
   const isWeb = Platform.OS === "web";
   const redirectTo = Linking.createURL(isWeb ? "login" : REDIRECT_PATH);
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -35,20 +57,22 @@ export async function signInWithSocialProvider(provider: Extract<Provider, "goog
 
   if (error) throw error;
   if (isWeb) return;
-  if (!data.url) throw new Error("לא התקבל קישור התחברות. נסו שוב.");
+  await completeNativeOAuth(data.url, redirectTo);
+}
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  if (result.type === "cancel" || result.type === "dismiss") return;
-  if (result.type !== "success") throw new Error("ההתחברות לא הושלמה. נסו שוב.");
-
-  const { accessToken, refreshToken } = readOAuthTokens(result.url);
-  if (!accessToken || !refreshToken) {
-    throw new Error("לא התקבלו פרטי התחברות תקינים. נסו שוב.");
-  }
-
-  const { error: sessionError } = await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken,
+/** Links another verified provider to the signed-in user instead of creating a second account. */
+export async function linkSocialProvider(provider: SocialProvider) {
+  const isWeb = Platform.OS === "web";
+  const redirectTo = Linking.createURL(isWeb ? "profile" : REDIRECT_PATH);
+  const { data, error } = await supabase.auth.linkIdentity({
+    provider,
+    options: {
+      redirectTo,
+      skipBrowserRedirect: !isWeb,
+    },
   });
-  if (sessionError) throw sessionError;
+
+  if (error) throw error;
+  if (isWeb) return;
+  await completeNativeOAuth(data.url, redirectTo);
 }

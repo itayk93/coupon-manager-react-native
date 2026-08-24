@@ -39,11 +39,53 @@ export async function clearLegacyUser(): Promise<void> {
   }
 }
 
+async function getAppUser(authUserId: string, email: string): Promise<LegacyUser> {
+  const { data: linkedUser, error: linkedError } = await supabase
+    .from("users")
+    .select("id,email,first_name,last_name,is_admin,is_confirmed,is_deleted")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+
+  if (linkedError) throw linkedError;
+  let data = linkedUser;
+  if (!data) {
+    const { data: emailUser, error: emailError } = await supabase
+      .from("users")
+      .select("id,email,first_name,last_name,is_admin,is_confirmed,is_deleted")
+      .eq("email", email)
+      .maybeSingle();
+    if (emailError) throw emailError;
+    data = emailUser;
+  }
+  if (!data || data.is_deleted) throw new Error("המשתמש הזה נמחק או נחסם.");
+
+  return {
+    id: data.id,
+    email: data.email,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    is_admin: Boolean(data.is_admin),
+    is_confirmed: Boolean(data.is_confirmed),
+  };
+}
+
 /**
  * Verifies credentials on the server and establishes a real Supabase session.
  */
 export async function signInLegacy(email: string, password: string): Promise<LegacyUser> {
   const normalizedEmail = email.trim().toLowerCase();
+
+  // Current accounts use Supabase password auth. Older Werkzeug accounts fall
+  // back to the server verifier, which then mints the same Supabase session.
+  const { data: passwordData } = await supabase.auth.signInWithPassword({
+    email: normalizedEmail,
+    password,
+  });
+  if (passwordData.user) {
+    const user = await getAppUser(passwordData.user.id, normalizedEmail);
+    await storeLegacyUser(user);
+    return user;
+  }
 
   const { data, error } = await supabase.functions.invoke("legacy-login", {
     body: { email: normalizedEmail, password },

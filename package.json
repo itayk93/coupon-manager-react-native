@@ -18,6 +18,8 @@
     "prebuild:clean": "expo prebuild --clean",
     "build:dev:ios": "eas build --profile development --platform ios",
     "build:dev:android": "eas build --profile development --platform android",
+    "build:android:production": "eas build --profile production --platform android",
+    "submit:android:internal": "eas submit --profile production --platform android",
     "build:sim:ios": "eas build --profile development-simulator --platform ios",
     "build:ios:device": "./build-ios.command",
     "test": "vitest run",
