@@ -24,6 +24,9 @@ export function BrandLaunchVideo({
   const player = useVideoPlayer(launchVideo, (instance) => {
     instance.loop = false;
     instance.muted = true;
+    // The reveal has no audio. Keep iOS from taking exclusive ownership of
+    // the audio session and pausing Spotify, podcasts, or other background audio.
+    instance.audioMixingMode = "mixWithOthers";
   });
 
   useEventListener(player, "playToEnd", () => setVideoEnded(true));
