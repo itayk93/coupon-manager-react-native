@@ -47,6 +47,10 @@ verify_jwt = true
 # itself so the OpenAI spend is always attributable to a real account.
 verify_jwt = true
 
+[functions.parse-usage-screenshot]
+# Auth is also checked inside the function before any paid AI request.
+verify_jwt = true
+
 [functions.send-emails]
 # Cannot be true: the issue_report mode is reached from /issues, a public
 # route. Authorisation is per-mode inside the function — newsletter and test

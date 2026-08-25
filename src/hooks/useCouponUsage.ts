@@ -291,6 +291,7 @@ export function useRecordUsage() {
         placeAddress,
         latitude,
         longitude,
+        timestamp,
       }: {
         couponId: number;
         usedAmount: number;
@@ -299,6 +300,7 @@ export function useRecordUsage() {
         placeAddress?: string;
         latitude?: number | null;
         longitude?: number | null;
+        timestamp?: string | null;
     }) => {
       if (!user) throw new Error("Not authenticated");
 
@@ -322,7 +324,7 @@ export function useRecordUsage() {
         place_address: placeAddress?.trim() || null,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
-        timestamp: new Date().toISOString(),
+        timestamp: timestamp || new Date().toISOString(),
       });
       if (usageErr) throw usageErr;
 
