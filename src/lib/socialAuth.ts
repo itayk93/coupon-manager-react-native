@@ -8,6 +8,8 @@ WebBrowser.maybeCompleteAuthSession();
 
 const REDIRECT_PATH = "auth/callback";
 const NATIVE_REDIRECT_URL = `couponmaster://${REDIRECT_PATH}`;
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_AUTH_WEB_CLIENT_ID;
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_AUTH_IOS_CLIENT_ID;
 
 export type SocialProvider = Extract<Provider, "google" | "apple">;
 
@@ -45,8 +47,49 @@ async function completeNativeOAuth(url: string | null, redirectTo: string) {
   return true;
 }
 
+async function signInWithNativeGoogle() {
+  if (!GOOGLE_WEB_CLIENT_ID || !GOOGLE_IOS_CLIENT_ID) {
+    throw new Error("Google Sign-In לא הוגדר בגרסה זו של האפליקציה.");
+  }
+
+  let googleSignIn: typeof import("@react-native-google-signin/google-signin");
+  try {
+    googleSignIn = await import("@react-native-google-signin/google-signin");
+  } catch {
+    throw new Error("Google Sign-In דורש התקנה מחדש של האפליקציה.");
+  }
+
+  const { GoogleSignin, isSuccessResponse } = googleSignIn;
+  GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    offlineAccess: false,
+    scopes: ["email", "profile"],
+  });
+
+  const response = await GoogleSignin.signIn();
+  if (!isSuccessResponse(response)) return false;
+
+  const idToken = response.data.idToken;
+  if (!idToken) throw new Error("Google לא החזיר אסימון התחברות תקין.");
+  const { accessToken } = await GoogleSignin.getTokens();
+
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: "google",
+    token: idToken,
+    access_token: accessToken,
+  });
+  if (error) throw error;
+  return true;
+}
+
 export async function signInWithSocialProvider(provider: SocialProvider) {
   const isWeb = Platform.OS === "web";
+  if (provider === "google" && Platform.OS === "ios") {
+    await signInWithNativeGoogle();
+    return;
+  }
+
   const redirectTo = isWeb ? Linking.createURL("login") : NATIVE_REDIRECT_URL;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,

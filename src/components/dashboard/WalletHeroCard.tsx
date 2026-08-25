@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   WalletCards,
-  Sparkles,
   BarChart3,
   CirclePlus,
   QrCode,
@@ -33,11 +32,6 @@ export function WalletHeroCard({
   const visibleCoupons = coupons.filter(isSpendableCoupon);
   const totalValue = visibleCoupons.reduce((sum, c) => sum + (c.value || 0), 0);
   const remainingValue = totalRemainingValue(coupons);
-  const totalSavings = visibleCoupons.reduce(
-    (sum, c) => sum + Math.max(0, (c.value || 0) - (c.cost || 0)),
-    0
-  );
-
   const expiringSoonCount = visibleCoupons.filter((c) => {
     if (!c.expiration) return false;
     const daysLeft =
@@ -109,13 +103,6 @@ export function WalletHeroCard({
           </Text>
         </View>
 
-        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Sparkles size={18} color={theme.success} />
-          <Text style={[styles.statLabel, { color: theme.textMuted }]}>חסכת עד היום</Text>
-          <Text style={[styles.statValue, { color: theme.success }]}>
-            {isLoading || isError ? "—" : formatIls(totalSavings)}
-          </Text>
-        </View>
       </View>
 
       {/* Quick Action Buttons */}

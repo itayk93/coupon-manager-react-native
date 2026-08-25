@@ -95,6 +95,12 @@
           "motionPermission": false
         }
       ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.100904281039-2i02vthc885npv27pabi81eb12l1p11i"
+        }
+      ],
       "expo-asset",
       "@react-native-community/datetimepicker",
       "@bacons/apple-targets",
