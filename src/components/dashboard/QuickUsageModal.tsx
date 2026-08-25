@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from "react-native";
-import { CheckCheck, Check, ChevronDown, MapPin } from "lucide-react-native";
+import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2 } from "lucide-react-native";
 import * as Location from "expo-location";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { supabase } from "@/integrations/supabase/client";
+import { ParsedUsage, useParseUsageScreenshot } from "@/hooks/useUsageAI";
 
 type QuickUsageModalProps = {
   visible: boolean;
@@ -38,6 +40,7 @@ export function QuickUsageModal({
 }: QuickUsageModalProps) {
   const { theme } = useAppTheme();
   const recordUsage = useRecordUsage();
+  const parseUsage = useParseUsageScreenshot();
 
   const activeCoupons = coupons.filter(
     (c) => !c.is_for_sale && c.status !== "נוצל"
@@ -57,6 +60,8 @@ export function QuickUsageModal({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [isConfirmingFullUse, setIsConfirmingFullUse] = useState(false);
+  const [detectedUsages, setDetectedUsages] = useState<ParsedUsage[]>([]);
+  const [savingDetected, setSavingDetected] = useState(false);
   const resolvedPlaceQuery = useRef("");
 
   useEffect(() => {
@@ -75,6 +80,7 @@ export function QuickUsageModal({
     setError("");
     setIsPickerOpen(false);
     setIsConfirmingFullUse(false);
+    setDetectedUsages([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, preselectedCoupon?.id]);
 
@@ -205,6 +211,72 @@ export function QuickUsageModal({
     }
   };
 
+  const pickUsageScreenshot = async () => {
+    let ImagePicker: typeof import("expo-image-picker");
+    try {
+      ImagePicker = require("expo-image-picker");
+    } catch {
+      setError("זיהוי מתמונה אינו זמין בגרסה המותקנת");
+      return;
+    }
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError("צריך לאפשר גישה לתמונות כדי להעלות צילום מסך");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      base64: true,
+      quality: 0.6,
+    });
+    if (result.canceled) return;
+    const base64 = result.assets?.[0]?.base64;
+    if (!base64) {
+      setError("לא ניתן לקרוא את התמונה");
+      return;
+    }
+    setError("");
+    try {
+      setDetectedUsages(await parseUsage.mutateAsync(base64));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const updateDetectedUsage = (id: string, field: keyof ParsedUsage, value: string | number) => {
+    setDetectedUsages((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const saveDetectedUsages = async () => {
+    if (!selectedCouponId) return setError("יש לבחור קופון");
+    const valid = detectedUsages.filter((item) => item.amount > 0);
+    const total = valid.reduce((sum, item) => sum + item.amount, 0);
+    if (!valid.length) return setError("לא נשארו שימושים תקינים לאישור");
+    if (total > remaining) return setError(`סך השימושים (${formatIls(total)}) גבוה מהיתרה (${formatIls(remaining)})`);
+    setSavingDetected(true);
+    setError("");
+    try {
+      for (const item of valid) {
+        await recordUsage.mutateAsync({
+          couponId: selectedCouponId,
+          usedAmount: item.amount,
+          details: item.details,
+          placeName: item.placeName,
+          placeAddress: item.placeAddress,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          timestamp: item.usedAt,
+        });
+      }
+      setDetectedUsages([]);
+      onClose();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingDetected(false);
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -252,6 +324,54 @@ export function QuickUsageModal({
             </Text>
           )}
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={pickUsageScreenshot}
+          disabled={parseUsage.isPending}
+          activeOpacity={0.82}
+          accessibilityRole="button"
+          accessibilityLabel="העלאת צילום מסך לדיווח שימושים"
+          style={[styles.aiUploadButton, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}
+        >
+          {parseUsage.isPending ? <ActivityIndicator color={theme.primary} /> : <ImagePlus size={22} color={theme.primary} />}
+          <View style={styles.aiUploadText}>
+            <Text style={[styles.aiUploadTitle, { color: theme.text }]}>
+              {parseUsage.isPending ? "ה-AI קורא ומאתר מקומות..." : "דיווח מצילום מסך"}
+            </Text>
+            <Text style={[styles.aiUploadSubtitle, { color: theme.textMuted }]}>העלאה, זיהוי שימושים ומיקום אוטומטי</Text>
+          </View>
+          <Sparkles size={18} color={theme.primary} />
+        </TouchableOpacity>
+
+        {detectedUsages.length ? (
+          <View style={styles.detectedSection}>
+            <View style={styles.detectedHeader}>
+              <Text style={[styles.detectedCount, { color: theme.primary }]}>{detectedUsages.length} שימושים זוהו</Text>
+              <Text style={[styles.detectedTitle, { color: theme.text }]}>בדיקה לפני אישור</Text>
+            </View>
+            {detectedUsages.map((item, index) => (
+              <View key={item.id} style={[styles.usageCard, { borderColor: theme.border, backgroundColor: theme.surfaceAlt }]}>
+                <View style={styles.usageCardHeader}>
+                  <TouchableOpacity
+                    accessibilityLabel={`מחיקת שימוש ${index + 1}`}
+                    onPress={() => setDetectedUsages((all) => all.filter((row) => row.id !== item.id))}
+                    style={styles.deleteUsage}
+                  ><Trash2 size={18} color={theme.danger} /></TouchableOpacity>
+                  <Text style={[styles.usageIndex, { color: theme.text }]}>שימוש {index + 1}</Text>
+                </View>
+                <Input label="סכום (₪)" keyboardType="decimal-pad" value={String(item.amount)} onChangeText={(value) => updateDetectedUsage(item.id, "amount", Number(value) || 0)} />
+                <Input label="מקום" value={item.placeName} onChangeText={(value) => updateDetectedUsage(item.id, "placeName", value)} />
+                <Input label="כתובת" value={item.placeAddress} placeholder="לא נמצאה כתובת — אפשר לערוך" onChangeText={(value) => updateDetectedUsage(item.id, "placeAddress", value)} />
+                <Input label="מועד השימוש" value={item.usedAt || ""} placeholder="YYYY-MM-DDTHH:mm:ss" onChangeText={(value) => updateDetectedUsage(item.id, "usedAt", value)} />
+                {item.latitude !== null && item.longitude !== null ? (
+                  <Text style={[styles.detectedCoordinates, { color: theme.textMuted }]}><MapPin size={13} color={theme.primary} /> {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</Text>
+                ) : null}
+              </View>
+            ))}
+            {error ? <Text style={[styles.batchError, { color: theme.danger }]}>{error}</Text> : null}
+            <Button title={`אישור והוספת ${detectedUsages.length} שימושים`} onPress={saveDetectedUsages} loading={savingDetected} disabled={savingDetected} />
+          </View>
+        ) : null}
 
         {/* Dropdown list if opened */}
         {isPickerOpen ? (
@@ -566,4 +686,27 @@ const styles = StyleSheet.create({
   confirmBtn: {
     flex: 1,
   },
+  aiUploadButton: {
+    minHeight: 72,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  aiUploadText: { flex: 1, alignItems: "flex-end" },
+  aiUploadTitle: { fontSize: 15, fontWeight: "800", textAlign: "right" },
+  aiUploadSubtitle: { fontSize: 12, marginTop: 3, textAlign: "right" },
+  detectedSection: { gap: 10, marginBottom: 18 },
+  detectedHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  detectedTitle: { fontSize: 17, fontWeight: "800" },
+  detectedCount: { fontSize: 12, fontWeight: "700" },
+  usageCard: { borderWidth: 1, borderRadius: 16, padding: 12 },
+  usageCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  usageIndex: { fontSize: 14, fontWeight: "800" },
+  deleteUsage: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  detectedCoordinates: { fontSize: 12, textAlign: "right", marginTop: -4, marginBottom: 4 },
+  batchError: { fontSize: 13, fontWeight: "600", textAlign: "right" },
 });
