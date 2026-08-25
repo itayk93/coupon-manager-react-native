@@ -11,6 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
+import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
@@ -104,6 +105,9 @@ export function DashboardScreen() {
           />
         }
       >
+        {/* Expiring-soon reminder, dismissible for the rest of the day */}
+        <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
+
         {/* Wallet Hero Card */}
         <WalletHeroCard
           coupons={coupons}
