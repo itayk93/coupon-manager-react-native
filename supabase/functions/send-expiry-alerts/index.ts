@@ -41,6 +41,8 @@ type PreferenceRow = {
   windows: number[] | null;
   quiet_until: string | null;
   timezone: string | null;
+  /** Remind every day once a coupon is this close to expiry. null = off. */
+  daily_within: number | null;
 };
 
 type UserRow = { id: number; email: string; first_name: string | null };
@@ -118,6 +120,7 @@ function preferencesFor(row: PreferenceRow | undefined, userId: number): Prefere
     windows: row?.windows?.length ? row.windows : DEFAULT_WINDOWS,
     quiet_until: row?.quiet_until ?? null,
     timezone: row?.timezone || DEFAULT_TIMEZONE,
+    daily_within: row?.daily_within ?? null,
   };
 }
 
@@ -182,7 +185,7 @@ Deno.serve(async (req: Request) => {
     const [{ data: users }, { data: prefRows }] = await Promise.all([
       supabase.from('users').select('id, email, first_name').eq('is_deleted', false),
       supabase.from('notification_preferences')
-        .select('user_id, email, push, in_app, windows, quiet_until, timezone'),
+        .select('user_id, email, push, in_app, windows, quiet_until, timezone, daily_within'),
     ]);
 
     if (!users?.length) {
@@ -208,7 +211,13 @@ Deno.serve(async (req: Request) => {
 
       const today = todayInTimeZone(timeZone);
       const targets = new Map<string, number>();
-      for (const days of prefs.windows || DEFAULT_WINDOWS) {
+      // Daily mode covers every day inside its reach; the fixed windows still
+      // apply outside it (a 30-day heads-up under a 14-day daily reach).
+      const offsets = new Set<number>(prefs.windows || DEFAULT_WINDOWS);
+      if (prefs.daily_within !== null) {
+        for (let days = 0; days <= prefs.daily_within; days += 1) offsets.add(days);
+      }
+      for (const days of offsets) {
         const date = addDays(today, days);
         targets.set(date, days);
         allTargetDates.add(date);

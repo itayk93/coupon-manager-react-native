@@ -13,3 +13,10 @@ export const NOTIFICATION_WINDOWS = [
 ] as const;
 
 export const DEFAULT_NOTIFICATION_WINDOWS = NOTIFICATION_WINDOWS.map((w) => w.value) as number[];
+
+/**
+ * Reach of the daily reminder when it is switched on: from this many days
+ * before expiry, the user hears about the coupon every single day. Matches the
+ * window the dashboard banner uses.
+ */
+export const DAILY_REMINDER_DAYS = 14;

@@ -13,6 +13,8 @@ export type NotificationPreferences = {
   windows: number[];
   quiet_until: string | null;
   timezone: string;
+  /** Remind every day once a coupon is this close to expiry. null = off. */
+  daily_within: number | null;
 };
 
 const PREFERENCE_COLUMNS = NOTIFICATION_PREFERENCES_COLUMNS;
@@ -25,6 +27,7 @@ const DEFAULTS: NotificationPreferences = {
   windows: DEFAULT_NOTIFICATION_WINDOWS,
   quiet_until: null,
   timezone: "Asia/Jerusalem",
+  daily_within: null,
 };
 
 export function useNotificationPreferences() {
