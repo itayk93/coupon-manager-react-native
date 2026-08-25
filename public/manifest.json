@@ -3,6 +3,8 @@
   "short_name": "קופון מאסטר",
   "description": "מערכת חכמה לניהול, שמירה ושיתוף קופונים ושוברי מתנה דיגיטליים",
   "start_url": "/",
+  "id": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0F172A",
@@ -44,5 +46,12 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["finance", "utilities", "productivity"]
+  "categories": [
+    "finance",
+    "utilities",
+    "productivity"
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

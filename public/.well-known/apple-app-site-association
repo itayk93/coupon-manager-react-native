@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TM252YSY6T.com.itaykarkason.couponmaster"],
+        "components": [
+          { "/": "/unsubscribe", "comment": "email preference centre" },
+          { "/": "/unsubscribe?*", "comment": "email preference centre, with token" },
+          { "/": "/coupons/*", "comment": "a single coupon" },
+          { "/": "/notifications", "comment": "the in-app notification list" },
+          { "/": "/notification-settings", "comment": "notification preferences" }
+        ]
+      }
+    ]
+  }
+}

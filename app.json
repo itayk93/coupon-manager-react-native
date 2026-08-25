@@ -13,13 +13,18 @@
       "bundleIdentifier": "com.itaykarkason.couponmaster",
       "appleTeamId": "TM252YSY6T",
       "entitlements": {
-        "com.apple.security.application-groups": ["group.com.itaykarkason.couponmaster"]
+        "com.apple.security.application-groups": [
+          "group.com.itaykarkason.couponmaster"
+        ]
       },
       "infoPlist": {
         "NSCameraUsageDescription": "אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.",
         "NSFaceIDUsageDescription": "אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת.",
         "NSLocationWhenInUseUsageDescription": "האפליקציה משתמשת במיקום שלך כדי לרשום את המקום שבו השתמשת בקופון."
-      }
+      },
+      "associatedDomains": [
+        "applinks:coupons.itaykarkason.com"
+      ]
     },
     "android": {
       "versionCode": 1,
@@ -36,6 +41,38 @@
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/unsubscribe"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/coupons/"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/notifications"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/notification-settings"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {
