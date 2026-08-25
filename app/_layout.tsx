@@ -14,6 +14,8 @@ import {
   DefaultTheme as NavigationDefaultTheme,
   Stack,
   ThemeProvider,
+  useGlobalSearchParams,
+  usePathname,
   useRootNavigationState,
   useRouter,
   useSegments,
@@ -35,6 +37,7 @@ import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
@@ -81,11 +84,15 @@ function useAuthGuard() {
   const { session, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
   const rootNavigationState = useRootNavigationState();
   const navigatorReady = Boolean(rootNavigationState?.key);
 
   const inAuthGroup = segments[0] === "(auth)";
-  const inPublicContent = ["about", "faq", "privacy", "issues"].includes(
+  // `unsubscribe` is public for a legal reason, not a cosmetic one: an opt-out
+  // link from an email has to work in the recipient's inbox, without a login.
+  const inPublicContent = ["about", "faq", "privacy", "issues", "unsubscribe"].includes(
     String(segments[0] ?? ""),
   );
 
@@ -93,11 +100,20 @@ function useAuthGuard() {
     if (isLoading || !navigatorReady) return;
 
     if (!session && !inAuthGroup && !inPublicContent) {
+      // Keep the destination, query string included, so logging in finishes the
+      // journey the link started instead of dropping the user on the home tab.
+      const query = new URLSearchParams(
+        Object.entries(params).flatMap(([key, value]) =>
+          typeof value === "string" ? [[key, value] as [string, string]] : [],
+        ),
+      ).toString();
+      rememberPendingRoute(query ? `${pathname}?${query}` : pathname);
       router.replace("/(auth)/login");
     } else if (session && inAuthGroup) {
-      router.replace("/(tabs)");
+      const pendingRoute = takePendingRoute();
+      router.replace((pendingRoute as any) ?? "/(tabs)");
     }
-  }, [session, isLoading, navigatorReady, inAuthGroup, inPublicContent, router]);
+  }, [session, isLoading, navigatorReady, inAuthGroup, inPublicContent, router, pathname, params]);
 
   // Stay covered until the tree on screen matches the session, so the wrong
   // side of the guard is never briefly visible.

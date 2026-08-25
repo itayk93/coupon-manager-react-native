@@ -19,7 +19,7 @@
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { isServiceRoleCall, requireAdmin } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
-import { buildUnsubscribeUrl } from '../_shared/unsubscribe.ts';
+import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubscribe.ts';
 import { expiryEmailHtml } from '../_shared/emailTemplate.ts';
 import { createServiceClient, sendPushToRows, type PushSubscriptionRow } from '../_shared/push.ts';
 
@@ -139,7 +139,12 @@ function summaryText(coupons: CouponRow[], days: number): string {
   return `הקופונים הבאים עומדים לפוג ${whenLabel(days)}: ${names}`;
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  headers: Record<string, string>,
+): Promise<boolean> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
   if (!apiKey) {
     console.error('[send-expiry-alerts] BREVO_API_KEY missing, skipping email');
@@ -162,6 +167,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         to: [{ email: to }],
         subject,
         htmlContent: html,
+        headers,
       }),
     });
     return resp.ok;
@@ -338,6 +344,7 @@ Deno.serve(async (req: Request) => {
               appUrl: Deno.env.get('APP_BASE_URL') || null,
               unsubscribeUrl: await buildUnsubscribeUrl(user.id, user.email),
             }),
+            await buildUnsubscribeHeaders(user.id, user.email),
           );
           if (ok) emailCount += 1;
           record('email', ok);
