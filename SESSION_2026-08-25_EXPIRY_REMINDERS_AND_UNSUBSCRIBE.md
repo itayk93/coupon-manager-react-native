@@ -8,6 +8,7 @@ what is still open. Three pieces of work, in the order they came up.
 | `48af4f4` | Dismissible expiring-coupons banner on the dashboard |
 | `e4e4d68` | Daily expiry reminders inside the final stretch |
 | `a92ad0e` | The email unsubscribe link reaches a real preference centre |
+| `d645c5f` | Email links open the installed app or PWA instead of the browser |
 
 ---
 
@@ -232,11 +233,66 @@ files. Pre-existing, unrelated to this work, but it blocked verification.
 
 ---
 
+## 4. The link should open the app, not the browser
+
+### The ask
+
+If the native app is installed, the email link should open it. If the PWA is
+installed, it should open that.
+
+### What the research said
+
+Both platforms have a first-party mechanism, and both need a two-way proof:
+config in the app plus a file hosted on the domain. iOS calls it Universal
+Links (`associatedDomains` + `/.well-known/apple-app-site-association`), Android
+calls it App Links (`intentFilters` with `autoVerify` +
+`/.well-known/assetlinks.json`). With the app absent, the link simply stays in
+the browser.
+([Expo linking overview](https://docs.expo.dev/linking/overview/),
+[iOS universal links](https://docs.expo.dev/linking/ios-universal-links/))
+
+An installed PWA needs no separate mechanism on Android: Chrome installs it as a
+WebAPK that already captures in-scope https links. What it does need is a
+`scope` that covers the path, and a `launch_handler` so the link lands in the
+window that is already open.
+
+### Decisions
+
+| Decision | Why |
+| --- | --- |
+| Claim specific paths, not the whole host | `/unsubscribe`, `/coupons/*`, `/notifications`, `/notification-settings` are the routes the app actually has. Claiming everything sends marketing pages into the app too. |
+| Android filter scoped with `pathPrefix` entries mirroring the AASA components | One list of app-owned paths, expressed twice because the platforms disagree on syntax. |
+| `/.well-known/` excluded from the SPA rewrite in `vercel.json` | The AASA file has no extension, so the catch-all rewrite would have served it as `index.html` and both platforms would have rejected it. |
+| Explicit `Content-Type: application/json` on both files | Required, and neither file's name implies it. |
+| `scope: "/"`, `id: "/"` and `launch_handler: navigate-existing` in the manifest | Scope is what makes the WebAPK capture the link; navigate-existing avoids a second window. |
+
+Files: [`apple-app-site-association`](./public/.well-known/apple-app-site-association),
+[`app.json`](./app.json), [`vercel.json`](./vercel.json),
+[`manifest.json`](./public/manifest.json).
+
+### What this does not cover
+
+- **Android App Links are configured but not yet verified.** `assetlinks.json`
+  needs the release signing key's SHA-256 fingerprint, and there is no Android
+  build on EAS to take it from. Until the file exists, Android ignores
+  `autoVerify` and the link opens the browser — the same result as before, so
+  nothing regresses.
+- **An installed PWA on iOS cannot capture links at all.** Safari has no
+  equivalent of WebAPK link capturing; the link opens in Safari. Installing the
+  native app is the only way to get app hand-off on iOS.
+
 ## Open items
 
 - **Push has no device registered** on the requesting account, so the push
   channel is untested end to end. Enable notifications on a device and use "שלח
   התראת בדיקה".
 - **The post-login return hop is unverified** for the reason above.
+- **`assetlinks.json` is missing.** After the first Android build:
+  `eas credentials -p android` → copy the SHA-256 fingerprint → write
+  `public/.well-known/assetlinks.json` with `package_name`
+  `com.itaykarkason.couponmaster`. Verify with Google's Digital Asset Links
+  tester before trusting it.
+- **The iOS entitlement ships only in a new build.** `associatedDomains` is a
+  native config change, so an already-installed build will not pick it up.
 - **`daily_within` is off for every other user.** Consider whether to surface it
   as a suggestion rather than leaving it buried in settings.
