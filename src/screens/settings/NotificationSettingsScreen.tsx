@@ -262,15 +262,18 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
     fontWeight: "600",
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   separator: {
     height: 1,
     marginVertical: 8,
   },
   windowRow: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
+    direction: "rtl",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -291,6 +294,8 @@ const styles = StyleSheet.create({
   windowText: {
     fontFamily: fonts.body,
     fontSize: 14,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   error: {
     fontFamily: fonts.body,
