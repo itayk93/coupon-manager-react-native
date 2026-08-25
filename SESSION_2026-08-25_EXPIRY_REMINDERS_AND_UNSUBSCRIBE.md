@@ -208,6 +208,21 @@ Signed out at `/notification-settings`: the guard redirects to login as
 intended. **The hop back after login was not executed** — it needs the account
 password, which was not entered.
 
+Then end to end against a freshly sent production email. Its raw source carries:
+
+```
+List-Unsubscribe: <https://dugjsiyenazpsoiyduuz.supabase.co/functions/v1/manage-unsubscribe?token=…>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+DKIM-Signature: … h=from:subject:date:to:mime-version:content-type:
+  content-transfer-encoding:list-unsubscribe:x-csa-complaints:
+  list-unsubscribe-post:message-id:x-sib-id:feedback-id;
+```
+
+`dkim=pass`, and the `h=` list covers **both** List-Unsubscribe headers — the
+condition Gmail checks before honouring one-click. Following the footer link
+through Brevo's tracking redirect now resolves to
+`https://coupons.itaykarkason.com/unsubscribe?token=…`, path and token intact.
+
 ### Incidental fix
 
 The web dev server could not build: Metro handed `.env.brevo.local` to Babel,
@@ -223,9 +238,5 @@ files. Pre-existing, unrelated to this work, but it blocked verification.
   channel is untested end to end. Enable notifications on a device and use "שלח
   התראת בדיקה".
 - **The post-login return hop is unverified** for the reason above.
-- **DKIM must cover the two List-Unsubscribe headers** for Gmail to honour
-  one-click. Brevo signs outgoing mail, but that the signature spans these
-  specific headers was not confirmed here — worth checking a delivered message's
-  `DKIM-Signature: h=` list.
 - **`daily_within` is off for every other user.** Consider whether to surface it
   as a suggestion rather than leaving it buried in settings.
