@@ -270,6 +270,27 @@ Files: [`apple-app-site-association`](./public/.well-known/apple-app-site-associ
 [`app.json`](./app.json), [`vercel.json`](./vercel.json),
 [`manifest.json`](./public/manifest.json).
 
+### Verified
+
+`expo export` was run locally first to confirm it copies a dot-prefixed
+directory into `dist` at all — it does, `dist/.well-known/apple-app-site-association`
+is present. Then against production once the deploy landed:
+
+| Check | Result |
+| --- | --- |
+| `GET /.well-known/apple-app-site-association` | `200`, `content-type: application/json` |
+| Its contents | `TM252YSY6T.com.itaykarkason.couponmaster`, all five path components |
+| `GET /manifest.json` | `id: "/"`, `scope: "/"`, `launch_handler: navigate-existing` |
+| `/unsubscribe?token=`, `/notification-settings`, `/coupons/751`, `/privacy` | all `200` |
+
+Before the `vercel.json` change the same AASA request returned
+`content-type: text/html` — the SPA rewrite was serving `index.html` in its
+place, which both platforms reject. That is the check worth repeating after any
+future change to the rewrite rules.
+
+Not verifiable from here: whether a real device actually hands the link to the
+app. That needs an installed build (see below).
+
 ### What this does not cover
 
 - **Android App Links are configured but not yet verified.** `assetlinks.json`
