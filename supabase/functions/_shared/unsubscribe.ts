@@ -35,3 +35,31 @@ export async function buildUnsubscribeUrl(userId: number, email: string): Promis
   if (!token) return null;
   return `${appBaseUrl.replace(/\/$/, '')}/unsubscribe?token=${encodeURIComponent(token)}`;
 }
+
+/**
+ * RFC 8058 one-click headers, for Gmail's and Yahoo's own unsubscribe button.
+ *
+ * Deliberately points at the edge function rather than the in-app page: the
+ * mail client POSTs here unattended and needs a plain 2xx, not HTML. The link
+ * in the body still goes to the preference centre, where the user can pick a
+ * single kind of mail instead of stopping everything.
+ *
+ * Returns an empty object when the token cannot be signed, so a missing secret
+ * degrades to "no headers" rather than a broken unsubscribe.
+ */
+export async function buildUnsubscribeHeaders(
+  userId: number,
+  email: string,
+): Promise<Record<string, string>> {
+  const functionsBase = Deno.env.get('SUPABASE_URL');
+  if (!functionsBase) return {};
+  const token = await createUnsubscribeToken(userId, email);
+  if (!token) return {};
+  const endpoint =
+    `${functionsBase.replace(/\/$/, '')}/functions/v1/manage-unsubscribe` +
+    `?token=${encodeURIComponent(token)}`;
+  return {
+    'List-Unsubscribe': `<${endpoint}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}

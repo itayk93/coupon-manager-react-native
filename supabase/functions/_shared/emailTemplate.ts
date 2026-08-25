@@ -139,7 +139,7 @@ export function expiryEmailHtml(options: {
   const footer = unsubscribeUrl
     ? `<p dir="rtl" style="${RTL};margin:10px 0 0 0;font-family:${FONT};font-size:12px;color:${COLOR.textMuted};line-height:1.6">
          לא רוצה לקבל תזכורות תפוגה במייל?
-         <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLOR.textSecondary}">אפשר לבטל כאן</a>.
+         <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLOR.textSecondary}">ניהול ההתראות וביטול</a>.
        </p>`
     : '';
 

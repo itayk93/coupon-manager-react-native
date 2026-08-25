@@ -17,12 +17,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall, isAdminIpAllowed } from '../_shared/auth.ts';
-import { buildUnsubscribeUrl } from '../_shared/unsubscribe.ts';
+import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubscribe.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  /** RFC 8058 headers; set for bulk mail, omitted for one-off transactional. */
+  headers: Record<string, string> = {},
+): Promise<boolean> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
   const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') || 'hello@itaykarkason.com';
   const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'Coupon Master';
@@ -40,6 +46,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         to: [{ email: to }],
         subject,
         htmlContent: html,
+        headers,
       }),
     });
     return resp.ok;
@@ -100,7 +107,7 @@ async function handleNewsletter(newsletterId: number) {
       u.id,
       u.email,
     );
-    const ok = await sendEmail(u.email, nl.title, html);
+    const ok = await sendEmail(u.email, nl.title, html, await buildUnsubscribeHeaders(u.id, u.email));
     await supabase.from('newsletter_sendings').insert({
       newsletter_id: newsletterId,
       user_id: u.id,
