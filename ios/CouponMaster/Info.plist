@@ -37,6 +37,12 @@
           <string>exp+coupon-master</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.100904281039-2i02vthc885npv27pabi81eb12l1p11i</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>

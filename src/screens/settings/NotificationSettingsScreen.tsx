@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
-import { Bell, Mail, MessageSquare, Smartphone, Clock } from "lucide-react-native";
+import { Bell, Mail, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
@@ -20,7 +20,10 @@ import {
 } from "@/hooks/useNotificationPreferences";
 import { usePwaNotifications } from "@/hooks/usePwaNotifications";
 import { useNativeNotifications } from "@/hooks/useNativeNotifications";
-import { NOTIFICATION_WINDOWS as WINDOW_OPTIONS } from "@/lib/notificationWindows";
+import {
+  NOTIFICATION_WINDOWS as WINDOW_OPTIONS,
+  DAILY_REMINDER_DAYS,
+} from "@/lib/notificationWindows";
 
 function ToggleRow({
   label,
@@ -167,6 +170,22 @@ export function NotificationSettingsScreen() {
             );
           })}
           {windowError ? <Text style={[styles.error, { color: theme.danger }]}>{windowError}</Text> : null}
+
+          <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+          <ToggleRow
+            label={`תזכורת יומית ב-${DAILY_REMINDER_DAYS} הימים האחרונים`}
+            icon={<CalendarClock size={20} color={theme.textMuted} />}
+            value={prefs.daily_within !== null}
+            onValueChange={(next) =>
+              updatePrefs.mutate({ daily_within: next ? DAILY_REMINDER_DAYS : null })
+            }
+            theme={theme}
+          />
+          <Text style={[styles.hint, { color: theme.textSubtle }]}>
+            כשמופעל, קופון שקרוב לפוג יזכיר לעצמו כל יום בערוצים שבחרת למעלה,
+            ולא רק בחלונות הקבועים
+          </Text>
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

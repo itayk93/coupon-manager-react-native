@@ -31,6 +31,6 @@ export const OPT_OUTS_COLUMNS = 'user_id,opted_out,timestamp' as const;
 
 export const NOTIFICATIONS_COLUMNS = 'id,user_id,message,link,shown,viewed,hide_from_view,timestamp' as const;
 
-export const NOTIFICATION_PREFERENCES_COLUMNS = 'user_id,email,push,in_app,windows,quiet_until,timezone' as const;
+export const NOTIFICATION_PREFERENCES_COLUMNS = 'user_id,email,push,in_app,windows,quiet_until,timezone,daily_within' as const;
 
 export const COUPON_ALERTS_COLUMNS = 'id,coupon_id,user_id,window_days,channel,sent_at,status' as const;
