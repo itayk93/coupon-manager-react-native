@@ -101,7 +101,11 @@ export function useParseCoupon() {
       return filteredCoupons;
     },
     onError: (error: any) => {
-      notify.error("שגיאה בפענוח הקופון", error.message);
+      const technicalMessage = String(error?.message || "");
+      const message = /Edge Function|non-2xx|Failed to fetch|Network/i.test(technicalMessage)
+        ? "לא הצלחנו להתחבר לזיהוי החכם. בדקו את הפרטים ונסו שוב."
+        : technicalMessage || "לא הצלחנו לזהות קופון. נסו לנסח שוב."
+      notify.error("לא הצלחנו לזהות הפעם", message);
     },
   });
 }

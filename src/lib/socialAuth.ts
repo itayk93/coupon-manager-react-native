@@ -47,7 +47,7 @@ async function completeNativeOAuth(url: string | null, redirectTo: string) {
 
 export async function signInWithSocialProvider(provider: SocialProvider) {
   const isWeb = Platform.OS === "web";
-  const redirectTo = isWeb ? Linking.createURL("login") : NATIVE_REDIRECT_URL;
+  const redirectTo = isWeb ? Linking.createURL("onboarding", { queryParams: { social: provider } }) : NATIVE_REDIRECT_URL;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {

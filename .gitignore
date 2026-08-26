@@ -68,3 +68,8 @@ AGENTS.md
 CLAUDE.md
 GEMINI.md
 *.command.zip
+
+# Intermediate frames the onboarding demo renderer writes before ffmpeg encodes
+# the mp4 next to them. 124MB of regenerable PNGs; rerun
+# scripts/render-onboarding-character-demos.py to get them back.
+assets/onboarding/videos/*-frames/

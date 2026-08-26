@@ -39,6 +39,7 @@ import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
+import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -109,7 +110,7 @@ function useAuthGuard() {
       ).toString();
       rememberPendingRoute(query ? `${pathname}?${query}` : pathname);
       router.replace("/(auth)/login");
-    } else if (session && inAuthGroup) {
+    } else if (session && inAuthGroup && pathname !== "/onboarding") {
       const pendingRoute = takePendingRoute();
       router.replace((pendingRoute as any) ?? "/(tabs)");
     }
@@ -120,7 +121,7 @@ function useAuthGuard() {
   const settled =
     !isLoading &&
     navigatorReady &&
-    (session ? !inAuthGroup : inAuthGroup || inPublicContent);
+    (session ? !inAuthGroup || pathname === "/onboarding" : inAuthGroup || inPublicContent);
 
   return { isReady: settled };
 }
@@ -129,6 +130,7 @@ function RootLayoutNav() {
   const { theme } = useAppTheme();
   const { isReady: authReady } = useAuthGuard();
   useWidgetSync();
+  usePendingOnboardingCoupon();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > 480;
   const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web");
