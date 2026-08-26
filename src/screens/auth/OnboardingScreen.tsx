@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AccessibilityInfo, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import Animated, { Easing, FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { AlarmClock, Check, ChevronRight, Search, Sparkles, TrendingUp } from "lucide-react-native";
 import { useParseCoupon, type ParsedCoupon } from "@/hooks/useCouponAI";
@@ -14,9 +14,9 @@ import { fonts, palette, radii } from "@/lib/theme";
 import { setOnboardingCompleted } from "@/lib/onboardingStatus";
 import { estimateAnnualSavings, saveOnboardingPrefs, type OnboardingGoal, type OnboardingVolume } from "@/lib/onboardingPrefs";
 import { Confetti, CountUp } from "@/components/onboarding/Celebration";
+import { CharacterScene, type CharacterState } from "@/components/onboarding/CharacterRig";
 
 type Mode = "profile" | "goal" | "volume" | "describe" | "preview";
-type CharacterState = "talking" | "thinking" | "cheering" | "scanning" | "success";
 
 const GOALS: { id: OnboardingGoal; label: string; hint: string; icon: typeof AlarmClock; reply: string }[] = [
   { id: "expiry", label: "שוכח שהם פגים", hint: "התוקף עובר וזה מרגיז", icon: AlarmClock, reply: "זה בדיוק מה שאני מונע. אזכיר לך לפני שכל קופון פג." },
@@ -172,7 +172,7 @@ export function OnboardingScreen() {
         </Animated.View>
 
         {mode === "profile" ? <View style={styles.panel}>
-          <View style={styles.profileVisual}><CharacterScene state="talking" reduceMotion={reduceMotion} /></View>
+          <View style={styles.profileVisual}><CharacterScene state="talking" reduceMotion={reduceMotion} compact /></View>
           <Field label="שם פרטי" value={firstName} onChangeText={setFirstName} placeholder="למשל נועה" />
           <Field label="שם משפחה" value={lastName} onChangeText={setLastName} placeholder="למשל כהן" />
           <PrimaryButton label="נעים להכיר, ממשיכים" onPress={saveProfile} disabled={profileLoading || !firstName.trim() || !lastName.trim()} loading={profileLoading} />
@@ -197,14 +197,14 @@ export function OnboardingScreen() {
         : mode === "describe" ? <Animated.View entering={reduceMotion ? undefined : FadeInDown.duration(260)} style={styles.panel}>
           <View style={styles.talkVisual}>
             <CharacterScene state={parseCoupon.isPending ? "scanning" : "talking"} reduceMotion={reduceMotion} />
-            <SpeechBubble reduceMotion={reduceMotion} text="כתבו לי איזו חברה, מה הקוד, כמה שילמתם וכמה הקופון שווה. יש כמה? כתבו את כולם יחד." />
+            <SpeechBubble reduceMotion={reduceMotion} text="איזו חברה, מה הקוד, כמה שילמתם וכמה הוא שווה. יש כמה? כתבו את כולם." />
           </View>
           <TextInput multiline value={text} onChangeText={setText} placeholder={'למשל: יש לי קופון ל־Wolt, קוד WOLT123, שילמתי 70 ₪ והוא שווה 100 ₪'} placeholderTextColor={theme.textSubtle} style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]} accessibilityLabel="תיאור הקופונים" />
           <PrimaryButton label={parseCoupon.isPending ? "רגע, מסדרים את הקופונים..." : "למצוא את הקופונים שלי"} onPress={identify} disabled={!canIdentify || parseCoupon.isPending} loading={parseCoupon.isPending} />
         </Animated.View>
 
         : <View style={styles.panel}>
-          <View style={styles.successVisual}><CharacterScene state="success" reduceMotion={reduceMotion} /></View>
+          <View style={styles.successVisual}><CharacterScene state="success" reduceMotion={reduceMotion} compact /></View>
           {/* Overlaid on the whole panel rather than on the illustration: the
               illustration clips its overflow, and confetti that stops falling
               120pt in reads as a glitch. */}
@@ -254,7 +254,10 @@ function ChoiceCard({ label, hint, Icon, selected, onPress, index, reduceMotion 
     scale.value = selected ? withSequence(withSpring(1.04, { damping: 9 }), withSpring(1)) : withSpring(1);
   }, [reduceMotion, scale, selected]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  return <Animated.View entering={reduceMotion ? undefined : FadeInDown.delay(index * 70).duration(260)} style={style}>
+  // Two wrappers on purpose: a layout animation and an animated transform on
+  // the same view fight over `transform`, and Reanimated warns about it.
+  return <Animated.View entering={reduceMotion ? undefined : FadeInDown.delay(index * 70).duration(260)}>
+    <Animated.View style={style}>
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }} style={({ pressed }) => [styles.choiceCard, selected && styles.choiceCardSelected, pressed && styles.pressed]}>
       {Icon ? <View style={[styles.choiceIcon, selected && styles.choiceIconSelected]}><Icon size={20} color={selected ? "#fff" : palette.primary} /></View> : null}
       <View style={styles.choiceCopy}>
@@ -263,6 +266,7 @@ function ChoiceCard({ label, hint, Icon, selected, onPress, index, reduceMotion 
       </View>
       {selected ? <View style={styles.choiceCheck}><Check size={15} color="#fff" /></View> : null}
     </Pressable>
+    </Animated.View>
   </Animated.View>;
 }
 
@@ -271,32 +275,6 @@ function CouponSummary({ coupon }: { coupon: ParsedCoupon }) {
 }
 function Field(props: React.ComponentProps<typeof TextInput> & { label: string }) { return <View style={styles.field}><Text style={styles.fieldLabel}>{props.label}</Text><TextInput {...props} placeholderTextColor="#8993A4" style={styles.fieldInput} /></View>; }
 function PrimaryButton({ label, onPress, disabled, loading }: { label: string; onPress: () => void; disabled?: boolean; loading?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, disabled && styles.primaryButtonDisabled, pressed && styles.pressed]}>{loading ? <ActivityIndicator color="#fff" /> : <><Sparkles size={19} color="#fff" /><Text style={styles.primaryButtonText}>{label}</Text></>}</Pressable>; }
-
-function CharacterScene({ state, reduceMotion }: { state: CharacterState; reduceMotion: boolean }) {
-  const blueY = useSharedValue(0); const blueRotation = useSharedValue(0); const mintY = useSharedValue(0); const mintScale = useSharedValue(1); const baseScale = useSharedValue(1);
-  useEffect(() => {
-    if (reduceMotion) { blueY.value = 0; blueRotation.value = 0; mintY.value = 0; mintScale.value = 1; baseScale.value = 1; return; }
-    if (state === "success" || state === "cheering") {
-      blueY.value = withSequence(withSpring(-12), withSpring(0));
-      mintY.value = withSequence(withSpring(-22), withSpring(0), withSpring(-8), withSpring(0));
-      baseScale.value = withSequence(withSpring(1.06), withSpring(1));
-      return;
-    }
-    // "thinking" is the same idle sway, slowed down and with a wider tilt —
-    // enough to read as considering rather than talking at you.
-    const duration = state === "scanning" ? 480 : state === "thinking" ? 1000 : 720;
-    const tilt = state === "thinking" ? 5 : 3;
-    blueY.value = withRepeat(withSequence(withTiming(-5, { duration }), withTiming(2, { duration })), -1, true);
-    blueRotation.value = withRepeat(withSequence(withTiming(-tilt, { duration }), withTiming(tilt - 1, { duration })), -1, true);
-    mintY.value = withRepeat(withSequence(withTiming(-8, { duration: duration + 80 }), withTiming(1, { duration: duration + 80 })), -1, true);
-    mintScale.value = withRepeat(withSequence(withTiming(1.035, { duration: 260, easing: Easing.inOut(Easing.ease) }), withTiming(1, { duration: 260 })), -1, true);
-  }, [baseScale, blueRotation, blueY, mintScale, mintY, reduceMotion, state]);
-  const blueStyle = useAnimatedStyle(() => ({ transform: [{ translateY: blueY.value }, { rotate: `${blueRotation.value}deg` }] }));
-  const mintStyle = useAnimatedStyle(() => ({ transform: [{ translateY: mintY.value }, { scale: mintScale.value }] }));
-  const baseStyle = useAnimatedStyle(() => ({ transform: [{ scale: baseScale.value }] }));
-  const success = state === "success";
-  return <View style={styles.characterScene}><Animated.Image source={success ? require("../../../assets/onboarding/coupon-saved.png") : require("../../../assets/onboarding/ai-scan-coupon.png")} style={[styles.sceneBase, baseStyle]} resizeMode="contain" /><Animated.Image source={require("../../../assets/onboarding/blue-investigator-cutout.png")} style={[styles.sceneCharacter, styles.sceneBlue, blueStyle]} resizeMode="contain" /><Animated.Image source={require("../../../assets/onboarding/mint-helper-cutout.png")} style={[styles.sceneCharacter, styles.sceneMint, mintStyle]} resizeMode="contain" /></View>;
-}
 
 const styles = StyleSheet.create({
   flex: { flex: 1 }, safe: { flex: 1 }, content: { flexGrow: 1, padding: 20, paddingBottom: 40 },
