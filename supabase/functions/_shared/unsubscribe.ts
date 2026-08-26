@@ -4,6 +4,8 @@
 // manage-unsubscribe, which is reachable without a session because the link is
 // clicked straight from an inbox.
 
+import { unsubscribeUrl } from './appLinks.ts';
+
 const textEncoder = new TextEncoder();
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -33,7 +35,7 @@ export async function buildUnsubscribeUrl(userId: number, email: string): Promis
   if (!appBaseUrl) return null;
   const token = await createUnsubscribeToken(userId, email);
   if (!token) return null;
-  return `${appBaseUrl.replace(/\/$/, '')}/unsubscribe?token=${encodeURIComponent(token)}`;
+  return unsubscribeUrl(appBaseUrl, token);
 }
 
 /**
