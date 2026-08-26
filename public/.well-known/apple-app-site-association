@@ -6,6 +6,7 @@
         "components": [
           { "/": "/unsubscribe", "comment": "email preference centre" },
           { "/": "/unsubscribe?*", "comment": "email preference centre, with token" },
+          { "/": "/coupons", "comment": "the coupon list" },
           { "/": "/coupons/*", "comment": "a single coupon" },
           { "/": "/notifications", "comment": "the in-app notification list" },
           { "/": "/notification-settings", "comment": "notification preferences" }

@@ -55,7 +55,7 @@
             {
               "scheme": "https",
               "host": "coupons.itaykarkason.com",
-              "pathPrefix": "/coupons/"
+              "pathPrefix": "/coupons"
             },
             {
               "scheme": "https",
