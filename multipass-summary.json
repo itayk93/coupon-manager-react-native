@@ -1,0 +1,26 @@
+{
+  "subject": "סיכום עדכון Multipass יומי — 26.8.2026",
+  "run_date": "26.8.2026, 13:29:26",
+  "started_at": "2026-08-26T10:29:07.824Z",
+  "ended_at": "2026-08-26T10:29:26.669Z",
+  "headless": true,
+  "selected": 1,
+  "scanned": 1,
+  "updated": 1,
+  "failed": 0,
+  "skipped": 13,
+  "no_change": false,
+  "items": [
+    {
+      "coupon_id": 3691,
+      "company": "Carrefour",
+      "old_usage": 241.93,
+      "new_usage": 250,
+      "delta": 8.069999999999993,
+      "value": 250,
+      "remaining_value": 0
+    }
+  ],
+  "failures": [],
+  "processed_coupons": 1
+}
