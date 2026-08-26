@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -10,24 +10,17 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Building2, ChevronLeft, Tag as TagIcon, Plus, X } from "lucide-react-native";
+import { Building2, ChevronLeft, Plus, X } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { DateField } from "@/components/ui/DateField";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
-import {
-  useAddCoupon,
-  useCoupon,
-  useUpdateCoupon,
-  DecryptedCoupon,
-} from "@/hooks/useCoupons";
-import { useCouponTags, useSetCouponTags } from "@/hooks/useTags";
+import { useCoupon, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCouponForm } from "@/hooks/useCouponForm";
+import { AUTO_PROVIDERS } from "@/lib/couponForm";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { notify } from "@/lib/notify";
-import { clearCouponDraft, loadCouponDraft, saveCouponDraft } from "@/lib/couponDraft";
 
 type CouponFormProps = {
   existingCoupon?: DecryptedCoupon;
@@ -37,34 +30,6 @@ type CouponFormProps = {
   initialExpiration?: string;
   initialDescription?: string;
 };
-
-/**
- * Providers the balance scraper knows how to log into. Kept in sync with the
- * web form (`src/components/coupons/CouponForm.tsx`).
- */
-const AUTO_PROVIDERS = ["BuyMe", "Multipass", "Max"] as const;
-type AutoProvider = (typeof AUTO_PROVIDERS)[number];
-
-function normalizeAutoProvider(
-  value: string | null | undefined,
-  allowAutoUpdater: boolean
-): AutoProvider | null {
-  if (!allowAutoUpdater) return null;
-  return AUTO_PROVIDERS.includes(value as AutoProvider)
-    ? (value as AutoProvider)
-    : null;
-}
-
-function getDefaultAutoProvider(
-  company: string | null | undefined
-): AutoProvider | null {
-  const name = company?.trim().toLowerCase() || "";
-  if (name.includes("buyme") || name.includes("ביימי")) return "BuyMe";
-  if (name.includes("multipass") || name.includes("מולטיפאס")) return "Multipass";
-  if (name.includes("max") || name.includes("מקס")) return "Max";
-  if (name.includes("xtra") || name.includes("אקסטרה")) return "Multipass";
-  return null;
-}
 
 /**
  * Route entry for both `/coupons/add` and `/coupons/edit?couponId=`.
@@ -135,194 +100,50 @@ function CouponForm({
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
-  const isEditing = existingCoupon !== undefined;
 
-  const addCoupon = useAddCoupon();
-  const updateCoupon = useUpdateCoupon();
-  const setCouponTags = useSetCouponTags();
-  const { data: existingTags = [] } = useCouponTags(existingCoupon?.id);
-  const { user } = useAuth();
-  const showAutoUsageUpdater = user?.id === 1;
-
-  const [company, setCompany] = useState(
-    existingCoupon?.company || initialCompany || ""
-  );
-  const [code, setCode] = useState(existingCoupon?.code || initialCode || "");
-  const [value, setValue] = useState(
-    existingCoupon?.value ? String(existingCoupon.value) : initialValue || ""
-  );
-  const [cost, setCost] = useState(
-    existingCoupon?.cost !== undefined ? String(existingCoupon.cost) : "0"
-  );
-  // Sliced to `YYYY-MM-DD`: the date field (and the column) only carry the day,
-  // but older rows can come back with a time component attached.
-  const [expiration, setExpiration] = useState(
-    (existingCoupon?.expiration || initialExpiration || "").slice(0, 10)
-  );
-  const [description, setDescription] = useState(
-    existingCoupon?.description || initialDescription || ""
-  );
-  const [includeCardInfo, setIncludeCardInfo] = useState(
-    Boolean(existingCoupon?.cvv || existingCoupon?.card_exp)
-  );
-  const [cvv, setCvv] = useState(existingCoupon?.cvv || "");
-  const [cardExp, setCardExp] = useState(existingCoupon?.card_exp || "");
-  // The automatic balance updater only runs for the maintainer's own account,
-  // so everyone else stores `auto_download_details: null` and never sees it.
-  const [autoProvider, setAutoProvider] = useState<AutoProvider | null>(() =>
-    normalizeAutoProvider(
-      existingCoupon?.auto_download_details ??
-        getDefaultAutoProvider(existingCoupon?.company || initialCompany),
-      showAutoUsageUpdater
-    )
-  );
-  const [redemptionUrl, setRedemptionUrl] = useState(
-    existingCoupon?.buyme_coupon_url ||
-      existingCoupon?.strauss_coupon_url ||
-      existingCoupon?.xgiftcard_coupon_url ||
-      existingCoupon?.xtra_coupon_url ||
-      ""
-  );
-
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTagInput, setNewTagInput] = useState("");
-  const [isCompanyPickerOpen, setIsCompanyPickerOpen] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (isEditing) return;
-    void loadCouponDraft().then((draft) => {
-      if (!draft) return;
-      setCompany(draft.company);
-      setCode(draft.code);
-      setValue(draft.value);
-      setCost(draft.cost);
-      setExpiration(draft.expiration);
-      setDescription(draft.description);
-      setIncludeCardInfo(draft.includeCardInfo);
-      setCvv(draft.cvv);
-      setCardExp(draft.cardExp);
-      setRedemptionUrl(draft.redemptionUrl);
-    });
-  }, [isEditing]);
-
-  useEffect(() => {
-    if (existingTags.length > 0) {
-      setTags(existingTags.map((t) => t.name));
-    }
-  }, [existingTags]);
-
-  // Picking a company suggests its provider, but never overrides an explicit
-  // choice the user already made.
-  const handleSelectCompany = (name: string) => {
-    setCompany(name);
-    if (showAutoUsageUpdater && !autoProvider) {
-      setAutoProvider(getDefaultAutoProvider(name));
-    }
-  };
-
-  const handleAddTag = () => {
-    const trimmed = newTagInput.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
-      setNewTagInput("");
-    }
-  };
-
-  const handleRemoveTag = (tagName: string) => {
-    setTags(tags.filter((t) => t !== tagName));
-  };
-
-  const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!company.trim()) errs.company = "יש לבחור או להזין חברה";
-    if (!code.trim()) errs.code = "קוד קופון הוא שדה חובה";
-    if (!value.trim() || isNaN(Number(value)) || Number(value) < 0) {
-      errs.value = "יש להזין שווי תקין בש״ח";
-    }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
-
-    try {
-      if (isEditing && existingCoupon) {
-        await updateCoupon.mutateAsync({
-          id: existingCoupon.id,
-          updates: {
-            company: company.trim(),
-            code: code.trim(),
-            value: Number(value) || 0,
-            cost: Number(cost) || 0,
-            expiration: expiration.trim() || null,
-            description: description.trim() || null,
-            cvv: includeCardInfo ? cvv.trim() || null : null,
-            card_exp: includeCardInfo ? cardExp.trim() || null : null,
-            buyme_coupon_url: redemptionUrl.trim() || null,
-            auto_download_details: showAutoUsageUpdater ? autoProvider : null,
-            auto_update: showAutoUsageUpdater ? autoProvider !== null : false,
-          },
-        });
-
-        await setCouponTags.mutateAsync({
-          couponId: existingCoupon.id,
-          tagNames: tags,
-        });
-
-        router.back();
-      } else {
-        const created = await addCoupon.mutateAsync({
-          company: company.trim(),
-          code: code.trim(),
-          value: Number(value) || 0,
-          cost: Number(cost) || 0,
-          expiration: expiration.trim() || null,
-          description: description.trim() || null,
-          cvv: includeCardInfo ? cvv.trim() || null : null,
-          card_exp: includeCardInfo ? cardExp.trim() || null : null,
-          buyme_coupon_url: redemptionUrl.trim() || null,
-          auto_download_details: showAutoUsageUpdater ? autoProvider : null,
-          auto_update: showAutoUsageUpdater ? autoProvider !== null : false,
-          used_value: 0,
-          status: "פעיל",
-        });
-
-        const couponId = (created as any)?.id;
-        if (couponId && tags.length > 0) {
-          await setCouponTags.mutateAsync({
-            couponId,
-            tagNames: tags,
-          });
-        }
-
-        await clearCouponDraft();
-
-        // A new coupon usually arrives via the scanner, and going `back` would
-        // drop the user onto the scanner they are done with. Send them to the
-        // dashboard, where the coupon they just saved is now counted.
-        router.replace("/(tabs)");
-      }
-    } catch (e) {
-      console.error(e);
-      if (!isEditing) {
-        await saveCouponDraft({
-          company,
-          code,
-          value,
-          cost,
-          expiration,
-          description,
-          cvv,
-          cardExp,
-          redemptionUrl,
-          includeCardInfo,
-        });
-      }
-      notify.error("שגיאה בשמירת הקופון", "הטיוטה נשמרה. נסה שוב בעוד רגע.");
-    }
-  };
+  const {
+    isEditing,
+    showAutoUsageUpdater,
+    isSaving,
+    company,
+    code,
+    setCode,
+    value,
+    setValue,
+    cost,
+    setCost,
+    expiration,
+    setExpiration,
+    description,
+    setDescription,
+    includeCardInfo,
+    setIncludeCardInfo,
+    cvv,
+    setCvv,
+    cardExp,
+    setCardExp,
+    autoProvider,
+    setAutoProvider,
+    redemptionUrl,
+    setRedemptionUrl,
+    tags,
+    newTagInput,
+    setNewTagInput,
+    handleAddTag,
+    handleRemoveTag,
+    isCompanyPickerOpen,
+    setIsCompanyPickerOpen,
+    handleSelectCompany,
+    errors,
+    handleSubmit,
+  } = useCouponForm({
+    existingCoupon,
+    initialCompany,
+    initialCode,
+    initialValue,
+    initialExpiration,
+    initialDescription,
+  });
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -585,7 +406,7 @@ function CouponForm({
           <Button
             title={isEditing ? "שמור שינויים" : "הוסף קופון לארנק"}
             onPress={handleSubmit}
-            loading={addCoupon.isPending || updateCoupon.isPending}
+            loading={isSaving}
             style={{ marginTop: 18 }}
           />
         </View>

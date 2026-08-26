@@ -1,0 +1,95 @@
+/**
+ * The parts of the add/edit coupon form that are pure: which provider a company
+ * implies, whether the fields are valid, and what row they turn into.
+ *
+ * These lived inside the screen component, where they could only be exercised
+ * by rendering it. Out here they are ordinary functions with tests, which is
+ * what makes the rest of the form safe to move.
+ */
+
+/**
+ * Providers the balance scraper knows how to log into. Kept in sync with the
+ * web form (`src/components/coupons/CouponForm.tsx`).
+ */
+export const AUTO_PROVIDERS = ["BuyMe", "Multipass", "Max"] as const;
+export type AutoProvider = (typeof AUTO_PROVIDERS)[number];
+
+export function normalizeAutoProvider(
+  value: string | null | undefined,
+  allowAutoUpdater: boolean
+): AutoProvider | null {
+  if (!allowAutoUpdater) return null;
+  return AUTO_PROVIDERS.includes(value as AutoProvider)
+    ? (value as AutoProvider)
+    : null;
+}
+
+export function getDefaultAutoProvider(
+  company: string | null | undefined
+): AutoProvider | null {
+  const name = company?.trim().toLowerCase() || "";
+  if (name.includes("buyme") || name.includes("ביימי")) return "BuyMe";
+  if (name.includes("multipass") || name.includes("מולטיפאס")) return "Multipass";
+  if (name.includes("max") || name.includes("מקס")) return "Max";
+  if (name.includes("xtra") || name.includes("אקסטרה")) return "Multipass";
+  return null;
+}
+
+/** Every field the form edits, as the strings the inputs actually hold. */
+export type CouponFormFields = {
+  company: string;
+  code: string;
+  value: string;
+  cost: string;
+  expiration: string;
+  description: string;
+  includeCardInfo: boolean;
+  cvv: string;
+  cardExp: string;
+  redemptionUrl: string;
+  autoProvider: AutoProvider | null;
+};
+
+export type CouponFormErrors = Record<string, string>;
+
+export function validateCouponForm(fields: CouponFormFields): CouponFormErrors {
+  const errors: CouponFormErrors = {};
+  if (!fields.company.trim()) errors.company = "יש לבחור או להזין חברה";
+  if (!fields.code.trim()) errors.code = "קוד קופון הוא שדה חובה";
+  if (
+    !fields.value.trim() ||
+    isNaN(Number(fields.value)) ||
+    Number(fields.value) < 0
+  ) {
+    errors.value = "יש להזין שווי תקין בש״ח";
+  }
+  return errors;
+}
+
+/**
+ * The columns an edit writes. A new coupon is this plus the two values that
+ * only make sense once — `used_value` and `status`.
+ *
+ * `showAutoUsageUpdater` is passed rather than read from auth: the automatic
+ * balance updater only runs for the maintainer's own account, and everyone
+ * else must store `auto_download_details: null` no matter what the (hidden)
+ * picker happens to hold.
+ */
+export function buildCouponPayload(
+  fields: CouponFormFields,
+  showAutoUsageUpdater: boolean
+) {
+  return {
+    company: fields.company.trim(),
+    code: fields.code.trim(),
+    value: Number(fields.value) || 0,
+    cost: Number(fields.cost) || 0,
+    expiration: fields.expiration.trim() || null,
+    description: fields.description.trim() || null,
+    cvv: fields.includeCardInfo ? fields.cvv.trim() || null : null,
+    card_exp: fields.includeCardInfo ? fields.cardExp.trim() || null : null,
+    buyme_coupon_url: fields.redemptionUrl.trim() || null,
+    auto_download_details: showAutoUsageUpdater ? fields.autoProvider : null,
+    auto_update: showAutoUsageUpdater ? fields.autoProvider !== null : false,
+  };
+}
