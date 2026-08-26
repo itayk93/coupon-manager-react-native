@@ -1699,6 +1699,26 @@ export type Database = {
         Args: { p_coupon_id: number }
         Returns: undefined
       }
+      record_coupon_usage: {
+        Args: {
+          p_coupon_id: number
+          p_used_amount: number
+          p_details?: string | null
+          p_place_name?: string | null
+          p_place_address?: string | null
+          p_latitude?: number | null
+          p_longitude?: number | null
+          p_timestamp?: string | null
+        }
+        Returns: {
+          new_used: number
+          fully_used: boolean
+        }[]
+      }
+      set_coupon_tags: {
+        Args: { p_coupon_id: number; p_names: string[] }
+        Returns: undefined
+      }
       trigger_hourly_multipass_update: { Args: never; Returns: undefined }
     }
     Enums: {

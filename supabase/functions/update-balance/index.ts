@@ -256,7 +256,6 @@ Deno.serve(async (req: Request) => {
       await supabase
         .from('auto_update_runs')
         .update({
-          status: 'completed',
           finished_at: new Date().toISOString(),
           status: multipassCouponsToDispatch.length > 0 && !Deno.env.get('SCRAPER_SERVICE_URL') ? 'dispatched' : 'completed',
           updated_count: updated,
@@ -273,6 +272,13 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({ updated, failed, skipped });
   } catch (err) {
-    return jsonResponse({ error: String(err) }, 500);
+    // Auth failures get their own status; everything else is logged here and
+    // answered with a fixed string, because String(err) on a Postgres or
+    // upstream-scraper error hands the caller internals it has no claim to.
+    const message = err instanceof Error ? err.message : String(err);
+    if (message === 'UNAUTHENTICATED') return jsonResponse({ error: message }, 401);
+    if (message === 'FORBIDDEN') return jsonResponse({ error: message }, 403);
+    console.error('[update-balance] fatal:', err);
+    return jsonResponse({ error: 'INTERNAL_ERROR' }, 500);
   }
 });
