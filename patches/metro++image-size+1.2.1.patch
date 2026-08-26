@@ -20,3 +20,22 @@ index f2bfafe..437e9b5 100644
              imageSize = getImageSize(imageHeader[0]);
              imageOffset += imageHeader[1];
              result.images.push(imageSize);
+diff --git a/node_modules/metro/node_modules/image-size/dist/types/jxl.js b/node_modules/metro/node_modules/image-size/dist/types/jxl.js
+index f557b0a..badd0c6 100644
+--- a/node_modules/metro/node_modules/image-size/dist/types/jxl.js
++++ b/node_modules/metro/node_modules/image-size/dist/types/jxl.js
+@@ -24,7 +24,13 @@ function extractPartialStreams(input) {
+         if (!jxlpBox)
+             break;
+         partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
+-        offset = jxlpBox.offset + jxlpBox.size;
++        // A jxlp box declaring size 0 would leave the offset where it is and
++        // spin here forever while partialStreams grows. Advance past at least
++        // the box header, which findBox already does for the same reason.
++        const nextOffset = jxlpBox.offset + (jxlpBox.size > 0 ? jxlpBox.size : 8);
++        if (nextOffset <= offset)
++            break;
++        offset = nextOffset;
+     }
+     return partialStreams;
+ }

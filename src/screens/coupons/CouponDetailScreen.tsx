@@ -48,6 +48,7 @@ import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import {
   useCouponUsageHistory,
   useDeleteTransactionRecord,
+  useRecordUsage,
 } from "@/hooks/useCouponUsage";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useWidgetToggle } from "@/hooks/useWidgetToggle";
@@ -153,6 +154,7 @@ export function CouponDetailScreen() {
   const deleteCoupon = useDeleteCoupon();
   const updateCoupon = useUpdateCoupon();
   const deleteTx = useDeleteTransactionRecord();
+  const recordUsage = useRecordUsage();
   const widget = useWidgetToggle(coupon);
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
@@ -211,12 +213,24 @@ export function CouponDetailScreen() {
       "סימון כנוצל",
       "האם לסמן את כל יתרת הקופון כנוצלת?",
       async () => {
+        // Spend the remainder through the same path as any other usage, so the
+        // history and the coupon total agree. Writing used_value directly left
+        // the ledger short by exactly this amount, which is what
+        // missingUsageFromLedger then had to paper over.
+        if (remaining > 0) {
+          await recordUsage.mutateAsync({
+            couponId: coupon.id,
+            usedAmount: remaining,
+            details: "סימון יתרת הקופון כנוצלה",
+          });
+          return;
+        }
+
+        // Nothing left to spend: the coupon is already empty and only its
+        // status is out of date.
         await updateCoupon.mutateAsync({
           id: coupon.id,
-          updates: {
-            used_value: coupon.value,
-            status: "נוצל",
-          },
+          updates: { status: "נוצל" },
         });
       },
       "סמן כנוצל"
