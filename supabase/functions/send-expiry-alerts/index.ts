@@ -118,6 +118,21 @@ function preferencesFor(row: PreferenceRow | undefined, userId: number): Prefere
   };
 }
 
+/**
+ * Where the email's button should land.
+ *
+ * It used to be APP_BASE_URL itself, and the app claims no path at the site
+ * root — so iOS handed the tap to the browser instead of opening the installed
+ * app. `/coupons` and `/coupons/<id>` are both in the AASA file and the Android
+ * intent filters, so they open the app when it is installed and the website
+ * when it is not.
+ */
+function couponsLink(coupons: CouponRow[]): string | null {
+  const base = (Deno.env.get('APP_BASE_URL') || '').replace(/\/+$/, '');
+  if (!base) return null;
+  return coupons.length === 1 ? `${base}/coupons/${coupons[0].id}` : `${base}/coupons`;
+}
+
 function remainingFor(coupon: CouponRow): number {
   return Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
 }
@@ -396,7 +411,7 @@ Deno.serve(async (req: Request) => {
                 remaining: remainingFor(c),
                 expiration: c.expiration,
               })),
-              appUrl: Deno.env.get('APP_BASE_URL') || null,
+              appUrl: couponsLink(emailClaimed),
               unsubscribeUrl: await buildUnsubscribeUrl(user.id, user.email),
             }),
             await buildUnsubscribeHeaders(user.id, user.email),
