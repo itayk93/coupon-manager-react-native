@@ -39,6 +39,7 @@ import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
+import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
@@ -131,6 +132,7 @@ function RootLayoutNav() {
   const { isReady: authReady } = useAuthGuard();
   useWidgetSync();
   usePendingOnboardingCoupon();
+  useScreenTracking();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > 480;
   const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web");

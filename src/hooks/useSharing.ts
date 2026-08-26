@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CouponShare } from "@/integrations/supabase";
 import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
+import { logActivity } from "@/lib/activityLog";
 
 export type PopulatedShare = CouponShare & {
   coupon: { id: number; company: string; description: string | null; value: number; used_value: number; code: string; expiration: string | null };
@@ -34,7 +35,11 @@ export function useCreateShare() {
       await couponVault({ action: "create_share", couponId, recipientEmail });
       return true;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my_shares"] }),
+    onSuccess: (_result, { couponId }) => {
+      // The recipient's address is deliberately not recorded.
+      logActivity("share_coupon", { couponId });
+      queryClient.invalidateQueries({ queryKey: ["my_shares"] });
+    },
     onError: (error: any) => notify.error("שגיאה בשיתוף הקופון", error.message),
   });
 }
@@ -48,7 +53,10 @@ export function useRevokeShare() {
       await couponVault({ action: "revoke_share", id: shareId });
       return true;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my_shares"] }),
+    onSuccess: (_result, shareId) => {
+      logActivity("revoke_share", { metadata: { share_id: shareId } });
+      queryClient.invalidateQueries({ queryKey: ["my_shares"] });
+    },
     onError: (error: any) => notify.error("שגיאה בביטול השיתוף", error.message),
   });
 }

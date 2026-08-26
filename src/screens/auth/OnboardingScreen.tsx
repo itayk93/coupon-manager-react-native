@@ -15,6 +15,7 @@ import { setOnboardingCompleted } from "@/lib/onboardingStatus";
 import { estimateAnnualSavings, saveOnboardingPrefs, type OnboardingGoal, type OnboardingVolume } from "@/lib/onboardingPrefs";
 import { Confetti, CountUp } from "@/components/onboarding/Celebration";
 import { CharacterScene, type CharacterState } from "@/components/onboarding/CharacterRig";
+import { logActivity } from "@/lib/activityLog";
 
 type Mode = "profile" | "goal" | "volume" | "describe" | "preview";
 
@@ -154,6 +155,7 @@ export function OnboardingScreen() {
       redemptionUrl: "", includeCardInfo: Boolean(coupon.cvv || coupon.card_exp), origin: "onboarding", createdAt: new Date().toISOString(),
     })));
     await setOnboardingCompleted(identity);
+    logActivity("onboarding_complete");
     finish();
   };
 

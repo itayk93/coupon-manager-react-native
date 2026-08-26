@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { logActivity } from "@/lib/activityLog";
 
 export function RegisterScreen() {
   const router = useRouter();
@@ -80,6 +81,10 @@ export function RegisterScreen() {
       if (!authData.user?.identities?.length) {
         throw new Error("כבר קיים חשבון עם האימייל הזה. התחברו בשיטה הקיימת וקשרו שיטה נוספת מהפרופיל.");
       }
+
+      logActivity("register_success", {
+        metadata: { needs_verification: !authData.session },
+      });
 
       if (!authData.session) {
         router.replace({

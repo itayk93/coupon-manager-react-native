@@ -26,6 +26,7 @@ import { notify } from "@/lib/notify";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
+import { logActivity } from "@/lib/activityLog";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -178,6 +179,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     setOpenCode(coupon);
     setCopied(false);
     void markCodeViewed(coupon.id);
+    logActivity("view_coupon_code", { couponId: coupon.id });
   };
 
   const handleCopy = async () => {

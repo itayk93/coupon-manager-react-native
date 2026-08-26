@@ -20,6 +20,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { signInWithSocialProvider } from "@/lib/socialAuth";
+import { logActivity } from "@/lib/activityLog";
 
 export function LoginScreen() {
   const router = useRouter();
@@ -50,6 +51,7 @@ export function LoginScreen() {
     setSocialLoading(provider);
     try {
       await signInWithSocialProvider(provider);
+      logActivity("login_success", { metadata: { method: provider } });
       if (Platform.OS !== "web") {
         router.replace({ pathname: "/(auth)/onboarding", params: { social: provider } });
       }
@@ -70,6 +72,7 @@ export function LoginScreen() {
     try {
       const user = await signInLegacy(email, password);
       setLegacySession(user);
+      logActivity("login_success", { metadata: { method: "password" } });
     } catch (err: any) {
       notify.error("שגיאת התחברות", err.message || "אימייל או סיסמה שגויים");
     } finally {

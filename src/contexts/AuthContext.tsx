@@ -6,6 +6,7 @@ import {
   storeLegacyUser,
 } from "@/lib/legacyAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { flushActivityLog, logActivity } from "@/lib/activityLog";
 
 type AuthContextType = {
   session: LegacyUser | null;
@@ -103,6 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Logged and flushed before the session is torn down: the log endpoint
+      // authenticates with the JWT, so anything still queued afterwards has
+      // nowhere to go.
+      logActivity("logout_success");
+      await flushActivityLog();
       await supabase.auth.signOut();
       await clearLegacyUser();
       setSession(null);

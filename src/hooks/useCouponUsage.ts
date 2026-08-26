@@ -11,6 +11,7 @@ import {
   usedValueFromLedger,
 } from "@/lib/couponLedger";
 import { DecryptedCoupon } from "./useCoupons";
+import { logActivity } from "@/lib/activityLog";
 
 export type ConsolidatedRow = {
   id: number | string;
@@ -326,7 +327,11 @@ export function useRecordUsage() {
 
       return { newUsed, fullyUsed };
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      logActivity("record_coupon_usage", {
+        couponId: variables.couponId,
+        metadata: { amount: variables.usedAmount, fully_used: data.fullyUsed },
+      });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
@@ -410,6 +415,10 @@ export function useDeleteTransactionRecord() {
       return { couponId };
     },
     onSuccess: (_data, variables) => {
+      logActivity("delete_coupon_usage_record", {
+        couponId: variables.couponId,
+        metadata: { source: variables.sourceTable },
+      });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
