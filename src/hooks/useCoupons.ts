@@ -5,6 +5,7 @@ import { matchCompanyName } from "@/lib/companyMatch";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
+import { logActivity } from "@/lib/activityLog";
 
 export type DecryptedCoupon = Omit<
   Coupon,
@@ -120,7 +121,11 @@ export function useAddCoupon() {
 
       return couponVault<DecryptedCoupon>({ action: "create", coupon: couponToInsert });
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
+      logActivity("add_coupon_submit", {
+        couponId: (created as any)?.id ?? null,
+        metadata: { company: String((created as any)?.company || "") },
+      });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {
@@ -182,6 +187,14 @@ export function useUpdateCoupon() {
       }
       notify.error("שגיאה בעדכון הקופון", error.message);
     },
+    onSuccess: (_data, { id, updates }) => {
+      // Which fields changed, never their values — an edit to a code must not
+      // put the code in the activity log.
+      logActivity("edit_coupon_submit", {
+        couponId: id,
+        metadata: { fields: Object.keys(updates).join(",") },
+      });
+    },
     onSettled: (_data, _error, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       queryClient.invalidateQueries({ queryKey: ["coupon", id] });
@@ -206,7 +219,8 @@ export function useDeleteCoupon() {
       if (error) throw error;
       return true;
     },
-    onSuccess: () => {
+    onSuccess: (_result, id) => {
+      logActivity("delete_coupon", { couponId: id });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {
@@ -234,6 +248,7 @@ export function useBulkDeleteCoupons() {
       return count ?? ids.length;
     },
     onSuccess: (deletedCount) => {
+      logActivity("delete_coupon", { metadata: { bulk: true, count: deletedCount } });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {

@@ -56,6 +56,7 @@ import { isWidgetSupported } from "../../../modules/coupon-widget";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { logActivity } from "@/lib/activityLog";
 
 function formatIls(value: number) {
   return `${value.toFixed(2)} ₪`;
@@ -169,7 +170,9 @@ export function CouponDetailScreen() {
   // Feeds the automatic balance updater, same as the legacy app.
   const { markDetailViewed } = useCouponViewTracking();
   React.useEffect(() => {
-    if (couponId !== undefined) void markDetailViewed(couponId);
+    if (couponId === undefined) return;
+    void markDetailViewed(couponId);
+    logActivity("view_coupon", { couponId });
   }, [couponId, markDetailViewed]);
 
   if (isLoading || !coupon) {
@@ -217,6 +220,7 @@ export function CouponDetailScreen() {
         // history and the coupon total agree. Writing used_value directly left
         // the ledger short by exactly this amount, which is what
         // missingUsageFromLedger then had to paper over.
+        logActivity("mark_coupon_as_used", { couponId: coupon.id });
         if (remaining > 0) {
           await recordUsage.mutateAsync({
             couponId: coupon.id,
@@ -244,6 +248,9 @@ export function CouponDetailScreen() {
       coupon.xgiftcard_coupon_url ||
       coupon.xtra_coupon_url;
     if (url) {
+      // The URL itself is a redemption secret, so only the fact of the tap and
+      // which coupon it was are recorded.
+      logActivity("open_redemption_url", { couponId: coupon.id });
       await WebBrowser.openBrowserAsync(url);
     }
   };

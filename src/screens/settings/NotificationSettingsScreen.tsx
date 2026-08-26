@@ -25,6 +25,7 @@ import {
   NOTIFICATION_WINDOWS as WINDOW_OPTIONS,
   DAILY_REMINDER_DAYS,
 } from "@/lib/notificationWindows";
+import { logActivity } from "@/lib/activityLog";
 
 function ToggleRow({
   label,
@@ -131,6 +132,7 @@ export function NotificationSettingsScreen() {
         if (pwa.isSupported) await pwa.disable();
       }
       await updatePrefs.mutateAsync({ push: next });
+      logActivity(next ? "enable_push" : "disable_push");
     } catch (error: any) {
       notify.error("שגיאה בהפעלת Push", error.message);
     }
