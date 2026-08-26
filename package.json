@@ -24,6 +24,7 @@
     "build:ios:device": "./build-ios.command",
     "test": "vitest run",
     "check:links": "node scripts/check-deep-links.mjs",
+    "e2e:activity-log": "node scripts/e2e-activity-log.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.native.json",
     "multipass:daily": "HEADLESS=true node scripts/run-daily-multipass.mjs"
   },

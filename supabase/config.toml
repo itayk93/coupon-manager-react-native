@@ -63,3 +63,9 @@ verify_jwt = false
 # EXPIRY_CRON_TOKEN header instead. The function admits nobody else — a caller
 # without that token must pass requireAdmin() or be the service role.
 verify_jwt = false
+
+[functions.log-activity]
+# What the user did and which screens they opened. The account, IP and device
+# are taken from the request, never from the body, which is the reason this is
+# a function and not an insert from the app.
+verify_jwt = true
