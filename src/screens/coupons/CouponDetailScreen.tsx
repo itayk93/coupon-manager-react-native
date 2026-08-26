@@ -429,7 +429,7 @@ export function CouponDetailScreen() {
             <Text style={styles.actionBtnTextWhite}>דיווח שימוש</Text>
           </TouchableOpacity>
 
-          {!isFullyUsed ? (
+          {!isFullyUsed && coupon.is_one_time ? (
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleMarkAsUsed}

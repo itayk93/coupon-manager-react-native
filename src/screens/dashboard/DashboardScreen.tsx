@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
+import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
@@ -85,6 +86,8 @@ export function DashboardScreen() {
     return visibleCoupons.filter((c) => c.company === selectedCompany);
   }, [visibleCoupons, selectedCompany]);
 
+  const onboardingPending = useOnboardingPending();
+
   const handleSelectCompany = (company: string) => {
     setSheetCompany(company);
   };
@@ -105,8 +108,13 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* Expiring-soon reminder, dismissible for the rest of the day */}
-        <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
+        {/* One banner at a time. The walkthrough prompt goes away by itself
+            once the first coupon is in, and stacking it above the expiry
+            warning turned the top of a new account into a wall of notices. */}
+        <OnboardingBanner />
+        {onboardingPending ? null : (
+          <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
+        )}
 
         {/* Wallet Hero Card */}
         <WalletHeroCard
@@ -208,7 +216,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    // Clears the floating notification bell, which is absolutely positioned
+    // over this content and would otherwise sit on top of the first card.
+    paddingTop: 56,
     paddingBottom: 32,
   },
   sectionHeader: {

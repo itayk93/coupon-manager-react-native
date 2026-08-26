@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Linking,
   View,
   Text,
   StyleSheet,
@@ -88,9 +89,39 @@ export function NotificationSettingsScreen() {
     updatePrefs.mutate({ windows: next.sort((a, b) => b - a) });
   };
 
+  /**
+   * Whether push can actually reach this device — not merely whether the
+   * account would like it to.
+   *
+   * The switch used to read `prefs.push`, which defaults to true for every new
+   * account. It therefore showed "on" from the very first launch, so nobody
+   * ever flipped it on, so the code that asks the OS for permission and
+   * registers the device never ran. The result was 132 accounts, zero
+   * registered devices, and a switch that promised notifications nothing was
+   * able to deliver.
+   */
+  const deviceReady = native.isSupported
+    ? native.notificationsEnabled
+    : pwa.isSupported
+      ? pwa.notificationsEnabled
+      : false;
+  const pushOn = prefs.push && deviceReady;
+  const blockedBySystem = native.isSupported && native.permission === "denied";
+
   const handlePushToggle = async (next: boolean) => {
     try {
       if (next) {
+        // iOS only ever shows the permission dialog once. After a refusal the
+        // request resolves as denied without any prompt, so send the user to
+        // the place where it can actually be changed.
+        if (blockedBySystem) {
+          notify.error(
+            "ההתראות חסומות בהגדרות המכשיר",
+            "צריך להפעיל אותן באפליקציית ההגדרות כדי לקבל תזכורות.",
+          );
+          void Linking.openSettings();
+          return;
+        }
         // Prefer the native channel on iOS/Android, web push on web.
         if (native.isSupported) await native.enable();
         else if (pwa.isSupported) await pwa.enable();
@@ -125,7 +156,7 @@ export function NotificationSettingsScreen() {
           <ToggleRow
             label="התראות Push"
             icon={<Smartphone size={20} color={theme.textMuted} />}
-            value={prefs.push}
+            value={pushOn}
             onValueChange={handlePushToggle}
             theme={theme}
           />
@@ -191,17 +222,15 @@ export function NotificationSettingsScreen() {
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <Text style={[styles.groupTitle, { color: theme.textMuted }]}>סטטוס Push</Text>
           <Text style={[styles.statusText, { color: theme.textMuted }]}>
-            {native.isSupported
-              ? native.notificationsEnabled
-                ? "Push נייטיב פעיל"
-                : "Push נייטיב לא פעיל"
-              : pwa.isSupported
-                ? pwa.notificationsEnabled
-                  ? "Web Push פעיל"
-                  : "Web Push לא פעיל"
-                : "Push לא נתמך"}
+            {!native.isSupported && !pwa.isSupported
+              ? "Push לא נתמך במכשיר הזה"
+              : deviceReady
+                ? "המכשיר הזה רשום לקבלת התראות"
+                : blockedBySystem
+                  ? "ההתראות חסומות בהגדרות המכשיר"
+                  : "המכשיר הזה לא רשום — הפעל את המתג למעלה"}
           </Text>
-          {(native.isSupported || pwa.isSupported) && (
+          {(native.isSupported || pwa.isSupported) && deviceReady && (
             <TouchableOpacity
               onPress={() => {
                 if (native.isSupported) native.sendTest().catch((e) => notify.error("שגיאה", e.message));

@@ -23,10 +23,11 @@ function loadEnvFile(filePath) {
 }
 
 function shekel(value) {
-  return new Intl.NumberFormat("he-IL", {
+  const amount = new Intl.NumberFormat("he-IL", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
+  return `₪ ${amount}`;
 }
 
 function escapeHtml(value) {
@@ -49,11 +50,6 @@ function parseSummaryArg() {
 function buildHtml(summary) {
   const positiveItems = summary.items || [];
   const noChange = Boolean(summary.no_change) || positiveItems.length === 0;
-  const updatedCount = Number(summary.updated || 0);
-  const selectedCount = Number(summary.selected || 0);
-  const scannedCount = Number(summary.scanned || 0);
-  const failedCount = Number(summary.failed || 0);
-  const skippedCount = Number(summary.skipped || 0);
   const totalDelta = positiveItems.reduce((sum, item) => sum + Number(item.delta || 0), 0);
   const dominantValue = positiveItems.reduce(
     (sum, item) => sum + Number(item.remaining_value || 0),
@@ -72,24 +68,33 @@ function buildHtml(summary) {
             <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse" dir="rtl">
               <tr>
                 <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">שימוש קודם</td>
-                <td style="padding:8px 0;color:#101828;font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.old_usage))} ₪</td>
+                <td style="padding:8px 0;color:#101828;font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.old_usage))}</td>
               </tr>
               <tr>
                 <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">שימוש חדש</td>
-                <td style="padding:8px 0;color:#101828;font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.new_usage))} ₪</td>
+                <td style="padding:8px 0;color:#101828;font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.new_usage))}</td>
               </tr>
               <tr>
                 <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">דלתא</td>
-                <td style="padding:8px 0;color:#16a34a;font-size:16px;font-weight:800;text-align:left;direction:ltr">+${escapeHtml(shekel(item.delta))} ₪</td>
+                <td style="padding:8px 0;color:#16a34a;font-size:16px;font-weight:800;text-align:left;direction:ltr">+${escapeHtml(shekel(item.delta))}</td>
               </tr>
               <tr>
                 <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">ערך</td>
-                <td style="padding:8px 0;color:#101828;font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.value))} ₪</td>
+                <td style="padding:8px 0;color:#101828;font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.value))}</td>
               </tr>
               <tr>
                 <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">יתרה</td>
-                <td style="padding:8px 0;color:${Number(item.remaining_value || 0) <= 0 ? "#b91c1c" : "#154a8f"};font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.remaining_value))} ₪</td>
+                <td style="padding:8px 0;color:${Number(item.remaining_value || 0) <= 0 ? "#b91c1c" : "#154a8f"};font-size:16px;font-weight:800;text-align:left;direction:ltr">${escapeHtml(shekel(item.remaining_value))}</td>
               </tr>
+              ${item.place_name ? `<tr>
+                <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">בית עסק</td>
+                <td style="padding:8px 0;color:#101828;font-size:14px;font-weight:700;text-align:left">${escapeHtml(item.place_name)}</td>
+              </tr>` : ""}
+              ${item.place_address ? `<tr>
+                <td style="padding:8px 0;color:#667085;font-size:14px;font-weight:600">כתובת</td>
+                <td style="padding:8px 0;color:#101828;font-size:13px;font-weight:600;text-align:left">${escapeHtml(item.place_address)}</td>
+              </tr>
+              ` : ""}
             </table>
           </div>
         </div>`;
@@ -120,32 +125,9 @@ function buildHtml(summary) {
         <div style="padding:18px 22px 0;background:#ffffff">
           <div style="background:#ffffff;border:1px solid #e6e9ef;border-radius:18px;padding:18px;margin-bottom:16px">
             <div style="color:#667085;font-size:13px;font-weight:700;margin-bottom:4px">יתרה זמינה אחרי העדכון</div>
-            <div style="color:#101828;font-size:30px;line-height:1.1;font-weight:800">${escapeHtml(shekel(dominantValue))} ₪</div>
-            <div style="color:#98a2b3;font-size:12px;margin-top:4px">${noChange ? "בלי שימוש חדש" : `סה\"כ דלתא חדשה ${escapeHtml(shekel(totalDelta))} ₪`}</div>
+            <div style="color:#101828;font-size:30px;line-height:1.1;font-weight:800;direction:ltr;text-align:right">${escapeHtml(shekel(dominantValue))}</div>
+            <div style="color:#98a2b3;font-size:12px;margin-top:4px">${noChange ? "בלי שימוש חדש" : `סה\"כ דלתא חדשה ${escapeHtml(shekel(totalDelta))}`}</div>
           </div>
-        </div>
-
-        <div style="padding:0 22px 18px">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:12px 0;table-layout:fixed;margin-bottom:18px" dir="rtl">
-            <tr>
-              <td style="background:#ffffff;border:1px solid #e6e9ef;border-radius:16px;padding:14px 10px;text-align:right;vertical-align:top">
-                <div style="color:#667085;font-size:12px;font-weight:700">קופונים שנבחרו</div>
-                <div style="color:#101828;font-size:24px;font-weight:800;margin-top:8px">${escapeHtml(selectedCount)}</div>
-              </td>
-              <td style="background:#ffffff;border:1px solid #e6e9ef;border-radius:16px;padding:14px 10px;text-align:right;vertical-align:top">
-                <div style="color:#667085;font-size:12px;font-weight:700">נסרקו</div>
-                <div style="color:#101828;font-size:24px;font-weight:800;margin-top:8px">${escapeHtml(scannedCount)}</div>
-              </td>
-              <td style="background:#ffffff;border:1px solid #e6e9ef;border-radius:16px;padding:14px 10px;text-align:right;vertical-align:top">
-                <div style="color:#667085;font-size:12px;font-weight:700">עודכנו</div>
-                <div style="color:#1f6fd1;font-size:24px;font-weight:800;margin-top:8px">${escapeHtml(updatedCount)}</div>
-              </td>
-              <td style="background:#ffffff;border:1px solid #e6e9ef;border-radius:16px;padding:14px 10px;text-align:right;vertical-align:top">
-                <div style="color:#667085;font-size:12px;font-weight:700">נכשלו</div>
-                <div style="color:${failedCount > 0 ? "#dc2626" : "#101828"};font-size:24px;font-weight:800;margin-top:8px">${escapeHtml(failedCount)}</div>
-              </td>
-            </tr>
-          </table>
         </div>
 
         <div style="padding:0 22px 22px">
@@ -155,13 +137,8 @@ function buildHtml(summary) {
           ${failuresHtml}
         </div>
 
-        <div style="padding:18px 22px 22px;background:#f2f3fd;border-top:1px solid #e6e9ef">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;color:#475467;font-size:14px;line-height:1.6" dir="rtl">
-            <tr><td style="padding:6px 0;font-weight:700;color:#344054">headless</td><td style="padding:6px 0;text-align:left;direction:ltr;color:#101828;font-weight:700">${escapeHtml(summary.headless ? "true" : "false")}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:700;color:#344054">דולגו</td><td style="padding:6px 0;text-align:left;direction:ltr;color:#101828;font-weight:700">${escapeHtml(skippedCount)}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:700;color:#344054">התחלה</td><td style="padding:6px 0;text-align:left;direction:ltr;color:#101828">${escapeHtml(summary.started_at || "")}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:700;color:#344054">סיום</td><td style="padding:6px 0;text-align:left;direction:ltr;color:#101828">${escapeHtml(summary.ended_at || "")}</td></tr>
-          </table>
+        <div style="padding:18px 22px 22px;background:#f2f3fd;border-top:1px solid #e6e9ef;color:#475467;font-size:13px;line-height:1.6">
+          ${escapeHtml(summary.ended_at || summary.started_at || "")}
         </div>
       </div>
     </div>
