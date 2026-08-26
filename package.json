@@ -23,6 +23,7 @@
     "build:sim:ios": "eas build --profile development-simulator --platform ios",
     "build:ios:device": "./build-ios.command",
     "test": "vitest run",
+    "check:links": "node scripts/check-deep-links.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.native.json"
   },
   "dependencies": {
