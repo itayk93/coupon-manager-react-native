@@ -2,6 +2,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router/js-tabs";
 import { BarChart3, Home, Share2, Ticket, User } from "lucide-react-native";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { OnboardingBanner } from "@/components/layout/OnboardingBanner";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -17,6 +18,7 @@ export default function TabsLayout() {
   return (
     <View style={[styles.shell, { backgroundColor: theme.background }]}>
       <AppHeader />
+      <OnboardingBanner />
       <Tabs
       // Declaration order is display order; reversed so דשבורד lands on the
       // right, where Hebrew starts.

@@ -50,6 +50,9 @@ export function LoginScreen() {
     setSocialLoading(provider);
     try {
       await signInWithSocialProvider(provider);
+      if (Platform.OS !== "web") {
+        router.replace({ pathname: "/(auth)/onboarding", params: { social: provider } });
+      }
     } catch (err: any) {
       notify.error(
         provider === "google" ? "התחברות עם Google" : "התחברות עם Apple",

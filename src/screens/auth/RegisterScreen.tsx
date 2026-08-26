@@ -82,12 +82,15 @@ export function RegisterScreen() {
       }
 
       if (!authData.session) {
-        notify.success("נשלח אליכם אימייל לאישור החשבון");
-        router.replace("/(auth)/login");
+        router.replace({
+          pathname: "/(auth)/onboarding",
+          params: { pendingVerification: normalizedEmail },
+        });
         return;
       }
 
       await refreshUser();
+      router.replace("/(auth)/onboarding");
     } catch (err: any) {
       notify.error("שגיאה בהרשמה", err.message || "אירעה שגיאה בעת ההרשמה");
     } finally {

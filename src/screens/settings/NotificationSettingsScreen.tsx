@@ -270,8 +270,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   windowRow: {
-    flexDirection: "row",
-    direction: "rtl",
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "flex-start",
     gap: 12,
