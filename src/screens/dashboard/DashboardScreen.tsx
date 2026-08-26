@@ -13,6 +13,7 @@ import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
+import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
@@ -113,7 +114,12 @@ export function DashboardScreen() {
             warning turned the top of a new account into a wall of notices. */}
         <OnboardingBanner />
         {onboardingPending ? null : (
-          <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
+          <>
+            <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
+            {/* Asked only once there is something in the wallet worth
+                protecting — see PushNudgeBanner. */}
+            <PushNudgeBanner hasCoupons={coupons.length > 0} />
+          </>
         )}
 
         {/* Wallet Hero Card */}
