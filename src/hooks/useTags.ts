@@ -50,26 +50,6 @@ export function useCouponTags(couponId: number | undefined) {
   });
 }
 
-async function getOrCreateTag(name: string): Promise<Tag> {
-  const trimmed = name.trim();
-  const { data: existing } = await supabase
-    .from("tag")
-    .select(TAG_COLUMNS)
-    .eq("name", trimmed)
-    .maybeSingle();
-
-  if (existing) return existing as Tag;
-
-  const { data, error } = await supabase
-    .from("tag")
-    .insert({ name: trimmed, count: 0 })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as Tag;
-}
-
 export function useSetCouponTags() {
   const queryClient = useQueryClient();
 
@@ -77,39 +57,16 @@ export function useSetCouponTags() {
     mutationFn: async ({ couponId, tagNames }: { couponId: number; tagNames: string[] }) => {
       const names = Array.from(new Set(tagNames.map((n) => n.trim()).filter(Boolean)));
 
-      const { data: currentLinks, error: linksError } = await supabase
-        .from("coupon_tags")
-        .select("tag_id")
-        .eq("coupon_id", couponId);
-      if (linksError) throw linksError;
-
-      const currentTagIds = Array.from(new Set((currentLinks || []).map((row) => row.tag_id)));
-      const { data: currentTagsData, error: currentTagsError } =
-        currentTagIds.length > 0
-          ? await supabase.from("tag").select("id, name").in("id", currentTagIds)
-          : { data: [], error: null };
-      if (currentTagsError) throw currentTagsError;
-
-      const currentTags = currentTagsData || [];
-      const currentNames = new Set(currentTags.map((t) => t.name));
-      const desiredNames = new Set(names);
-
-      // Add new tags
-      for (const name of names) {
-        if (currentNames.has(name)) continue;
-        const tag = await getOrCreateTag(name);
-        await supabase.from("coupon_tags").insert({ coupon_id: couponId, tag_id: tag.id });
-        await supabase.from("tag").update({ count: (tag.count || 0) + 1 }).eq("id", tag.id);
-      }
-
-      // Remove dropped tags
-      for (const t of currentTags) {
-        if (desiredNames.has(t.name)) continue;
-        await supabase.from("coupon_tags").delete().eq("coupon_id", couponId).eq("tag_id", t.id);
-        const { data: tagRow } = await supabase.from("tag").select("count").eq("id", t.id).single();
-        const newCount = Math.max(0, (tagRow?.count || 1) - 1);
-        await supabase.from("tag").update({ count: newCount }).eq("id", t.id);
-      }
+      // One transaction on the server. The old client-side version did a
+      // select-then-insert per name (two people adding the same new tag both
+      // missed and both inserted) and a read-modify-write on tag.count, which
+      // drifted whenever two links landed at once. count is now recomputed
+      // from coupon_tags rather than incremented.
+      const { error } = await supabase.rpc("set_coupon_tags", {
+        p_coupon_id: couponId,
+        p_names: names,
+      });
+      if (error) throw error;
 
       return true;
     },

@@ -30,6 +30,8 @@ const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 /** Users who set no quiet_until are not woken before this local hour. */
 const DEFAULT_SEND_HOUR = 9;
 const CHANNELS = ['email', 'push', 'in_app'] as const;
+/** A 'pending' claim older than this belonged to a run that never finished. */
+const STALE_CLAIM_MS = 60 * 60 * 1000;
 
 type Channel = typeof CHANNELS[number];
 
@@ -54,14 +56,6 @@ type CouponRow = {
   value: number;
   used_value: number;
   expiration: string;
-};
-
-type LedgerRow = {
-  coupon_id: number;
-  user_id: number;
-  window_days: number;
-  channel: Channel;
-  status: 'sent' | 'failed';
 };
 
 /**
@@ -269,14 +263,30 @@ Deno.serve(async (req: Request) => {
       subsByUser.set(row.user_id, list);
     }
 
-    // Everything already delivered for these coupons. This is the guard that
-    // makes repeat runs safe — the ledger is read before sending, not only
-    // written after it.
+    const couponIds = (coupons as CouponRow[]).map((c) => c.id);
+
+    let emailCount = 0;
+    let pushCount = 0;
+    let inAppCount = 0;
+    let alertCount = 0;
+
+    // A run that died between claiming a row and sending it leaves the claim
+    // behind. An hour is longer than a run can last and shorter than the gap
+    // to the next reminder, so anything older is nobody's.
+    await supabase
+      .from('coupon_alerts')
+      .delete()
+      .eq('status', 'pending')
+      .lt('sent_at', new Date(Date.now() - STALE_CLAIM_MS).toISOString());
+
+    // Everything already delivered or claimed for these coupons. This read is
+    // only a bulk shortcut; the claim below is what actually makes concurrent
+    // runs safe.
     const { data: ledger } = await supabase
       .from('coupon_alerts')
       .select('coupon_id, window_days, channel')
-      .eq('status', 'sent')
-      .in('coupon_id', (coupons as CouponRow[]).map((c) => c.id));
+      .in('status', ['sent', 'pending'])
+      .in('coupon_id', couponIds);
 
     const alreadySent = new Set(
       (ledger || []).map((row: any) => `${row.coupon_id}:${row.window_days}:${row.channel}`),
@@ -284,10 +294,67 @@ Deno.serve(async (req: Request) => {
     const deliveredKey = (couponId: number, days: number, channel: Channel) =>
       `${couponId}:${days}:${channel}`;
 
-    let emailCount = 0;
-    let pushCount = 0;
-    let inAppCount = 0;
-    let alertCount = 0;
+    /**
+     * Take the ledger rows *before* sending. Only the coupons this insert gets
+     * back are ours: a concurrent run loses the ON CONFLICT DO NOTHING race,
+     * gets an empty list, and stays quiet instead of sending a second copy.
+     */
+    const claim = async (
+      channel: Channel,
+      days: number,
+      userId: number,
+      candidates: CouponRow[],
+    ): Promise<CouponRow[]> => {
+      if (!candidates.length) return [];
+      const { data, error } = await supabase
+        .from('coupon_alerts')
+        .upsert(
+          candidates.map((c) => ({
+            coupon_id: c.id,
+            user_id: userId,
+            window_days: days,
+            channel,
+            status: 'pending',
+          })),
+          { onConflict: 'coupon_id,window_days,channel', ignoreDuplicates: true },
+        )
+        .select('coupon_id');
+      if (error) {
+        console.error('[send-expiry-alerts] claim error:', error.message);
+        return [];
+      }
+      const claimed = new Set((data || []).map((row: any) => row.coupon_id));
+      return candidates.filter((c) => claimed.has(c.id));
+    };
+
+    /**
+     * Promote a claim to a receipt, or drop it. Dropping is deliberate: a
+     * failed send should be retried by the next hourly run, which is what the
+     * old 'failed' row amounted to in practice.
+     */
+    const settle = async (
+      channel: Channel,
+      days: number,
+      claimed: CouponRow[],
+      ok: boolean,
+    ): Promise<void> => {
+      if (!claimed.length) return;
+      const ids = claimed.map((c) => c.id);
+      const { error } = ok
+        ? await supabase.from('coupon_alerts')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('status', 'pending').eq('window_days', days)
+            .eq('channel', channel).in('coupon_id', ids)
+        : await supabase.from('coupon_alerts')
+            .delete()
+            .eq('status', 'pending').eq('window_days', days)
+            .eq('channel', channel).in('coupon_id', ids);
+      if (error) console.error('[send-expiry-alerts] ledger error:', error.message);
+      else if (ok) {
+        for (const coupon of claimed) alreadySent.add(deliveredKey(coupon.id, days, channel));
+        alertCount += claimed.length;
+      }
+    };
 
     for (const { user, prefs, targets } of dueUsers) {
       const userCoupons = couponsByUser.get(user.id);
@@ -303,32 +370,20 @@ Deno.serve(async (req: Request) => {
         byWindow.set(days, list);
       }
 
-      const rows: LedgerRow[] = [];
-
       for (const [days, windowCoupons] of byWindow) {
-        const pending: Record<Channel, CouponRow[]> = { email: [], push: [], in_app: [] };
+        const candidates: Record<Channel, CouponRow[]> = { email: [], push: [], in_app: [] };
         for (const channel of CHANNELS) {
           if (!prefs[channel]) continue;
-          pending[channel] = windowCoupons.filter(
+          candidates[channel] = windowCoupons.filter(
             (c) => !alreadySent.has(deliveredKey(c.id, days, channel)),
           );
         }
 
-        const record = (channel: Channel, ok: boolean) => {
-          for (const coupon of pending[channel]) {
-            rows.push({
-              coupon_id: coupon.id,
-              user_id: user.id,
-              window_days: days,
-              channel,
-              status: ok ? 'sent' : 'failed',
-            });
-            if (ok) alreadySent.add(deliveredKey(coupon.id, days, channel));
-          }
-        };
-
-        if (pending.email.length && user.email) {
-          const count = pending.email.length;
+        const emailClaimed = user.email
+          ? await claim('email', days, user.id, candidates.email)
+          : [];
+        if (emailClaimed.length) {
+          const count = emailClaimed.length;
           const subject = `תזכורת: ${count === 1 ? 'קופון עומד לפוג' : `${count} קופונים עומדים לפוג`}`;
           const ok = await sendEmail(
             user.email,
@@ -336,7 +391,7 @@ Deno.serve(async (req: Request) => {
             expiryEmailHtml({
               firstName: user.first_name || '',
               days,
-              coupons: pending.email.map((c) => ({
+              coupons: emailClaimed.map((c) => ({
                 company: c.company,
                 remaining: remainingFor(c),
                 expiration: c.expiration,
@@ -347,48 +402,42 @@ Deno.serve(async (req: Request) => {
             await buildUnsubscribeHeaders(user.id, user.email),
           );
           if (ok) emailCount += 1;
-          record('email', ok);
+          await settle('email', days, emailClaimed, ok);
         }
 
         // A user with the channel on but no registered device is not a failure
-        // to retry every hour — there is simply nowhere to send.
+        // to retry every hour — there is simply nowhere to send, so nothing is
+        // claimed either.
         const subs = subsByUser.get(user.id) || [];
-        if (pending.push.length && subs.length) {
+        const pushClaimed = subs.length
+          ? await claim('push', days, user.id, candidates.push)
+          : [];
+        if (pushClaimed.length) {
           const stats = await sendPushToRows(supabase, subs, {
             title: 'קופון מאסטר',
-            body: summaryText(pending.push, days),
+            body: summaryText(pushClaimed, days),
             url: '/notifications',
             tag: `expiry-${days}-${user.id}`,
             renotify: true,
           });
           const ok = stats.sent > 0;
           if (ok) pushCount += 1;
-          record('push', ok);
+          await settle('push', days, pushClaimed, ok);
         }
 
-        if (pending.in_app.length) {
+        const inAppClaimed = await claim('in_app', days, user.id, candidates.in_app);
+        if (inAppClaimed.length) {
           const { error } = await supabase.from('notifications').insert({
             user_id: user.id,
-            message: summaryText(pending.in_app, days),
+            message: summaryText(inAppClaimed, days),
             link: '/notifications',
             shown: false,
             viewed: false,
             hide_from_view: false,
           });
           if (!error) inAppCount += 1;
-          record('in_app', !error);
+          await settle('in_app', days, inAppClaimed, !error);
         }
-      }
-
-      // Written per user rather than once at the end: a timeout halfway through
-      // the run must not lose the record of mail that already went out.
-      if (rows.length) {
-        const { data: inserted, error } = await supabase
-          .from('coupon_alerts')
-          .upsert(rows, { onConflict: 'coupon_id,window_days,channel', ignoreDuplicates: true })
-          .select('id');
-        if (error) console.error('[send-expiry-alerts] ledger error:', error.message);
-        else alertCount += inserted?.length || 0;
       }
     }
 

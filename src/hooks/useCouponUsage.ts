@@ -304,36 +304,25 @@ export function useRecordUsage() {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { data: coupon, error: fetchErr } = await supabase
-        .from("coupon")
-        .select("id, value, used_value")
-        .eq("id", couponId)
-        .eq("user_id", user.id)
-        .single();
-      if (fetchErr) throw fetchErr;
-
-      const newUsed = Math.min(coupon.value, (coupon.used_value || 0) + usedAmount);
-      const fullyUsed = newUsed >= coupon.value;
-
-      const { error: usageErr } = await supabase.from("coupon_usage").insert({
-        coupon_id: couponId,
-        used_amount: usedAmount,
-        action: "usage",
-        details: details || null,
-        place_name: placeName?.trim() || null,
-        place_address: placeAddress?.trim() || null,
-        latitude: latitude ?? null,
-        longitude: longitude ?? null,
-        timestamp: timestamp || new Date().toISOString(),
+      // One transaction on the server: the coupon row is locked, the ledger
+      // row inserted, and used_value written from the locked read. Doing it as
+      // three calls from here let two concurrent usages both start from the
+      // same balance, so the second write silently dropped the first.
+      const { data, error } = await supabase.rpc("record_coupon_usage", {
+        p_coupon_id: couponId,
+        p_used_amount: usedAmount,
+        p_details: details ?? null,
+        p_place_name: placeName ?? null,
+        p_place_address: placeAddress ?? null,
+        p_latitude: latitude ?? null,
+        p_longitude: longitude ?? null,
+        p_timestamp: timestamp ?? null,
       });
-      if (usageErr) throw usageErr;
+      if (error) throw error;
 
-      const { error: updateErr } = await supabase
-        .from("coupon")
-        .update({ used_value: newUsed, status: fullyUsed ? "נוצל" : "פעיל" })
-        .eq("id", couponId)
-        .eq("user_id", user.id);
-      if (updateErr) throw updateErr;
+      const row = Array.isArray(data) ? data[0] : data;
+      const newUsed = Number(row?.new_used ?? 0);
+      const fullyUsed = Boolean(row?.fully_used);
 
       return { newUsed, fullyUsed };
     },
