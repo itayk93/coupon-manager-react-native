@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ChevronLeft, Sparkles } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
-import { hasCompletedOnboarding } from "@/lib/onboardingStatus";
+import { hasCompletedOnboarding, setOnboardingCompleted } from "@/lib/onboardingStatus";
+import { useCoupons } from "@/hooks/useCoupons";
 import { fonts, palette } from "@/lib/theme";
 
 /**
@@ -12,20 +13,40 @@ import { fonts, palette } from "@/lib/theme";
  * Lifted out of the banner so the dashboard can also use it to decide what
  * else to show: two stacked banners at the top of a fresh account read as
  * clutter, and the walkthrough is the one that goes away on its own.
+ *
+ * A wallet that already holds a coupon answers the question on its own — the
+ * walkthrough exists to put the first one in, and offering it to someone who
+ * is already past that reads as the app not knowing who it is talking to.
+ * The local "completed" flag is per-device, so an account signing in on a new
+ * phone has no flag but plenty of coupons; the wallet is the truth, and the
+ * flag gets written so the check settles.
  */
 export function useOnboardingPending(): boolean {
   const { user } = useAuth();
-  const [pending, setPending] = useState(false);
+  const { data: coupons, isLoading } = useCoupons();
+  const [completed, setCompleted] = useState<boolean | null>(null);
 
   useFocusEffect(useCallback(() => {
     let active = true;
-    void hasCompletedOnboarding(user?.email).then((completed) => {
-      if (active) setPending(!completed);
+    void hasCompletedOnboarding(user?.email).then((value) => {
+      if (active) setCompleted(value);
     });
     return () => { active = false; };
   }, [user?.email]));
 
-  return pending;
+  const hasCoupons = (coupons?.length ?? 0) > 0;
+
+  useEffect(() => {
+    if (completed === false && hasCoupons) {
+      setCompleted(true);
+      void setOnboardingCompleted(user?.email);
+    }
+  }, [completed, hasCoupons, user?.email]);
+
+  // Undecided while either answer is still in flight: a prompt that appears
+  // for a frame and vanishes is worse than one that arrives a beat late.
+  if (completed === null || isLoading) return false;
+  return !completed && !hasCoupons;
 }
 
 /**

@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fonts, palette, radii } from "@/lib/theme";
 import { setOnboardingCompleted } from "@/lib/onboardingStatus";
+import { useCoupons } from "@/hooks/useCoupons";
 import { estimateAnnualSavings, saveOnboardingPrefs, type OnboardingGoal, type OnboardingVolume } from "@/lib/onboardingPrefs";
 import { Confetti, CountUp } from "@/components/onboarding/Celebration";
 import { CharacterScene, type CharacterState } from "@/components/onboarding/CharacterRig";
@@ -46,6 +47,7 @@ export function OnboardingScreen() {
   const { user, refreshUser } = useAuth();
   const { theme } = useAppTheme();
   const parseCoupon = useParseCoupon();
+  const { data: existingCoupons, isLoading: walletLoading } = useCoupons();
   const identity = user?.email || pendingVerification;
   const [mode, setMode] = useState<Mode>(social ? "profile" : "goal");
   const [firstName, setFirstName] = useState(user?.first_name || "");
@@ -105,6 +107,19 @@ export function OnboardingScreen() {
     else router.replace("/(auth)/register");
   };
 
+  // Someone whose wallet already holds coupons is past the point this
+  // walkthrough exists for. The social sign-in redirect lands here by URL
+  // rather than through a router call we could gate, so the screen has to
+  // turn returning users around itself.
+  const hasWallet = (existingCoupons?.length ?? 0) > 0;
+  useEffect(() => {
+    if (!user || !hasWallet) return;
+    void setOnboardingCompleted(identity);
+    finish();
+    // finish() only reads router and route params, which are stable here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasWallet, identity, user]);
+
   const chooseGoal = (id: OnboardingGoal) => {
     tap();
     setGoal(id);
@@ -158,6 +173,12 @@ export function OnboardingScreen() {
     logActivity("onboarding_complete");
     finish();
   };
+
+  if (user && (walletLoading || hasWallet)) {
+    return <SafeAreaView style={[styles.safe, styles.centered, { backgroundColor: theme.background }]}>
+      <ActivityIndicator color={theme.primary} />
+    </SafeAreaView>;
+  }
 
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -213,8 +234,8 @@ export function OnboardingScreen() {
           <Confetti active reduceMotion={reduceMotion} />
           {savedNow > 0 ? <View style={styles.savingsBlock} accessibilityLabel={`חסכתם ${Math.round(savedNow)} שקלים`}>
             <Text style={styles.savingsLabel}>חסכתם כאן</Text>
-            <CountUp value={Math.round(savedNow)} suffix=" ₪" reduceMotion={reduceMotion} style={styles.savingsValue} />
-            <Text style={styles.savingsFoot}>בקצב הזה זה בערך {annualSavings.toLocaleString("he-IL")} ₪ בשנה</Text>
+            <CountUp value={Math.round(savedNow)} prefix="₪ " reduceMotion={reduceMotion} style={styles.savingsValue} />
+            <Text style={styles.savingsFoot}>בקצב הזה זה בערך ₪{annualSavings.toLocaleString("he-IL")} בשנה</Text>
           </View> : null}
           {coupons.map((coupon, index) => <CouponSummary key={`${coupon.code}-${index}`} coupon={coupon} />)}
           {validCoupons.length !== coupons.length ? <Text style={styles.missingText}>חסר פרט באחד הקופונים. חזרו לטקסט והוסיפו חברה, קוד ושווי.</Text> : null}
@@ -279,7 +300,7 @@ function Field(props: React.ComponentProps<typeof TextInput> & { label: string }
 function PrimaryButton({ label, onPress, disabled, loading }: { label: string; onPress: () => void; disabled?: boolean; loading?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, disabled && styles.primaryButtonDisabled, pressed && styles.pressed]}>{loading ? <ActivityIndicator color="#fff" /> : <><Sparkles size={19} color="#fff" /><Text style={styles.primaryButtonText}>{label}</Text></>}</Pressable>; }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 }, safe: { flex: 1 }, content: { flexGrow: 1, padding: 20, paddingBottom: 40 },
+  flex: { flex: 1 }, safe: { flex: 1 }, centered: { alignItems: "center", justifyContent: "center" }, content: { flexGrow: 1, padding: 20, paddingBottom: 40 },
   topRow: { minHeight: 62, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: 8 }, iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   skipButton: { maxWidth: 150, minHeight: 44, justifyContent: "center" }, skipText: { color: palette.primary, fontFamily: fonts.bodyBold, fontSize: 12, lineHeight: 17, textAlign: "left", writingDirection: "rtl" },
   // Mirrored so the fill grows from the right, with the rest of the RTL layout.

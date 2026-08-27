@@ -235,7 +235,7 @@ export function SharingScreen() {
                           {item.coupon?.company}
                         </Text>
                         <Text style={[styles.sharedWithText, { color: theme.textMuted }]}>
-                          שותף עם {item.shared_with?.email}
+                          {`שיתפתי את ${item.coupon?.company || "הקופון"} עם ${item.shared_with?.email || "משתמש שטרם נרשם"}`}
                         </Text>
                       </View>
                       <Image

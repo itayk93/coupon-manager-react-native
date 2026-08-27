@@ -68,7 +68,7 @@ function ConfettiPiece({ piece }: { piece: Piece }) {
  * the digits themselves have to change, and Reanimated cannot interpolate the
  * text content of a Text node.
  */
-export function CountUp({ value, suffix = "", reduceMotion, style }: { value: number; suffix?: string; reduceMotion: boolean; style?: any }) {
+export function CountUp({ value, prefix = "", suffix = "", reduceMotion, style }: { value: number; prefix?: string; suffix?: string; reduceMotion: boolean; style?: any }) {
   const [shown, setShown] = useState(reduceMotion ? value : 0);
 
   useEffect(() => {
@@ -86,7 +86,11 @@ export function CountUp({ value, suffix = "", reduceMotion, style }: { value: nu
     return () => clearInterval(timer);
   }, [reduceMotion, value]);
 
-  return <Text style={style}>{shown.toLocaleString("he-IL")}{suffix}</Text>;
+  // The currency mark is written into the string on the side it belongs on,
+  // rather than left to the paragraph direction: this number is centred with
+  // no writing direction of its own, and a bare suffix flipped sides between
+  // the app and the browser.
+  return <Text style={style}>{prefix}{shown.toLocaleString("he-IL")}{suffix}</Text>;
 }
 
 const styles = StyleSheet.create({
