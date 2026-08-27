@@ -61,3 +61,26 @@ export function estimateAnnualSavings(volume: OnboardingVolume | undefined, save
   const perCoupon = savedNow > 0 ? savedNow : 25;
   return Math.round(perCoupon * perMonth * 12);
 }
+
+const PUSH_PRIMER_PREFIX = "push_primer_seen:";
+
+/**
+ * Whether this person has already been asked, in our own words, about
+ * notifications. Separate from the nudge banner's flag: the primer is the one
+ * warm ask that precedes the OS dialog, and it gets exactly one showing.
+ */
+export async function hasSeenPushPrimer(identity?: string | null): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(key(PUSH_PRIMER_PREFIX, identity))) === "true";
+  } catch {
+    return true; // On a storage failure, stay quiet rather than ask every launch.
+  }
+}
+
+export async function markPushPrimerSeen(identity?: string | null): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key(PUSH_PRIMER_PREFIX, identity), "true");
+  } catch {
+    // Best-effort.
+  }
+}

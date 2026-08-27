@@ -66,6 +66,16 @@
               "scheme": "https",
               "host": "coupons.itaykarkason.com",
               "pathPrefix": "/notification-settings"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/statistics"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/sharing"
             }
           ],
           "category": [

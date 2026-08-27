@@ -14,6 +14,7 @@ import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
+import { PushPrimer } from "@/components/layout/PushPrimer";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
@@ -95,6 +96,8 @@ export function DashboardScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      {/* Our own ask, before the OS spends its one permission dialog. */}
+      <PushPrimer />
 
       <ScrollView
         style={styles.container}

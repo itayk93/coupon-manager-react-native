@@ -11,6 +11,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Bell, Mail, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
+import {
+  NOTIFICATION_TYPES,
+  isTypeChannelOn,
+  withTypeChannel,
+  type NotificationChannel,
+  type NotificationTypeId,
+} from "@/lib/notificationTypes";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
@@ -51,6 +58,60 @@ function ToggleRow({
       <View style={styles.rowLabel}>
         {icon}
         <Text style={[styles.rowText, { color: theme.text }]}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * One kind of message, with the two channels it can arrive on.
+ *
+ * "In the app" is not offered per kind: the feed is where everything lands and
+ * a kind missing from it would be a message the user can never go back and
+ * read. The master switch above still turns the whole feed off.
+ *
+ * The sample line is deliberately a real message rather than a description.
+ * "סיכום חודשי" is a category; "באוגוסט חסכת 869.80 ₪" is the thing you are
+ * agreeing to receive.
+ */
+function TypeCard({
+  meta, typeChannels, onChange, pushAvailable, emailAvailable, theme,
+}: {
+  meta: typeof NOTIFICATION_TYPES[number];
+  typeChannels: any;
+  onChange: (type: NotificationTypeId, channel: NotificationChannel, value: boolean) => void;
+  pushAvailable: boolean;
+  emailAvailable: boolean;
+  theme: ReturnType<typeof useAppTheme>["theme"];
+}) {
+  return (
+    <View style={[styles.typeCard, { borderBottomColor: theme.border }]}>
+      <Text style={[styles.typeLabel, { color: theme.text }]}>{meta.label}</Text>
+      <Text style={[styles.typeDescription, { color: theme.textMuted }]}>{meta.description}</Text>
+      <View style={[styles.sampleBubble, { backgroundColor: theme.surfaceAlt }]}>
+        <Text style={[styles.sampleText, { color: theme.textSecondary }]}>{meta.sample}</Text>
+      </View>
+      <View style={styles.channelRow}>
+        <View style={styles.channelToggle}>
+          <Switch
+            value={pushAvailable && isTypeChannelOn(typeChannels, meta.id, "push")}
+            disabled={!pushAvailable}
+            onValueChange={(next) => onChange(meta.id, "push", next)}
+            trackColor={{ false: theme.inputBorder, true: theme.primary }}
+            thumbColor="#ffffff"
+          />
+          <Text style={[styles.channelLabel, { color: theme.textMuted }]}>פוש</Text>
+        </View>
+        <View style={styles.channelToggle}>
+          <Switch
+            value={emailAvailable && isTypeChannelOn(typeChannels, meta.id, "email")}
+            disabled={!emailAvailable}
+            onValueChange={(next) => onChange(meta.id, "email", next)}
+            trackColor={{ false: theme.inputBorder, true: theme.primary }}
+            thumbColor="#ffffff"
+          />
+          <Text style={[styles.channelLabel, { color: theme.textMuted }]}>מייל</Text>
+        </View>
       </View>
     </View>
   );
@@ -108,6 +169,16 @@ export function NotificationSettingsScreen() {
       : false;
   const pushOn = prefs.push && deviceReady;
   const blockedBySystem = native.isSupported && native.permission === "denied";
+
+  const handleTypeChannel = (
+    type: NotificationTypeId,
+    channel: NotificationChannel,
+    value: boolean,
+  ) => {
+    updatePrefs.mutate({
+      type_channels: withTypeChannel(prefs.type_channels, type, channel, value),
+    });
+  };
 
   const handlePushToggle = async (next: boolean) => {
     try {
@@ -171,6 +242,25 @@ export function NotificationSettingsScreen() {
             onValueChange={(next) => updatePrefs.mutate({ in_app: next })}
             theme={theme}
           />
+        </View>
+
+        <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.groupTitle, { color: theme.textMuted }]}>מה נשלח אליך</Text>
+          <Text style={[styles.hint, { color: theme.textSubtle }]}>
+            כל סוג הודעה בנפרד. מה שכיבית כאן פשוט לא יישלח — הכל תמיד ממשיך
+            להופיע ברשימת ההתראות באפליקציה
+          </Text>
+          {NOTIFICATION_TYPES.map((meta) => (
+            <TypeCard
+              key={meta.id}
+              meta={meta}
+              typeChannels={prefs.type_channels}
+              pushAvailable={pushOn}
+              emailAvailable={prefs.email}
+              onChange={handleTypeChannel}
+              theme={theme}
+            />
+          ))}
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -295,6 +385,51 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "right",
     writingDirection: "rtl",
+  },
+  typeCard: {
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+  },
+  typeLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15.5,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  typeDescription: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  sampleBubble: {
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 11,
+    marginTop: 2,
+  },
+  sampleText: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  channelRow: {
+    flexDirection: "row-reverse",
+    gap: 20,
+    marginTop: 4,
+  },
+  channelToggle: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+  },
+  channelLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
   },
   separator: {
     height: 1,

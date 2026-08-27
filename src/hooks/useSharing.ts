@@ -4,6 +4,7 @@ import { CouponShare } from "@/integrations/supabase";
 import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
 import { logActivity } from "@/lib/activityLog";
+import { notifyEvent } from "@/lib/notifyEvent";
 
 export type PopulatedShare = CouponShare & {
   coupon: { id: number; company: string; description: string | null; value: number; used_value: number; code: string; expiration: string | null };
@@ -35,7 +36,9 @@ export function useCreateShare() {
       await couponVault({ action: "create_share", couponId, recipientEmail });
       return true;
     },
-    onSuccess: (_result, { couponId }) => {
+    onSuccess: (_result, { couponId, recipientEmail }) => {
+      // The person on the other end has no idea this happened until we say so.
+      notifyEvent("share_received", { couponId, recipientEmail });
       // The recipient's address is deliberately not recorded.
       logActivity("share_coupon", { couponId });
       queryClient.invalidateQueries({ queryKey: ["my_shares"] });

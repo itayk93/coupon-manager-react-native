@@ -19,7 +19,9 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
-import { createServiceClient, sendPushToRows } from '../_shared/push.ts';
+import { createServiceClient } from '../_shared/push.ts';
+import { deliver, type DeliveryPrefs } from '../_shared/deliver.ts';
+import { money } from '../_shared/notificationTypes.ts';
 import { requireSameUser, requireUser } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
@@ -171,6 +173,7 @@ Deno.serve(async (req: Request) => {
         updated++;
         if (newUsed !== coupon.used_value) {
           changedCoupons.push({
+            id: coupon.id,
             company: coupon.company,
             oldRemaining,
             newRemaining,
@@ -216,40 +219,48 @@ Deno.serve(async (req: Request) => {
     }
 
     if (changedCoupons.length > 0) {
-      const topChanges = changedCoupons
-        .slice(0, 3)
-        .map((item) => `${item.company}: ${item.oldRemaining.toFixed(2)}₪ → ${item.newRemaining.toFixed(2)}₪`)
-        .join(' | ');
+      // Routed through deliver() like every other kind, rather than writing the
+      // notifications row and firing push by hand: that older path ignored the
+      // user's preferences entirely, so someone who had turned everything off
+      // still got a buzz whenever a balance moved.
+      const [{ data: recipient }, { data: prefRow }, { data: subscriptions }] = await Promise.all([
+        serviceSupabase.from('users').select('id, email, first_name').eq('id', userId).maybeSingle(),
+        serviceSupabase.from('notification_preferences')
+          .select('email, push, in_app, quiet_until, timezone, type_channels')
+          .eq('user_id', userId).maybeSingle(),
+        serviceSupabase.from('push_subscriptions')
+          .select('endpoint, subscription, kind, expo_token')
+          .eq('user_id', userId),
+      ]);
 
-      const extraCount = changedCoupons.length - 3;
-      const suffix = extraCount > 0 ? ` ועוד ${extraCount} קופונים` : '';
-      const message = `סיימנו לעדכן את הקופונים שלך. ${changedCoupons.length} קופונים השתנו: ${topChanges}${suffix}`;
-
-      await supabase.from('notifications').insert({
-        user_id,
-        message,
-        link: '/notifications',
-        shown: false,
-        viewed: false,
-        hide_from_view: false,
-      });
-
-      const { data: subscriptions } = await serviceSupabase
-        .from('push_subscriptions')
-        .select('endpoint, subscription')
-        .eq('user_id', userId);
-
-      await sendPushToRows(
-        serviceSupabase,
-        (subscriptions || []) as Array<{ endpoint: string; subscription: Record<string, unknown> }>,
-        {
-          title: 'קופון מאסטר',
-          body: message,
-          url: '/notifications',
-          tag: `coupon-update-${user_id}`,
-          renotify: true,
-        }
-      );
+      if (recipient) {
+        const prefs: DeliveryPrefs = {
+          email: prefRow?.email ?? true,
+          push: prefRow?.push ?? true,
+          in_app: prefRow?.in_app ?? true,
+          quiet_until: prefRow?.quiet_until ?? null,
+          timezone: prefRow?.timezone || 'Asia/Jerusalem',
+          type_channels: prefRow?.type_channels ?? null,
+        };
+        const lead = changedCoupons[0];
+        await deliver(serviceSupabase, {
+          user: recipient,
+          prefs,
+          subscriptions: (subscriptions || []) as any,
+          type: 'balance_updated',
+          payload: {
+            company: lead.company,
+            balance: lead.newRemaining,
+            couponId: lead.id,
+            extra: changedCoupons.length - 1,
+          },
+          // The user asked for this refresh and is watching it happen; holding
+          // the answer until morning would be absurd.
+          respectQuietHours: false,
+          highlight: money(lead.newRemaining),
+          ctaLabel: 'לראות את הקופון',
+        });
+      }
     }
 
     if (run) {

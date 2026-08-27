@@ -23,6 +23,7 @@ import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubsc
 import { expiryEmailHtml } from '../_shared/emailTemplate.ts';
 import { createServiceClient, sendPushToRows, type PushSubscriptionRow } from '../_shared/push.ts';
 import { couponsUrl } from '../_shared/appLinks.ts';
+import { wants, type DeliveryPrefs } from '../_shared/deliver.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const DEFAULT_WINDOWS = [30, 7, 1, 0];
@@ -46,6 +47,8 @@ type PreferenceRow = {
   timezone: string | null;
   /** Remind every day once a coupon is this close to expiry. null = off. */
   daily_within: number | null;
+  /** Per-kind channel overrides; expiry is one kind among several now. */
+  type_channels: DeliveryPrefs['type_channels'];
 };
 
 type UserRow = { id: number; email: string; first_name: string | null };
@@ -116,6 +119,7 @@ function preferencesFor(row: PreferenceRow | undefined, userId: number): Prefere
     quiet_until: row?.quiet_until ?? null,
     timezone: row?.timezone || DEFAULT_TIMEZONE,
     daily_within: row?.daily_within ?? null,
+    type_channels: row?.type_channels ?? null,
   };
 }
 
@@ -187,7 +191,7 @@ Deno.serve(async (req: Request) => {
     const [{ data: users }, { data: prefRows }] = await Promise.all([
       supabase.from('users').select('id, email, first_name').eq('is_deleted', false),
       supabase.from('notification_preferences')
-        .select('user_id, email, push, in_app, windows, quiet_until, timezone, daily_within'),
+        .select('user_id, email, push, in_app, windows, quiet_until, timezone, daily_within, type_channels'),
     ]);
 
     if (!users?.length) {
@@ -206,7 +210,9 @@ Deno.serve(async (req: Request) => {
 
     for (const user of users as UserRow[]) {
       const prefs = preferencesFor(prefsByUser.get(user.id), user.id);
-      if (!prefs.email && !prefs.push && !prefs.in_app) continue;
+      if (!wants(prefs, 'expiry', 'email')
+        && !wants(prefs, 'expiry', 'push')
+        && !wants(prefs, 'expiry', 'in_app')) continue;
 
       const timeZone = prefs.timezone || DEFAULT_TIMEZONE;
       if (localHourInTimeZone(timeZone) < sendHour(prefs.quiet_until)) continue;
@@ -375,7 +381,7 @@ Deno.serve(async (req: Request) => {
       for (const [days, windowCoupons] of byWindow) {
         const candidates: Record<Channel, CouponRow[]> = { email: [], push: [], in_app: [] };
         for (const channel of CHANNELS) {
-          if (!prefs[channel]) continue;
+          if (!wants(prefs, 'expiry', channel)) continue;
           candidates[channel] = windowCoupons.filter(
             (c) => !alreadySent.has(deliveredKey(c.id, days, channel)),
           );
@@ -433,8 +439,10 @@ Deno.serve(async (req: Request) => {
         if (inAppClaimed.length) {
           const { error } = await supabase.from('notifications').insert({
             user_id: user.id,
+            type: 'expiry',
+            title: inAppClaimed.length === 1 ? 'קופון עומד לפוג' : 'קופונים עומדים לפוג',
             message: summaryText(inAppClaimed, days),
-            link: '/notifications',
+            link: '/coupons',
             shown: false,
             viewed: false,
             hide_from_view: false,

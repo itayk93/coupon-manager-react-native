@@ -25,6 +25,8 @@ type FeedItem = {
   type: "warning" | "system";
   urgent: boolean;
   date: string;
+  /** In-app path this notification answers. */
+  link?: string | null;
 };
 
 export function NotificationsScreen() {
@@ -58,11 +60,13 @@ export function NotificationsScreen() {
 
   const persistedItems: FeedItem[] = (inAppRows || []).map((row) => ({
     id: `db-${row.id}`,
-    title: "התראה",
+    // Rows written before notifications had kinds carry no title of their own.
+    title: row.title || "התראה",
     message: row.message,
     type: "system",
     urgent: !row.viewed,
     date: row.timestamp ? new Date(row.timestamp).toLocaleDateString("he-IL") : "",
+    link: row.link || null,
   }));
 
   const notifications = [...persistedItems, ...expiringItems];
@@ -74,9 +78,12 @@ export function NotificationsScreen() {
     <TouchableOpacity
       key={item.id}
       activeOpacity={0.8}
-      onPress={() =>
-        item.couponId ? router.push(`/coupons/${item.couponId}`) : router.push("/notifications")
-      }
+      onPress={() => {
+        if (item.couponId) router.push(`/coupons/${item.couponId}`);
+        // Each kind points at the screen that answers it: savings at the chart,
+        // a share at the sharing list, an expiry at the coupons.
+        else if (item.link) router.push(item.link as any);
+      }}
       style={[
         styles.notifCard,
         {
