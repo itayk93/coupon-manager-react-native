@@ -193,10 +193,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 14,
-    // Sits in the strip the floating notification bell occupies, clearing the
-    // bell itself on the left. That strip used to be reserved and empty, so
-    // the warning cost a full row of screen it did not need.
-    marginLeft: 52,
     ...shadows.card,
   },
   headRow: {

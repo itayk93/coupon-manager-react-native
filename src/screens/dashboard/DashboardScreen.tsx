@@ -222,9 +222,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    // The floating notification bell is absolutely positioned over this
-    // content. Rather than reserve a blank strip under it, the expiry banner
-    // moves up into that strip and insets itself past the bell.
     paddingTop: 14,
     paddingBottom: 32,
   },
