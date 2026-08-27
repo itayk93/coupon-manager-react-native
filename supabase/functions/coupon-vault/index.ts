@@ -6,7 +6,7 @@ import { decryptCouponValue, encryptCouponValue } from '../_shared/encryption.ts
 const SENSITIVE = ['code', 'description', 'buyme_coupon_url', 'strauss_coupon_url', 'xgiftcard_coupon_url', 'xtra_coupon_url', 'cvv', 'card_exp'] as const;
 const WRITABLE = new Set([
   'company', ...SENSITIVE, 'value', 'cost', 'used_value', 'status', 'expiration', 'date_added',
-  'is_one_time', 'is_for_sale', 'purpose', 'auto_download_details', 'auto_update', 'last_scraped',
+  'is_one_time', 'purpose', 'auto_download_details', 'auto_update', 'last_scraped',
   'last_detail_view', 'last_company_view', 'last_code_view', 'show_in_widget', 'widget_display_order', 'source',
 ]);
 

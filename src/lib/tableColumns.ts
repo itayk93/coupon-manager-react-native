@@ -1,7 +1,7 @@
 // Explicit Supabase columns for queries that previously used select('*').
 // Keeping these as const string literals preserves supabase-js row typing.
 
-export const COUPON_COLUMNS = 'id,user_id,company,code,description,value,cost,used_value,status,expiration,date_added,is_one_time,is_for_sale,purpose,cvv,card_exp,buyme_coupon_url,strauss_coupon_url,xgiftcard_coupon_url,xtra_coupon_url,auto_download_details,auto_update,last_scraped,last_detail_view,last_company_view,last_code_view,show_in_widget,widget_display_order,source' as const;
+export const COUPON_COLUMNS = 'id,user_id,company,code,description,value,cost,used_value,status,expiration,date_added,is_one_time,purpose,cvv,card_exp,buyme_coupon_url,strauss_coupon_url,xgiftcard_coupon_url,xtra_coupon_url,auto_download_details,auto_update,last_scraped,last_detail_view,last_company_view,last_code_view,show_in_widget,widget_display_order,source' as const;
 
 export const COMPANIES_COLUMNS = 'id,name,image_path,company_count' as const;
 

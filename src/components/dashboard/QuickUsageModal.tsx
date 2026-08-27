@@ -42,9 +42,7 @@ export function QuickUsageModal({
   const recordUsage = useRecordUsage();
   const parseUsage = useParseUsageScreenshot();
 
-  const activeCoupons = coupons.filter(
-    (c) => !c.is_for_sale && c.status !== "נוצל"
-  );
+  const activeCoupons = coupons.filter((c) => c.status !== "נוצל");
 
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(
     preselectedCoupon ? preselectedCoupon.id : activeCoupons[0]?.id || null

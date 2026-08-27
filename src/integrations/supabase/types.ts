@@ -186,7 +186,6 @@ export type Database = {
           description: string | null
           expiration: string | null
           id: number
-          is_for_sale: boolean | null
           is_one_time: boolean | null
           last_code_view: string | null
           last_company_view: string | null
@@ -217,7 +216,6 @@ export type Database = {
           description?: string | null
           expiration?: string | null
           id?: number
-          is_for_sale?: boolean | null
           is_one_time?: boolean | null
           last_code_view?: string | null
           last_company_view?: string | null
@@ -248,7 +246,6 @@ export type Database = {
           description?: string | null
           expiration?: string | null
           id?: number
-          is_for_sale?: boolean | null
           is_one_time?: boolean | null
           last_code_view?: string | null
           last_company_view?: string | null

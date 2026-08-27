@@ -10,7 +10,7 @@ import type { DecryptedCoupon } from "@/hooks/useCoupons";
  * same wallet. Import from here rather than re-deriving the rule.
  */
 export function isSpendableCoupon(coupon: DecryptedCoupon): boolean {
-  return !coupon.is_for_sale && coupon.status !== "נוצל";
+  return coupon.status !== "נוצל";
 }
 
 export function couponRemainingValue(coupon: DecryptedCoupon): number {
