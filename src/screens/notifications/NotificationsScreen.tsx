@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { Bell, AlertTriangle, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
+import { Bell, AlertTriangle, CheckCheck, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
@@ -210,6 +210,7 @@ export function NotificationsScreen() {
               activeOpacity={0.85}
               style={[styles.markAllButton, { backgroundColor: theme.primary }]}
             >
+              <CheckCheck size={15} color="#fff" />
               <Text style={styles.markAllText}>סמן הכל כנקרא</Text>
             </TouchableOpacity>
           ) : undefined
@@ -331,8 +332,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 34,
     borderRadius: 17,
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
   },
   markAllText: {
     color: "#fff",
