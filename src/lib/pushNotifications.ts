@@ -85,9 +85,28 @@ async function invokePushFunction(body: Record<string, unknown>) {
   return data;
 }
 
+async function getServiceWorkerScriptProblem(): Promise<string | undefined> {
+  try {
+    const response = await fetch('/sw.js', { cache: 'no-store' });
+    const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+
+    if (!response.ok || !contentType.includes('javascript')) {
+      return 'התראות Push אינן זמינות כרגע בגרסת הפיתוח המקומית.';
+    }
+  } catch {
+    return 'לא ניתן לטעון את שירות ההתראות כרגע.';
+  }
+
+  return undefined;
+}
+
 async function ensureRegistration() {
   const current = await navigator.serviceWorker.getRegistration();
   if (current) return current;
+
+  const scriptProblem = await getServiceWorkerScriptProblem();
+  if (scriptProblem) throw new Error(scriptProblem);
+
   return navigator.serviceWorker.register('/sw.js');
 }
 
@@ -100,6 +119,11 @@ export async function getPushState(): Promise<PushState> {
   }
 
   try {
+    const scriptProblem = await getServiceWorkerScriptProblem();
+    if (scriptProblem) {
+      return { ...support, supported: false, reason: scriptProblem, permission, subscribed: false };
+    }
+
     const registration = await navigator.serviceWorker.getRegistration();
     const subscription = registration ? await registration.pushManager.getSubscription() : null;
     return { ...support, permission, subscribed: Boolean(subscription) };

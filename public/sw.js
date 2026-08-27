@@ -1,15 +1,9 @@
 /*
- * Self-destroying service worker.
+ * Notification-only service worker.
  *
- * The previous worker (Vite-era, "coupon-master-v3") was cache-first and
- * precached "/" and "/index.html". Once installed it kept serving that stale
- * shell, which pointed at an old JS bundle hash — so devices that had the PWA
- * installed never picked up new deploys no matter what we shipped.
- *
- * The Expo build registers no service worker at all. This file exists only to
- * evict the old one: browsers re-fetch the worker script on update checks, get
- * this, drop every cache and unregister themselves. It can be deleted once
- * installs have had time to update.
+ * Do not cache the app shell here. Expo's web build uses hashed assets and
+ * must always load its current HTML from the network. This worker stays
+ * registered solely because Web Push subscriptions require an active worker.
  */
 
 self.addEventListener("install", () => {
@@ -19,17 +13,59 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
+      // Remove caches left by the old Vite-era service worker.
       const names = await caches.keys();
       await Promise.all(names.map((name) => caches.delete(name)));
-
-      await self.registration.unregister();
-
-      // Reload open tabs so they come back from the network, not the dead cache.
-      const clients = await self.clients.matchAll({ type: "window" });
-      clients.forEach((client) => client.navigate(client.url));
+      await self.clients.claim();
     })()
   );
 });
 
-// Pass everything straight through while we are still alive.
-self.addEventListener("fetch", () => {});
+self.addEventListener("push", (event) => {
+  let data = {};
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = { body: event.data.text() };
+    }
+  }
+
+  const title = data.title || "קופון מאסטר";
+  const options = {
+    body: data.body || "יש עדכון חדש בקופונים שלך.",
+    icon: data.icon || "/pwa-192x192.png",
+    badge: data.badge || "/pwa-192x192.png",
+    tag: data.tag || "coupon-master-update",
+    renotify: Boolean(data.renotify),
+    requireInteraction: Boolean(data.requireInteraction),
+    data: {
+      url: data.url || "/notifications",
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/notifications";
+  const destinationUrl = new URL(targetUrl, self.location.origin).toString();
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url === destinationUrl || client.url.startsWith(destinationUrl)) {
+          client.focus();
+          client.postMessage({ url: targetUrl });
+          return;
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(destinationUrl);
+      }
+    })
+  );
+});
