@@ -513,9 +513,10 @@ const styles = StyleSheet.create({
     writingDirection: "ltr",
   },
   days: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
-    fontWeight: "700",
+    fontFamily: fonts.body,
+    // The least urgent fact on the card, so it reads last.
+    fontSize: 11.5,
+    fontWeight: "500",
   },
   tagsRow: {
     flexDirection: "row-reverse",
