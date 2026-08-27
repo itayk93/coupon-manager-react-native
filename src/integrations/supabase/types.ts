@@ -2097,10 +2097,7 @@ export type Database = {
       my_referral_status: {
         Args: never
         Returns: {
-          activated: number
           code: string
-          joined: number
-          retained: number
         }[]
       }
       referral_activity_days: {

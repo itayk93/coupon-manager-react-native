@@ -255,7 +255,7 @@ try {
   });
   check('a client cannot write itself into a chain', insertAsBob.status >= 400, `got ${insertAsBob.status}`);
 
-  // 8. His own code and counts are all he gets.
+  // 8. His own code is all he gets — never the tally the pilot pays on.
   const own = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/my_referral_status`, {
     method: 'POST',
     headers: {
@@ -265,7 +265,26 @@ try {
     },
     body: '{}',
   }).then((r) => r.json());
-  check('a user can read their own code and counts', Array.isArray(own) && own[0]?.code === bobCode && own[0]?.joined === 1, JSON.stringify(own));
+  check('a user can read their own code', Array.isArray(own) && own[0]?.code === bobCode, JSON.stringify(own));
+  check('and gets no count of who joined underneath them',
+    Object.keys(own[0] ?? {}).join() === 'code', JSON.stringify(own[0]));
+
+  const codesAsBob = await fetch(`${process.env.SUPABASE_URL}/rest/v1/referral_codes?select=*`, {
+    headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${bob.token}` },
+  }).then((r) => r.json());
+  check('nor a way round it through the codes table',
+    Array.isArray(codesAsBob) && codesAsBob.length === 0, JSON.stringify(codesAsBob).slice(0, 200));
+
+  const rewardsAsBob = await fetch(`${process.env.SUPABASE_URL}/rest/v1/referral_rewards?select=*`, {
+    headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${bob.token}` },
+  }).then((r) => r.json());
+  check('and no sight of what the pilot is worth',
+    Array.isArray(rewardsAsBob) && rewardsAsBob.length === 0, JSON.stringify(rewardsAsBob).slice(0, 200));
+
+  const campaignsAsBob = await fetch(`${process.env.SUPABASE_URL}/rest/v1/referral_campaigns?select=*`, {
+    headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${bob.token}` },
+  }).then((r) => r.json());
+  check('nor which chain he is in', Array.isArray(campaignsAsBob) && campaignsAsBob.length === 0, JSON.stringify(campaignsAsBob).slice(0, 200));
 
   // 9. The admin screen, from the other side of the same policy.
   await db.query('update public.users set is_admin = true where id = $1', [mallory.appId]);

@@ -4,13 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export type MyReferralStatus = {
   code: string;
-  joined: number;
-  activated: number;
-  retained: number;
 };
 
 /**
- * The signed-in person's own invite code and how their chain is doing.
+ * The signed-in person's own invite code. The code, and nothing else.
+ *
+ * Deliberately not how many people joined underneath them: that is the number
+ * the pilot pays on, it belongs to the admin tab, and a partner watching it
+ * move turns every reward into a negotiation. The server returns one column
+ * for the same reason.
  *
  * Returns null for anyone outside a campaign, and that is what keeps the pilot
  * closed: a code only exists once the server has attributed someone to a

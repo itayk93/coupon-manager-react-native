@@ -23,9 +23,9 @@ const APP_BASE_URL = "https://coupons.itaykarkason.com";
 /**
  * Where someone in a referral chain gets their own link.
  *
- * The numbers shown are counts and nothing else — no names, no addresses of
- * the people who joined. Someone who invited four friends does not need, and
- * should not get, a list of what those friends are doing in the app.
+ * The screen shows a code and nothing else. Not who joined, not how many, not
+ * how far along they are — that tally is what the pilot pays on, so it lives
+ * on the admin tab and nowhere a partner can watch it.
  */
 export function InviteScreen() {
   const { theme } = useAppTheme();
@@ -92,35 +92,8 @@ export function InviteScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.label, { color: theme.textMuted }]}>מי הצטרף דרכך</Text>
-          <View style={styles.statRow}>
-            <Stat label="הצטרפו" value={status.joined} color={theme.text} muted={theme.textMuted} />
-            <Stat label="התחילו להשתמש" value={status.activated} color={theme.text} muted={theme.textMuted} />
-            <Stat label="נשארו" value={status.retained} color={theme.text} muted={theme.textMuted} />
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  color,
-  muted,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  muted: string;
-}) {
-  return (
-    <View style={styles.stat}>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: muted }]}>{label}</Text>
-    </View>
   );
 }
 
@@ -150,8 +123,4 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   secondaryButtonText: { fontFamily: fonts.body, fontSize: 14 },
-  statRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 4 },
-  stat: { flex: 1, alignItems: "center", gap: 4 },
-  statValue: { fontFamily: fonts.display, fontSize: 26 },
-  statLabel: { fontFamily: fonts.body, fontSize: 12, textAlign: "center" },
 });
