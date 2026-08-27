@@ -287,6 +287,9 @@ PODS:
     - ExpoModulesCore
   - ExpoSystemUI (57.0.2):
     - ExpoModulesCore
+  - ExpoTaskManager (57.0.14):
+    - ExpoModulesCore
+    - UMAppLoader
   - ExpoUI (57.0.12):
     - ExpoModulesCore
     - ExpoModulesWorklets
@@ -2664,6 +2667,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - UMAppLoader (57.0.1)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2707,6 +2711,7 @@ DEPENDENCIES:
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
+  - ExpoTaskManager (from `../node_modules/expo-task-manager/ios`)
   - "ExpoUI (from `../node_modules/@expo/ui/ios`)"
   - ExpoVideo (from `../node_modules/expo-video/ios/ExpoVideo.podspec`)
   - ExpoWebBrowser (from `../node_modules/expo-web-browser/ios`)
@@ -2800,6 +2805,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
+  - UMAppLoader (from `../node_modules/unimodules-app-loader/ios`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2896,6 +2902,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-symbols/ios"
   ExpoSystemUI:
     :path: "../node_modules/expo-system-ui/ios"
+  ExpoTaskManager:
+    :path: "../node_modules/expo-task-manager/ios"
   ExpoUI:
     :path: "../node_modules/@expo/ui/ios"
   ExpoVideo:
@@ -3081,6 +3089,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-svg"
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
+  UMAppLoader:
+    :path: "../node_modules/unimodules-app-loader/ios"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3127,6 +3137,7 @@ SPEC CHECKSUMS:
   ExpoSplashScreen: 9c11c0c7dd0c57853244d0ae640a63e42ede8ffd
   ExpoSymbols: 0efd93edf0f825bf3c762582b0769dd3b296235c
   ExpoSystemUI: ff3142b323ae7b4d11dc0b1dc4acfa30d92be7dc
+  ExpoTaskManager: 370a3a6b0e05ddc94fc0e19d818596dcec9cde64
   ExpoUI: 27fa8fbaf7b4a84d643b2bdd6e436ee061a100af
   ExpoVideo: b1d9a325ddcd4f3ed8ccb374c01b688e98bc6a04
   ExpoWebBrowser: 9b98d939d5f1c5dd8f523f0a0683056fb1204434
@@ -3227,6 +3238,7 @@ SPEC CHECKSUMS:
   RNScreens: c1a06fd73d0581a2a28a160577be393f579662b9
   RNSVG: 3fe8590403ac9f107b4d14591bc6e54da4894e5c
   RNWorklets: 43af89f696342f91118a2f1f3a879056e2f47331
+  UMAppLoader: 173cb90a3039aa9c1b84bace4487e1907a4a5a39
   Yoga: 9891cfb1c680f64de9c41b09e7453dea33454d2b
 
 PODFILE CHECKSUM: 663e58e33a11b250e4cc233e2ab7439a49d29ea8
