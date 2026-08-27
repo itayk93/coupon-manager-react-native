@@ -112,11 +112,9 @@ export function CouponCard({
           ? `בתוקף עד: ${formattedExpiry}`
           : "ללא תוקף";
 
-  const daysColor = isExpired || isFullyUsed
-    ? theme.danger
-    : isExpiringSoon
-      ? theme.warning
-      : theme.success;
+  // Green by default, by product decision. A coupon that is spent or out of
+  // date still keeps its red, since that is the one case worth interrupting on.
+  const daysColor = isExpired || isFullyUsed ? theme.danger : theme.success;
 
   const handleCopy = async (e: any) => {
     e?.stopPropagation?.();
@@ -468,10 +466,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   metaRow: {
-    // The code owns its own line: at reading size it no longer shares one with
-    // the expiry without truncating.
-    alignItems: "flex-end",
-    gap: 4,
+    flexDirection: "row-reverse",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 8,
   },
   cardDetailsRow: {
     // A grey pill here made a third box inside an already layered card, so the
@@ -514,9 +512,11 @@ const styles = StyleSheet.create({
   },
   days: {
     fontFamily: fonts.body,
-    // The least urgent fact on the card, so it reads last.
-    fontSize: 11.5,
+    // Rides along on the code's line at the smallest size on the card: present
+    // when looked for, never competing with the code itself.
+    fontSize: 10.5,
     fontWeight: "500",
+    flexShrink: 0,
   },
   tagsRow: {
     flexDirection: "row-reverse",

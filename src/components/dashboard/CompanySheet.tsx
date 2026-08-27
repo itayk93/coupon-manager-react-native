@@ -312,13 +312,9 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                       ? `בתוקף עד: ${formattedExpiry}`
                       : "ללא תוקף";
 
-              // A date five years out is not news, and colouring it burns the
-              // signal needed by the coupon that expires this week.
-              const daysColor = isExpired || isFullyUsed
-                ? theme.danger
-                : isExpiringSoon
-                  ? theme.warning
-                  : theme.textMuted;
+              // Green by default, by product decision. Spent or out of date
+              // keeps its red, which is the one case worth interrupting on.
+              const daysColor = isExpired || isFullyUsed ? theme.danger : theme.success;
 
               const isInactive = isFullyUsed || isExpired;
 
@@ -680,10 +676,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   metaRow: {
-    // The code owns its own line: at reading size it no longer shares one with
-    // the expiry without truncating.
-    alignItems: "flex-end",
-    gap: 4,
+    flexDirection: "row-reverse",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 8,
   },
   code: {
     fontFamily: fonts.display,
@@ -696,9 +692,11 @@ const styles = StyleSheet.create({
   },
   days: {
     fontFamily: fonts.body,
-    // The least urgent fact on the card, so it reads last.
-    fontSize: 11.5,
+    // Rides along on the code's line at the smallest size on the card: present
+    // when looked for, never competing with the code itself.
+    fontSize: 10.5,
     fontWeight: "500",
+    flexShrink: 0,
   },
   cardDetailsRow: {
     // The details sit on the card behind a rule instead of inside a grey pill,
