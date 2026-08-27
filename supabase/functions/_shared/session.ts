@@ -1,8 +1,12 @@
 // Mints a real Supabase session for a legacy user row.
 //
-// Both entry points (password login and Google) need this, and they must agree:
-// if either one hands back a user without a session, that user is invisible to
-// RLS and loses access to their own data.
+// One caller left, legacy-login: the Werkzeug accounts are the only ones that
+// still need a session minted by hand. Google used to be the other, through a
+// google-auth function the app stopped calling once signInWithOAuth covered
+// both platforms; that function is gone.
+//
+// A caller that hands back a user without a session leaves them invisible to
+// RLS and locked out of their own data, so the token is not optional.
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 

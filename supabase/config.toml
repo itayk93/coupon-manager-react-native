@@ -17,11 +17,6 @@ project_id = "dugjsiyenazpsoiyduuz"
 # Protected by the Werkzeug hash check and a uniform error for unknown emails.
 verify_jwt = false
 
-[functions.google-auth]
-# Public by necessity: authenticates against Google before a session exists.
-# The Google access token is validated server-side against Google's userinfo.
-verify_jwt = false
-
 [functions.manage-unsubscribe]
 # Public by necessity: reached from an email link, before login.
 # Authenticated by an HMAC token signed with UNSUBSCRIBE_SECRET.
