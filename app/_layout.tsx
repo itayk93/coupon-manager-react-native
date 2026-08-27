@@ -20,6 +20,7 @@ import {
   useRouter,
   useSegments,
 } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import {
@@ -236,21 +237,26 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppThemeProvider>
-            <NativeErrorBoundary>
-              <RootLayoutNav />
-            </NativeErrorBoundary>
-          </AppThemeProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AppThemeProvider>
+              <NativeErrorBoundary>
+                <RootLayoutNav />
+              </NativeErrorBoundary>
+            </AppThemeProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   outerShell: {
     flex: 1,
     backgroundColor: "transparent",

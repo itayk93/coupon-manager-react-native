@@ -8,14 +8,19 @@ import {
   SafeAreaView,
   RefreshControl,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { Bell, AlertTriangle } from "lucide-react-native";
+import { Bell, AlertTriangle, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
-import { useInAppNotifications } from "@/hooks/useInAppNotifications";
+import { useHideNotification, useInAppNotifications } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { fonts, radii, shadows } from "@/lib/theme";
+import { fonts } from "@/lib/theme";
+import { formatIls } from "@/lib/formatIls";
+import { notify } from "@/lib/notify";
+import { legacyHebrew, mergeNotificationFeeds } from "@/lib/notificationFeed";
+import { useMarkNotificationViewed } from "@/hooks/useInAppNotifications";
 
 type FeedItem = {
   id: string;
@@ -27,13 +32,23 @@ type FeedItem = {
   date: string;
   /** In-app path this notification answers. */
   link?: string | null;
+  persistedId?: number;
+  kind?: string | null;
 };
+
+function iconFor(kind: string | null | undefined, color: string) {
+  if (kind === "share_received") return <Share2 size={18} color={color} />;
+  if (kind === "idle_money" || kind === "balance_updated") return <WalletCards size={18} color={color} />;
+  return <Bell size={18} color={color} />;
+}
 
 export function NotificationsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: inAppRows = [] } = useInAppNotifications();
+  const markViewed = useMarkNotificationViewed();
+  const hideNotification = useHideNotification();
 
   const expiringItems: FeedItem[] = coupons
     .filter((c) => {
@@ -49,76 +64,146 @@ export function NotificationsScreen() {
         id: `exp-${c.id}`,
         couponId: c.id,
         title: `הקופון של ${c.company} עומד לפוג!`,
-        message: `נותרו עוד ${days} ימים למימוש יתרה של ${(
-          (c.value || 0) - (c.used_value || 0)
-        ).toFixed(2)} ₪`,
+        message: `נותרו ${days} ימים למימוש יתרה של ${formatIls((c.value || 0) - (c.used_value || 0))}`,
         type: "warning",
         urgent: days <= 3,
         date: days <= 3 ? "היום" : `בעוד ${days} ימים`,
       };
     });
 
-  const persistedItems: FeedItem[] = (inAppRows || []).map((row) => ({
+  const persistedItems: FeedItem[] = (inAppRows || [])
+    // Expiry is generated live from current coupon data below. Old stored rows
+    // would otherwise repeat the same warning with stale day counts.
+    .filter((row) => row.type !== "expiry")
+    .map((row) => ({
     id: `db-${row.id}`,
     // Rows written before notifications had kinds carry no title of their own.
-    title: row.title || "התראה",
-    message: row.message,
+    title: legacyHebrew(row.title || "עדכון בארנק"),
+    message: legacyHebrew(row.message),
     type: "system",
     urgent: !row.viewed,
     date: row.timestamp ? new Date(row.timestamp).toLocaleDateString("he-IL") : "",
     link: row.link || null,
+    persistedId: row.id,
+    kind: row.type,
   }));
 
-  const notifications = [...persistedItems, ...expiringItems];
+  const notifications = mergeNotificationFeeds<FeedItem>([expiringItems, persistedItems]);
 
-  const today = notifications.filter((n) => n.urgent);
-  const earlier = notifications.filter((n) => !n.urgent);
+  const actionRequired = notifications.filter((n) => n.type === "warning" || n.kind === "idle_money");
+  const updates = notifications.filter((n) => !actionRequired.includes(n) && n.urgent);
+  const history = notifications.filter((n) => !actionRequired.includes(n) && !n.urgent);
 
-  const renderNotification = (item: FeedItem, unread: boolean) => (
-    <TouchableOpacity
-      key={item.id}
-      activeOpacity={0.8}
-      onPress={() => {
-        if (item.couponId) router.push(`/coupons/${item.couponId}`);
-        // Each kind points at the screen that answers it: savings at the chart,
-        // a share at the sharing list, an expiry at the coupons.
-        else if (item.link) router.push(item.link as any);
-      }}
-      style={[
-        styles.notifCard,
-        {
-          backgroundColor: theme.card,
-          borderColor: theme.cardBorder,
-          opacity: unread ? 1 : 0.75,
-        },
-      ]}
-    >
-      <View
+  const unreadIds = notifications
+    .filter((n) => n.urgent && n.persistedId)
+    .map((n) => n.persistedId!);
+
+  const markAllRead = () => {
+    unreadIds.forEach((id) => markViewed.mutate(id));
+  };
+
+  const renderRow = (item: FeedItem, unread: boolean) => {
+    const row = (
+      <TouchableOpacity
+        activeOpacity={0.6}
+        onPress={() => {
+          if (item.persistedId && unread) markViewed.mutate(item.persistedId);
+          if (item.couponId) router.push(`/coupons/${item.couponId}`);
+          // Each kind points at the screen that answers it: savings at the chart,
+          // a share at the sharing list, an expiry at the coupons.
+          else if (item.link) router.push(item.link as any);
+        }}
         style={[
-          styles.iconBox,
-          { backgroundColor: item.type === "warning" ? theme.warningBg : theme.primaryTint },
+          styles.row,
+          {
+            borderBottomColor: theme.divider,
+            // The unread state is carried by the whole row rather than a dot in
+            // the corner, so the eye lands on it without hunting.
+            backgroundColor: unread ? theme.primaryTint : "transparent",
+          },
         ]}
       >
-        {item.type === "warning" ? (
-          <AlertTriangle size={18} color={theme.warning} />
-        ) : (
-          <Bell size={18} color={theme.primary} />
+        <View style={styles.iconSlot}>
+          {item.type === "warning" ? (
+            <AlertTriangle size={18} color={theme.warning} />
+          ) : iconFor(item.kind, theme.primary)}
+        </View>
+
+        <View style={styles.contentCol}>
+          <View style={styles.titleLine}>
+            <Text numberOfLines={1} style={[styles.title, { color: theme.text }]}>
+              {item.title}
+            </Text>
+            {item.date ? (
+              <Text style={[styles.date, { color: theme.textSubtle }]}>{item.date}</Text>
+            ) : null}
+          </View>
+          <Text style={[styles.message, { color: theme.textMuted }]}>{item.message}</Text>
+        </View>
+
+        {item.couponId || item.link ? (
+          <ChevronLeft size={16} color={theme.textSubtle} style={styles.chevron} />
+        ) : null}
+      </TouchableOpacity>
+    );
+
+    // Only stored rows can be hidden; live expiry warnings would come straight
+    // back on the next render, so they carry no swipe action.
+    if (!item.persistedId) return <View key={item.id}>{row}</View>;
+
+    return (
+      <Swipeable
+        key={item.id}
+        friction={2}
+        rightThreshold={40}
+        renderRightActions={() => (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`הסרת ההתראה: ${item.title}`}
+            onPress={() => {
+              const id = item.persistedId!;
+              const label = item.title;
+              hideNotification.mutate(id, {
+                onSuccess: () => notify.success("ההתראה הוסרה", label),
+              });
+            }}
+            style={[styles.swipeAction, { backgroundColor: theme.danger }]}
+          >
+            <Trash2 size={18} color="#fff" />
+          </TouchableOpacity>
         )}
-      </View>
+      >
+        {row}
+      </Swipeable>
+    );
+  };
 
-      <View style={styles.contentCol}>
-        <Text style={[styles.notifTitle, { color: theme.text }]}>{item.title}</Text>
-        <Text style={[styles.notifMessage, { color: theme.textMuted }]}>{item.message}</Text>
-        <Text style={[styles.notifDate, { color: theme.textSubtle }]}>{item.date}</Text>
-      </View>
-
-      {unread ? <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} /> : null}
-    </TouchableOpacity>
-  );
+  const renderSection = (label: string, items: FeedItem[], unread: boolean) =>
+    items.length > 0 ? (
+      <>
+        <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>
+          {label} · {items.length}
+        </Text>
+        <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          {items.map((item) => renderRow(item, unread))}
+        </View>
+      </>
+    ) : null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="מרכז התראות" showBack onBack={() => router.back()} />
+      <Header
+        title="מרכז התראות"
+        showBack
+        onBack={() => router.back()}
+        rightAction={
+          unreadIds.length > 0 ? (
+            <TouchableOpacity onPress={markAllRead} hitSlop={8} style={styles.markAllButton}>
+              <Text style={[styles.markAllText, { color: theme.primary }]}>סמן הכל כנקרא</Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       <ScrollView
         style={styles.container}
@@ -134,19 +219,9 @@ export function NotificationsScreen() {
       >
         {notifications.length > 0 ? (
           <>
-            {today.length > 0 ? (
-              <>
-                <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>היום</Text>
-                {today.map((item) => renderNotification(item, true))}
-              </>
-            ) : null}
-
-            {earlier.length > 0 ? (
-              <>
-                <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>מוקדם יותר</Text>
-                {earlier.map((item) => renderNotification(item, false))}
-              </>
-            ) : null}
+            {renderSection("דורש פעולה", actionRequired, true)}
+            {renderSection("עדכונים", updates, true)}
+            {renderSection("היסטוריה", history, false)}
           </>
         ) : (
           <EmptyState
@@ -172,54 +247,76 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
-  notifCard: {
+  group: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: 18,
+  },
+  row: {
     flexDirection: "row-reverse",
     alignItems: "flex-start",
-    padding: 14,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    marginBottom: 8,
-    gap: 12,
-    ...shadows.card,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  iconSlot: {
+    width: 22,
     alignItems: "center",
-    justifyContent: "center",
+    paddingTop: 1,
   },
   contentCol: {
     flex: 1,
     alignItems: "flex-end",
   },
-  notifTitle: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
+  titleLine: {
+    flexDirection: "row-reverse",
+    alignItems: "baseline",
+    alignSelf: "stretch",
+    gap: 8,
   },
-  notifMessage: {
+  title: {
+    flexShrink: 1,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "right",
+  },
+  message: {
     fontSize: 13,
     lineHeight: 18,
     textAlign: "right",
-    marginBottom: 6,
+    marginTop: 2,
   },
-  notifDate: {
-    fontSize: 12,
+  date: {
+    fontSize: 11,
+  },
+  chevron: {
+    alignSelf: "center",
   },
   groupLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
+    fontSize: 11,
     fontWeight: "800",
+    letterSpacing: 0.6,
     textAlign: "right",
-    marginBottom: 8,
-    marginTop: 6,
+    marginBottom: 6,
+    marginTop: 4,
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 5,
+  swipeAction: {
+    width: 72,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markAllButton: {
+    paddingHorizontal: 4,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  markAllText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
