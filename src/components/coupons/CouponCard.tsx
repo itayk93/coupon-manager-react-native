@@ -251,6 +251,13 @@ export function CouponCard({
       ) : null}
       {/* Brand header */}
       <View style={[styles.header, { backgroundColor: headerColor }]}>
+        <ShimmerLogo
+          source={logoUri}
+          size={56}
+          style={[styles.logoFrame, { backgroundColor: theme.card }]}
+          imageStyle={styles.logoImg}
+        />
+
         <View style={styles.headerTitleGroup}>
           <Text numberOfLines={1} style={[styles.company, { color: headerText }]}>
             {coupon.company || "ללא חברה"}
@@ -260,13 +267,6 @@ export function CouponCard({
         <View style={[styles.statusPill, { backgroundColor: headerPill }]}>
           <Text style={[styles.statusPillText, { color: headerText }]}>{statusLabel}</Text>
         </View>
-
-        <ShimmerLogo
-          source={logoUri}
-          size={44}
-          style={[styles.logoFrame, { backgroundColor: theme.card }]}
-          imageStyle={styles.logoImg}
-        />
       </View>
 
       {/* Hold progress: fills across the card on the way to "report usage" */}
@@ -382,22 +382,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   header: {
-    height: 68,
+    height: 76,
     paddingHorizontal: 14,
-    paddingTop: 14,
     flexDirection: "row-reverse",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
+    gap: 10,
   },
   headerTitleGroup: {
     flex: 1,
     alignItems: "flex-end",
-    paddingLeft: 8,
   },
   company: {
     fontFamily: fonts.display,
     color: "#ffffff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "800",
     textAlign: "right",
   },
@@ -414,12 +413,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   logoFrame: {
-    position: "absolute",
-    bottom: -22,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 13,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -437,7 +433,7 @@ const styles = StyleSheet.create({
     zIndex: 6,
   },
   body: {
-    paddingTop: 24,
+    paddingTop: 16,
     paddingHorizontal: 18,
     paddingBottom: 18,
     gap: 14,
