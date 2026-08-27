@@ -27,6 +27,7 @@ import {
   useUpdateNotificationPreferences,
 } from "@/hooks/useNotificationPreferences";
 import { usePwaNotifications } from "@/hooks/usePwaNotifications";
+import { useNearbyAlerts } from "@/hooks/useNearbyAlerts";
 import { useNativeNotifications } from "@/hooks/useNativeNotifications";
 import {
   NOTIFICATION_WINDOWS as WINDOW_OPTIONS,
@@ -117,6 +118,68 @@ function TypeCard({
   );
 }
 
+/**
+ * The nearby alert is not a channel choice, so it does not get channel
+ * switches.
+ *
+ * It needs background location — a permission people are right to hesitate
+ * over — and it is raised by the phone itself rather than sent from a server.
+ * Both of those are facts the person deciding deserves to be told, in the row
+ * where they decide.
+ */
+function NearbyCard({ meta, nearby, theme }: {
+  meta: typeof NOTIFICATION_TYPES[number];
+  nearby: ReturnType<typeof useNearbyAlerts>;
+  theme: ReturnType<typeof useAppTheme>["theme"];
+}) {
+  const onPress = async () => {
+    if (nearby.enabled) { await nearby.disable(); return; }
+    if (nearby.blocked) {
+      notify.error(
+        "המיקום חסום בהגדרות המכשיר",
+        "צריך לאשר גישה למיקום 'תמיד' בהגדרות כדי לקבל את התזכורת הזאת.",
+      );
+      void Linking.openSettings();
+      return;
+    }
+    const granted = await nearby.enable();
+    if (!granted) {
+      notify.error("לא קיבלנו הרשאה למיקום", "בלי זה אי אפשר לדעת שאתה ליד החנות.");
+    }
+  };
+
+  return (
+    <View style={[styles.typeCard, { borderBottomColor: theme.border }]}>
+      <Text style={[styles.typeLabel, { color: theme.text }]}>{meta.label}</Text>
+      <Text style={[styles.typeDescription, { color: theme.textMuted }]}>{meta.description}</Text>
+      <View style={[styles.sampleBubble, { backgroundColor: theme.surfaceAlt }]}>
+        <Text style={[styles.sampleText, { color: theme.textSecondary }]}>{meta.sample}</Text>
+      </View>
+      <Text style={[styles.typeDescription, { color: theme.textSubtle }]}>
+        {!nearby.supported
+          ? "זמין רק באפליקציה המותקנת, לא בדפדפן"
+          : nearby.enabled
+            ? `הטלפון עוקב אחרי ${nearby.watching} מקומות שכבר קנית בהם. המיקום לא נשלח לשום מקום.`
+            : "המכשיר בודק את זה בעצמו — המיקום שלך לא נשלח לשרת ולא נשמר אצלנו"}
+      </Text>
+      <View style={styles.channelRow}>
+        <View style={styles.channelToggle}>
+          <Switch
+            value={nearby.enabled}
+            disabled={!nearby.supported || nearby.busy}
+            onValueChange={() => { void onPress(); }}
+            trackColor={{ false: theme.inputBorder, true: theme.primary }}
+            thumbColor="#ffffff"
+          />
+          <Text style={[styles.channelLabel, { color: theme.textMuted }]}>
+            {nearby.busy ? "רגע..." : "תזכורת כשאני בסביבה"}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export function NotificationSettingsScreen() {
   const { theme } = useAppTheme();
   const { data: prefs, isLoading: prefsLoading } = useNotificationPreferences();
@@ -169,6 +232,8 @@ export function NotificationSettingsScreen() {
       : false;
   const pushOn = prefs.push && deviceReady;
   const blockedBySystem = native.isSupported && native.permission === "denied";
+
+  const nearby = useNearbyAlerts();
 
   const handleTypeChannel = (
     type: NotificationTypeId,
@@ -250,7 +315,9 @@ export function NotificationSettingsScreen() {
             כל סוג הודעה בנפרד. מה שכיבית כאן פשוט לא יישלח — הכל תמיד ממשיך
             להופיע ברשימת ההתראות באפליקציה
           </Text>
-          {NOTIFICATION_TYPES.map((meta) => (
+          {NOTIFICATION_TYPES.map((meta) => meta.id === "nearby_store" ? (
+            <NearbyCard key={meta.id} meta={meta} nearby={nearby} theme={theme} />
+          ) : (
             <TypeCard
               key={meta.id}
               meta={meta}

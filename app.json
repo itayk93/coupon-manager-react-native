@@ -37,7 +37,8 @@
         "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
@@ -129,11 +130,11 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "האפליקציה משתמשת במיקום שלך רק לאחר לחיצה על 'המיקום שלי', כדי לרשום היכן השתמשת בקופון.",
-          "locationAlwaysAndWhenInUsePermission": false,
-          "locationAlwaysPermission": false,
+          "locationAlwaysAndWhenInUsePermission": "כדי להזכיר לך על קופון כשאתה ליד החנות. הבדיקה נעשית על המכשיר בלבד — המיקום שלך לא נשלח לשום מקום.",
+          "locationAlwaysPermission": "כדי להזכיר לך על קופון כשאתה ליד החנות, גם כשהאפליקציה סגורה. הבדיקה נעשית על המכשיר בלבד.",
           "motionUsagePermission": false,
-          "isIosBackgroundLocationEnabled": false,
-          "isAndroidBackgroundLocationEnabled": false
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
         }
       ],
       [

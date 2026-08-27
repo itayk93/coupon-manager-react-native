@@ -64,12 +64,13 @@ describe("withTypeChannel", () => {
 });
 
 describe("copy", () => {
-  it("keeps the shekel sign beside the amount", () => {
-    // Written the other way round, bidi throws the sign to the far end of the
-    // line — the bug this codebase has already fixed twice on screen.
+  it("spells the currency out instead of using the sign", () => {
+    // The ₪ sign lands on the wrong side of the digits in mail clients and
+    // notification shades alike; the letters never do, and they read as speech.
     const copy = copyFor("monthly_summary", { month: 7, year: 2026, amount: 869.8, isBest: true });
-    expect(copy.body).toContain("869.80 ₪");
+    expect(copy.body).toContain("869.80 ש״ח");
     expect(copy.body).toContain("באוגוסט 2026");
+    expect(copy.body).not.toContain("₪");
   });
 
   it("names the sharer and the company", () => {
@@ -99,6 +100,8 @@ describe("copy", () => {
         month: 0, year: 2026, amount: 10, months: 3, fromName: "א", company: "ב",
         balance: 1, couponId: 1, saved: 5, threshold: 1000, count: 10, remaining: 5,
       });
+      // The sign never reaches a notification, whichever kind it is.
+      expect(`${copy.title} ${copy.body}`).not.toContain("₪");
       expect(copy.title).toMatch(/[֐-׿]/);
       expect(copy.body).toMatch(/[֐-׿]/);
     }

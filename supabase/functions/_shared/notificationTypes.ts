@@ -21,7 +21,8 @@ export type NotificationTypeId =
   | 'coupon_finished'
   | 'savings_milestone'
   | 'coupon_milestone'
-  | 'expired_unused';
+  | 'expired_unused'
+  | 'nearby_store';
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -86,11 +87,25 @@ export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta
     label: 'קופון פג בלי שנוצל',
     defaults: { email: true, push: false, in_app: true },
   },
+  nearby_store: {
+    id: 'nearby_store',
+    label: 'אתה ליד חנות עם קופון',
+    // The device raises this one itself, from a geofence, with no server
+    // involved — so push is the only channel that can carry it.
+    defaults: { email: false, push: true, in_app: false },
+  },
 };
 
-/** "869.80 ₪", glued so bidi keeps the sign beside the digits. */
+/**
+ * "869.80 ש״ח".
+ *
+ * Spelled out rather than the ₪ sign: a notification is a sentence someone
+ * reads in a shade or an inbox, and the letters read as speech where the sign
+ * reads as a form field. It also sidesteps every mail client and launcher that
+ * lays the sign out on the wrong side of the digits.
+ */
 export function money(amount: number): string {
-  return `${amount.toFixed(2)} ₪`;
+  return `${amount.toFixed(2)} ש״ח`;
 }
 
 const MONTHS = [
@@ -119,6 +134,14 @@ export type NotificationCopy = { title: string; body: string; link: string };
  */
 export function copyFor(type: NotificationTypeId, payload: Record<string, any>): NotificationCopy {
   switch (type) {
+    case 'expiry': {
+      const names: string[] = payload.names || [];
+      return {
+        title: names.length === 1 ? 'קופון עומד לפוג' : 'קופונים עומדים לפוג',
+        body: `הקופונים הבאים עומדים לפוג ${payload.when}: ${names.join(', ')}`,
+        link: '/coupons',
+      };
+    }
     case 'monthly_summary': {
       const label = `${monthName(payload.month)} ${payload.year}`;
       const best = payload.isBest
@@ -172,6 +195,12 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
           ? 'הכנסת את הקופון הראשון שלך. מכאן אנחנו שומרים עליו — נזכיר לך לפני שהוא פג.'
           : `${payload.count} קופונים בארנק. יפה 👏`,
         link: '/coupons',
+      };
+    case 'nearby_store':
+      return {
+        title: `יש לך קופון ב${payload.company}`,
+        body: `אתה ממש ליד. נשארו לך ${money(payload.remaining)} לנצל כאן.`,
+        link: payload.couponId ? `/coupons/${payload.couponId}` : '/coupons',
       };
     case 'expired_unused':
       return {
