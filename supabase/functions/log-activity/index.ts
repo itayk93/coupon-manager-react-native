@@ -41,11 +41,14 @@ function clientIp(req: Request): string | null {
 /**
  * Device and app version, as the client states them in its user agent. Kept as
  * free text like the legacy rows rather than parsed into a taxonomy that would
- * be wrong within a release.
+ * be wrong within a release. user_activities.device is varchar(50), so a long
+ * browser user agent has to be cut to fit or the whole batch fails to insert.
  */
+const DEVICE_MAX_LENGTH = 50;
+
 function clientDevice(req: Request): string | null {
   const ua = req.headers.get('user-agent');
-  return ua ? ua.slice(0, 255) : null;
+  return ua ? ua.slice(0, DEVICE_MAX_LENGTH) : null;
 }
 
 /**
