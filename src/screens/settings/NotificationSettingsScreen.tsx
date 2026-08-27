@@ -187,6 +187,11 @@ export function NotificationSettingsScreen() {
 
   const pwa = usePwaNotifications();
   const native = useNativeNotifications();
+  // Above the loading return, with the others. Called after it, this ran on
+  // the render that had preferences and not on the render that did not, so
+  // React saw the hook count grow the moment the query resolved and threw
+  // instead of drawing the screen — a spinner that never became anything.
+  const nearby = useNearbyAlerts();
 
   const [windowError, setWindowError] = useState<string | null>(null);
 
@@ -233,7 +238,6 @@ export function NotificationSettingsScreen() {
   const pushOn = prefs.push && deviceReady;
   const blockedBySystem = native.isSupported && native.permission === "denied";
 
-  const nearby = useNearbyAlerts();
 
   const handleTypeChannel = (
     type: NotificationTypeId,
