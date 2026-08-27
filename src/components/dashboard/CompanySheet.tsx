@@ -402,10 +402,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
 
                   {c.card_exp || c.cvv ? (
                     <View
-                      style={[
-                        styles.cardDetailsRow,
-                        { backgroundColor: theme.surfaceAlt },
-                      ]}
+                      style={[styles.cardDetailsRow, { borderTopColor: theme.divider }]}
                     >
                       {c.card_exp ? (
                         <View style={styles.cardDetailItem}>
@@ -661,7 +658,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   track: {
-    height: 10,
+    height: 6,
     borderRadius: radii.pill,
     overflow: "hidden",
     flexDirection: "row-reverse",
@@ -691,9 +688,9 @@ const styles = StyleSheet.create({
   },
   code: {
     fontFamily: fonts.display,
-    // Read out loud at the till, so it is sized to be read from a held phone
-    // rather than to fit the line.
-    fontSize: 20,
+    // Readable at arm's length without competing with the balance, which is
+    // the one number the card leads on.
+    fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.5,
     writingDirection: "ltr",
@@ -704,13 +701,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   cardDetailsRow: {
+    // The details sit on the card behind a rule instead of inside a grey pill,
+    // which was a third box in an already layered sheet.
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "flex-start",
     gap: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: radii.sm,
   },
   cardDetailItem: {
     flexDirection: "row-reverse",
@@ -723,15 +721,14 @@ const styles = StyleSheet.create({
   },
   cardDetailVal: {
     fontFamily: fonts.display,
-    // Dictated at the till alongside the code, so it is sized to match it.
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.5,
     writingDirection: "ltr",
   },
   cardDetailDivider: {
     width: 1,
-    height: 18,
+    height: 14,
   },
   codeOverlay: {
     ...StyleSheet.absoluteFill,

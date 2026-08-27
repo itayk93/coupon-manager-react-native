@@ -233,7 +233,7 @@ export function CouponCard({
       onPressOut={hold.handlers.onPressOut}
       style={[
         styles.card,
-        shadows.lifted,
+        shadows.card,
         {
           backgroundColor: theme.card,
           borderColor: selected ? theme.primary : "transparent",
@@ -302,7 +302,7 @@ export function CouponCard({
         </View>
 
         {coupon.card_exp || coupon.cvv ? (
-          <View style={styles.cardDetailsRow}>
+          <View style={[styles.cardDetailsRow, { borderTopColor: theme.divider }]}>
             {coupon.card_exp ? (
               <View style={styles.cardDetailItem}>
                 <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   track: {
-    height: 10,
+    height: 6,
     borderRadius: radii.pill,
     overflow: "hidden",
     flexDirection: "row-reverse",
@@ -474,14 +474,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cardDetailsRow: {
+    // A grey pill here made a third box inside an already layered card, so the
+    // details sit on the card itself, separated by a rule.
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "flex-start",
     gap: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: "rgba(0,0,0,0.03)",
-    borderRadius: radii.sm,
   },
   cardDetailItem: {
     flexDirection: "row-reverse",
@@ -494,21 +494,20 @@ const styles = StyleSheet.create({
   },
   cardDetailVal: {
     fontFamily: fonts.display,
-    // Dictated at the till alongside the code, so it is sized to match it.
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.5,
     writingDirection: "ltr",
   },
   cardDetailDivider: {
     width: 1,
-    height: 18,
+    height: 14,
   },
   code: {
     fontFamily: fonts.display,
-    // Read out loud at the till, so it is sized to be read from a held phone
-    // rather than to fit the line.
-    fontSize: 20,
+    // Readable at arm's length without competing with the balance, which is
+    // the one number the card leads on.
+    fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.5,
     writingDirection: "ltr",
