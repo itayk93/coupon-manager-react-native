@@ -684,14 +684,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   metaRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
+    // The code owns its own line: at reading size it no longer shares one with
+    // the expiry without truncating.
+    alignItems: "flex-end",
+    gap: 4,
   },
   code: {
     fontFamily: fonts.display,
-    fontSize: 13,
+    // Read out loud at the till, so it is sized to be read from a held phone
+    // rather than to fit the line.
+    fontSize: 20,
     fontWeight: "700",
+    letterSpacing: 0.5,
     writingDirection: "ltr",
   },
   days: {
@@ -715,17 +719,19 @@ const styles = StyleSheet.create({
   },
   cardDetailLabel: {
     fontFamily: fonts.body,
-    fontSize: 11.5,
+    fontSize: 12,
   },
   cardDetailVal: {
     fontFamily: fonts.display,
-    fontSize: 12,
+    // Dictated at the till alongside the code, so it is sized to match it.
+    fontSize: 17,
     fontWeight: "700",
+    letterSpacing: 0.5,
     writingDirection: "ltr",
   },
   cardDetailDivider: {
     width: 1,
-    height: 12,
+    height: 18,
   },
   codeOverlay: {
     ...StyleSheet.absoluteFill,

@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React from "react";
 import {
   View,
@@ -178,7 +179,7 @@ export function CouponCard({
       toValue: 1,
       duration: 420,
       easing: Easing.out(Easing.back(2)),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start(({ finished }) => {
       if (finished && Platform.OS !== "web") {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
@@ -243,7 +244,7 @@ export function CouponCard({
       ]}
     >
       {isInactive ? (
-        <Animated.View style={[styles.stamp, stampStyle]} pointerEvents="none">
+        <Animated.View style={[styles.stamp, stampStyle, { pointerEvents: "none" }]}>
           <Text style={[styles.stampText, { color: theme.danger }]}>
             {isExpired ? "פג תוקף" : "נוצל"}
           </Text>
@@ -271,8 +272,7 @@ export function CouponCard({
 
       {/* Hold progress: fills across the card on the way to "report usage" */}
       <Animated.View
-        pointerEvents="none"
-        style={[styles.holdBar, { width: holdFill, backgroundColor: theme.primary }]}
+        style={[styles.holdBar, { width: holdFill, backgroundColor: theme.primary, pointerEvents: "none" }]}
       />
 
       {/* Body */}
@@ -468,9 +468,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   metaRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
+    // The code owns its own line: at reading size it no longer shares one with
+    // the expiry without truncating.
+    alignItems: "flex-end",
+    gap: 4,
   },
   cardDetailsRow: {
     flexDirection: "row-reverse",
@@ -489,22 +490,27 @@ const styles = StyleSheet.create({
   },
   cardDetailLabel: {
     fontFamily: fonts.body,
-    fontSize: 11.5,
+    fontSize: 12,
   },
   cardDetailVal: {
     fontFamily: fonts.display,
-    fontSize: 12,
+    // Dictated at the till alongside the code, so it is sized to match it.
+    fontSize: 17,
     fontWeight: "700",
+    letterSpacing: 0.5,
     writingDirection: "ltr",
   },
   cardDetailDivider: {
     width: 1,
-    height: 12,
+    height: 18,
   },
   code: {
     fontFamily: fonts.display,
-    fontSize: 13,
+    // Read out loud at the till, so it is sized to be read from a held phone
+    // rather than to fit the line.
+    fontSize: 20,
     fontWeight: "700",
+    letterSpacing: 0.5,
     writingDirection: "ltr",
   },
   days: {
