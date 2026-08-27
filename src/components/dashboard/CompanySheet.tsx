@@ -347,21 +347,17 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                       ) : null}
                     </View>
 
-                    {/* An untouched coupon draws an empty grey bar that says
-                        nothing, so the track only appears once there is fill. */}
-                    {usedPct > 0 ? (
-                      <View style={[styles.track, { backgroundColor: theme.track }]}>
-                        <View
-                          style={[
-                            styles.fill,
-                            {
-                              width: `${usedPct}%`,
-                              backgroundColor: isInactive ? theme.textSubtle : brand,
-                            },
-                          ]}
-                        />
-                      </View>
-                    ) : null}
+                    <View style={[styles.track, { backgroundColor: theme.track }]}>
+                      <View
+                        style={[
+                          styles.fill,
+                          {
+                            width: `${usedPct}%`,
+                            backgroundColor: isInactive ? theme.textSubtle : brand,
+                          },
+                        ]}
+                      />
+                    </View>
                   </View>
 
                   <View style={styles.metaRow}>
