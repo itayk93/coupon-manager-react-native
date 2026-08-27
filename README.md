@@ -49,6 +49,17 @@ credentials or production coupon data.
 `npm start` alone expects a dev client. The app uses native modules, so Expo Go
 will not run it — build once with `npm run ios` / `npm run android` first.
 
+### Live iPhone logs
+
+Connect and unlock the iPhone, then run:
+
+```bash
+npm run logs:ios
+```
+
+This detects the connected iPhone and streams JavaScript logs, warnings, native
+errors and crashes from `CouponMaster`. Press `Ctrl-C` to stop.
+
 ## Backend
 
 Migrations live in `supabase/migrations/`, applied in filename order:
