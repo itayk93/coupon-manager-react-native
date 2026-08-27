@@ -63,12 +63,20 @@
     <string>אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>האפליקציה משתמשת במיקום שלך רק לאחר לחיצה על 'המיקום שלי', כדי לרשום היכן השתמשת בקופון.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>כדי להזכיר לך על קופון כשאתה ליד החנות. הבדיקה נעשית על המכשיר בלבד — המיקום שלך לא נשלח לשום מקום.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>כדי להזכיר לך על קופון כשאתה ליד החנות, גם כשהאפליקציה סגורה. הבדיקה נעשית על המכשיר בלבד.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
     </array>
     <key>RCTMetroPort</key>
     <string>$(RCT_METRO_PORT)</string>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>location</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
