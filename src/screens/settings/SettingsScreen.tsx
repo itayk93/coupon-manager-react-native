@@ -181,9 +181,9 @@ export function SettingsScreen() {
               </View>
             ) : null}
 
-            {/* Statistics and purchase map. They used to be bottom-bar tabs;
-                they are destinations people choose, not places they pass
-                through, so they live here now. */}
+            {/* The screens people navigate to deliberately, grouped: they are
+                destinations someone chooses, not places passed through on the
+                way to something else. */}
             <TouchableOpacity
               onPress={() => router.push("/statistics")}
               style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
@@ -210,6 +210,19 @@ export function SettingsScreen() {
               </View>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              onPress={() => router.push("/sharing")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  שיתופים
+                </Text>
+                <Share2 size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
             {/* Notification preferences */}
             <TouchableOpacity
               onPress={() => router.push("/notification-settings")}
@@ -221,20 +234,6 @@ export function SettingsScreen() {
                   התראות
                 </Text>
                 <Bell size={20} color={theme.textMuted} />
-              </View>
-            </TouchableOpacity>
-
-            {/* Sharing Entry */}
-            <TouchableOpacity
-              onPress={() => router.push("/sharing")}
-              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
-            >
-              <ChevronLeft size={18} color={theme.textMuted} />
-              <View style={styles.menuItemLabelGroup}>
-                <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  קופונים משותפים
-                </Text>
-                <Share2 size={20} color={theme.textMuted} />
               </View>
             </TouchableOpacity>
 

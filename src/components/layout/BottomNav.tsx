@@ -2,8 +2,9 @@ import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Share2, Ticket, User } from "lucide-react-native";
+import { Bell, Home, Share2, Ticket, User } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInAppNotifications } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -24,6 +25,7 @@ const ITEMS: Item[] = [
   { label: "דשבורד", path: "/", Icon: Home, match: [] },
   { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
   { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
+  { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
   { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", "/admin"] },
 ];
 
@@ -47,6 +49,8 @@ export function BottomNav() {
   const insets = useSafeAreaInsets();
   const { theme } = useAppTheme();
   const { session } = useAuth();
+  const { data: notifications = [] } = useInAppNotifications();
+  const unread = notifications.filter((item) => !item.viewed).length;
 
   // The nav belongs to the signed-in app, not the auth screens. Owning this
   // here keeps the root layout from having to thread visibility through.
@@ -76,7 +80,10 @@ export function BottomNav() {
             accessibilityLabel={item.label}
             accessibilityState={{ selected: active }}
           >
-            <item.Icon color={color} size={20} strokeWidth={1.8} />
+            <View>
+              <item.Icon color={color} size={20} strokeWidth={1.8} />
+              {item.path === "/notifications" && unread > 0 ? <View style={styles.dot} /> : null}
+            </View>
             <Text style={[styles.label, { color }]}>{item.label}</Text>
           </TouchableOpacity>
         );
@@ -97,6 +104,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
+  },
+  dot: {
+    position: "absolute",
+    top: -2,
+    right: -3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ef4444",
   },
   label: {
     fontFamily: fonts.bodyBold,
