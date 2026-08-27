@@ -277,16 +277,19 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               <Text numberOfLines={1} style={[styles.headTitle, { color: headText }]}>
                 {shown}
               </Text>
-            </View>
 
-            <Text
-              style={[styles.headMeta, { color: headTextSoft }]}
-              maxFontSizeMultiplier={1.3}
-            >
-              {rows.length === 1
-                ? "קופון אחד"
-                : `${rows.length} קופונים · יתרה ${formatIls(total)}`}
-            </Text>
+              {/* Rides at the far end of the logo's line: the count is context
+                  for the name, not a line of its own under it. */}
+              <Text
+                numberOfLines={2}
+                style={[styles.headMeta, { color: headTextSoft }]}
+                maxFontSizeMultiplier={1.3}
+              >
+                {rows.length === 1
+                  ? "קופון אחד"
+                  : `${rows.length} קופונים · ${formatIls(total)}`}
+              </Text>
+            </View>
           </View>
 
           <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body}>
@@ -586,12 +589,12 @@ const styles = StyleSheet.create({
   headRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
   },
   logoFrame: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.md,
+    width: 52,
+    height: 52,
+    borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -603,16 +606,17 @@ const styles = StyleSheet.create({
   headTitle: {
     fontFamily: fonts.display,
     color: "#ffffff",
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: "800",
-    flexShrink: 1,
+    flex: 1,
+    textAlign: "right",
   },
   headMeta: {
     fontFamily: fonts.body,
     color: "rgba(255,255,255,0.85)",
-    fontSize: 13,
-    marginTop: 4,
-    textAlign: "right",
+    fontSize: 12,
+    textAlign: "left",
+    maxWidth: 110,
   },
   bodyScroll: {
     flexGrow: 0,
