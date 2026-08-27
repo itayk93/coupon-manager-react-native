@@ -470,7 +470,6 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                   cardExp={openCode.card_exp}
                   cvv={openCode.cvv}
                   label="קוד הקופון"
-                  onPress={handleCopy}
                 />
 
                 <View style={[styles.codeBalance, { backgroundColor: theme.inputBg }]}>

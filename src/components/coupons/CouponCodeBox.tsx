@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette } from "@/lib/theme";
 
@@ -9,7 +9,6 @@ type CouponCodeBoxProps = {
   cvv?: string | null;
   /** Shown above the box. Pass null on surfaces that already have a heading. */
   label?: string | null;
-  onPress?: () => void;
 };
 
 /**
@@ -26,14 +25,14 @@ export function CouponCodeBox({
   cardExp,
   cvv,
   label = "קוד למימוש בקופה / באתר",
-  onPress,
 }: CouponCodeBoxProps) {
-  const { theme, isDark } = useAppTheme();
+  const { theme } = useAppTheme();
 
-  const frame = isDark ? "rgba(22, 163, 74, 0.3)" : "rgba(22, 163, 74, 0.2)";
-  const fill = isDark ? "rgba(22, 163, 74, 0.12)" : "rgba(22, 163, 74, 0.08)";
-
-  const Box = onPress ? TouchableOpacity : View;
+  // Light-only by product decision: the wallet stays bright, so the code frame
+  // uses the light green tint everywhere rather than branching on a dark mode
+  // that the theme layer never produces.
+  const frame = "rgba(22, 163, 74, 0.2)";
+  const fill = "rgba(22, 163, 74, 0.08)";
 
   return (
     <View style={styles.wrapper}>
@@ -41,11 +40,14 @@ export function CouponCodeBox({
         <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>
       ) : null}
 
-      <Box
-        {...(onPress ? { onPress, activeOpacity: 0.7, accessibilityRole: "button" as const } : {})}
+      <View
         style={[styles.box, { backgroundColor: fill, borderColor: frame }]}
       >
-        <Text style={[styles.code, { color: palette.success }]} selectable>
+        <Text
+          style={[styles.code, { color: palette.success }]}
+          maxFontSizeMultiplier={1.3}
+          selectable
+        >
           {code || "—"}
         </Text>
 
@@ -54,7 +56,11 @@ export function CouponCodeBox({
             {cardExp ? (
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: theme.textMuted }]}>תוקף כרטיס:</Text>
-                <Text style={[styles.detailValue, { color: theme.text }]} selectable>
+                <Text
+                  style={[styles.detailValue, { color: theme.text }]}
+                  maxFontSizeMultiplier={1.3}
+                  selectable
+                >
                   {cardExp}
                 </Text>
               </View>
@@ -67,14 +73,18 @@ export function CouponCodeBox({
             {cvv ? (
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: theme.textMuted }]}>CVV:</Text>
-                <Text style={[styles.detailValue, { color: theme.text }]} selectable>
+                <Text
+                  style={[styles.detailValue, { color: theme.text }]}
+                  maxFontSizeMultiplier={1.3}
+                  selectable
+                >
                   {cvv}
                 </Text>
               </View>
             ) : null}
           </View>
         ) : null}
-      </Box>
+      </View>
     </View>
   );
 }

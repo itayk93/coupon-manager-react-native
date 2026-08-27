@@ -22,7 +22,7 @@ type CouponBarcodeViewProps = {
 };
 
 export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
-  const { theme, isDark } = useAppTheme();
+  const { theme } = useAppTheme();
   const [copied, setCopied] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
@@ -52,8 +52,8 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
         style={[
           styles.mainCodeCard,
           {
-            backgroundColor: isDark ? theme.card : "#ffffff",
-            borderColor: isDark ? theme.border : "rgba(0,0,0,0.06)",
+            backgroundColor: "#ffffff",
+            borderColor: "rgba(0,0,0,0.06)",
           },
         ]}
       >
@@ -61,7 +61,6 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
           code={code}
           cardExp={coupon.card_exp}
           cvv={coupon.cvv}
-          onPress={handleCopyCode}
         />
 
         {/* Action Buttons Row: Copy + Show QR */}
@@ -94,8 +93,8 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                 styles.actionButton,
                 styles.qrActionButton,
                 {
-                  backgroundColor: isDark ? theme.surfaceAlt : "#f1f5f9",
-                  borderColor: isDark ? theme.border : "#e2e8f0",
+                  backgroundColor: "#f1f5f9",
+                  borderColor: "#e2e8f0",
                 },
               ]}
             >
@@ -145,8 +144,8 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
             style={[
               styles.modalCodeBox,
               {
-                backgroundColor: isDark ? theme.surfaceAlt : "#f8fafc",
-                borderColor: isDark ? theme.border : "#e2e8f0",
+                backgroundColor: "#f8fafc",
+                borderColor: "#e2e8f0",
               },
             ]}
           >
@@ -160,7 +159,11 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                 {copied ? "הועתק" : "העתק"}
               </Text>
             </View>
-            <Text style={[styles.modalCodeDigits, { color: theme.text }]} selectable>
+            <Text
+              style={[styles.modalCodeDigits, { color: theme.text }]}
+              maxFontSizeMultiplier={1.3}
+              selectable
+            >
               {code}
             </Text>
           </TouchableOpacity>
@@ -170,8 +173,8 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
               style={[
                 styles.modalCardDetailsBox,
                 {
-                  backgroundColor: isDark ? theme.surfaceAlt : "#f8fafc",
-                  borderColor: isDark ? theme.border : "#e2e8f0",
+                  backgroundColor: "#f8fafc",
+                  borderColor: "#e2e8f0",
                 },
               ]}
             >
@@ -180,7 +183,11 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                   <Text style={[styles.modalCardDetailLabel, { color: theme.textMuted }]}>
                     תוקף כרטיס:
                   </Text>
-                  <Text style={[styles.modalCardDetailVal, { color: theme.text }]} selectable>
+                  <Text
+                    style={[styles.modalCardDetailVal, { color: theme.text }]}
+                    maxFontSizeMultiplier={1.3}
+                    selectable
+                  >
                     {coupon.card_exp}
                   </Text>
                 </View>
@@ -190,7 +197,11 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                   <Text style={[styles.modalCardDetailLabel, { color: theme.textMuted }]}>
                     CVV:
                   </Text>
-                  <Text style={[styles.modalCardDetailVal, { color: theme.text }]} selectable>
+                  <Text
+                    style={[styles.modalCardDetailVal, { color: theme.text }]}
+                    maxFontSizeMultiplier={1.3}
+                    selectable
+                  >
                     {coupon.cvv}
                   </Text>
                 </View>
@@ -214,10 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 18,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.08)",
     elevation: 3,
     borderWidth: 1,
   },
@@ -259,10 +267,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#ffffff",
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
     elevation: 4,
   },
   noCodeBox: {
