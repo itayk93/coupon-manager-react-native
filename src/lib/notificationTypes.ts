@@ -23,7 +23,8 @@ export type NotificationTypeId =
   | "coupon_finished"
   | "savings_milestone"
   | "coupon_milestone"
-  | "expired_unused";
+  | "expired_unused"
+  | "nearby_store";
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -53,35 +54,35 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     id: "idle_money",
     label: "כסף ששוכב בארנק",
     description: "פעם בחודש, על יתרות שלא נגעת בהן",
-    sample: "240.00 ₪ יושבים בארנק כבר 3 חודשים",
+    sample: "240.00 ש״ח יושבים בארנק כבר 3 חודשים",
     defaults: { email: true, push: true, in_app: true },
   },
   {
     id: "balance_updated",
     label: "יתרה התעדכנה",
     description: "כשאנחנו בודקים יתרה בשבילך והיא השתנתה",
-    sample: "היתרה ב־Multipass עומדת עכשיו על 120.00 ₪",
+    sample: "היתרה ב־Multipass עומדת עכשיו על 120.00 ש״ח",
     defaults: { email: false, push: true, in_app: true },
   },
   {
     id: "coupon_finished",
     label: "סיימת קופון",
     description: "רגע קטן של סיפוק כשקופון נגמר",
-    sample: "סיימת את הקופון של גוד פארם. חסכת עליו 60.00 ₪",
+    sample: "סיימת את הקופון של גוד פארם. חסכת עליו 60.00 ש״ח",
     defaults: { email: false, push: true, in_app: true },
   },
   {
     id: "monthly_summary",
     label: "סיכום חודשי",
     description: "בתחילת כל חודש, כמה חסכת בחודש שעבר",
-    sample: "באוגוסט חסכת 869.80 ₪",
+    sample: "באוגוסט חסכת 869.80 ש״ח",
     defaults: { email: true, push: false, in_app: true },
   },
   {
     id: "savings_milestone",
     label: "אבני דרך בחיסכון",
     description: "כשעוברים סכום עגול של חיסכון מצטבר",
-    sample: "עברת 20,000 ₪ חיסכון מצטבר 🎉",
+    sample: "עברת 20,000 ש״ח חיסכון מצטבר 🎉",
     defaults: { email: true, push: false, in_app: true },
   },
   {
@@ -92,10 +93,17 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     defaults: { email: false, push: false, in_app: true },
   },
   {
+    id: "nearby_store",
+    label: "אתה ליד חנות עם קופון",
+    description: "כשאתה עובר ליד מקום שיש לך בו יתרה. הכל נשאר על המכשיר",
+    sample: "יש לך קופון ברולדין — אתה ממש ליד, נשארו 45.00 ש״ח",
+    defaults: { email: false, push: true, in_app: false },
+  },
+  {
     id: "expired_unused",
     label: "קופון פג בלי שנוצל",
     description: "פעם אחת בלבד, כדי שנוכל לתזכר מוקדם יותר בפעם הבאה",
-    sample: "הקופון בקסטרו פג עם 80.00 ₪ שלא נוצלו",
+    sample: "הקופון בקסטרו פג עם 80.00 ש״ח שלא נוצלו",
     defaults: { email: true, push: false, in_app: true },
   },
 ];

@@ -15,10 +15,10 @@ import { sendPushToRows, type PushSubscriptionRow } from './push.ts';
 import { notificationUrl } from './appLinks.ts';
 import {
   NOTIFICATION_TYPES,
-  copyFor,
   type NotificationChannel,
   type NotificationTypeId,
 } from './notificationTypes.ts';
+import { phrase } from './notificationVoice.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
@@ -170,7 +170,10 @@ export async function deliver(
     }
   }
 
-  const copy = copyFor(type, payload);
+  // Written fresh for this message rather than pulled from a fixed string —
+  // and falling back to the fixed string the moment anything is off. See
+  // notificationVoice.ts.
+  const copy = await phrase(type, payload, { supabase, userId: user.id });
   const appBase = Deno.env.get('APP_BASE_URL') || '';
 
   if (wantsInApp) {

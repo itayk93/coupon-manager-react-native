@@ -43,6 +43,10 @@ import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
+// Imported for its side effect: the geofencing task must be defined before
+// the system can hand an event to it, including on a cold start where the app
+// was launched by that event.
+import "@/lib/nearbyAlerts";
 
 // Hebrew RTL must be enabled before the first layout pass, so this runs at
 // module scope rather than in an effect.

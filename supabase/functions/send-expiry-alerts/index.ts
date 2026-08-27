@@ -24,6 +24,7 @@ import { expiryEmailHtml } from '../_shared/emailTemplate.ts';
 import { createServiceClient, sendPushToRows, type PushSubscriptionRow } from '../_shared/push.ts';
 import { couponsUrl } from '../_shared/appLinks.ts';
 import { wants, type DeliveryPrefs } from '../_shared/deliver.ts';
+import { phrase } from '../_shared/notificationVoice.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const DEFAULT_WINDOWS = [30, 7, 1, 0];
@@ -133,9 +134,13 @@ function whenLabel(days: number): string {
   return `בעוד ${days} ימים`;
 }
 
-function summaryText(coupons: CouponRow[], days: number): string {
-  const names = coupons.map((c) => `${c.company} (${remainingFor(c).toFixed(2)} ₪)`).join(', ');
-  return `הקופונים הבאים עומדים לפוג ${whenLabel(days)}: ${names}`;
+/** The facts, formatted, for both the written sentence and the model's. */
+function summaryFacts(coupons: CouponRow[], days: number) {
+  return {
+    when: whenLabel(days),
+    count: coupons.length,
+    names: coupons.map((c) => `${c.company} (${remainingFor(c).toFixed(2)} ש״ח)`),
+  };
 }
 
 async function sendEmail(
@@ -423,9 +428,12 @@ Deno.serve(async (req: Request) => {
           ? await claim('push', days, user.id, candidates.push)
           : [];
         if (pushClaimed.length) {
+          const copy = await phrase('expiry', summaryFacts(pushClaimed, days), {
+            supabase, userId: user.id,
+          });
           const stats = await sendPushToRows(supabase, subs, {
-            title: 'קופון מאסטר',
-            body: summaryText(pushClaimed, days),
+            title: copy.title,
+            body: copy.body,
             url: '/notifications',
             tag: `expiry-${days}-${user.id}`,
             renotify: true,
@@ -437,12 +445,15 @@ Deno.serve(async (req: Request) => {
 
         const inAppClaimed = await claim('in_app', days, user.id, candidates.in_app);
         if (inAppClaimed.length) {
+          const copy = await phrase('expiry', summaryFacts(inAppClaimed, days), {
+            supabase, userId: user.id,
+          });
           const { error } = await supabase.from('notifications').insert({
             user_id: user.id,
             type: 'expiry',
-            title: inAppClaimed.length === 1 ? 'קופון עומד לפוג' : 'קופונים עומדים לפוג',
-            message: summaryText(inAppClaimed, days),
-            link: '/coupons',
+            title: copy.title,
+            message: copy.body,
+            link: copy.link,
             shown: false,
             viewed: false,
             hide_from_view: false,
