@@ -11,6 +11,7 @@ import {
   Image,
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowRight, ChevronRight, KeyRound, Mail } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+
+// Where the recovery link in the email lands. Without it Supabase falls back to
+// the project's Site URL, which drops the user on the home screen already
+// signed in and with no way to actually pick a new password.
+const WEB_APP_ORIGIN = "https://coupons.itaykarkason.com";
 
 export function ForgotPasswordScreen() {
   const router = useRouter();
@@ -37,8 +43,16 @@ export function ForgotPasswordScreen() {
     setLoading(true);
 
     try {
+      // Native included: the link is opened from a mail client, so it has to
+      // resolve to the web app rather than to a custom scheme.
+      const redirectTo =
+        Platform.OS === "web"
+          ? Linking.createURL("reset-password")
+          : `${WEB_APP_ORIGIN}/reset-password`;
+
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase()
+        email.trim().toLowerCase(),
+        { redirectTo }
       );
       if (resetError) throw resetError;
 

@@ -82,6 +82,11 @@ const navigationFonts = Platform.select({
   },
 } as const);
 
+// Auth-group routes that stay put with a session in hand. `reset-password` is
+// reached from the recovery email, which signs the visitor in before they have
+// chosen the new password — bouncing them to the tabs would skip the reset.
+const AUTHED_AUTH_ROUTES = ["/onboarding", "/reset-password"];
+
 /**
  * Central auth guard. Redirects only once the stored session has been resolved
  * and the root navigator is mounted, so we never bounce the user mid-restore.
@@ -115,7 +120,7 @@ function useAuthGuard() {
       ).toString();
       rememberPendingRoute(query ? `${pathname}?${query}` : pathname);
       router.replace("/(auth)/login");
-    } else if (session && inAuthGroup && pathname !== "/onboarding") {
+    } else if (session && inAuthGroup && !AUTHED_AUTH_ROUTES.includes(pathname)) {
       const pendingRoute = takePendingRoute();
       router.replace((pendingRoute as any) ?? "/(tabs)");
     }
@@ -126,7 +131,7 @@ function useAuthGuard() {
   const settled =
     !isLoading &&
     navigatorReady &&
-    (session ? !inAuthGroup || pathname === "/onboarding" : inAuthGroup || inPublicContent);
+    (session ? !inAuthGroup || AUTHED_AUTH_ROUTES.includes(pathname) : inAuthGroup || inPublicContent);
 
   return { isReady: settled };
 }
