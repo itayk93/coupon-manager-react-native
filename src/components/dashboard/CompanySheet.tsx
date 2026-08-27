@@ -150,6 +150,10 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   const headText = getContrastText(brand);
   const headTextSoft =
     headText === "#ffffff" ? "rgba(255,255,255,0.8)" : "rgba(31,41,55,0.7)";
+  // A wash of the band's own colour, so the stat sits in a shape instead of
+  // floating loose at the end of the row.
+  const headScrim =
+    headText === "#ffffff" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)";
 
   // Set when a row is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = React.useState<DecryptedCoupon | null>(null);
@@ -278,17 +282,25 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                 {shown}
               </Text>
 
-              {/* Rides at the far end of the logo's line: the count is context
-                  for the name, not a line of its own under it. */}
-              <Text
-                numberOfLines={2}
-                style={[styles.headMeta, { color: headTextSoft }]}
-                maxFontSizeMultiplier={1.3}
-              >
-                {rows.length === 1
-                  ? "קופון אחד"
-                  : `${rows.length} קופונים · ${formatIls(total)}`}
-              </Text>
+              {/* A stat block, the shape every wallet app uses for this: the
+                  figure on top, what it counts underneath in small type. Loose
+                  text at the end of the row read as leftovers. */}
+              <View style={[styles.headStat, { backgroundColor: headScrim }]}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.headStatValue, { color: headText }]}
+                  maxFontSizeMultiplier={1.3}
+                >
+                  {formatIls(total)}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.headStatLabel, { color: headTextSoft }]}
+                  maxFontSizeMultiplier={1.3}
+                >
+                  {rows.length === 1 ? "קופון אחד" : `${rows.length} קופונים`}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -611,12 +623,22 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "right",
   },
-  headMeta: {
+  headStat: {
+    alignItems: "flex-end",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radii.md,
+  },
+  headStatValue: {
+    fontFamily: fonts.display,
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  headStatLabel: {
     fontFamily: fonts.body,
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-    textAlign: "left",
-    maxWidth: 110,
+    fontSize: 11,
+    marginTop: 1,
   },
   bodyScroll: {
     flexGrow: 0,
