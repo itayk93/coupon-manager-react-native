@@ -90,7 +90,6 @@ export function CouponCard({
   const brand = getCompanyColor(coupon.company || "");
   const headerColor = isFullyUsed || isExpired ? theme.textSubtle : brand;
   const headerText = getContrastText(headerColor);
-  const headerTextSoft = headerText === "#ffffff" ? "rgba(255,255,255,0.75)" : "rgba(31,41,55,0.7)";
   const headerPill = headerText === "#ffffff" ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.12)";
 
   const statusLabel = isExpired
@@ -256,11 +255,6 @@ export function CouponCard({
           <Text numberOfLines={1} style={[styles.company, { color: headerText }]}>
             {coupon.company || "ללא חברה"}
           </Text>
-          {coupon.description ? (
-            <Text numberOfLines={1} style={[styles.category, { color: headerTextSoft }]}>
-              {coupon.description}
-            </Text>
-          ) : null}
         </View>
 
         <View style={[styles.statusPill, { backgroundColor: headerPill }]}>
@@ -388,7 +382,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   header: {
-    height: 84,
+    height: 68,
     paddingHorizontal: 14,
     paddingTop: 14,
     flexDirection: "row-reverse",
@@ -405,13 +399,6 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "800",
-    textAlign: "right",
-  },
-  category: {
-    fontFamily: fonts.body,
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 12,
-    marginTop: 2,
     textAlign: "right",
   },
   statusPill: {
