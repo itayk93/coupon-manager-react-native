@@ -8,8 +8,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { Tag, Sparkles, ChevronLeft } from "lucide-react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Sparkles, ChevronLeft } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
@@ -26,9 +26,12 @@ import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { companyKey } from "@/lib/companyName";
+import { CharacterScene } from "@/components/onboarding/CharacterRig";
 
 export function DashboardScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ saved?: string }>();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
@@ -38,6 +41,12 @@ export function DashboardScreen() {
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
+  const [showSavedCelebration, setShowSavedCelebration] = useState(params.saved === "1");
+
+  React.useEffect(() => {
+    if (params.saved !== "1") return;
+    router.setParams({ saved: undefined });
+  }, [params.saved, router]);
 
   const visibleCoupons = useMemo(() => {
     const spendable = coupons.filter(isSpendableCoupon);
@@ -60,9 +69,10 @@ export function DashboardScreen() {
   const companyCards = useMemo(() => {
     const map = visibleCoupons.reduce<Record<string, { company: string; count: number }>>(
       (acc, coupon) => {
-        const company = coupon.company || "ללא חברה";
-        acc[company] = acc[company] || { company, count: 0 };
-        acc[company].count += 1;
+        const key = companyKey(coupon.company);
+        const company = (coupon.company || "ללא חברה").trim();
+        acc[key] = acc[key] || { company, count: 0 };
+        acc[key].count += 1;
         return acc;
       },
       {}
@@ -85,8 +95,22 @@ export function DashboardScreen() {
 
   const filteredCoupons = useMemo(() => {
     if (!selectedCompany) return visibleCoupons;
-    return visibleCoupons.filter((c) => c.company === selectedCompany);
+    return visibleCoupons.filter(
+      (c) => companyKey(c.company) === companyKey(selectedCompany)
+    );
   }, [visibleCoupons, selectedCompany]);
+
+  const prioritizedCoupons = useMemo(() => {
+    const now = Date.now();
+    return [...filteredCoupons].sort((a, b) => {
+      const expiryA = a.expiration ? new Date(a.expiration).getTime() : Number.POSITIVE_INFINITY;
+      const expiryB = b.expiration ? new Date(b.expiration).getTime() : Number.POSITIVE_INFINITY;
+      const urgencyA = expiryA === Number.POSITIVE_INFINITY ? expiryA : Math.max(0, expiryA - now);
+      const urgencyB = expiryB === Number.POSITIVE_INFINITY ? expiryB : Math.max(0, expiryB - now);
+      if (urgencyA !== urgencyB) return urgencyA - urgencyB;
+      return ((b.value || 0) - (b.used_value || 0)) - ((a.value || 0) - (a.used_value || 0));
+    });
+  }, [filteredCoupons]);
 
   const onboardingPending = useOnboardingPending();
 
@@ -116,6 +140,21 @@ export function DashboardScreen() {
             once the first coupon is in, and stacking it above the expiry
             warning turned the top of a new account into a wall of notices. */}
         <OnboardingBanner />
+        {showSavedCelebration ? (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setShowSavedCelebration(false)}
+            style={[styles.successCard, { backgroundColor: theme.successBg }]}
+            accessibilityRole="button"
+            accessibilityLabel="הקופון נשמר בארנק. סגירת ההודעה"
+          >
+            <View style={styles.successVisual}><CharacterScene state="success" compact /></View>
+            <View style={styles.successCopy}>
+              <Text style={[styles.successTitle, { color: theme.successText }]}>הקופון נשמר בארנק</Text>
+              <Text style={[styles.successText, { color: theme.successText }]}>הוא מוכן למימוש. לחיצה סוגרת את ההודעה.</Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
         {onboardingPending ? null : (
           <>
             <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
@@ -137,6 +176,7 @@ export function DashboardScreen() {
           companyCards={companyCards}
           selectedCompany={selectedCompany}
           onSelectCompany={handleSelectCompany}
+          onShowAll={() => router.navigate("/coupons")}
         />
 
         {/* Selected Company Clear Filter Header */}
@@ -160,20 +200,20 @@ export function DashboardScreen() {
               onPress={() => router.navigate("/coupons")}
               style={styles.seeAllBtn}
             >
-              <ChevronLeft size={16} color={theme.primary} />
-              <Text style={[styles.seeAllText, { color: theme.primary }]}>
+              <ChevronLeft size={16} color={theme.textMuted} />
+              <Text style={[styles.seeAllText, { color: theme.textMuted }]}>
                 לכל הקופונים ({visibleCoupons.length})
               </Text>
             </TouchableOpacity>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              קופונים פעילים
+            <Text style={[styles.sectionTitle, { color: theme.text }]}> 
+              דורש טיפול
             </Text>
           </View>
         )}
 
         {/* List of Recent Active Coupons */}
-        {filteredCoupons.length > 0 ? (
-          filteredCoupons.slice(0, selectedCompany ? 20 : 6).map((coupon) => (
+        {prioritizedCoupons.length > 0 ? (
+          prioritizedCoupons.slice(0, selectedCompany ? 12 : 3).map((coupon) => (
             <CouponCard
               key={coupon.id}
               coupon={coupon}
@@ -190,7 +230,7 @@ export function DashboardScreen() {
             icon={<Sparkles size={32} color={theme.primary} />}
             title="אין קופונים להצגה"
             subtitle="הוסף את הקופון הראשון שלך ותתחיל לחסוך כסף!"
-            actionTitle="הוסף קופון חדש"
+            actionTitle="הוספת קופון"
             onAction={() => router.push("/scanner")}
           />
         )}
@@ -270,5 +310,36 @@ const styles = StyleSheet.create({
   clearFilterText: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  successCard: {
+    minHeight: 116,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  successVisual: {
+    width: 128,
+    height: 110,
+    overflow: "hidden",
+  },
+  successCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  successTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  successText: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    textAlign: "right",
+    marginTop: 3,
   },
 });

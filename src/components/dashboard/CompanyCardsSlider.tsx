@@ -14,6 +14,7 @@ type CompanyCardsSliderProps = {
   companyCards: CompanyCardItem[];
   selectedCompany: string | null;
   onSelectCompany: (company: string) => void;
+  onShowAll?: () => void;
 };
 
 /**
@@ -24,6 +25,7 @@ export function CompanyCardsSlider({
   companyCards,
   selectedCompany,
   onSelectCompany,
+  onShowAll,
 }: CompanyCardsSliderProps) {
   const { theme } = useAppTheme();
 
@@ -31,12 +33,19 @@ export function CompanyCardsSlider({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>
-        חברות עם קופונים פעילים
-      </Text>
+      <View style={styles.titleRow}>
+        {companyCards.length > 6 && onShowAll ? (
+          <TouchableOpacity onPress={onShowAll} accessibilityRole="button">
+            <Text style={[styles.showAll, { color: theme.textMuted }]}>הצגת הכול</Text>
+          </TouchableOpacity>
+        ) : <View />}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}> 
+          חברות עם קופונים פעילים
+        </Text>
+      </View>
 
       <View style={styles.grid}>
-        {companyCards.map((item) => {
+        {companyCards.slice(0, 6).map((item) => {
           const isSelected = selectedCompany === item.company;
           const logoUri = getCompanyLogoSource(item.company);
 
@@ -50,8 +59,8 @@ export function CompanyCardsSlider({
                 shadows.card,
                 {
                   backgroundColor: theme.card,
-                  borderColor: isSelected ? theme.primary : theme.cardBorder,
-                  borderWidth: isSelected ? 2 : 1,
+                  borderColor: isSelected ? theme.primary : "transparent",
+                  borderWidth: isSelected ? 2 : 0,
                 },
               ]}
             >
@@ -66,8 +75,8 @@ export function CompanyCardsSlider({
                 {item.company}
               </Text>
 
-              <Text style={[styles.couponCount, { color: theme.textSubtle }]}>
-                {item.count} קופונים
+              <Text style={[styles.couponCount, { color: theme.textSubtle }]}> 
+                {item.count === 1 ? "קופון אחד" : `${item.count} קופונים`}
               </Text>
             </TouchableOpacity>
           );
@@ -79,34 +88,43 @@ export function CompanyCardsSlider({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 28,
-    marginBottom: 24,
+    marginTop: 20,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "800",
     textAlign: "right",
-    marginBottom: 12,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  showAll: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
   },
   grid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
-    gap: 12,
-  },
-  card: {
-    // Two per row on a phone, matching the design's minmax(140px, 1fr) grid.
-    width: "48%",
-    borderRadius: radii.card,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    alignItems: "center",
     gap: 8,
   },
+  card: {
+    width: "31%",
+    borderRadius: radii.card,
+    minHeight: 98,
+    paddingVertical: 9,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    gap: 5,
+  },
   logoWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: radii.xl,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -118,13 +136,13 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontFamily: fonts.bodyBold,
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "700",
     textAlign: "center",
     maxWidth: "100%",
   },
   couponCount: {
     fontFamily: fonts.body,
-    fontSize: 12,
+    fontSize: 11,
   },
 });

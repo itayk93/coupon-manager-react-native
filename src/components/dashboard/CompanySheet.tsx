@@ -602,6 +602,8 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 12,
+    // Clears the close button, which floats at the top-left of the band.
+    paddingLeft: 40,
   },
   logoFrame: {
     width: 52,

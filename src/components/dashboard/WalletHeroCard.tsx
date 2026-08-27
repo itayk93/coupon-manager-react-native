@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import { formatIls } from "@/lib/formatIls";
+import { IlsAmount } from "@/components/ui/IlsAmount";
 
 type WalletHeroCardProps = {
   coupons: DecryptedCoupon[];
@@ -43,39 +44,43 @@ export function WalletHeroCard({
       <View
         style={[
           styles.mainCard,
-          {
-            backgroundColor: theme.card,
-            borderColor: theme.cardBorder,
-          },
+          { backgroundColor: theme.card },
         ]}
       >
         <View style={styles.topRow}>
-          <View style={[styles.eyebrowBadge, { backgroundColor: theme.primaryTint }]}>
-            <Text style={[styles.eyebrowText, { color: theme.primaryDark }]}>הארנק שלך</Text>
-            <WalletCards size={15} color={theme.primaryDark} />
+          {/* Neutral on purpose: the only colour on this screen belongs to the
+              button the user is meant to press. */}
+          <View style={[styles.eyebrowBadge, { backgroundColor: theme.surfaceAlt }]}>
+            <Text style={[styles.eyebrowText, { color: theme.textMuted }]}>הארנק שלך</Text>
+            <WalletCards size={15} color={theme.textMuted} />
           </View>
         </View>
 
         <Text style={[styles.greetingText, { color: theme.text }]}>
           {greeting}, {displayName} 👋
         </Text>
-        <Text style={[styles.subGreetingText, { color: theme.textMuted }]}>
+        <Text style={[styles.subGreetingText, { color: theme.textMuted }]}> 
           {isError
             ? "לא הצלחנו לטעון את הקופונים"
-            : `${visibleCoupons.length} קופונים פעילים לניצול`}
+            : visibleCoupons.length === 1 ? "קופון אחד פעיל" : `${visibleCoupons.length} קופונים פעילים`}
         </Text>
 
         {/* Balance Box */}
-        <View
-          style={[
-            styles.balanceBox,
-            { backgroundColor: theme.surface, borderColor: theme.cardBorder },
-          ]}
-        >
+        {/* A tinted box inside a white card inside a cream screen was three
+            layers deep. The balance sits on the card, behind a rule. */}
+        <View style={[styles.balanceBox, { borderTopColor: theme.divider }]}>
           <Text style={[styles.balanceLabel, { color: theme.textMuted }]}>יתרה זמינה בארנק</Text>
-          <Text style={[styles.balanceValue, { color: theme.text }]}>
-            {isError ? "—" : isLoading ? "טוען..." : formatIls(remainingValue)}
-          </Text>
+          {isError || isLoading ? (
+            <Text style={[styles.balanceValue, { color: theme.text }]}> 
+              {isError ? "—" : "טוען..."}
+            </Text>
+          ) : (
+            <IlsAmount
+              value={remainingValue}
+              style={[styles.balanceValue, { color: theme.text }]}
+              currencyStyle={styles.balanceCurrency}
+            />
+          )}
           <Text style={[styles.balanceSub, { color: theme.textSubtle }]}>
             {isError
               ? "היתרה תוצג לאחר טעינה מחדש"
@@ -107,19 +112,18 @@ export function WalletHeroCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   mainCard: {
     borderRadius: radii.hero,
-    padding: 22,
-    borderWidth: 1,
+    padding: 18,
     ...shadows.card,
   },
   topRow: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   eyebrowBadge: {
     flexDirection: "row-reverse",
@@ -136,7 +140,7 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontFamily: fonts.display,
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "800",
     letterSpacing: -0.4,
     textAlign: "right",
@@ -147,24 +151,29 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     textAlign: "right",
     marginTop: 2,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   balanceBox: {
-    borderRadius: radii.card,
-    padding: 18,
     alignItems: "flex-end",
-    marginBottom: 14,
-    borderWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 14,
   },
   balanceLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   balanceValue: {
     fontFamily: fonts.display,
-    fontSize: 30,
+    // Roughly 3.5x its own label, which is the ratio the pattern lives on.
+    fontSize: 44,
+    lineHeight: 50,
     fontWeight: "800",
+    letterSpacing: -1,
+  },
+  balanceCurrency: {
+    fontSize: 24,
+    fontWeight: "700",
   },
   balanceSub: {
     fontSize: 12.5,
@@ -173,7 +182,7 @@ const styles = StyleSheet.create({
   actionButtonsRow: {
     flexDirection: "row-reverse",
     gap: 10,
-    marginTop: 16,
+    marginTop: 12,
     flexWrap: "wrap",
   },
   actionBtn: {
