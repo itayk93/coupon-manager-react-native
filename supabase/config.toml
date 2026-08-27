@@ -69,3 +69,21 @@ verify_jwt = false
 # are taken from the request, never from the body, which is the reason this is
 # a function and not an insert from the app.
 verify_jwt = true
+
+[functions.send-engagement-alerts]
+# Cannot be true, for the same reason as send-expiry-alerts: pg_cron has no JWT
+# to present and authenticates with the cron-token header instead. Left at the
+# default, the platform rejects the cron call with a 401 before the function
+# runs at all — which is exactly what happened the first time this deployed.
+verify_jwt = false
+
+[functions.notify-event]
+# The app tells the server what just happened; the server checks the claim
+# against the coupon before saying anything about it. A caller without a session
+# has nothing to report.
+verify_jwt = true
+
+[functions.phrase-notification]
+# Wording for a notification the device will raise later. Requires a session so
+# the model spend is always attributable to an account.
+verify_jwt = true
