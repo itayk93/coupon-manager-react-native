@@ -83,7 +83,7 @@ async function seedActivity(user, endDaysAgo, days) {
   }
 }
 
-const made = { users: [], campaign: null };
+const made = { users: [], campaign: null, extraCampaigns: [] };
 
 await db.connect();
 try {
@@ -335,7 +335,101 @@ try {
   });
   check('and can recompute the campaign on demand', refreshed.status < 300, `got ${refreshed.status}`);
 
-  // 10. Self-referral is refused outright.
+  // 10. Partners are made from the admin screen, not from a migration.
+  async function adminRpc(name, body) {
+    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: 'POST', headers: adminHeaders, body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.json().catch(() => null) };
+  }
+
+  const created = await adminRpc('referral_create_campaign', { p_partner_name: `E2E Partner ${stamp}` });
+  const createdCode = created.body?.[0]?.code;
+  if (created.body?.[0]?.id) made.extraCampaigns.push(created.body[0].id);
+  check('an admin can start a partner and get a code back', created.status < 300 && /^[A-Z0-9]{6}$/.test(createdCode ?? ''), JSON.stringify(created.body));
+
+  const ladder = (await db.query(
+    'select metric, threshold, reward_value from public.referral_rewards where campaign_id = $1 order by metric, threshold',
+    [created.body[0].id],
+  )).rows;
+  check('a new partner starts on the standard ladder', ladder.length === 3, JSON.stringify(ladder));
+
+  const chosen = await adminRpc('referral_create_campaign', { p_partner_name: 'E2E Named', p_code: `E2EN${stamp.toString(36).toUpperCase().slice(-4)}` });
+  if (chosen.body?.[0]?.id) made.extraCampaigns.push(chosen.body[0].id);
+  check('and can choose a memorable code instead', chosen.status < 300 && Boolean(chosen.body?.[0]?.code), JSON.stringify(chosen.body));
+
+  const taken = await adminRpc('referral_create_campaign', { p_partner_name: 'E2E Dup', p_code: CAMPAIGN_CODE });
+  check('a code already in use is refused', taken.status >= 400, `got ${taken.status}`);
+
+  const malformed = await adminRpc('referral_create_campaign', { p_partner_name: 'E2E Bad', p_code: 'has space' });
+  check('so is one the link could never carry', malformed.status >= 400, `got ${malformed.status}`);
+
+  const asNonAdmin = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/referral_create_campaign`, {
+    method: 'POST',
+    headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${bob.token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ p_partner_name: 'not allowed' }),
+  });
+  check('a normal user cannot start a partner', asNonAdmin.status >= 400, `got ${asNonAdmin.status}`);
+
+  // A new partner's code has to actually work as a link.
+  const newcomer = await makeUser(6);
+  made.users.push(newcomer);
+  const throughNew = await claim(newcomer, createdCode, 'install-newcomer');
+  check("a fresh partner's code attributes a real user", throughNew.body?.status === 'claimed', JSON.stringify(throughNew.body));
+
+  // 11. Ending a deal stops new attributions and keeps the old ones.
+  await adminRpc('referral_set_campaign_active', { p_campaign_id: created.body[0].id, p_active: false });
+  const afterClose = await makeUser(7);
+  made.users.push(afterClose);
+  const refused = await claim(afterClose, createdCode, 'install-late');
+  check('a closed link stops attributing anyone new', refused.body?.status === 'invalid_code', JSON.stringify(refused.body));
+  const kept = (await db.query('select count(*)::int n from public.referrals where campaign_id = $1', [created.body[0].id])).rows[0].n;
+  check('while everyone already counted stays counted', kept === 1);
+
+  // 12. Ten partners means ten tallies, not one.
+  const overview = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/referral_campaign_overview?select=*`,
+    { headers: adminHeaders },
+  ).then((r) => r.json());
+  // pg hands back bigints as strings and PostgREST as numbers, so compare as text.
+  const byId = (id) => overview.find((entry) => String(entry.id) === String(id));
+  const mine = byId(made.campaign);
+  const theirs = byId(created.body[0].id);
+  check('every partner appears with their own numbers', Boolean(mine) && Boolean(theirs));
+  check('and those numbers do not bleed between them',
+    mine?.joined === 4 && theirs?.joined === 1, JSON.stringify({ mine: mine?.joined, theirs: theirs?.joined }));
+  check('a closed partner is still listed, marked closed', theirs?.active === false);
+
+  const overviewAsBob = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/referral_campaign_overview?select=*`,
+    { headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${bob.token}` } },
+  ).then((r) => r.json());
+  check('and none of it is visible to a normal user',
+    Array.isArray(overviewAsBob) && overviewAsBob.length === 0, JSON.stringify(overviewAsBob).slice(0, 200));
+
+  // 13. Each partner's terms are their own.
+  await adminRpc('referral_upsert_reward', {
+    p_campaign_id: created.body[0].id, p_metric: 'activated', p_threshold: 5,
+    p_reward_type: 'cash', p_reward_value: 30,
+  });
+  const custom = (await db.query(
+    "select reward_type, reward_value from public.referral_rewards where campaign_id = $1 and threshold = 5",
+    [created.body[0].id],
+  )).rows[0];
+  check('a rung can be added on different terms', custom?.reward_type === 'cash' && Number(custom.reward_value) === 30);
+
+  const rungId = (await db.query(
+    'select id from public.referral_rewards where campaign_id = $1 and threshold = 5', [created.body[0].id],
+  )).rows[0].id;
+  await adminRpc('referral_delete_reward', { p_reward_id: rungId });
+  const goneCount = (await db.query('select count(*)::int n from public.referral_rewards where id = $1', [rungId])).rows[0].n;
+  check('and removed again while nobody has reached it', goneCount === 0);
+
+  const earnedRung = await adminRpc('referral_delete_reward', { p_reward_id: reward.id });
+  const stillThere = (await db.query('select count(*)::int n from public.referral_rewards where id = $1', [reward.id])).rows[0].n;
+  check('but a rung already earned is a record, not a row to delete', earnedRung.status < 300 && stillThere === 1);
+
+  // 14. Self-referral is refused outright.
   const carolOwn = (await db.query('select code from public.referral_codes where user_id = $1', [carol.appId])).rows[0]?.code;
   const selfClaim = await db.query('select public.claim_referral($1, $2) as status', [carol.appId, carolOwn]);
   check('claiming your own code is refused', selfClaim.rows[0].status === 'already_attributed');
@@ -349,7 +443,7 @@ try {
   const selfOnly = await db.query('select public.claim_referral($1, $2) as status', [fresh.appId, freshOwn.rows[0].code]);
   check('an unattributed user cannot attribute themselves either', selfOnly.rows[0].status === 'self_referral', selfOnly.rows[0].status);
 
-  // 11. Attribution does not reach back into old accounts.
+  // 15. Attribution does not reach back into old accounts.
   await db.query(`update public.users set created_at = now() - interval '90 days' where id = $1`, [fresh.appId]);
   const late = await db.query('select public.claim_referral($1, $2) as status', [fresh.appId, CAMPAIGN_CODE]);
   check('a code cannot be applied to a long-standing account', late.rows[0].status === 'too_late', late.rows[0].status);
@@ -366,10 +460,11 @@ try {
     if (user?.appId) await db.query('delete from public.users where id = $1', [user.appId]);
     if (user?.id) await db.query('delete from auth.users where id = $1', [user.id]);
   }
-  if (made.campaign) {
-    await db.query('delete from public.referral_rewards where campaign_id = $1', [made.campaign]);
-    await db.query('delete from public.referrals where campaign_id = $1', [made.campaign]);
-    await db.query('delete from public.referral_campaigns where id = $1', [made.campaign]);
+  for (const id of [made.campaign, ...made.extraCampaigns].filter(Boolean)) {
+    await db.query('delete from public.referral_rewards where campaign_id = $1', [id]);
+    await db.query('delete from public.referral_codes where campaign_id = $1', [id]);
+    await db.query('delete from public.referrals where campaign_id = $1', [id]);
+    await db.query('delete from public.referral_campaigns where id = $1', [id]);
   }
   await db.end();
 }

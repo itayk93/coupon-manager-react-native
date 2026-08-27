@@ -1986,6 +1986,24 @@ export type Database = {
       }
     }
     Views: {
+      referral_campaign_overview: {
+        Row: {
+          activated: number | null
+          active: boolean | null
+          code: string | null
+          ends_at: string | null
+          id: number | null
+          in_review: number | null
+          joined: number | null
+          last_join_at: string | null
+          notes: string | null
+          partner_name: string | null
+          rejected: number | null
+          retained: number | null
+          starts_at: string | null
+        }
+        Relationships: []
+      }
       referral_admin_rows: {
         Row: {
           activated_at: string | null
@@ -2099,6 +2117,36 @@ export type Database = {
         Returns: {
           code: string
         }[]
+      }
+      referral_create_campaign: {
+        Args: { p_code?: string; p_notes?: string; p_partner_name: string }
+        Returns: {
+          code: string
+          id: number
+        }[]
+      }
+      referral_default_rewards: {
+        Args: { p_campaign_id: number }
+        Returns: undefined
+      }
+      referral_delete_reward: {
+        Args: { p_reward_id: number }
+        Returns: undefined
+      }
+      referral_set_campaign_active: {
+        Args: { p_active: boolean; p_campaign_id: number }
+        Returns: undefined
+      }
+      referral_upsert_reward: {
+        Args: {
+          p_campaign_id: number
+          p_label?: string
+          p_metric: string
+          p_reward_type: string
+          p_reward_value: number
+          p_threshold: number
+        }
+        Returns: undefined
       }
       referral_activity_days: {
         Args: { p_from: string; p_to: string; p_user_id: number }

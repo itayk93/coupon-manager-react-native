@@ -77,9 +77,15 @@ There is no application server. All authorization is enforced in the database:
 
 A partner gets a code; whoever registers through it is attributed to their
 campaign, and so is whoever registers through *that* person's code, however
-deep the chain runs. It is one closed pilot rather than a feature for everyone:
-a personal code only exists once the server has attributed someone to a
-campaign, so there is no flag to remember to turn off.
+deep the chain runs. It is a closed programme rather than a feature for
+everyone: a personal code only exists once the server has attributed someone to
+a campaign, so there is no flag to remember to turn off.
+
+Partners are created from the admin screen — name, an optional memorable code,
+and the link is issued. Each campaign carries its own reward ladder and its own
+tally, so ten simultaneous deals are ten rows rather than ten migrations.
+Ending one deactivates the code: it stops attributing anyone new while everyone
+already counted stays counted.
 
 - Attribution is written once. A unique key on `referred_user_id` is the lock,
   and a trigger freezes the columns that decide who gets paid, so a link cannot
@@ -94,8 +100,8 @@ campaign, so there is no flag to remember to turn off.
   `paid_at` is written by hand from the admin screen once the reward has
   actually gone out.
 - The tally is admin-only. `my_referral_status()` returns a single column — the
-  code — and all four referral tables sit behind `is_app_admin()`. A partner
-  can share their link and cannot watch the number they are paid on.
+  code — and every referral table sits behind `is_app_admin()`. A partner can
+  share their link and cannot watch the number they are paid on.
 
 ### Coupon encryption
 

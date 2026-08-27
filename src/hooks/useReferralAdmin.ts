@@ -22,6 +22,21 @@ export type ReferralCampaign = {
   notes: string | null;
 };
 
+/** One partner per line: the answer to "how is each of them doing". */
+export type ReferralCampaignOverview = {
+  id: number;
+  partner_name: string;
+  code: string;
+  active: boolean;
+  notes: string | null;
+  joined: number;
+  activated: number;
+  retained: number;
+  in_review: number;
+  rejected: number;
+  last_join_at: string | null;
+};
+
 export type ReferralReward = {
   id: number;
   label: string;
@@ -73,6 +88,23 @@ export function useReferralCampaigns() {
         .order("id");
       if (error) throw error;
       return (data ?? []) as ReferralCampaign[];
+    },
+    enabled: isAdmin,
+  });
+}
+
+export function useReferralCampaignOverview() {
+  const isAdmin = useAdminGuard();
+  return useQuery({
+    queryKey: ["referral_campaign_overview"],
+    queryFn: async (): Promise<ReferralCampaignOverview[]> => {
+      const { data, error } = await supabase
+        .from("referral_campaign_overview")
+        .select("*")
+        .order("active", { ascending: false })
+        .order("id");
+      if (error) throw error;
+      return (data ?? []) as ReferralCampaignOverview[];
     },
     enabled: isAdmin,
   });
@@ -136,8 +168,8 @@ export function summarizeReferrals(rows: ReferralRow[]) {
   };
 }
 
-function useReferralMutation<T>(
-  run: (input: T) => Promise<void>,
+function useReferralMutation<T, R = void>(
+  run: (input: T) => Promise<R>,
   successMessage: string,
 ) {
   const queryClient = useQueryClient();
@@ -146,10 +178,77 @@ function useReferralMutation<T>(
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["referral_rows"] });
       queryClient.invalidateQueries({ queryKey: ["referral_rewards"] });
+      queryClient.invalidateQueries({ queryKey: ["referral_campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["referral_campaign_overview"] });
       notify.success(successMessage);
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
   });
+}
+
+/**
+ * Start a partner and get the code their link is built from.
+ *
+ * A campaign is a deal with one person, so making one is an everyday admin
+ * action rather than a migration — the first pilot was seeded in SQL, and that
+ * quietly implied the second one needed a release.
+ */
+export function useCreateReferralCampaign() {
+  return useReferralMutation<{ partnerName: string; code?: string; notes?: string }, { id: number; code: string }>(
+    async ({ partnerName, code, notes }) => {
+      const { data, error } = await supabase.rpc("referral_create_campaign", {
+        p_partner_name: partnerName,
+        p_code: code?.trim() ? code.trim().toUpperCase() : undefined,
+        p_notes: notes?.trim() || undefined,
+      });
+      if (error) throw error;
+      const created = (data as { id: number; code: string }[])?.[0];
+      if (!created) throw new Error("לא נוצר קמפיין");
+      return created;
+    },
+    "הקמפיין נוצר",
+  );
+}
+
+/**
+ * End a deal without losing what it brought. Deleting the campaign would take
+ * its referrals with it, and "how many did that one bring" outlives the deal.
+ */
+export function useSetCampaignActive() {
+  return useReferralMutation<{ id: number; active: boolean }>(async ({ id, active }) => {
+    const { error } = await supabase.rpc("referral_set_campaign_active", {
+      p_campaign_id: id,
+      p_active: active,
+    });
+    if (error) throw error;
+  }, "הקמפיין עודכן");
+}
+
+/** A rung on one partner's ladder — ten partners, ten different deals. */
+export function useUpsertReferralReward() {
+  return useReferralMutation<{
+    campaignId: number;
+    metric: "activated" | "retained";
+    threshold: number;
+    rewardType: "dream_card" | "cash";
+    rewardValue: number;
+  }>(async ({ campaignId, metric, threshold, rewardType, rewardValue }) => {
+    const { error } = await supabase.rpc("referral_upsert_reward", {
+      p_campaign_id: campaignId,
+      p_metric: metric,
+      p_threshold: threshold,
+      p_reward_type: rewardType,
+      p_reward_value: rewardValue,
+    });
+    if (error) throw error;
+  }, "היעד נשמר");
+}
+
+export function useDeleteReferralReward() {
+  return useReferralMutation<{ id: number }>(async ({ id }) => {
+    const { error } = await supabase.rpc("referral_delete_reward", { p_reward_id: id });
+    if (error) throw error;
+  }, "היעד נמחק");
 }
 
 export function useSetReferralFraudStatus() {
