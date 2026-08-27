@@ -57,7 +57,12 @@ async function getAppUser(authUserId: string, email: string): Promise<LegacyUser
     if (emailError) throw emailError;
     data = emailUser;
   }
-  if (!data || data.is_deleted) throw new Error("המשתמש הזה נמחק או נחסם.");
+  // Two different failures, and saying "deleted or blocked" for both sent us
+  // looking at an account that was neither: no row here also means the row is
+  // there but RLS will not show it, which is what an unlinked auth_user_id
+  // looks like from the client.
+  if (data?.is_deleted) throw new Error("המשתמש הזה נמחק או נחסם.");
+  if (!data) throw new Error("החשבון לא נמצא. פנו לתמיכה כדי לשחזר אותו.");
 
   return {
     id: data.id,
