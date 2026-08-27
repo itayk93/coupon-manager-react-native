@@ -91,8 +91,8 @@ try {
 
   // A campaign of our own, so nothing here touches the real pilot's numbers.
   made.campaign = (await db.query(
-    `insert into public.referral_campaigns(name, partner_name, code, notes)
-     values ('E2E', 'E2E partner', $1, 'throwaway') returning id`,
+    `insert into public.referral_campaigns(name, partner_name, code)
+     values ('E2E', 'E2E partner', $1) returning id`,
     [CAMPAIGN_CODE],
   )).rows[0].id;
 
@@ -335,7 +335,7 @@ try {
   });
   check('and can recompute the campaign on demand', refreshed.status < 300, `got ${refreshed.status}`);
 
-  // 10. Partners are made from the admin screen, not from a migration.
+  // 10. Partners are made from the admin screen, and a partner is an account.
   async function adminRpc(name, body) {
     const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/${name}`, {
       method: 'POST', headers: adminHeaders, body: JSON.stringify(body),
@@ -343,48 +343,69 @@ try {
     return { status: response.status, body: await response.json().catch(() => null) };
   }
 
-  const created = await adminRpc('referral_create_campaign', { p_partner_name: `E2E Partner ${stamp}` });
+  const partnerUser = await makeUser(6);
+  made.users.push(partnerUser);
+
+  const created = await adminRpc('referral_create_campaign_for_user', { p_user_id: partnerUser.appId });
   const createdCode = created.body?.[0]?.code;
   if (created.body?.[0]?.id) made.extraCampaigns.push(created.body[0].id);
-  check('an admin can start a partner and get a code back', created.status < 300 && /^[A-Z0-9]{6}$/.test(createdCode ?? ''), JSON.stringify(created.body));
+  check('an admin can turn a user into a partner', created.status < 300 && /^[A-Z0-9]{6}$/.test(createdCode ?? ''), JSON.stringify(created.body));
+
+  const linked = (await db.query('select partner_user_id, partner_name from public.referral_campaigns where id = $1', [created.body[0].id])).rows[0];
+  check('the campaign points at that account', linked.partner_user_id === partnerUser.appId);
+
+  // The link must not say whose it is: a code carrying a name gets guessed and
+  // forwarded to people it was never sent to.
+  check('the code carries no trace of the partner',
+    !createdCode.includes('E2E') && !partnerUser.email.toUpperCase().includes(createdCode), createdCode);
 
   const ladder = (await db.query(
     'select metric, threshold, reward_value from public.referral_rewards where campaign_id = $1 order by metric, threshold',
     [created.body[0].id],
   )).rows;
-  check('a new partner starts on the standard ladder', ladder.length === 3, JSON.stringify(ladder));
+  check('and opens on the one ladder everybody is on', ladder.length === 3, JSON.stringify(ladder));
 
-  const chosen = await adminRpc('referral_create_campaign', { p_partner_name: 'E2E Named', p_code: `E2EN${stamp.toString(36).toUpperCase().slice(-4)}` });
-  if (chosen.body?.[0]?.id) made.extraCampaigns.push(chosen.body[0].id);
-  check('and can choose a memorable code instead', chosen.status < 300 && Boolean(chosen.body?.[0]?.code), JSON.stringify(chosen.body));
+  const twice = await adminRpc('referral_create_campaign_for_user', { p_user_id: partnerUser.appId });
+  check('a second live campaign for the same person is refused', twice.status >= 400, `got ${twice.status}`);
 
-  const taken = await adminRpc('referral_create_campaign', { p_partner_name: 'E2E Dup', p_code: CAMPAIGN_CODE });
-  check('a code already in use is refused', taken.status >= 400, `got ${taken.status}`);
+  const ghost = await adminRpc('referral_create_campaign_for_user', { p_user_id: 2147483000 });
+  check('so is a partner who does not exist', ghost.status >= 400, `got ${ghost.status}`);
 
-  const malformed = await adminRpc('referral_create_campaign', { p_partner_name: 'E2E Bad', p_code: 'has space' });
-  check('so is one the link could never carry', malformed.status >= 400, `got ${malformed.status}`);
-
-  const asNonAdmin = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/referral_create_campaign`, {
+  const asNonAdmin = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/referral_create_campaign_for_user`, {
     method: 'POST',
     headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${bob.token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ p_partner_name: 'not allowed' }),
+    body: JSON.stringify({ p_user_id: bob.appId }),
   });
-  check('a normal user cannot start a partner', asNonAdmin.status >= 400, `got ${asNonAdmin.status}`);
+  check('a normal user cannot make themselves a partner', asNonAdmin.status >= 400, `got ${asNonAdmin.status}`);
+
+  // The terms are fixed, so there is nothing to negotiate through the API.
+  const editTerms = await adminRpc('referral_upsert_reward', {
+    p_campaign_id: created.body[0].id, p_metric: 'activated', p_threshold: 5,
+    p_reward_type: 'cash', p_reward_value: 30,
+  });
+  check('and not even an admin can put one partner on different terms', editTerms.status >= 400, `got ${editTerms.status}`);
 
   // A new partner's code has to actually work as a link.
-  const newcomer = await makeUser(6);
+  const newcomer = await makeUser(7);
   made.users.push(newcomer);
   const throughNew = await claim(newcomer, createdCode, 'install-newcomer');
   check("a fresh partner's code attributes a real user", throughNew.body?.status === 'claimed', JSON.stringify(throughNew.body));
 
+  const partnerSelf = await db.query('select public.claim_referral($1, $2) as status', [partnerUser.appId, createdCode]);
+  check('and the partner cannot claim their own link', partnerSelf.rows[0].status === 'self_referral', partnerSelf.rows[0].status);
+
   // 11. Ending a deal stops new attributions and keeps the old ones.
   await adminRpc('referral_set_campaign_active', { p_campaign_id: created.body[0].id, p_active: false });
-  const afterClose = await makeUser(7);
+  const afterClose = await makeUser(8);
   made.users.push(afterClose);
   const refused = await claim(afterClose, createdCode, 'install-late');
   check('a closed link stops attributing anyone new', refused.body?.status === 'invalid_code', JSON.stringify(refused.body));
   const kept = (await db.query('select count(*)::int n from public.referrals where campaign_id = $1', [created.body[0].id])).rows[0].n;
   check('while everyone already counted stays counted', kept === 1);
+
+  const freedUp = await adminRpc('referral_create_campaign_for_user', { p_user_id: partnerUser.appId });
+  if (freedUp.body?.[0]?.id) made.extraCampaigns.push(freedUp.body[0].id);
+  check('ending a deal frees the person for a new one', freedUp.status < 300, `got ${freedUp.status}`);
 
   // 12. Ten partners means ten tallies, not one.
   const overview = await fetch(
@@ -399,6 +420,7 @@ try {
   check('and those numbers do not bleed between them',
     mine?.joined === 4 && theirs?.joined === 1, JSON.stringify({ mine: mine?.joined, theirs: theirs?.joined }));
   check('a closed partner is still listed, marked closed', theirs?.active === false);
+  check('and the account behind each one is named', theirs?.partner_email === partnerUser.email, theirs?.partner_email);
 
   const overviewAsBob = await fetch(
     `${process.env.SUPABASE_URL}/rest/v1/referral_campaign_overview?select=*`,
@@ -407,29 +429,7 @@ try {
   check('and none of it is visible to a normal user',
     Array.isArray(overviewAsBob) && overviewAsBob.length === 0, JSON.stringify(overviewAsBob).slice(0, 200));
 
-  // 13. Each partner's terms are their own.
-  await adminRpc('referral_upsert_reward', {
-    p_campaign_id: created.body[0].id, p_metric: 'activated', p_threshold: 5,
-    p_reward_type: 'cash', p_reward_value: 30,
-  });
-  const custom = (await db.query(
-    "select reward_type, reward_value from public.referral_rewards where campaign_id = $1 and threshold = 5",
-    [created.body[0].id],
-  )).rows[0];
-  check('a rung can be added on different terms', custom?.reward_type === 'cash' && Number(custom.reward_value) === 30);
-
-  const rungId = (await db.query(
-    'select id from public.referral_rewards where campaign_id = $1 and threshold = 5', [created.body[0].id],
-  )).rows[0].id;
-  await adminRpc('referral_delete_reward', { p_reward_id: rungId });
-  const goneCount = (await db.query('select count(*)::int n from public.referral_rewards where id = $1', [rungId])).rows[0].n;
-  check('and removed again while nobody has reached it', goneCount === 0);
-
-  const earnedRung = await adminRpc('referral_delete_reward', { p_reward_id: reward.id });
-  const stillThere = (await db.query('select count(*)::int n from public.referral_rewards where id = $1', [reward.id])).rows[0].n;
-  check('but a rung already earned is a record, not a row to delete', earnedRung.status < 300 && stillThere === 1);
-
-  // 14. Self-referral is refused outright.
+  // 13. Self-referral is refused outright.
   const carolOwn = (await db.query('select code from public.referral_codes where user_id = $1', [carol.appId])).rows[0]?.code;
   const selfClaim = await db.query('select public.claim_referral($1, $2) as status', [carol.appId, carolOwn]);
   check('claiming your own code is refused', selfClaim.rows[0].status === 'already_attributed');
@@ -443,7 +443,7 @@ try {
   const selfOnly = await db.query('select public.claim_referral($1, $2) as status', [fresh.appId, freshOwn.rows[0].code]);
   check('an unattributed user cannot attribute themselves either', selfOnly.rows[0].status === 'self_referral', selfOnly.rows[0].status);
 
-  // 15. Attribution does not reach back into old accounts.
+  // 14. Attribution does not reach back into old accounts.
   await db.query(`update public.users set created_at = now() - interval '90 days' where id = $1`, [fresh.appId]);
   const late = await db.query('select public.claim_referral($1, $2) as status', [fresh.appId, CAMPAIGN_CODE]);
   check('a code cannot be applied to a long-standing account', late.rows[0].status === 'too_late', late.rows[0].status);

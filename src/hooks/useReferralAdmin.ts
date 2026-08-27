@@ -19,16 +19,16 @@ export type ReferralCampaign = {
   partner_name: string;
   code: string;
   active: boolean;
-  notes: string | null;
 };
 
 /** One partner per line: the answer to "how is each of them doing". */
 export type ReferralCampaignOverview = {
   id: number;
   partner_name: string;
+  partner_user_id: number | null;
+  partner_email: string | null;
   code: string;
   active: boolean;
-  notes: string | null;
   joined: number;
   activated: number;
   retained: number;
@@ -84,7 +84,7 @@ export function useReferralCampaigns() {
     queryFn: async (): Promise<ReferralCampaign[]> => {
       const { data, error } = await supabase
         .from("referral_campaigns")
-        .select("id,name,partner_name,code,active,notes")
+        .select("id,name,partner_name,code,active")
         .order("id");
       if (error) throw error;
       return (data ?? []) as ReferralCampaign[];
@@ -187,19 +187,21 @@ function useReferralMutation<T, R = void>(
 }
 
 /**
- * Start a partner and get the code their link is built from.
+ * Turn one of your users into a partner, and get the code their link carries.
  *
- * A campaign is a deal with one person, so making one is an everyday admin
- * action rather than a migration — the first pilot was seeded in SQL, and that
- * quietly implied the second one needed a release.
+ * Takes an account rather than a typed name: the arrangement always starts
+ * with somebody already using the app, and a name in a text column joins to
+ * nothing — so "is the partner themselves still active" stops being answerable
+ * the moment it is stored as a string.
+ *
+ * The code is generated server-side and cannot be supplied. A link that spells
+ * out whose it is gets guessed and forwarded with the name attached.
  */
 export function useCreateReferralCampaign() {
-  return useReferralMutation<{ partnerName: string; code?: string; notes?: string }, { id: number; code: string }>(
-    async ({ partnerName, code, notes }) => {
-      const { data, error } = await supabase.rpc("referral_create_campaign", {
-        p_partner_name: partnerName,
-        p_code: code?.trim() ? code.trim().toUpperCase() : undefined,
-        p_notes: notes?.trim() || undefined,
+  return useReferralMutation<{ userId: number }, { id: number; code: string }>(
+    async ({ userId }) => {
+      const { data, error } = await supabase.rpc("referral_create_campaign_for_user", {
+        p_user_id: userId,
       });
       if (error) throw error;
       const created = (data as { id: number; code: string }[])?.[0];
@@ -224,32 +226,6 @@ export function useSetCampaignActive() {
   }, "הקמפיין עודכן");
 }
 
-/** A rung on one partner's ladder — ten partners, ten different deals. */
-export function useUpsertReferralReward() {
-  return useReferralMutation<{
-    campaignId: number;
-    metric: "activated" | "retained";
-    threshold: number;
-    rewardType: "dream_card" | "cash";
-    rewardValue: number;
-  }>(async ({ campaignId, metric, threshold, rewardType, rewardValue }) => {
-    const { error } = await supabase.rpc("referral_upsert_reward", {
-      p_campaign_id: campaignId,
-      p_metric: metric,
-      p_threshold: threshold,
-      p_reward_type: rewardType,
-      p_reward_value: rewardValue,
-    });
-    if (error) throw error;
-  }, "היעד נשמר");
-}
-
-export function useDeleteReferralReward() {
-  return useReferralMutation<{ id: number }>(async ({ id }) => {
-    const { error } = await supabase.rpc("referral_delete_reward", { p_reward_id: id });
-    if (error) throw error;
-  }, "היעד נמחק");
-}
 
 export function useSetReferralFraudStatus() {
   return useReferralMutation<{ id: number; status: string; note?: string | null }>(

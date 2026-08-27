@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  I18nManager,
   Share,
   StyleSheet,
   Switch,
@@ -11,16 +12,16 @@ import {
   View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { ChevronRight, Copy, Plus, RefreshCw, Search, Share2, Trash2 } from "lucide-react-native";
+import { ChevronRight, Copy, Plus, RefreshCw, Search, Share2 } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/Modal";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useManageUsers } from "@/hooks/useAdminManagement";
 import {
   ReferralCampaignOverview,
   ReferralRow,
   summarizeReferrals,
   useCreateReferralCampaign,
-  useDeleteReferralReward,
   useMarkRewardPaid,
   useReferralCampaignOverview,
   useReferralRewards,
@@ -28,28 +29,43 @@ import {
   useRefreshReferralProgress,
   useSetCampaignActive,
   useSetReferralFraudStatus,
-  useUpsertReferralReward,
 } from "@/hooks/useReferralAdmin";
 import { referralShareMessage, referralUrl } from "@/lib/referral";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 /**
- * The referral pilots, seen from the inside.
+ * The referral partners, seen from the inside.
  *
  * Two levels, because there is rarely one partner. The list is every deal at a
  * glance — who is bringing people and who has gone quiet — and opening one
- * gives that partner's ladder and the individual people underneath them.
+ * gives that partner's progress and the individual people underneath them.
  *
- * Two things this screen deliberately does not do. It never moves money: a
+ * Three things this screen deliberately does not do. It never moves money: a
  * reward that has been earned is marked as *delivered* by hand, after the
  * Dream Card or the transfer has actually gone out, so a bug here can only
- * ever produce a wrong number on a screen. And it never deletes a referral —
- * a rejected one keeps its row, because "why did this person not count" is a
- * question that gets asked weeks later.
+ * ever produce a wrong number on a screen. It never deletes a referral — a
+ * rejected one keeps its row, because "why did this person not count" is a
+ * question that gets asked weeks later. And it does not negotiate: every
+ * partner is on the same ladder, so there is nothing here to edit.
  */
 
 const APP_BASE_URL = "https://coupons.itaykarkason.com";
+
+/**
+ * A row whose first child sits on the right, whichever way the app is laid out.
+ *
+ * `allowRTL` without `forceRTL` means `I18nManager.isRTL` is false on most
+ * installs, and there `row-reverse` puts the first child on the right while
+ * `row` puts it on the left — the two swap once RTL does kick in. Reading the
+ * direction here is what keeps a heading on the right and its icon on the left
+ * either way; the alternative is a screen that is correct only on the phone it
+ * was built on. Same guard CouponsListScreen already uses.
+ *
+ * The rule that goes with it: the thing being named comes first in the JSX,
+ * and the icon that acts on it comes second.
+ */
+const rowStart: "row" | "row-reverse" = I18nManager.isRTL ? "row" : "row-reverse";
 
 const FILTERS = [
   { key: "all", label: "הכל" },
@@ -93,9 +109,9 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
   const refresh = useRefreshReferralProgress();
 
   const [isCreating, setIsCreating] = useState(false);
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [notes, setNotes] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const { data: candidates = [], isLoading: loadingUsers } = useManageUsers(userSearch);
+
   // Held after creation so the link can be handed over immediately — the code
   // is the whole deliverable, and going back to look it up is a step nobody
   // should have to take.
@@ -121,9 +137,7 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
               title="שותף חדש"
               icon={<Plus size={18} color="#ffffff" />}
               onPress={() => {
-                setName("");
-                setCode("");
-                setNotes("");
+                setUserSearch("");
                 setIsCreating(true);
               }}
             />
@@ -132,10 +146,10 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
               disabled={refresh.isPending}
               style={styles.refreshRow}
             >
-              <RefreshCw size={14} color={theme.textMuted} />
               <Text style={[styles.refreshText, { color: theme.textMuted }]}>
                 חשב מחדש את כל הקמפיינים
               </Text>
+              <RefreshCw size={14} color={theme.textMuted} />
             </TouchableOpacity>
           </View>
         }
@@ -144,46 +158,75 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
             עדיין אין שותפים. "שותף חדש" מנפיק קישור.
           </Text>
         }
-        renderItem={({ item }) => (
-          <PartnerCard partner={item} onOpen={() => onOpen(item.id)} />
-        )}
+        renderItem={({ item }) => <PartnerCard partner={item} onOpen={() => onOpen(item.id)} />}
       />
 
       <Modal
         visible={isCreating}
         onClose={() => setIsCreating(false)}
         title="שותף חדש"
-        subtitle="שם השותף, ואם רוצים גם קוד קריא. הקוד הוא הקישור."
+        subtitle="בחר משתמש קיים. הקישור נוצר אקראית ואינו נושא את שמו."
       >
         <View style={{ gap: 10 }}>
-          <Field label="שם השותף" value={name} onChange={setName} placeholder="אליאור" />
-          <Field
-            label="קוד (אופציונלי)"
-            value={code}
-            onChange={(text) => setCode(text.toUpperCase())}
-            placeholder="נוצר אוטומטית אם ריק"
-            autoCapitalize="characters"
-          />
-          <Field label="הערה (אופציונלי)" value={notes} onChange={setNotes} placeholder="תנאי העסקה" />
-          <Text style={[styles.hint, { color: theme.textMuted }]}>
-            הקמפיין נפתח עם היעדים הרגילים — 10 ו-25 מופעלים, ו-25 שנשארו. אפשר לשנות
-            אותם אחרי זה בכרטיס של השותף.
-          </Text>
-          <Button
-            title="צור והנפק קישור"
-            loading={createCampaign.isPending}
-            onPress={() =>
-              createCampaign.mutate(
-                { partnerName: name, code, notes },
-                {
-                  onSuccess: (created) => {
-                    setIsCreating(false);
-                    setIssued({ code: created.code, partnerName: name.trim() });
+          <View
+            style={[styles.searchBar, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
+          >
+            <Search size={16} color={theme.textMuted} />
+            <TextInput
+              placeholder="חיפוש לפי שם או אימייל..."
+              placeholderTextColor={theme.textMuted}
+              value={userSearch}
+              onChangeText={setUserSearch}
+              style={[styles.searchInput, { color: theme.text }]}
+            />
+          </View>
+
+          {loadingUsers ? <ActivityIndicator color={theme.primary} /> : null}
+
+          {candidates.slice(0, 20).map((candidate: any) => {
+            const partnerName =
+              `${candidate.first_name ?? ""} ${candidate.last_name ?? ""}`.trim() || candidate.email;
+            const alreadyPartner = partners.some(
+              (entry) => entry.partner_user_id === candidate.id && entry.active,
+            );
+            return (
+              <TouchableOpacity
+                key={candidate.id}
+                disabled={alreadyPartner || createCampaign.isPending}
+                onPress={() =>
+                  createCampaign.mutate(
+                    { userId: candidate.id },
+                    {
+                      onSuccess: (created) => {
+                        setIsCreating(false);
+                        setIssued({ code: created.code, partnerName });
+                      },
+                    },
+                  )
+                }
+                style={[
+                  styles.row,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                    opacity: alreadyPartner ? 0.45 : 1,
                   },
-                },
-              )
-            }
-          />
+                ]}
+              >
+                <View style={styles.rowMain}>
+                  <Text style={[styles.rowName, { color: theme.text }]} numberOfLines={1}>
+                    {partnerName}
+                  </Text>
+                  <Text style={[styles.rowMeta, { color: theme.textMuted }]} numberOfLines={1}>
+                    {candidate.email}
+                  </Text>
+                </View>
+                {alreadyPartner ? (
+                  <Text style={[styles.badge, { color: theme.textMuted }]}>כבר שותף</Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </Modal>
 
@@ -212,17 +255,26 @@ function PartnerCard({
   return (
     <TouchableOpacity
       onPress={onOpen}
-      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder, marginTop: 10 }]}
+      style={[
+        styles.card,
+        { backgroundColor: theme.card, borderColor: theme.cardBorder, marginTop: 10 },
+      ]}
     >
       <View style={styles.cardHead}>
-        <ChevronRight size={18} color={theme.textMuted} />
         <View style={styles.partnerTitleGroup}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>{partner.partner_name}</Text>
           {!partner.active ? (
             <Text style={[styles.inactiveTag, { color: theme.textMuted }]}>לא פעיל</Text>
           ) : null}
         </View>
+        <ChevronRight size={18} color={theme.textMuted} />
       </View>
+
+      {partner.partner_email ? (
+        <Text style={[styles.rowMeta, { color: theme.textMuted }]} numberOfLines={1}>
+          {partner.partner_email}
+        </Text>
+      ) : null}
 
       <TouchableOpacity
         onPress={async () => {
@@ -231,10 +283,10 @@ function PartnerCard({
         }}
         style={styles.linkRow}
       >
-        <Copy size={14} color={theme.textMuted} />
         <Text style={[styles.link, { color: theme.textMuted }]} numberOfLines={1}>
           {link}
         </Text>
+        <Copy size={14} color={theme.textMuted} />
       </TouchableOpacity>
 
       <View style={styles.summaryRow}>
@@ -293,19 +345,12 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
   const setFraud = useSetReferralFraudStatus();
   const markPaid = useMarkRewardPaid();
   const setActive = useSetCampaignActive();
-  const upsertReward = useUpsertReferralReward();
-  const deleteReward = useDeleteReferralReward();
 
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ReferralRow | null>(null);
   const [payingRewardId, setPayingRewardId] = useState<number | null>(null);
   const [payNote, setPayNote] = useState("");
-  const [isAddingReward, setIsAddingReward] = useState(false);
-  const [rewardMetric, setRewardMetric] = useState<"activated" | "retained">("activated");
-  const [rewardType, setRewardType] = useState<"dream_card" | "cash">("dream_card");
-  const [rewardThreshold, setRewardThreshold] = useState("");
-  const [rewardValue, setRewardValue] = useState("");
 
   const summary = useMemo(() => summarizeReferrals(rows), [rows]);
 
@@ -336,11 +381,16 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
             <TouchableOpacity onPress={onBack} style={styles.backRow}>
-              <Text style={[styles.backText, { color: theme.primary }]}>כל השותפים ›</Text>
+              <Text style={[styles.backText, { color: theme.primary }]}>‹ כל השותפים</Text>
             </TouchableOpacity>
 
-            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <View
+              style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+            >
               <View style={styles.cardHead}>
+                <Text style={[styles.cardTitle, { color: theme.text }]}>
+                  {partner?.partner_name}
+                </Text>
                 <TouchableOpacity
                   onPress={() => refresh.mutate({ campaignId })}
                   disabled={refresh.isPending}
@@ -348,9 +398,6 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
                 >
                   <RefreshCw size={16} color={theme.textMuted} />
                 </TouchableOpacity>
-                <Text style={[styles.cardTitle, { color: theme.text }]}>
-                  {partner?.partner_name} · קוד {partner?.code}
-                </Text>
               </View>
 
               {partner ? <IssuedLink code={partner.code} /> : null}
@@ -364,13 +411,13 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
               </View>
 
               <View style={styles.activeRow}>
+                <Text style={[styles.activeLabel, { color: theme.textMuted }]}>
+                  קישור פעיל — כיבוי עוצר שיוך של אנשים חדשים, ולא מוחק את מי שכבר נספר
+                </Text>
                 <Switch
                   value={Boolean(partner?.active)}
                   onValueChange={(value) => setActive.mutate({ id: campaignId, active: value })}
                 />
-                <Text style={[styles.activeLabel, { color: theme.textMuted }]}>
-                  קישור פעיל — כיבוי עוצר שיוך של אנשים חדשים, ולא מוחק את מי שכבר נספר
-                </Text>
               </View>
             </View>
 
@@ -380,18 +427,12 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
               return (
                 <View
                   key={reward.id}
-                  style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+                  style={[
+                    styles.card,
+                    { backgroundColor: theme.card, borderColor: theme.cardBorder },
+                  ]}
                 >
-                  <View style={styles.cardHead}>
-                    {!reward.earned_at ? (
-                      <TouchableOpacity onPress={() => deleteReward.mutate({ id: reward.id })}>
-                        <Trash2 size={15} color={theme.danger} />
-                      </TouchableOpacity>
-                    ) : (
-                      <View />
-                    )}
-                    <Text style={[styles.rewardTitle, { color: theme.text }]}>{reward.label}</Text>
-                  </View>
+                  <Text style={[styles.rewardTitle, { color: theme.text }]}>{reward.label}</Text>
                   <Text style={[styles.rewardMeta, { color: theme.textMuted }]}>
                     {reward.reward_type === "cash" ? "מזומן" : "Dream Card"} · {reward.reward_value} ₪
                   </Text>
@@ -431,18 +472,6 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
                 </View>
               );
             })}
-
-            <Button
-              title="הוסף יעד"
-              size="sm"
-              variant="outline"
-              icon={<Plus size={16} color={theme.primary} />}
-              onPress={() => {
-                setRewardThreshold("");
-                setRewardValue("");
-                setIsAddingReward(true);
-              }}
-            />
 
             <View style={styles.chipRow}>
               {FILTERS.map((option) => (
@@ -494,6 +523,16 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
             onPress={() => setSelected(item)}
             style={[styles.row, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
           >
+            <View style={styles.rowMain}>
+              <Text style={[styles.rowName, { color: theme.text }]} numberOfLines={1}>
+                {item.referred_name || item.referred_email}
+              </Text>
+              <Text style={[styles.rowMeta, { color: theme.textMuted }]} numberOfLines={1}>
+                {item.referrer_name ? `הופנה ע"י ${item.referrer_name}` : "הגיע ישירות"} · עומק{" "}
+                {item.depth} · {item.coupon_count} קופונים · {item.active_days_first_30}/3 ימים
+              </Text>
+            </View>
+
             <View style={styles.rowBadges}>
               <Text style={[styles.badge, { color: STATUS_BADGE[item.status]?.color }]}>
                 {STATUS_BADGE[item.status]?.label}
@@ -508,16 +547,6 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
                   {item.fraud_status === "rejected" ? "נפסל" : "לבדיקה"}
                 </Text>
               ) : null}
-            </View>
-
-            <View style={styles.rowMain}>
-              <Text style={[styles.rowName, { color: theme.text }]} numberOfLines={1}>
-                {item.referred_name || item.referred_email}
-              </Text>
-              <Text style={[styles.rowMeta, { color: theme.textMuted }]} numberOfLines={1}>
-                {item.referrer_name ? `הופנה ע"י ${item.referrer_name}` : "הגיע ישירות"} · עומק{" "}
-                {item.depth} · {item.coupon_count} קופונים · {item.active_days_first_30}/3 ימים
-              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -625,145 +654,11 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
           style={{ marginTop: 12 }}
         />
       </Modal>
-
-      <Modal
-        visible={isAddingReward}
-        onClose={() => setIsAddingReward(false)}
-        title="יעד חדש"
-        subtitle="לכל שותף אפשר לסכם תנאים אחרים"
-      >
-        <View style={{ gap: 10 }}>
-          <Choice
-            label="נמדד לפי"
-            options={[
-              { key: "activated", label: "משתמשים מופעלים" },
-              { key: "retained", label: "משתמשים שנשארו" },
-            ]}
-            value={rewardMetric}
-            onChange={(value) => setRewardMetric(value as "activated" | "retained")}
-          />
-          <Choice
-            label="סוג ההטבה"
-            options={[
-              { key: "dream_card", label: "Dream Card" },
-              { key: "cash", label: "מזומן" },
-            ]}
-            value={rewardType}
-            onChange={(value) => setRewardType(value as "dream_card" | "cash")}
-          />
-          <Field
-            label="כמה משתמשים"
-            value={rewardThreshold}
-            onChange={setRewardThreshold}
-            placeholder="10"
-            keyboardType="number-pad"
-          />
-          <Field
-            label="שווי בשקלים"
-            value={rewardValue}
-            onChange={setRewardValue}
-            placeholder="50"
-            keyboardType="number-pad"
-          />
-          <Button
-            title="שמור יעד"
-            onPress={() => {
-              const threshold = Number(rewardThreshold);
-              const value = Number(rewardValue);
-              if (!Number.isInteger(threshold) || threshold < 1 || !Number.isFinite(value) || value <= 0) {
-                notify.error("יש להזין מספר משתמשים ושווי תקינים");
-                return;
-              }
-              upsertReward.mutate({
-                campaignId,
-                metric: rewardMetric,
-                threshold,
-                rewardType,
-                rewardValue: value,
-              });
-              setIsAddingReward(false);
-            }}
-          />
-        </View>
-      </Modal>
     </View>
   );
 }
 
 /* ----------------------------------------------------------------- parts */
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  keyboardType,
-  autoCapitalize,
-}: {
-  label: string;
-  value: string;
-  onChange: (text: string) => void;
-  placeholder?: string;
-  keyboardType?: "number-pad";
-  autoCapitalize?: "characters";
-}) {
-  const { theme } = useAppTheme();
-  return (
-    <View style={{ gap: 4 }}>
-      <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor={theme.textMuted}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        autoCorrect={false}
-        style={[
-          styles.noteInput,
-          { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
-        ]}
-      />
-    </View>
-  );
-}
-
-function Choice({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { key: string; label: string }[];
-  value: string;
-  onChange: (key: string) => void;
-}) {
-  const { theme } = useAppTheme();
-  return (
-    <View style={{ gap: 4 }}>
-      <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>{label}</Text>
-      <View style={styles.chipRow}>
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option.key}
-            onPress={() => onChange(option.key)}
-            style={[
-              styles.chip,
-              { backgroundColor: value === option.key ? theme.primary : theme.surfaceAlt },
-            ]}
-          >
-            <Text
-              style={[styles.chipText, { color: value === option.key ? "#fff" : theme.textMuted }]}
-            >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-}
 
 function Summary({
   label,
@@ -787,8 +682,8 @@ function Summary({
 function Detail({ label, value, theme }: { label: string; value: string; theme: any }) {
   return (
     <View style={styles.detailRow}>
-      <Text style={[styles.detailValue, { color: theme.text }]}>{value}</Text>
       <Text style={[styles.detailLabel, { color: theme.textMuted }]}>{label}</Text>
+      <Text style={[styles.detailValue, { color: theme.text }]}>{value}</Text>
     </View>
   );
 }
@@ -806,29 +701,28 @@ const styles = StyleSheet.create({
   tabContent: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   muted: { fontFamily: fonts.body, fontSize: 14, textAlign: "center" },
-  hint: { fontFamily: fonts.body, fontSize: 12, textAlign: "right", lineHeight: 18 },
 
   card: { borderRadius: radii.card, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 6 },
-  cardHead: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  cardHead: { flexDirection: rowStart, alignItems: "center", justifyContent: "space-between" },
   cardTitle: { fontFamily: fonts.displaySemi, fontSize: 16 },
-  partnerTitleGroup: { flexDirection: "row-reverse", alignItems: "center", gap: 8 },
+  partnerTitleGroup: { flexDirection: rowStart, alignItems: "center", gap: 8 },
   inactiveTag: { fontFamily: fonts.body, fontSize: 11 },
   refreshBtn: { padding: 6 },
-  refreshRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 6 },
+  refreshRow: { flexDirection: rowStart, alignItems: "center", justifyContent: "center", gap: 6 },
   refreshText: { fontFamily: fonts.body, fontSize: 12 },
   backRow: { paddingVertical: 4 },
   backText: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "right" },
 
-  linkRow: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
+  linkRow: { flexDirection: rowStart, alignItems: "center", gap: 6 },
   link: { fontFamily: fonts.body, fontSize: 12, flexShrink: 1 },
   code: { fontFamily: fonts.display, fontSize: 32, letterSpacing: 4, textAlign: "center" },
 
-  summaryRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 8 },
+  summaryRow: { flexDirection: rowStart, justifyContent: "space-between", marginTop: 8 },
   summaryItem: { flex: 1, alignItems: "center", gap: 2 },
   summaryValue: { fontFamily: fonts.display, fontSize: 20 },
   summaryLabel: { fontFamily: fonts.body, fontSize: 11, textAlign: "center" },
 
-  activeRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10, marginTop: 8 },
+  activeRow: { flexDirection: rowStart, alignItems: "center", gap: 10, marginTop: 8 },
   activeLabel: { fontFamily: fonts.body, fontSize: 11, flex: 1, textAlign: "right", lineHeight: 16 },
 
   rewardTitle: { fontFamily: fonts.bodyBold, fontSize: 15, textAlign: "right" },
@@ -836,14 +730,12 @@ const styles = StyleSheet.create({
   progressTrack: { height: 8, borderRadius: radii.pill, overflow: "hidden", marginVertical: 6 },
   progressFill: { height: "100%", borderRadius: radii.pill },
 
-  chipRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6 },
+  chipRow: { flexDirection: rowStart, flexWrap: "wrap", gap: 6 },
   chip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.pill },
   chipText: { fontFamily: fonts.body, fontSize: 12 },
 
-  fieldLabel: { fontFamily: fonts.body, fontSize: 12, textAlign: "right" },
-
   searchBar: {
-    flexDirection: "row-reverse",
+    flexDirection: rowStart,
     alignItems: "center",
     gap: 8,
     borderRadius: radii.md,
@@ -854,7 +746,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 14, textAlign: "right" },
 
   row: {
-    flexDirection: "row-reverse",
+    flexDirection: rowStart,
     alignItems: "center",
     gap: 10,
     borderRadius: radii.md,
@@ -865,14 +757,14 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, gap: 2 },
   rowName: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "right" },
   rowMeta: { fontFamily: fonts.body, fontSize: 11, textAlign: "right" },
-  rowBadges: { alignItems: "flex-start", gap: 2 },
+  rowBadges: { alignItems: "flex-end", gap: 2 },
   badge: { fontFamily: fonts.bodyBold, fontSize: 11 },
 
-  detailRow: { flexDirection: "row-reverse", justifyContent: "space-between", gap: 12 },
+  detailRow: { flexDirection: rowStart, justifyContent: "space-between", gap: 12 },
   detailLabel: { fontFamily: fonts.body, fontSize: 12 },
   detailValue: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "left", flexShrink: 1 },
 
-  actionRow: { flexDirection: "row-reverse", gap: 8, marginTop: 12 },
+  actionRow: { flexDirection: rowStart, gap: 8, marginTop: 12 },
   noteInput: {
     borderRadius: radii.md,
     borderWidth: StyleSheet.hairlineWidth,

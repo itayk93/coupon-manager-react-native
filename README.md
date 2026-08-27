@@ -81,11 +81,14 @@ deep the chain runs. It is a closed programme rather than a feature for
 everyone: a personal code only exists once the server has attributed someone to
 a campaign, so there is no flag to remember to turn off.
 
-Partners are created from the admin screen — name, an optional memorable code,
-and the link is issued. Each campaign carries its own reward ladder and its own
-tally, so ten simultaneous deals are ten rows rather than ten migrations.
-Ending one deactivates the code: it stops attributing anyone new while everyone
-already counted stays counted.
+Partners are created from the admin screen by picking an existing account —
+the arrangement always starts with someone already using the app, and a name in
+a text column joins to nothing. The code is generated and cannot be chosen: a
+link that spells out whose it is gets guessed and forwarded with the name
+attached. Every partner is on the same ladder, so there is nothing per-deal to
+edit; what differs is the tally, and ten simultaneous partners are ten rows
+rather than ten migrations. Ending one deactivates the code — it stops
+attributing anyone new while everyone already counted stays counted.
 
 - Attribution is written once. A unique key on `referred_user_id` is the lock,
   and a trigger freezes the columns that decide who gets paid, so a link cannot

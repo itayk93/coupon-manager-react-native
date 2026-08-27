@@ -988,7 +988,6 @@ export type Database = {
           ends_at: string | null
           id: number
           name: string
-          notes: string | null
           partner_name: string
           partner_user_id: number | null
           starts_at: string
@@ -1000,7 +999,6 @@ export type Database = {
           ends_at?: string | null
           id?: number
           name: string
-          notes?: string | null
           partner_name: string
           partner_user_id?: number | null
           starts_at?: string
@@ -1012,7 +1010,6 @@ export type Database = {
           ends_at?: string | null
           id?: number
           name?: string
-          notes?: string | null
           partner_name?: string
           partner_user_id?: number | null
           starts_at?: string
@@ -1991,12 +1988,13 @@ export type Database = {
           activated: number | null
           active: boolean | null
           code: string | null
+          partner_email: string | null
+          partner_user_id: number | null
           ends_at: string | null
           id: number | null
           in_review: number | null
           joined: number | null
           last_join_at: string | null
-          notes: string | null
           partner_name: string | null
           rejected: number | null
           retained: number | null
@@ -2118,8 +2116,12 @@ export type Database = {
           code: string
         }[]
       }
-      referral_create_campaign: {
-        Args: { p_code?: string; p_notes?: string; p_partner_name: string }
+      referral_code_taken: {
+        Args: { p_code: string }
+        Returns: boolean
+      }
+      referral_create_campaign_for_user: {
+        Args: { p_user_id: number }
         Returns: {
           code: string
           id: number
@@ -2129,23 +2131,8 @@ export type Database = {
         Args: { p_campaign_id: number }
         Returns: undefined
       }
-      referral_delete_reward: {
-        Args: { p_reward_id: number }
-        Returns: undefined
-      }
       referral_set_campaign_active: {
         Args: { p_active: boolean; p_campaign_id: number }
-        Returns: undefined
-      }
-      referral_upsert_reward: {
-        Args: {
-          p_campaign_id: number
-          p_label?: string
-          p_metric: string
-          p_reward_type: string
-          p_reward_value: number
-          p_threshold: number
-        }
         Returns: undefined
       }
       referral_activity_days: {
