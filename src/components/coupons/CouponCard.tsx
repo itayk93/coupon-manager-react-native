@@ -7,7 +7,6 @@ import {
   Platform,
   Animated,
   Easing,
-  PanResponder,
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
@@ -159,70 +158,6 @@ export function CouponCard({
     outputRange: ["0%", "100%"],
   });
 
-  // "Physical voucher" easter egg: the card is perforated under its header,
-  // and pulling the body down opens the tear a little before it snaps back.
-  const tear = React.useRef(new Animated.Value(0)).current;
-  const tearArmed = React.useRef(false);
-  const touchStartedAt = React.useRef(0);
-  // The tear gesture must never steal the touch while a hold is filling up.
-  const holdingRef = React.useRef(false);
-  holdingRef.current = hold.holding;
-
-  const panResponder = React.useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => {
-          touchStartedAt.current = Date.now();
-          return false;
-        },
-        // Claim the gesture only for a deliberate downward pull that starts
-        // after a short hold, so list scrolling is never stolen.
-        onMoveShouldSetPanResponder: (_evt, gesture) =>
-          !holdingRef.current &&
-          gesture.dy > 24 &&
-          Math.abs(gesture.dx) < 10 &&
-          Date.now() - touchStartedAt.current > 220,
-        onPanResponderGrant: () => {
-          tearArmed.current = false;
-        },
-        onPanResponderMove: (_evt, gesture) => {
-          // Rubberband: the further you pull, the less it gives.
-          const pulled = Math.max(0, gesture.dy);
-          const eased = Math.min(1, Math.sqrt(pulled / 90));
-          tear.setValue(eased);
-
-          if (eased > 0.7 && !tearArmed.current) {
-            tearArmed.current = true;
-            if (Platform.OS !== "web") {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            }
-          }
-        },
-        onPanResponderRelease: () => {
-          tearArmed.current = false;
-          Animated.spring(tear, {
-            toValue: 0,
-            useNativeDriver: false,
-            friction: 5,
-            tension: 90,
-          }).start();
-        },
-        onPanResponderTerminate: () => {
-          Animated.spring(tear, {
-            toValue: 0,
-            useNativeDriver: false,
-            friction: 5,
-            tension: 90,
-          }).start();
-        },
-      }),
-    [tear],
-  );
-
-  // The perforation strip is always visible; pulling only widens the gap.
-  const tearGap = tear.interpolate({ inputRange: [0, 1], outputRange: [0, 16] });
-  const perfHeight = tear.interpolate({ inputRange: [0, 1], outputRange: [10, 26] });
-
   // "Crumple" easter egg: a spent/expired coupon tilts and gets a stamp
   // slapped on it. The stamp lands with a haptic thud, but only when the
   // coupon turns inactive while the card is on screen (i.e. right after the
@@ -298,7 +233,7 @@ export function CouponCard({
       onPressOut={hold.handlers.onPressOut}
       style={[
         styles.card,
-        shadows.card,
+        shadows.lifted,
         {
           backgroundColor: theme.card,
           borderColor: selected ? theme.primary : "transparent",
@@ -346,18 +281,8 @@ export function CouponCard({
         style={[styles.holdBar, { width: holdFill, backgroundColor: theme.primary }]}
       />
 
-      {/* Perforation: the tear line the body hangs from */}
-      <Animated.View style={[styles.perforation, { height: perfHeight }]}>
-        <View style={[styles.perfDashes, { borderTopColor: theme.border }]} />
-        <View style={[styles.notch, styles.notchLeft, { backgroundColor: theme.background }]} />
-        <View style={[styles.notch, styles.notchRight, { backgroundColor: theme.background }]} />
-      </Animated.View>
-
       {/* Body */}
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[styles.body, { transform: [{ translateY: tearGap }] }]}
-      >
+      <Animated.View style={styles.body}>
         <View>
           <View style={styles.amountRow}>
             <Text style={[styles.remaining, { color: theme.text }]}>
@@ -423,23 +348,30 @@ export function CouponCard({
         ) : null}
 
         <View style={styles.actionsRow}>
+          {/* Copying the code is the moment the coupon is actually used, so it
+              carries the brand fill. Reporting usage comes afterwards and sits
+              quiet, which keeps one filled button per card. */}
           <TouchableOpacity
             onPress={handleCopy}
-            style={[styles.actionBtn, { backgroundColor: theme.inputBg }]}
+            style={[styles.actionBtn, { backgroundColor: headerColor }]}
           >
             {copied ? (
-              <Check size={14} color={theme.success} />
+              <Check size={14} color={headerText} />
             ) : null}
-            <Text style={[styles.actionText, { color: theme.label }]}>
+            <Text style={[styles.actionText, { color: headerText }]}>
               {copied ? "הועתק" : "העתקת קוד"}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleSecondaryAction}
-            style={[styles.actionBtn, { backgroundColor: headerColor }]}
+            style={[
+              styles.actionBtn,
+              styles.actionBtnQuiet,
+              { borderColor: theme.inputBorder },
+            ]}
           >
-            <Text style={[styles.actionText, styles.actionTextOnBrand, { color: headerText }]}>
+            <Text style={[styles.actionText, { color: theme.label }]}>
               {isInactive ? "עריכת קופון" : "דיווח שימוש"}
             </Text>
           </TouchableOpacity>
@@ -517,30 +449,6 @@ const styles = StyleSheet.create({
     height: 4,
     zIndex: 6,
   },
-  perforation: {
-    width: "100%",
-    overflow: "hidden",
-  },
-  perfDashes: {
-    position: "absolute",
-    top: 4,
-    width: "100%",
-    borderTopWidth: 2,
-    borderStyle: "dashed",
-  },
-  notch: {
-    position: "absolute",
-    top: -3,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  notchLeft: {
-    left: -7,
-  },
-  notchRight: {
-    right: -7,
-  },
   body: {
     paddingTop: 24,
     paddingHorizontal: 18,
@@ -555,8 +463,12 @@ const styles = StyleSheet.create({
   },
   remaining: {
     fontFamily: fonts.display,
-    fontSize: 19,
+    // The balance is what the card is opened for, so it reads before anything
+    // else is parsed: roughly triple the label beside it.
+    fontSize: 32,
+    lineHeight: 36,
     fontWeight: "800",
+    letterSpacing: -0.5,
   },
   ofTotal: {
     fontFamily: fonts.body,
@@ -645,13 +557,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
   },
+  actionBtnQuiet: {
+    borderWidth: 1,
+    backgroundColor: "transparent",
+  },
   actionText: {
     fontFamily: fonts.bodyBold,
     fontSize: 12.5,
     fontWeight: "700",
-  },
-  actionTextOnBrand: {
-    color: "#ffffff",
   },
   stamp: {
     position: "absolute",
