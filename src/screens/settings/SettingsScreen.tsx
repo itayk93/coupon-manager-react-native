@@ -23,6 +23,8 @@ import {
   Share2,
   ShieldCheck,
   LayoutGrid,
+  BarChart3,
+  MapPinned,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -178,6 +180,35 @@ export function SettingsScreen() {
                 </View>
               </View>
             ) : null}
+
+            {/* Statistics and purchase map. They used to be bottom-bar tabs;
+                they are destinations people choose, not places they pass
+                through, so they live here now. */}
+            <TouchableOpacity
+              onPress={() => router.push("/statistics")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  סטטיסטיקה
+                </Text>
+                <BarChart3 size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/where-bought")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  איפה קניתי
+                </Text>
+                <MapPinned size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
 
             {/* Notification preferences */}
             <TouchableOpacity

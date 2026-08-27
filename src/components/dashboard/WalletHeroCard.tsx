@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   WalletCards,
-  BarChart3,
   CirclePlus,
   QrCode,
 } from "lucide-react-native";
@@ -32,13 +31,6 @@ export function WalletHeroCard({
   const visibleCoupons = coupons.filter(isSpendableCoupon);
   const totalValue = visibleCoupons.reduce((sum, c) => sum + (c.value || 0), 0);
   const remainingValue = totalRemainingValue(coupons);
-  const expiringSoonCount = visibleCoupons.filter((c) => {
-    if (!c.expiration) return false;
-    const daysLeft =
-      (new Date(c.expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    return daysLeft >= 0 && daysLeft <= 14;
-  }).length;
-
   const displayName =
     user?.first_name || user?.email?.split("@")[0] || "משתמש";
   const hour = new Date().getHours();
@@ -88,18 +80,6 @@ export function WalletHeroCard({
             {isError
               ? "היתרה תוצג לאחר טעינה מחדש"
               : `מתוך ${formatIls(totalValue)} בארנק`}
-          </Text>
-        </View>
-
-      </View>
-
-      {/* Stat tiles */}
-      <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <BarChart3 size={18} color={theme.warning} />
-          <Text style={[styles.statLabel, { color: theme.textMuted }]}>פגים ב-14 יום</Text>
-          <Text style={[styles.statValue, { color: theme.text }]}>
-            {isLoading || isError ? "—" : expiringSoonCount}
           </Text>
         </View>
 
@@ -189,31 +169,6 @@ const styles = StyleSheet.create({
   balanceSub: {
     fontSize: 12.5,
     marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: "row-reverse",
-    gap: 14,
-    marginTop: 14,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: radii.card,
-    borderWidth: 1,
-    padding: 16,
-    alignItems: "flex-end",
-    gap: 6,
-    ...shadows.card,
-  },
-  statLabel: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    fontWeight: "600",
-    textAlign: "right",
-  },
-  statValue: {
-    fontFamily: fonts.display,
-    fontSize: 20,
-    fontWeight: "800",
   },
   actionButtonsRow: {
     flexDirection: "row-reverse",

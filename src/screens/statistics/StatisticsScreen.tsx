@@ -160,17 +160,6 @@ export function StatisticsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>חיסכון חודשי</Text>
           </View>
 
-          {activeMonth && (
-            <View style={[styles.monthTooltip, { backgroundColor: theme.surfaceAlt, borderColor: theme.border }]}>
-              <Text style={[styles.monthTooltipLabel, { color: theme.textMuted }]}>
-                {monthlyTrend.find((m) => m.key === activeMonth)?.fullLabel}
-              </Text>
-              <Text style={[styles.monthTooltipValue, { color: theme.primary }]}>
-                {formatIls(monthlyTrend.find((m) => m.key === activeMonth)?.value || 0)}
-              </Text>
-            </View>
-          )}
-
           <View style={styles.barsRow}>
             {monthlyTrend.map((m) => {
               const isActive = activeMonth === m.key;
@@ -200,6 +189,22 @@ export function StatisticsScreen() {
               );
             })}
           </View>
+
+          {/* The readout sits under the bars, where the tapped bar is: above
+              them it pushed the whole chart down on every tap, and read as a
+              header rather than as the answer to the tap. */}
+          {activeMonth ? (
+            <Text style={[styles.monthReadout, { color: theme.text }]}>
+              {`בחודש ${monthlyTrend.find((m) => m.key === activeMonth)?.fullLabel} חסכת `}
+              <Text style={{ color: theme.primary }}>
+                {formatIls(monthlyTrend.find((m) => m.key === activeMonth)?.value || 0)}
+              </Text>
+            </Text>
+          ) : (
+            <Text style={[styles.monthReadout, { color: theme.textSubtle }]}>
+              נגעו בעמודה כדי לראות כמה חסכתם באותו חודש
+            </Text>
+          )}
         </View>
 
         {/* Status Distribution */}
@@ -331,23 +336,13 @@ const styles = StyleSheet.create({
   barLabel: {
     fontSize: 11,
   },
-  monthTooltip: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    alignItems: "flex-end",
-  },
-  monthTooltipLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  monthTooltipValue: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    fontWeight: "900",
+  monthReadout: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+    writingDirection: "rtl",
+    marginTop: 14,
   },
   titleRow: {
     flexDirection: "row-reverse",

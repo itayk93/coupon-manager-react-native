@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BarChart3, Home, MapPinned, Share2, Ticket, User } from "lucide-react-native";
+import { Home, Share2, Ticket, User } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
@@ -16,11 +16,13 @@ type Item = {
 };
 
 // Declared right-to-left: דשבורד leads, as Hebrew expects.
+//
+// Statistics and "איפה קניתי" are reached from the account page rather than
+// from here: six bars left each label under ten points of type, and neither
+// screen is somewhere people go mid-task.
 const ITEMS: Item[] = [
   { label: "דשבורד", path: "/", Icon: Home, match: [] },
   { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
-  { label: "סטטיסטיקה", path: "/statistics", Icon: BarChart3, match: ["/statistics"] },
-  { label: "איפה קניתי", path: "/where-bought", Icon: MapPinned, match: ["/where-bought"] },
   { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
   { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", "/admin"] },
 ];
