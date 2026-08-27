@@ -237,7 +237,11 @@ Deno.serve(async (req) => {
         const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const result = await send(
           'idle_money',
-          { amount: idleAmount, months: Math.floor(IDLE_DAYS / 30) },
+          {
+            amount: idleAmount,
+            months: Math.floor(IDLE_DAYS / 30),
+            couponIds: idle.map((coupon) => coupon.id),
+          },
           monthKey,
           money(idleAmount),
           'לארנק שלי',

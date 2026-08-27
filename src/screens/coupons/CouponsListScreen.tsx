@@ -35,8 +35,10 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
+import { companyKey } from "@/lib/companyName";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
-type FilterStatus = "all" | "active" | "used" | "expired";
+type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
 interface CouponSection {
   key: string;
@@ -46,13 +48,29 @@ interface CouponSection {
 
 export function CouponsListScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ initialFilterTag?: string; initialCompany?: string }>();
+  const params = useLocalSearchParams<{
+    initialFilterTag?: string;
+    initialCompany?: string;
+    /** Comma-separated coupon ids, sent by a notification that is about them. */
+    ids?: string;
+  }>();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const bulkDelete = useBulkDeleteCoupons();
   const triggerAutoUpdate = useTriggerAutoUpdate();
+
+  // A notification links here with the exact coupons it was written about, so
+  // the list opens on those and not on the whole wallet. Cleared from the
+  // banner, which is the only way back to everything.
+  const [focusIds, setFocusIds] = useState<number[] | null>(() => {
+    const parsed = String(params.ids ?? "")
+      .split(",")
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isFinite(value) && value > 0);
+    return parsed.length ? parsed : null;
+  });
 
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(
@@ -65,6 +83,7 @@ export function CouponsListScreen() {
   const [showStatusRow, setShowStatusRow] = useState(
     Boolean(params.initialFilterTag)
   );
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
   // Set when a coupon card is held: the usage modal opens on that coupon.
@@ -74,8 +93,8 @@ export function CouponsListScreen() {
   // the right edge (where the row lands after scrollToEnd) is the most recently used/highest-usage company.
   const companyChips = useMemo(() => {
     const counts = coupons.reduce<Record<string, number>>((acc, coupon) => {
-      const company = (coupon.company || "").trim();
-      if (company) acc[company] = (acc[company] || 0) + 1;
+      const key = companyKey(coupon.company);
+      if (key) acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
     const companyUsage = usageStats?.usageCountByCompany || {};
@@ -91,11 +110,15 @@ export function CouponsListScreen() {
 
         return a[1] - b[1] || a[0].localeCompare(b[0], "he");
       })
-      .map(([company]) => company);
+      .map(([key]) => {
+        // Prefer the exact spelling the user sees on their coupons.
+        const source = coupons.find((c) => companyKey(c.company) === key);
+        return (source?.company || key).trim();
+      });
   }, [coupons, usageStats]);
 
   const isCompanyFiltered = (coupon: DecryptedCoupon) =>
-    !selectedCompany || (coupon.company || "").trim() === selectedCompany;
+    !selectedCompany || companyKey(coupon.company) === companyKey(selectedCompany);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -105,6 +128,8 @@ export function CouponsListScreen() {
 
   const matchedCoupons = useMemo(() => {
     return coupons.filter((coupon) => {
+      if (focusIds && !focusIds.includes(coupon.id)) return false;
+
       // Search
       if (!matchesCouponSearch(coupon, search)) return false;
 
@@ -118,7 +143,7 @@ export function CouponsListScreen() {
 
       return true;
     });
-  }, [coupons, search, selectedCompany, selectedTag, tagsMap]);
+  }, [coupons, focusIds, search, selectedCompany, selectedTag, tagsMap]);
 
   const sections = useMemo(() => {
     const active: DecryptedCoupon[] = [];
@@ -131,6 +156,13 @@ export function CouponsListScreen() {
       const isExpired =
         coupon.expiration && new Date(coupon.expiration).getTime() < Date.now();
       const isUsed = coupon.status === "נוצל" || remaining <= 0;
+
+      const daysLeft = coupon.expiration
+        ? Math.ceil((new Date(coupon.expiration).getTime() - Date.now()) / 86400000)
+        : null;
+      const matchesExpiring = daysLeft !== null && daysLeft >= 0 && daysLeft <= 14;
+
+      if (statusFilter === "expiring" && !matchesExpiring) continue;
 
       if (isUsed) {
         used.push(coupon);
@@ -162,9 +194,9 @@ export function CouponsListScreen() {
 
     const list: CouponSection[] = [];
 
-    if (statusFilter === "all" || statusFilter === "active") {
+    if (statusFilter === "all" || statusFilter === "active" || statusFilter === "expiring") {
       if (active.length > 0) {
-        list.push({ key: "active", title: "פעילים:", data: active });
+        list.push({ key: "active", title: statusFilter === "expiring" ? "פגים בקרוב" : "פעילים", data: active });
       }
     }
     if (statusFilter === "all" || statusFilter === "expired") {
@@ -258,12 +290,23 @@ export function CouponsListScreen() {
             style={[styles.addBtn, { backgroundColor: theme.primary }]}
           >
             <Plus size={16} color="#ffffff" />
-            <Text style={styles.addBtnText}>קופון חדש</Text>
+            <Text style={styles.addBtnText}>הוספת קופון</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.container}>
+        {focusIds ? (
+          <View style={[styles.focusBanner, { backgroundColor: theme.primaryTint }]}>
+            <Text style={[styles.focusText, { color: theme.primary }]}>
+              מציג את הקופונים מההתראה
+            </Text>
+            <TouchableOpacity onPress={() => setFocusIds(null)} hitSlop={8}>
+              <Text style={[styles.focusClear, { color: theme.primary }]}>הצג הכל</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {/* Search Bar */}
         <View
           style={[
@@ -317,10 +360,13 @@ export function CouponsListScreen() {
             </Text>
           </TouchableOpacity>
 
-          {companyChips.map((company) => {
-            const isCurrent = selectedCompany === company;
+          {(showAllCompanies
+            ? companyChips
+            : Array.from(new Set([...companyChips.slice(-6), ...(selectedCompany ? [selectedCompany] : [])]))
+          ).map((company) => {
+            const isCurrent = companyKey(selectedCompany) === companyKey(company);
             const count = coupons.filter(
-              (coupon) => (coupon.company || "").trim() === company
+              (coupon) => companyKey(coupon.company) === companyKey(company)
             ).length;
             return (
               <TouchableOpacity
@@ -353,6 +399,18 @@ export function CouponsListScreen() {
               </TouchableOpacity>
             );
           })}
+          {companyChips.length > 6 ? (
+            <TouchableOpacity
+              onPress={() => setShowAllCompanies((value) => !value)}
+              style={[styles.companyChip, { backgroundColor: theme.surfaceAlt, borderColor: theme.inputBorder }]}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showAllCompanies }}
+            >
+              <Text style={[styles.companyChipText, { color: theme.primary }]}> 
+                {showAllCompanies ? "פחות חברות" : `כל החברות (${companyChips.length})`}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </ScrollView>
 
         {/* Status filter, revealed from the header's filter button */}
@@ -362,8 +420,9 @@ export function CouponsListScreen() {
               [
                 { key: "all", label: "הכל" },
                 { key: "active", label: "פעילים" },
+                { key: "expiring", label: "פגים בקרוב" },
                 { key: "expired", label: "פגי תוקף" },
-                { key: "used", label: "נוצלו במלואם" },
+                { key: "used", label: "נוצלו" },
               ] as const
             ).map((tab) => {
               const isCurrent = statusFilter === tab.key;
@@ -506,14 +565,15 @@ export function CouponsListScreen() {
           )}
           ListEmptyComponent={
             <EmptyState
-              icon={<Sparkles size={32} color={theme.primary} />}
+              icon={<CharacterSpotlight character="investigator" state={search || selectedTag ? "thinking" : "talking"} />}
+              largeVisual
               title="לא נמצאו קופונים"
               subtitle={
                 search || selectedTag
                   ? "נסה לשנות את מילות החיפוש או הסינון"
                   : "הוסף את הקופון הראשון שלך עכשיו!"
               }
-              actionTitle="הוסף קופון"
+              actionTitle="הוספת קופון"
               onAction={() => router.push("/coupons/add")}
             />
           }
@@ -580,6 +640,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  focusBanner: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  focusText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  focusClear: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "800",
+    textDecorationLine: "underline",
+  },
   searchBar: {
     // Keep the icon on the right whether or not the runtime flipped the layout.
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
@@ -599,11 +679,13 @@ const styles = StyleSheet.create({
   },
   statusTabsRow: {
     flexDirection: "row-reverse",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 14,
   },
   statusTab: {
-    flex: 1,
+    minWidth: 92,
+    flexGrow: 1,
     paddingVertical: 8,
     borderRadius: radii.pill,
     borderWidth: 1,

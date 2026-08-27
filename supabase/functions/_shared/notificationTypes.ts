@@ -153,12 +153,16 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         link: '/statistics',
       };
     }
-    case 'idle_money':
+    case 'idle_money': {
+      // The alert is about specific coupons, so it opens the list on exactly
+      // those. Older rows carry no ids and still land on the full wallet.
+      const ids = Array.isArray(payload.couponIds) ? payload.couponIds : [];
       return {
         title: 'יש לך כסף שמחכה',
         body: `${money(payload.amount)} יושבים בארנק כבר ${monthsPhrase(payload.months)} בלי שנגעת בהם. שווה מבט.`,
-        link: '/coupons',
+        link: ids.length ? `/coupons?ids=${ids.join(',')}` : '/coupons',
       };
+    }
     case 'share_received':
       return {
         title: 'שיתפו איתך קופון',
