@@ -33,14 +33,39 @@ async function ensureAndroidChannel() {
  * expo-notifications resolves the EAS project id from the manifest, which is
  * absent in some bare/dev-client builds. Pass it explicitly when we have it.
  */
+/**
+ * Turn a push-registration failure into something a person can read.
+ *
+ * These arrive from Apple's own frameworks, in English, phrased for whoever
+ * wrote the build — "no valid aps-environment entitlement string found" is a
+ * true and completely useless thing to show somebody who tapped "remind me".
+ */
+function describeTokenFailure(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  if (raw.includes("aps-environment")) {
+    return "הגרסה הזאת של האפליקציה נבנתה בלי הרשאת Push. צריך build חדש כדי להפעיל התראות.";
+  }
+  if (raw.includes("projectId") || raw.includes("project ID")) {
+    return "חסר מזהה פרויקט להתראות בגרסה הזאת של האפליקציה.";
+  }
+  if (/network|timeout|offline/i.test(raw)) {
+    return "אין חיבור לשרת ההתראות. נסו שוב עוד רגע.";
+  }
+  return "לא הצלחנו לרשום את המכשיר לקבלת התראות.";
+}
+
 async function fetchExpoToken(): Promise<string | null> {
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ??
     (Constants as any)?.easConfig?.projectId;
-  const token = await Notifications.getExpoPushTokenAsync(
-    projectId ? { projectId } : undefined,
-  );
-  return token.data || null;
+  try {
+    const token = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    );
+    return token.data || null;
+  } catch (error) {
+    throw new Error(describeTokenFailure(error));
+  }
 }
 
 type NativePushState = {

@@ -13,6 +13,7 @@
       "bundleIdentifier": "com.itaykarkason.couponmaster",
       "appleTeamId": "TM252YSY6T",
       "entitlements": {
+        "aps-environment": "development",
         "com.apple.security.application-groups": [
           "group.com.itaykarkason.couponmaster"
         ]
