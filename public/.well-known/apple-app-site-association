@@ -37,6 +37,10 @@
           {
             "/": "/sharing",
             "comment": "the sharing screen"
+          },
+          {
+            "/": "/r/*",
+            "comment": "a referral invite link"
           }
         ]
       }

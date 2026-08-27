@@ -1,5 +1,5 @@
 /**
- * Every link an email puts in front of a user.
+ * Every link the product puts in front of a user outside the app.
  *
  * These are the URLs that decide whether a tap opens the installed app or the
  * website. A path the app does not claim — in apple-app-site-association and in
@@ -11,6 +11,15 @@
  * src/lib/appLinks.test.ts checks what they produce against both platforms'
  * claim files on every test run.
  */
+
+import { referralUrl } from "./referralCodes";
+
+/**
+ * A referral invite. Not built by an email, but it goes out through a share
+ * sheet to someone who may already have the app installed, so it lives or dies
+ * by the same claim files as everything else here.
+ */
+export { referralUrl };
 
 /** Trailing slashes on APP_BASE_URL would otherwise produce `//coupons`. */
 export function normalizeBase(base: string): string {
@@ -88,5 +97,6 @@ export function allEmailLinks(base: string): Record<string, string> {
     "notification link, statistics": notificationUrl(base, "/statistics"),
     "notification link, sharing": notificationUrl(base, "/sharing"),
     "notification link, unknown path": notificationUrl(base, "/somewhere-else"),
+    "referral invite": referralUrl(base, "ELIOR"),
   };
 }

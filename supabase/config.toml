@@ -89,3 +89,9 @@ verify_jwt = true
 # address has an account, and redirect_to is matched against a fixed list so
 # the link it mails can only ever land on our own reset screen.
 verify_jwt = false
+
+[functions.claim-referral]
+# The account being attributed comes from the JWT. Without verification the
+# body would be the only thing saying who is being added to a partner's chain,
+# and that partner is paid per user.
+verify_jwt = true

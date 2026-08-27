@@ -103,7 +103,9 @@ function useAuthGuard() {
   const inAuthGroup = segments[0] === "(auth)";
   // `unsubscribe` is public for a legal reason, not a cosmetic one: an opt-out
   // link from an email has to work in the recipient's inbox, without a login.
-  const inPublicContent = ["about", "faq", "privacy", "issues", "unsubscribe"].includes(
+  // `r` is public for the same reason: an invite link is opened by someone who
+  // does not have an account yet, which is the entire point of it.
+  const inPublicContent = ["about", "faq", "privacy", "issues", "unsubscribe", "r"].includes(
     String(segments[0] ?? ""),
   );
 

@@ -25,10 +25,12 @@ import {
   LayoutGrid,
   BarChart3,
   MapPinned,
+  UserPlus,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { useMyReferralStatus } from "@/hooks/useReferral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
@@ -38,6 +40,9 @@ export function SettingsScreen() {
   const { theme } = useAppTheme();
   const { user, isAdmin, signOut } = useAuth();
   const biometric = useBiometricAuth();
+  // Absent for anyone outside a referral chain, which is how the pilot stays
+  // closed without a feature flag to remember to turn off later.
+  const { data: referral } = useMyReferralStatus();
 
   const handleToggleBiometric = async (next: boolean) => {
     if (!next) {
@@ -222,6 +227,21 @@ export function SettingsScreen() {
                 <Share2 size={20} color={theme.textMuted} />
               </View>
             </TouchableOpacity>
+
+            {referral ? (
+              <TouchableOpacity
+                onPress={() => router.push("/invite")}
+                style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+              >
+                <ChevronLeft size={18} color={theme.textMuted} />
+                <View style={styles.menuItemLabelGroup}>
+                  <Text style={[styles.menuItemText, { color: theme.text }]}>
+                    הזמנת חברים
+                  </Text>
+                  <UserPlus size={20} color={theme.textMuted} />
+                </View>
+              </TouchableOpacity>
+            ) : null}
 
             {/* Notification preferences */}
             <TouchableOpacity

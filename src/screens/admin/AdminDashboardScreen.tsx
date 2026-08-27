@@ -22,11 +22,13 @@ import {
   Shield,
   Send,
   MessageSquare,
+  Share2,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/Modal";
+import { ReferralsTab } from "@/screens/admin/ReferralsTab";
 import {
   useManageUsers,
   useCompanies,
@@ -42,7 +44,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
-type AdminTab = "users" | "companies" | "tags" | "messages";
+type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals";
 
 export function AdminDashboardScreen() {
   const router = useRouter();
@@ -110,6 +112,7 @@ export function AdminDashboardScreen() {
               { key: "companies", label: "חברות", icon: <Building2 size={16} /> },
               { key: "tags", label: "תגיות", icon: <Tag size={16} /> },
               { key: "messages", label: "הודעות", icon: <MessageSquare size={16} /> },
+              { key: "referrals", label: "הפניות", icon: <Share2 size={16} /> },
             ] as const
           ).map((tab) => {
             const isCurrent = activeTab === tab.key;
@@ -138,6 +141,11 @@ export function AdminDashboardScreen() {
             );
           })}
         </View>
+
+        {/* Tab 5: Referrals — the pilot dashboard. Everything it reads is
+            gated by is_app_admin() inside the database, so this tab being
+            hidden is a convenience and not the permission. */}
+        {activeTab === "referrals" ? <ReferralsTab /> : null}
 
         {/* Tab 1: Users */}
         {activeTab === "users" ? (

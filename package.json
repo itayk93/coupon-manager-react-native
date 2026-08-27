@@ -25,6 +25,7 @@
     "test": "vitest run",
     "check:links": "node scripts/check-deep-links.mjs",
     "e2e:activity-log": "node scripts/e2e-activity-log.mjs",
+    "e2e:referral": "node scripts/e2e-referral.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.native.json",
     "multipass:daily": "HEADLESS=true node scripts/run-daily-multipass.mjs"
   },

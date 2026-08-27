@@ -7,6 +7,7 @@ import {
 } from "@/lib/legacyAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { flushActivityLog, logActivity } from "@/lib/activityLog";
+import { claimPendingReferral, resetReferralClaim } from "@/lib/referralClaim";
 
 type AuthContextType = {
   session: LegacyUser | null;
@@ -70,6 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(normalizedUser);
           setUser(normalizedUser);
           setIsAdmin(normalizedUser.is_admin);
+
+          // The first moment there is both a session and a row in `users` to
+          // attach a referral to. Registration itself is too early: with email
+          // verification the row does not exist yet, and Google sign-in never
+          // passes through the registration screen at all. Not awaited — a
+          // partner's attribution must not hold up the app opening.
+          void claimPendingReferral();
         }
       }
     } catch (error) {
@@ -111,6 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await flushActivityLog();
       await supabase.auth.signOut();
       await clearLegacyUser();
+      // Whoever signs in next on this phone gets their own chance to claim.
+      await resetReferralClaim();
       setSession(null);
       setUser(null);
       setIsAdmin(false);
