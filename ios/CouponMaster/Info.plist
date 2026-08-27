@@ -59,6 +59,8 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>אפליקציה זו זקוקה לגישה לתמונות כדי לזהות פרטי שובר מצילום מסך.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
