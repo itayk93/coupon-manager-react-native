@@ -16,7 +16,8 @@ Backed by Supabase (Postgres + Auth + Edge Functions).
 - Camera scanning + AI parsing of coupon screenshots (`supabase/functions/parse-coupon`)
 - Automatic balance refresh for supported providers (Multipass)
 - Home-screen widgets on iOS and Android (`modules/coupon-widget`, `targets/`)
-- Biometric lock, push and email notifications, marketplace for reselling coupons
+- Biometric lock, push and email notifications
+- Referral chains behind an admin-only dashboard (`supabase/migrations/*_referral_*.sql`)
 
 ## Screenshot
 
@@ -72,6 +73,30 @@ There is no application server. All authorization is enforced in the database:
   (`0016_revoke_public_rpc_execute.sql`).
 - The anon key is public by design — it grants no data access on its own.
 
+### Referrals
+
+A partner gets a code; whoever registers through it is attributed to their
+campaign, and so is whoever registers through *that* person's code, however
+deep the chain runs. It is one closed pilot rather than a feature for everyone:
+a personal code only exists once the server has attributed someone to a
+campaign, so there is no flag to remember to turn off.
+
+- Attribution is written once. A unique key on `referred_user_id` is the lock,
+  and a trigger freezes the columns that decide who gets paid, so a link cannot
+  move a paying user between partners after the fact.
+- Qualification is computed from `coupon` and `user_activities` — a real coupon
+  plus coupon activity on three separate days in the first month to activate,
+  two separate days in the second to count as retained. Opening the app and
+  logging in count for nothing. `pg_cron` runs
+  `refresh_referral_progress()` hourly; retention lands the day it is earned
+  rather than waiting for day 60.
+- Nothing pays out on its own. Crossing a threshold stamps `earned_at`;
+  `paid_at` is written by hand from the admin screen once the reward has
+  actually gone out.
+- The tally is admin-only. `my_referral_status()` returns a single column — the
+  code — and all four referral tables sit behind `is_app_admin()`. A partner
+  can share their link and cannot watch the number they are paid on.
+
 ### Coupon encryption
 
 Sensitive coupon fields are encrypted and decrypted only by the authenticated
@@ -85,6 +110,17 @@ Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 ```bash
 npm test
 npm run typecheck
+```
+
+Two suites run against a real deployment rather than a mock, because what they
+check — that the server, not the client, decides whose account a row belongs to
+— cannot be observed from unit tests. They create throwaway accounts and delete
+everything they made:
+
+```bash
+set -a && . ./.env.supabase.local && set +a
+npm run e2e:activity-log
+npm run e2e:referral
 ```
 
 ## License

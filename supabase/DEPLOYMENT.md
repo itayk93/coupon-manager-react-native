@@ -29,6 +29,12 @@ supabase secrets set BREVO_SENDER_NAME="Coupon Master"
 supabase secrets set SCRAPER_SERVICE_URL=https://your-scraper.example.com
 supabase secrets set SCRAPER_SERVICE_TOKEN=...
 
+# הפניות (Referral) — מלח לטביעת האצבע של ההתקנה.
+# בלי הסוד הזה ה-install id פשוט לא נשמר: עדיף לוותר על הסימון של
+# "כמה חשבונות מאותה התקנה" מאשר לשמור hash לא מומלח, שכל מי שמחזיק
+# בטבלה יכול להתאים בחזרה למכשיר.
+supabase secrets set REFERRAL_INSTALL_PEPPER=$(openssl rand -hex 32)
+
 # Multipass / XGiftCard דרך GitHub Actions + Supabase Edge Function
 supabase secrets set GITHUB_TOKEN=...
 supabase secrets set MULTIPASS_GH_OWNER=itayk93
@@ -49,6 +55,7 @@ supabase functions deploy manage-unsubscribe
 supabase functions deploy send-emails
 supabase functions deploy push-notifications
 supabase functions deploy send-expiry-alerts
+supabase functions deploy claim-referral
 ```
 
 ## 4. תזמון (Cron)
@@ -89,6 +96,19 @@ select public.trigger_send_expiry_alerts();
 select status_code, content from net._http_response order by id desc limit 1;
 ```
 
+- **הפניות (Referral)** — `referral-progress-hourly` רץ על `17 * * * *` ומריץ
+  את `public.refresh_referral_progress()` **ישירות**, בלי `pg_net` ובלי סוד
+  ב-Vault. אין כאן קפיצת HTTP כי אין מה לקרוא בחוץ: החישוב הוא שאילתות מעל
+  `coupon` ו-`user_activities` באותו מסד. לכן גם אין טוקן cron לתחזק.
+
+```sql
+-- הרצה ידנית (או מכפתור הרענון בטאב "הפניות" בפאנל הניהול):
+select public.refresh_referral_progress();
+```
+
+  ה-job idempotent: `activated_at` ו-`retained_at` נכתבים פעם אחת ולא נדרסים,
+  והכרעה אנושית על `fraud_status` (כלומר שורה עם `reviewed_at`) לא נדרסת גם היא.
+
 בנוסף:
 - ניקוי `coupon_active_viewers` ישנים — פעם בשעה.
 - `trigger-multipass-update` — פעם בשעה דרך `pg_cron` + `vault`.
@@ -106,3 +126,7 @@ select status_code, content from net._http_response order by id desc limit 1;
 - **AI:** בטופס הוספת קופון, הדבק טקסט קופון ולחץ "פענח ומלא".
 - **דוא"ל:** פאנל ניהול → הודעות ודוא"ל → "מייל בדיקה".
 - **תזכורות:** אותו מסך → "תזכורות תפוגה → הפעל עכשיו".
+- **הפניות:** פאנל ניהול → הפניות. הטאב גלוי לאדמין בלבד, וזו לא רק הסתרה:
+  כל טבלאות ה-referral חסומות ב-RLS מאחורי `is_app_admin()`, כך שמשתמש רגיל
+  מקבל אפס שורות מ-Postgres. בדיקה מלאה מקצה לקצה מול הפרודקשן:
+  `npm run e2e:referral` (יוצר חשבונות זמניים ומוחק אחריו הכול).
