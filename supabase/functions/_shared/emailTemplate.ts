@@ -219,3 +219,119 @@ export function expiryEmailHtml(options: {
 </body>
 </html>`;
 }
+
+/**
+ * The chrome above, wrapped around one short message.
+ *
+ * The expiry mail is a list of coupons and needs the table; everything else the
+ * app has to say is a headline, a sentence, and a button. Same header, same
+ * footer, same unsubscribe — so a person who has seen one recognises the next.
+ */
+export function messageEmailHtml(options: {
+  firstName: string;
+  title: string;
+  body: string;
+  /** Optional big number, shown as a pill above the text. */
+  highlight?: string | null;
+  ctaLabel?: string | null;
+  appUrl: string | null;
+  unsubscribeUrl: string | null;
+}): string {
+  const { firstName, title, body, highlight, ctaLabel, appUrl, unsubscribeUrl } = options;
+
+  const pill = highlight
+    ? `<span dir="rtl" style="${RTL};display:inline-block;background:${COLOR.primaryTint};color:${COLOR.primary};
+                 font-family:${FONT};font-size:13px;font-weight:700;padding:6px 14px;border-radius:999px">
+         ${RLM}${escapeHtml(highlight)}
+       </span>`
+    : '';
+
+  const cta = appUrl
+    ? `<tr>
+         <td dir="rtl" align="center" style="${RTL};text-align:center;padding:20px 0 4px 0">
+           <a href="${escapeHtml(appUrl)}"
+              style="display:inline-block;background:${COLOR.primary};color:#ffffff;font-family:${FONT};
+                     font-size:15px;font-weight:700;text-decoration:none;padding:13px 30px;border-radius:12px">
+             ${escapeHtml(ctaLabel || 'לפתיחת האפליקציה')}
+           </a>
+         </td>
+       </tr>`
+    : '';
+
+  const footer = unsubscribeUrl
+    ? `<p dir="rtl" style="${RTL};margin:10px 0 0 0;font-family:${FONT};font-size:12px;color:${COLOR.textMuted};line-height:1.6">
+         לא רוצה לקבל את ההודעות האלה?
+         <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLOR.textSecondary}">ניהול ההתראות וביטול</a>.
+       </p>`
+    : '';
+
+  return `<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>${escapeHtml(title)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body dir="rtl" style="${RTL};margin:0;padding:0;background:${COLOR.shell}">
+  <div dir="rtl" style="${RTL};display:none;max-height:0;overflow:hidden;opacity:0">
+    ${RLM}${escapeHtml(body)}
+  </div>
+
+  <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="${RTL};background:${COLOR.shell};padding:24px 12px">
+    <tr>
+      <td dir="rtl" align="center" style="${RTL};text-align:center">
+        <table dir="rtl" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+               style="${RTL};width:100%;max-width:600px">
+
+          <tr>
+            <td dir="rtl" align="right" style="${RTL};background:${COLOR.headerBg};border-radius:20px 20px 0 0;padding:22px 24px">
+              <div dir="rtl" style="${RTL};font-family:${FONT};font-size:19px;font-weight:800;color:#ffffff">
+                קופון מאסטר
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td dir="rtl" align="right" style="${RTL};background:${COLOR.card};padding:26px 24px 22px 24px">
+              <div dir="rtl" style="${RTL};font-family:${FONT};font-size:15px;color:${COLOR.textSecondary}">
+                שלום ${escapeHtml(firstName || '')},
+              </div>
+
+              <div dir="rtl" style="${RTL};font-family:${FONT};font-size:24px;font-weight:800;color:${COLOR.text};
+                          line-height:1.35;padding:6px 0 12px 0">
+                ${RLM}${escapeHtml(title)}
+              </div>
+
+              ${pill}
+
+              <p dir="rtl" style="${RTL};margin:14px 0 0 0;font-family:${FONT};font-size:16px;
+                        color:${COLOR.textSecondary};line-height:1.7">
+                ${RLM}${escapeHtml(body)}
+              </p>
+
+              <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL}">
+                ${cta}
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td dir="rtl" align="right" style="${RTL};background:${COLOR.surface};border-radius:0 0 20px 20px;
+                       border-top:1px solid ${COLOR.divider};padding:18px 24px">
+              <p dir="rtl" style="${RTL};margin:0;font-family:${FONT};font-size:13px;color:${COLOR.textMuted};line-height:1.6">
+                אפשר לבחור בדיוק אילו הודעות לקבל, ובאיזה ערוץ, במסך ההתראות באפליקציה.
+              </p>
+              ${footer}
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}

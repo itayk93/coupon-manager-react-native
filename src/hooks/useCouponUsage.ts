@@ -12,6 +12,7 @@ import {
 } from "@/lib/couponLedger";
 import { DecryptedCoupon } from "./useCoupons";
 import { logActivity } from "@/lib/activityLog";
+import { notifyEvent } from "@/lib/notifyEvent";
 
 export type ConsolidatedRow = {
   id: number | string;
@@ -332,6 +333,9 @@ export function useRecordUsage() {
         couponId: variables.couponId,
         metadata: { amount: variables.usedAmount, fully_used: data.fullyUsed },
       });
+      // Spending the last of a coupon is the one moment in the app that is
+      // purely good news. The server re-checks that it really is finished.
+      if (data.fullyUsed) notifyEvent("coupon_finished", { couponId: variables.couponId });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });

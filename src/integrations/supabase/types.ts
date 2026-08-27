@@ -803,6 +803,7 @@ export type Database = {
           push: boolean
           quiet_until: string | null
           timezone: string
+          type_channels: Json
           updated_at: string
           user_id: number
           windows: number[] | null
@@ -815,6 +816,7 @@ export type Database = {
           push?: boolean
           quiet_until?: string | null
           timezone?: string
+          type_channels?: Json
           updated_at?: string
           user_id: number
           windows?: number[] | null
@@ -827,6 +829,7 @@ export type Database = {
           push?: boolean
           quiet_until?: string | null
           timezone?: string
+          type_channels?: Json
           updated_at?: string
           user_id?: number
           windows?: number[] | null
@@ -849,6 +852,8 @@ export type Database = {
           message: string
           shown: boolean
           timestamp: string | null
+          title: string | null
+          type: string | null
           user_id: number
           viewed: boolean | null
         }
@@ -859,6 +864,8 @@ export type Database = {
           message: string
           shown?: boolean
           timestamp?: string | null
+          title?: string | null
+          type?: string | null
           user_id: number
           viewed?: boolean | null
         }
@@ -869,6 +876,8 @@ export type Database = {
           message?: string
           shown?: boolean
           timestamp?: string | null
+          title?: string | null
+          type?: string | null
           user_id?: number
           viewed?: boolean | null
         }

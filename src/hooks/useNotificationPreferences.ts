@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { NOTIFICATION_PREFERENCES_COLUMNS } from "@/lib/tableColumns";
 import { DEFAULT_NOTIFICATION_WINDOWS } from "@/lib/notificationWindows";
+import type { TypeChannels } from "@/lib/notificationTypes";
 
 export type NotificationPreferences = {
   user_id: number;
@@ -15,6 +16,12 @@ export type NotificationPreferences = {
   timezone: string;
   /** Remind every day once a coupon is this close to expiry. null = off. */
   daily_within: number | null;
+  /**
+   * Per-kind channel choices. An absent kind, or an absent channel inside one,
+   * means "whatever that kind defaults to" — so a kind added on the server
+   * reaches people who have never opened this screen.
+   */
+  type_channels: TypeChannels;
 };
 
 const PREFERENCE_COLUMNS = NOTIFICATION_PREFERENCES_COLUMNS;
@@ -28,6 +35,7 @@ const DEFAULTS: NotificationPreferences = {
   quiet_until: null,
   timezone: "Asia/Jerusalem",
   daily_within: null,
+  type_channels: {},
 };
 
 export function useNotificationPreferences() {

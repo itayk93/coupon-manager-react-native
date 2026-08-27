@@ -41,6 +41,35 @@ export function notificationSettingsUrl(base: string): string {
   return `${normalizeBase(base)}/notification-settings`;
 }
 
+/** The savings screen, linked from the summary and milestone emails. */
+export function statisticsUrl(base: string): string {
+  return `${normalizeBase(base)}/statistics`;
+}
+
+/** The sharing screen, linked from the "someone shared with you" email. */
+export function sharingUrl(base: string): string {
+  return `${normalizeBase(base)}/sharing`;
+}
+
+/**
+ * Where a notification of any kind points.
+ *
+ * The kinds each carry their own in-app path, and a path that reaches here
+ * without a builder above is a path nothing claims — so this refuses anything
+ * it does not recognise rather than quietly handing the user to Safari.
+ */
+export function notificationUrl(base: string, path: string): string {
+  const root = normalizeBase(base);
+  if (path === "/coupons" || path === "/notifications" || path === "/notification-settings") {
+    return `${root}${path}`;
+  }
+  if (path === "/statistics") return statisticsUrl(base);
+  if (path === "/sharing") return sharingUrl(base);
+  const coupon = path.match(/^\/coupons\/(\d+)$/);
+  if (coupon) return couponsUrl(base, [Number(coupon[1])]);
+  return notificationsUrl(base);
+}
+
 /**
  * One sample of every link shape above, for the test to check against the
  * claim files. Add a builder, add it here — an unclaimed link is then a failing
@@ -53,5 +82,11 @@ export function allEmailLinks(base: string): Record<string, string> {
     unsubscribe: unsubscribeUrl(base, "sample.token"),
     notifications: notificationsUrl(base),
     "notification settings": notificationSettingsUrl(base),
+    statistics: statisticsUrl(base),
+    sharing: sharingUrl(base),
+    "notification link, coupon": notificationUrl(base, "/coupons/42"),
+    "notification link, statistics": notificationUrl(base, "/statistics"),
+    "notification link, sharing": notificationUrl(base, "/sharing"),
+    "notification link, unknown path": notificationUrl(base, "/somewhere-else"),
   };
 }
