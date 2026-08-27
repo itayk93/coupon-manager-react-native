@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useHideNotification, useInAppNotifications } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { fonts } from "@/lib/theme";
+import { fonts, shadows } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { notify } from "@/lib/notify";
 import { legacyHebrew, mergeNotificationFeeds } from "@/lib/notificationFeed";
@@ -113,16 +113,17 @@ export function NotificationsScreen() {
           // a share at the sharing list, an expiry at the coupons.
           else if (item.link) router.push(item.link as any);
         }}
-        style={[
-          styles.row,
-          {
-            borderBottomColor: theme.divider,
-            // The unread state is carried by the whole row rather than a dot in
-            // the corner, so the eye lands on it without hunting.
-            backgroundColor: unread ? theme.primaryTint : "transparent",
-          },
-        ]}
+        style={[styles.row, { borderBottomColor: theme.divider }]}
       >
+        {/* The accent belongs to what should be tapped, so an unread row gets a
+            thin bar on its leading edge rather than a full colour wash. */}
+        <View
+          style={[
+            styles.unreadBar,
+            { backgroundColor: unread ? theme.primary : "transparent" },
+          ]}
+        />
+
         <View style={styles.iconSlot}>
           {item.type === "warning" ? (
             <AlertTriangle size={18} color={theme.warning} />
@@ -131,7 +132,13 @@ export function NotificationsScreen() {
 
         <View style={styles.contentCol}>
           <View style={styles.titleLine}>
-            <Text numberOfLines={1} style={[styles.title, { color: theme.text }]}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.title,
+                { color: unread ? theme.text : theme.textSecondary, fontWeight: unread ? "700" : "500" },
+              ]}
+            >
               {item.title}
             </Text>
             {item.date ? (
@@ -184,7 +191,7 @@ export function NotificationsScreen() {
         <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>
           {label} · {items.length}
         </Text>
-        <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+        <View style={[styles.group, { backgroundColor: theme.card }]}>
           {items.map((item) => renderRow(item, unread))}
         </View>
       </>
@@ -198,8 +205,12 @@ export function NotificationsScreen() {
         onBack={() => router.back()}
         rightAction={
           unreadIds.length > 0 ? (
-            <TouchableOpacity onPress={markAllRead} hitSlop={8} style={styles.markAllButton}>
-              <Text style={[styles.markAllText, { color: theme.primary }]}>סמן הכל כנקרא</Text>
+            <TouchableOpacity
+              onPress={markAllRead}
+              activeOpacity={0.85}
+              style={[styles.markAllButton, { backgroundColor: theme.primary }]}
+            >
+              <Text style={styles.markAllText}>סמן הכל כנקרא</Text>
             </TouchableOpacity>
           ) : undefined
         }
@@ -248,18 +259,25 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   group: {
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 18,
     overflow: "hidden",
     marginBottom: 18,
+    ...shadows.card,
   },
   row: {
     flexDirection: "row-reverse",
     alignItems: "flex-start",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
     gap: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  unreadBar: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: 3,
   },
   iconSlot: {
     width: 22,
@@ -310,13 +328,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   markAllButton: {
-    paddingHorizontal: 4,
-    minHeight: 44,
+    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
     justifyContent: "center",
   },
   markAllText: {
+    color: "#fff",
     fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12.5,
+    fontWeight: "700",
   },
 });
