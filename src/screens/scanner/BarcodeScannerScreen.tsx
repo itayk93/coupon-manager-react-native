@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
-  Image,
   Platform,
   ActivityIndicator,
 } from "react-native";
@@ -19,9 +18,7 @@ import {
   Camera,
   RotateCcw,
   PlusCircle,
-  FileText,
   ImagePlus,
-  X,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
@@ -41,11 +38,6 @@ export function BarcodeScannerScreen() {
   const scannedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
   const [aiText, setAiText] = useState("");
-  // The picked image is held here rather than parsed on selection: the model
-  // misses details on a busy screenshot often enough that the user wants to add
-  // the surrounding text before spending a parse.
-  const [imageBase64, setImageBase64] = useState<string | undefined>();
-  const [imageUri, setImageUri] = useState<string | undefined>();
   const parseCoupon = useParseCoupon();
 
   const handleBarcodeScanned = ({ data, type }: { data: string; type: string }) => {
@@ -92,19 +84,17 @@ export function BarcodeScannerScreen() {
     });
   };
 
-  /// Sends whatever the user supplied — text, an image, or both. Together they
-  /// read better than either alone: the picture carries the layout, the pasted
-  /// text carries the small print the model tends to drop.
+  /// Text stays an explicit action so the user can finish pasting or editing it.
+  /// Images take the shorter path below and parse as soon as the picker returns.
   const handleParse = async () => {
-    if (!aiText.trim() && !imageBase64) {
-      notify.error("יש להדביק טקסט או לצרף תמונה של השובר");
+    if (!aiText.trim()) {
+      notify.error("יש להדביק טקסט של השובר");
       return;
     }
 
     try {
       const results = await parseCoupon.mutateAsync({
-        text: aiText.trim() || undefined,
-        imageBase64,
+        text: aiText.trim(),
       });
       if (results && results.length > 0) {
         goToAddCoupon(results[0]);
@@ -114,9 +104,9 @@ export function BarcodeScannerScreen() {
     }
   };
 
-  /// Reads a voucher off a photo or screenshot. The barcode scanner only ever
-  /// yields the code digits; the amount and expiry live in the surrounding
-  /// text, so the picture itself has to reach the parser.
+  /// Reads and parses a voucher immediately after the camera or library picker
+  /// returns. There is no intermediate image-preview confirmation: choosing the
+  /// image is the user's instruction to extract it.
   ///
   /// expo-image-picker is loaded here rather than at the top of the file on
   /// purpose: its entry point calls `requireNativeModule` while the module is
@@ -171,16 +161,16 @@ export function BarcodeScannerScreen() {
         return;
       }
 
-      setImageBase64(asset.base64);
-      setImageUri(asset.uri);
+      const results = await parseCoupon.mutateAsync({
+        text: aiText.trim() || undefined,
+        imageBase64: asset.base64,
+      });
+      if (results.length > 0) {
+        goToAddCoupon(results[0]);
+      }
     } catch (e: any) {
       console.error(e);
     }
-  };
-
-  const handleRemoveImage = () => {
-    setImageBase64(undefined);
-    setImageUri(undefined);
   };
 
   return (
@@ -373,31 +363,11 @@ export function BarcodeScannerScreen() {
                 </View>
               </View>
 
-              {imageUri ? (
-                <View
-                  style={[
-                    styles.imagePreviewRow,
-                    { backgroundColor: theme.surfaceAlt, borderColor: theme.border },
-                  ]}
-                >
-                  <TouchableOpacity onPress={handleRemoveImage} hitSlop={8}>
-                    <X size={18} color={theme.textMuted} />
-                  </TouchableOpacity>
-                  <Text
-                    style={[styles.imagePreviewText, { color: theme.textMuted }]}
-                    numberOfLines={1}
-                  >
-                    תמונה מצורפת
-                  </Text>
-                  <Image source={{ uri: imageUri }} style={styles.imageThumb} />
-                </View>
-              ) : null}
-
               <Button
                 title="חלץ פרטים והוסף קופון"
                 onPress={handleParse}
                 loading={parseCoupon.isPending}
-                disabled={!aiText.trim() && !imageBase64}
+                disabled={!aiText.trim()}
                 icon={<Sparkles size={18} color="#ffffff" />}
                 style={{ marginTop: 16 }}
               />
@@ -435,25 +405,6 @@ const styles = StyleSheet.create({
   imageBtnRow: {
     flexDirection: "row-reverse",
     gap: 10,
-  },
-  imagePreviewRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 12,
-    padding: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  imageThumb: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  imagePreviewText: {
-    flex: 1,
-    fontSize: 12,
-    textAlign: "right",
   },
   tabSelector: {
     flexDirection: "row-reverse",
