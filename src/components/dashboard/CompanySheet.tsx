@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React from "react";
 import {
   Animated,
@@ -27,6 +28,9 @@ import { useHoldAction } from "@/hooks/useHoldAction";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
 import { logActivity } from "@/lib/activityLog";
+import { formatIls } from "@/lib/formatIls";
+import { formatDateShort, daysUntil } from "@/lib/formatDate";
+import { companyKey } from "@/lib/companyName";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -60,7 +64,7 @@ function CouponRow({ coupon, onOpenCode, onReportUsage, children, style }: Coupo
       onPressOut={hold.handlers.onPressOut}
       style={style}
     >
-      <Animated.View pointerEvents="none" style={[rowStyles.holdBar, { width: fill }]} />
+      <Animated.View style={[rowStyles.holdBar, { width: fill, pointerEvents: "none" }]} />
       {children}
     </TouchableOpacity>
   );
@@ -82,31 +86,6 @@ type CompanySheetProps = {
   coupons: DecryptedCoupon[];
   onClose: () => void;
 };
-
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
-
-function formatDateShort(dateStr: string | null) {
-  if (!dateStr) return null;
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  } catch {
-    return dateStr;
-  }
-}
-
-function daysUntil(expiration: string | null) {
-  if (!expiration) return null;
-  const ms = new Date(expiration).getTime() - Date.now();
-  if (Number.isNaN(ms)) return null;
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
-}
 
 /**
  * Bottom sheet listing one company's coupons — the `companyModal` in the
@@ -143,7 +122,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
       toValue: visible ? 1 : 0,
       duration: visible ? 280 : 220,
       easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start(({ finished }) => {
       if (finished && !visible) {
         setMounted(false);
@@ -158,7 +137,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   }, [company, markCompanyViewed]);
 
   const rows = React.useMemo(
-    () => coupons.filter((c) => c.company === shown),
+    () => coupons.filter((c) => companyKey(c.company) === companyKey(shown)),
     [coupons, shown]
   );
 
@@ -180,6 +159,21 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     setCopied(false);
     void markCodeViewed(coupon.id);
     logActivity("view_coupon_code", { couponId: coupon.id });
+  };
+
+  // Copy straight from a row, without going through the enlarged-code overlay.
+  const [copiedRowId, setCopiedRowId] = React.useState<number | null>(null);
+
+  const copyRowCode = async (coupon: DecryptedCoupon) => {
+    if (!coupon.code) return;
+    await Clipboard.setStringAsync(coupon.code);
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
+    void markCodeViewed(coupon.id);
+    logActivity("view_coupon_code", { couponId: coupon.id });
+    setCopiedRowId(coupon.id);
+    setTimeout(() => setCopiedRowId(null), 2000);
   };
 
   const handleCopy = async () => {
@@ -233,7 +227,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
           } else {
             Animated.spring(drag, {
               toValue: 0,
-              useNativeDriver: true,
+              useNativeDriver,
               bounciness: 0,
             }).start();
           }
@@ -269,7 +263,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             <View style={styles.handle} />
 
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityLabel="סגירה">
-              <X size={15} color={headText} />
+              <X size={18} color={headText} />
             </TouchableOpacity>
 
             <View style={styles.headRow}>
@@ -285,8 +279,13 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               </Text>
             </View>
 
-            <Text style={[styles.headMeta, { color: headTextSoft }]}>
-              {rows.length} קופונים · יתרה {formatIls(total)}
+            <Text
+              style={[styles.headMeta, { color: headTextSoft }]}
+              maxFontSizeMultiplier={1.3}
+            >
+              {rows.length === 1
+                ? "קופון אחד"
+                : `${rows.length} קופונים · יתרה ${formatIls(total)}`}
             </Text>
           </View>
 
@@ -313,11 +312,13 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                       ? `בתוקף עד: ${formattedExpiry}`
                       : "ללא תוקף";
 
+              // A date five years out is not news, and colouring it burns the
+              // signal needed by the coupon that expires this week.
               const daysColor = isExpired || isFullyUsed
                 ? theme.danger
                 : isExpiringSoon
                   ? theme.warning
-                  : theme.success;
+                  : theme.textMuted;
 
               const isInactive = isFullyUsed || isExpired;
 
@@ -337,33 +338,67 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                 >
                   <View>
                     <View style={styles.amountRow}>
-                      <Text style={[styles.remaining, { color: theme.text }]}>
+                      <Text
+                        style={[styles.remaining, { color: theme.text }]}
+                        maxFontSizeMultiplier={1.3}
+                      >
                         {formatIls(remaining)}
                       </Text>
-                      <Text style={[styles.ofTotal, { color: theme.textSubtle }]}>
-                        מתוך {formatIls(total)}
-                      </Text>
+                      {used > 0 ? (
+                        <Text style={[styles.ofTotal, { color: theme.textSubtle }]}>
+                          מתוך {formatIls(total)}
+                        </Text>
+                      ) : null}
                     </View>
 
-                    <View style={[styles.track, { backgroundColor: theme.track }]}>
-                      <View
-                        style={[
-                          styles.fill,
-                          {
-                            width: `${usedPct}%`,
-                            backgroundColor: isInactive ? theme.textSubtle : brand,
-                          },
-                        ]}
-                      />
-                    </View>
+                    {/* An untouched coupon draws an empty grey bar that says
+                        nothing, so the track only appears once there is fill. */}
+                    {usedPct > 0 ? (
+                      <View style={[styles.track, { backgroundColor: theme.track }]}>
+                        <View
+                          style={[
+                            styles.fill,
+                            {
+                              width: `${usedPct}%`,
+                              backgroundColor: isInactive ? theme.textSubtle : brand,
+                            },
+                          ]}
+                        />
+                      </View>
+                    ) : null}
                   </View>
 
                   <View style={styles.metaRow}>
-                    <Text numberOfLines={1} style={[styles.code, { color: theme.label }]}>
+                    <Text
+                      numberOfLines={1}
+                      maxFontSizeMultiplier={1.3}
+                      style={[styles.code, { color: theme.label }]}
+                    >
                       {c.code || "—"}
                     </Text>
                     <Text style={[styles.days, { color: daysColor }]}>{daysLabel}</Text>
                   </View>
+
+                  {/* Copying the code was reachable only by tapping the row, so
+                      the one thing the sheet is opened for had no visible
+                      affordance. It is now the only filled control in it. */}
+                  {c.code ? (
+                    <TouchableOpacity
+                      onPress={() => copyRowCode(c)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`העתקת הקוד של ${c.company}`}
+                      style={[styles.copyBtn, { backgroundColor: brand }]}
+                    >
+                      {copiedRowId === c.id ? (
+                        <Check size={14} color={headText} />
+                      ) : (
+                        <Copy size={14} color={headText} />
+                      )}
+                      <Text style={[styles.copyBtnText, { color: headText }]}>
+                        {copiedRowId === c.id ? "הועתק" : "העתקת קוד"}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
 
                   {c.card_exp || c.cvv ? (
                     <View
@@ -445,7 +480,10 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                   <Text style={[styles.codeBalanceLabel, { color: theme.textMuted }]}>
                     יתרה:
                   </Text>
-                  <Text style={[styles.codeBalanceValue, { color: theme.text }]}>
+                  <Text
+                    style={[styles.codeBalanceValue, { color: theme.text }]}
+                    maxFontSizeMultiplier={1.3}
+                  >
                     {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
                   </Text>
                 </View>
@@ -535,7 +573,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   head: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   handle: {
     width: 36,
@@ -547,14 +587,13 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     position: "absolute",
-    top: 18,
-    left: 18,
-    width: 28,
-    height: 28,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    top: 14,
+    left: 14,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
+    opacity: 0.7,
   },
   headRow: {
     flexDirection: "row-reverse",
@@ -612,8 +651,10 @@ const styles = StyleSheet.create({
   },
   remaining: {
     fontFamily: fonts.display,
-    fontSize: 19,
+    fontSize: 30,
+    lineHeight: 34,
     fontWeight: "800",
+    letterSpacing: -0.5,
   },
   ofTotal: {
     fontFamily: fonts.body,
@@ -628,6 +669,19 @@ const styles = StyleSheet.create({
   fill: {
     height: "100%",
     borderRadius: radii.pill,
+  },
+  copyBtn: {
+    height: 40,
+    borderRadius: radii.md,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  copyBtnText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "700",
   },
   metaRow: {
     flexDirection: "row-reverse",
