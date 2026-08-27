@@ -87,3 +87,10 @@ verify_jwt = true
 # Wording for a notification the device will raise later. Requires a session so
 # the model spend is always attributable to an account.
 verify_jwt = true
+
+[functions.send-password-reset]
+# Public by necessity: a person who cannot sign in is the only one who needs
+# it. Nothing is returned either way, so it cannot be used to ask whether an
+# address has an account, and redirect_to is matched against a fixed list so
+# the link it mails can only ever land on our own reset screen.
+verify_jwt = false

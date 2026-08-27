@@ -50,9 +50,13 @@ export function ForgotPasswordScreen() {
           ? Linking.createURL("reset-password")
           : `${WEB_APP_ORIGIN}/reset-password`;
 
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-        { redirectTo }
+      // Not resetPasswordForEmail(): that goes out on Supabase's built-in
+      // SMTP, whose quota is a couple of messages an hour for the whole
+      // project. The function below generates the same recovery link and sends
+      // it through Brevo, like the rest of the mail this app sends.
+      const { error: resetError } = await supabase.functions.invoke(
+        "send-password-reset",
+        { body: { email: email.trim().toLowerCase(), redirectTo } }
       );
       if (resetError) throw resetError;
 
