@@ -17,6 +17,18 @@ function supa() {
   );
 }
 
+function isCronRequest(req: Request): boolean {
+  const presented = req.headers.get('x-cron-token') || '';
+  const expected = Deno.env.get('MULTIPASS_CRON_TOKEN') || '';
+  if (!presented || !expected || presented.length !== expected.length) return false;
+
+  let mismatch = 0;
+  for (let i = 0; i < presented.length; i += 1) {
+    mismatch |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 async function dispatchGitHubWorkflow(couponCodes: string[]): Promise<DispatchResult> {
   const githubToken = Deno.env.get('GITHUB_TOKEN');
   if (!githubToken) return { success: false, error: 'GITHUB_TOKEN not configured' };
@@ -150,8 +162,10 @@ Deno.serve(async (req: Request) => {
     if (!Number.isFinite(userId) || userId <= 0) {
       return jsonResponse({ error: 'user_id חסר או לא תקין' }, 400);
     }
-    const authenticatedUser = await requireUser(req);
-    requireSameUser(userId, authenticatedUser.id);
+    if (!isCronRequest(req)) {
+      const authenticatedUser = await requireUser(req);
+      requireSameUser(userId, authenticatedUser.id);
+    }
 
     const supabase = supa();
     let query = supabase
