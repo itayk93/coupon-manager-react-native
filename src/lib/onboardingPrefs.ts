@@ -62,7 +62,10 @@ export function estimateAnnualSavings(volume: OnboardingVolume | undefined, save
   return Math.round(perCoupon * perMonth * 12);
 }
 
-const PUSH_PRIMER_PREFIX = "push_primer_seen:";
+// Versioned so a materially improved permission explanation can be shown once
+// even to people who saw the older primer. Bump only when the primer's contract
+// changes, never for cosmetic edits.
+const PUSH_PRIMER_PREFIX = "push_primer_seen_v2:";
 
 /**
  * Whether this person has already been asked, in our own words, about

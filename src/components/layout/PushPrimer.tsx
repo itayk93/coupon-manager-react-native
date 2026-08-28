@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { BellRing, Check } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -42,19 +42,21 @@ export function PushPrimer() {
   // "undetermined", the browser says "default". Both mean nobody has answered.
   const raw = native.isSupported ? native.permission : pwa.permission;
   const unanswered = raw === "undetermined" || raw === "default";
+  const denied = native.isSupported && raw === "denied";
   const alreadyOn = native.isSupported ? native.notificationsEnabled : pwa.notificationsEnabled;
 
   useEffect(() => {
     let active = true;
     if (!user || !supported || native.isLoading) return;
-    // Only ever the undetermined state: "granted" needs nothing and "denied"
-    // cannot be undone from inside the app.
-    if (alreadyOn || !unanswered) return;
+    // Granted needs nothing. An unanswered permission can open the OS prompt;
+    // a denied permission gets the same warm explanation with a direct route
+    // to Settings, because iOS never presents its system prompt twice.
+    if (alreadyOn || (!unanswered && !denied)) return;
     void hasSeenPushPrimer(user.email).then((seen) => {
       if (active && !seen) setVisible(true);
     });
     return () => { active = false; };
-  }, [alreadyOn, native.isLoading, supported, unanswered, user]);
+  }, [alreadyOn, denied, native.isLoading, supported, unanswered, user]);
 
   const close = useCallback(() => {
     setVisible(false);
@@ -64,6 +66,12 @@ export function PushPrimer() {
   const accept = async () => {
     setBusy(true);
     try {
+      if (native.isSupported && denied) {
+        await Linking.openSettings();
+        logActivity("enable_push", { metadata: { source: "primer_settings" } });
+        close();
+        return;
+      }
       if (native.isSupported) await native.enable();
       else if (pwa.isSupported) await pwa.enable();
       logActivity("enable_push", { metadata: { source: "primer" } });
@@ -106,7 +114,11 @@ export function PushPrimer() {
             style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
             accessibilityRole="button"
           >
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>כן, תזכירו לי</Text>}
+            {busy ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.primaryText}>{denied ? "פתיחת הגדרות" : "כן, תזכירו לי"}</Text>
+            )}
           </Pressable>
 
           <Pressable onPress={close} style={styles.secondary} accessibilityRole="button">
