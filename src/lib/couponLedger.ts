@@ -18,13 +18,17 @@
  * rows are hidden from the history, and they must be left out of the balance
  * too or their amount is counted twice.
  */
-const HIDDEN_AUTO_USAGE_DETAILS = new Set(["עדכון אוטומטי via Multipass daily flow"]);
+const HIDDEN_AUTO_USAGE_DETAILS = new Set([
+  "עדכון אוטומטי via Multipass daily flow",
+  "עדכון אוטומטי via Multipass CI flow",
+]);
 
 export function isHiddenLedgerRow(details: string): boolean {
   const normalized = details.trim();
   if (!normalized) return false;
   if (HIDDEN_AUTO_USAGE_DETAILS.has(normalized)) return true;
-  return normalized.toLowerCase().includes("multipass daily flow");
+  const lower = normalized.toLowerCase();
+  return lower.includes("multipass daily flow") || lower.includes("multipass ci flow");
 }
 
 /** A usage row is always spending, whatever sign the amount was stored with. */

@@ -62,6 +62,7 @@ describe("isHiddenLedgerRow", () => {
   it("flags the duplicated Multipass audit rows", () => {
     expect(isHiddenLedgerRow("עדכון אוטומטי via Multipass daily flow")).toBe(true);
     expect(isHiddenLedgerRow("Updated by MULTIPASS DAILY FLOW")).toBe(true);
+    expect(isHiddenLedgerRow("עדכון אוטומטי via Multipass CI flow")).toBe(true);
   });
 
   it("keeps real rows", () => {

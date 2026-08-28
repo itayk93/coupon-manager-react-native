@@ -133,8 +133,10 @@ async function processScrapeResults(body: Record<string, unknown>) {
       if (usageAmount > 0) newestUsage = transaction;
     }
     if (newTransactions.length > 0) {
-      const { error } = await db.from('coupon_transaction').insert(newTransactions);
-      if (error) throw error;
+      for (const transaction of newTransactions) {
+        const { error } = await db.from('coupon_transaction').insert(transaction);
+        if (error && error.code !== '23505') throw error;
+      }
     }
 
     const { data: allTransactions, error: totalsError } = await db.from('coupon_transaction')
@@ -165,7 +167,7 @@ async function processScrapeResults(body: Record<string, unknown>) {
         coupon_id: coupon.id,
         used_amount: delta,
         action: 'Multipass',
-        details: 'עדכון אוטומטי via Multipass CI flow',
+        details: 'עדכון אוטומטי via Multipass daily flow',
         timestamp: now,
         place_name: place?.place_name || location || null,
         place_address: place?.place_address || null,
