@@ -101,7 +101,12 @@ export function StatusDrilldownModal({
           ]}
         >
           <Text style={[styles.totalLabel, { color: theme.textMuted }]}>יתרה כוללת</Text>
-          <Text style={[styles.totalValue, { color: theme.primary }]}>{formatIls(total)}</Text>
+          <Text
+            style={[styles.totalValue, { color: theme.primary }]}
+            maxFontSizeMultiplier={1.3}
+          >
+            {formatIls(total)}
+          </Text>
         </View>
 
         {filtered.length === 0 ? (

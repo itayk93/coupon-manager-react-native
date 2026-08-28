@@ -42,3 +42,44 @@ export function useMarkNotificationViewed() {
     },
   });
 }
+
+/** Marks every visible notification as read in one server update. */
+export function useMarkAllNotificationsViewed() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("notifications")
+        .update({ viewed: true, shown: true })
+        .eq("user_id", user.id)
+        .eq("hide_from_view", false)
+        .not("viewed", "is", true);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["in_app_notifications"] });
+    },
+  });
+}
+
+/** Hides a notification from the user's feed without deleting audit history. */
+export function useHideNotification() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("notifications")
+        .update({ hide_from_view: true })
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["in_app_notifications"] });
+    },
+  });
+}

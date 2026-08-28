@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React, { useState } from "react";
 import {
   Animated,
@@ -57,23 +58,8 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
-
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
-
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return "ללא תוקף";
-  try {
-    return new Date(dateStr).toLocaleDateString("he-IL", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
+import { formatIls } from "@/lib/formatIls";
+import { formatDateHebrew } from "@/lib/formatDate";
 
 /**
  * Confirmation for deleting a history record. It unfolds under the row it
@@ -98,7 +84,7 @@ function DeleteConfirm({
       toValue: 1,
       duration: 160,
       easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start();
   }, [anim]);
 
@@ -354,21 +340,30 @@ export function CouponDetailScreen() {
             <View style={styles.gaugeRow}>
               <View style={styles.gaugeCol}>
                 <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>נוצל</Text>
-                <Text style={[styles.gaugeVal, { color: theme.textMuted }]}>
+                <Text
+                  style={[styles.gaugeVal, { color: theme.textMuted }]}
+                  maxFontSizeMultiplier={1.3}
+                >
                   {formatIls(coupon.used_value || 0)}
                 </Text>
               </View>
 
               <View style={styles.gaugeCol}>
                 <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>שווי מקורי</Text>
-                <Text style={[styles.gaugeVal, { color: theme.text }]}>
+                <Text
+                  style={[styles.gaugeVal, { color: theme.text }]}
+                  maxFontSizeMultiplier={1.3}
+                >
                   {formatIls(coupon.value || 0)}
                 </Text>
               </View>
 
               <View style={styles.gaugeCol}>
                 <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>יתרה זמינה</Text>
-                <Text style={[styles.gaugeValHighlight, { color: theme.primary }]}>
+                <Text
+                  style={[styles.gaugeValHighlight, { color: theme.primary }]}
+                  maxFontSizeMultiplier={1.3}
+                >
                   {formatIls(remaining)}
                 </Text>
               </View>
@@ -391,6 +386,7 @@ export function CouponDetailScreen() {
               תוקף הקופון
             </Text>
             <Text
+              maxFontSizeMultiplier={1.3}
               style={[
                 styles.expirationValue,
                 {
@@ -403,7 +399,7 @@ export function CouponDetailScreen() {
                 },
               ]}
             >
-              {formatDate(coupon.expiration)}
+              {formatDateHebrew(coupon.expiration)}
             </Text>
           </View>
         ) : null}
@@ -713,7 +709,7 @@ export function CouponDetailScreen() {
                       ) : null}
                       {h.timestamp ? (
                         <Text style={[styles.historyDate, { color: theme.textMuted }]}>
-                          {formatDate(h.timestamp)}
+                          {formatDateHebrew(h.timestamp)}
                         </Text>
                       ) : null}
                     </View>

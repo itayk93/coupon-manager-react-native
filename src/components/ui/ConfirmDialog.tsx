@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React from "react";
 import {
   Animated,
@@ -6,8 +7,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
+  Pressable,
 } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
@@ -71,7 +72,7 @@ export function ConfirmHost() {
       toValue: req ? 1 : 0,
       duration: req ? 180 : 140,
       easing: req ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start(({ finished }) => {
       if (finished && !req) setMounted(false);
     });
@@ -93,9 +94,7 @@ export function ConfirmHost() {
     <Modal visible transparent animationType="none" onRequestClose={close}>
       <View style={styles.root}>
         <Animated.View style={[styles.scrim, { opacity: anim }]}>
-          <TouchableWithoutFeedback onPress={close}>
-            <View style={StyleSheet.absoluteFill} />
-          </TouchableWithoutFeedback>
+          <Pressable style={StyleSheet.absoluteFill} onPress={close} />
         </Animated.View>
 
         <Animated.View

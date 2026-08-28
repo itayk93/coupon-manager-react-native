@@ -77,7 +77,6 @@ export function BrandLaunchVideo({
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      pointerEvents="auto"
       style={styles.overlay}
     >
       <VideoView

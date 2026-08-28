@@ -148,7 +148,7 @@ function CouponForm({
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
-        title={isEditing ? "עריכת קופון" : "הוספת קופון חדש"}
+        title={isEditing ? "עריכת קופון" : "הוספת קופון"}
         showBack
         onBack={() => router.back()}
       />

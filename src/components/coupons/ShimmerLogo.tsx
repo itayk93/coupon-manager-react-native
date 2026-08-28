@@ -62,7 +62,6 @@ export function ShimmerLogo({
 
       {active ? (
         <AnimatedGradient
-          pointerEvents="none"
           colors={[
             "rgba(255,255,255,0)",
             "rgba(255,255,255,0.55)",
@@ -100,5 +99,6 @@ const styles = StyleSheet.create({
   },
   sheen: {
     position: "absolute",
+    pointerEvents: "none",
   },
 });

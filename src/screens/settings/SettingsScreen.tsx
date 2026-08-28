@@ -105,7 +105,7 @@ export function SettingsScreen() {
             {isAdmin ? (
               <View style={[styles.adminTag, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}>
                 <Text style={[styles.adminTagText, { color: theme.primary }]}>
-                  מנהל מערכת (Admin)
+                  מנהל מערכת
                 </Text>
               </View>
             ) : null}
@@ -145,7 +145,7 @@ export function SettingsScreen() {
                 <ChevronLeft size={18} color={theme.textMuted} />
                 <View style={styles.menuItemLabelGroup}>
                   <Text style={[styles.menuItemText, { color: theme.text }]}>
-                    פאנל ניהול (Admin Dashboard)
+                    פאנל ניהול
                   </Text>
                   <Shield size={20} color={theme.primary} />
                 </View>
@@ -315,7 +315,7 @@ export function SettingsScreen() {
               <ChevronLeft size={18} color={theme.textMuted} />
               <View style={styles.menuItemLabelGroup}>
                 <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  שאלות נפוצות (FAQ)
+                  שאלות נפוצות
                 </Text>
                 <FileText size={20} color={theme.textMuted} />
               </View>
@@ -362,7 +362,7 @@ export function SettingsScreen() {
         </TouchableOpacity>
 
         <Text style={[styles.versionText, { color: theme.textMuted }]}>
-          גרסה 1.0.0 (Native Mobile)
+          גרסה 1.0.0
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    padding: 14,
     borderRadius: 22,
     borderWidth: 1,
     marginBottom: 20,
@@ -423,9 +423,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
   },

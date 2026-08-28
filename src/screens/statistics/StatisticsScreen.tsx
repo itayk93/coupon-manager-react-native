@@ -147,7 +147,10 @@ export function StatisticsScreen() {
                 <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>{kpi.label}</Text>
                 {kpi.icon}
               </View>
-              <Text style={[styles.kpiValue, { color: kpi.color }]}>
+              <Text
+                style={[styles.kpiValue, { color: kpi.color }]}
+                maxFontSizeMultiplier={1.3}
+              >
                 {formatIls(kpi.value)}
               </Text>
             </TouchableOpacity>
@@ -194,7 +197,10 @@ export function StatisticsScreen() {
               them it pushed the whole chart down on every tap, and read as a
               header rather than as the answer to the tap. */}
           {activeMonth ? (
-            <Text style={[styles.monthReadout, { color: theme.text }]}>
+            <Text
+              style={[styles.monthReadout, { color: theme.text }]}
+              maxFontSizeMultiplier={1.3}
+            >
               {`בחודש ${monthlyTrend.find((m) => m.key === activeMonth)?.fullLabel} חסכת `}
               <Text style={{ color: theme.primary }}>
                 {formatIls(monthlyTrend.find((m) => m.key === activeMonth)?.value || 0)}
@@ -232,7 +238,10 @@ export function StatisticsScreen() {
               onPress={() => setStatusFilter("active")}
               style={styles.statusCol}
             >
-              <Text style={[styles.statusNum, { color: theme.primary }]}>
+              <Text
+                style={[styles.statusNum, { color: theme.primary }]}
+                maxFontSizeMultiplier={1.3}
+              >
                 {statusStats.active}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>פעילים</Text>
@@ -245,7 +254,10 @@ export function StatisticsScreen() {
               onPress={() => setStatusFilter("used")}
               style={styles.statusCol}
             >
-              <Text style={[styles.statusNum, { color: theme.primary }]}>
+              <Text
+                style={[styles.statusNum, { color: theme.primary }]}
+                maxFontSizeMultiplier={1.3}
+              >
                 {statusStats.fullyUsed}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>נוצלו במלואם</Text>
@@ -258,7 +270,10 @@ export function StatisticsScreen() {
               onPress={() => setStatusFilter("expired")}
               style={styles.statusCol}
             >
-              <Text style={[styles.statusNum, { color: theme.danger }]}>
+              <Text
+                style={[styles.statusNum, { color: theme.danger }]}
+                maxFontSizeMultiplier={1.3}
+              >
                 {statusStats.expired}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>פגי תוקף</Text>

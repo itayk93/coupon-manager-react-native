@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.itaykarkason.couponmaster",
+      "sha256_cert_fingerprints": [
+        "6B:82:45:0A:6C:3B:7B:53:07:8E:50:D1:B4:D5:C4:63:A3:64:54:E6:AD:AB:ED:31:10:85:B4:B3:C1:23:EA:34"
+      ]
+    }
+  }
+]

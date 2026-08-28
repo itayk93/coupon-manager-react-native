@@ -26,10 +26,8 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
-
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
+import { formatIls } from "@/lib/formatIls";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 export function SharingScreen() {
   const router = useRouter();
@@ -84,11 +82,23 @@ export function SharingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Text style={[styles.pageTitle, { color: theme.text }]}>שיתופים</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>שיתופים</Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="שיתוף קופון חדש"
+          activeOpacity={0.85}
+          onPress={() => setIsShareModalOpen(true)}
+          style={[styles.newShareBtn, { backgroundColor: theme.primary }]}
+        >
+          <Plus size={16} color="#fff" />
+          <Text style={styles.newShareText}>שיתוף חדש</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.container}>
         {/* Tabs */}
-        <View style={styles.tabsRow}>
+        <View style={[styles.tabsRow, { backgroundColor: theme.surfaceAlt }]}>
           <TouchableOpacity
             onPress={() => setActiveTab("shared_with_me")}
             style={[
@@ -96,9 +106,12 @@ export function SharingScreen() {
               {
                 backgroundColor:
                   activeTab === "shared_with_me" ? theme.card : "transparent",
+                borderColor:
+                  activeTab === "shared_with_me" ? theme.cardBorder : "transparent",
               },
             ]}
           >
+            <View style={styles.tabContent}>
             <Text
               style={[
                 styles.tabText,
@@ -108,8 +121,12 @@ export function SharingScreen() {
                 },
               ]}
             >
-              שותפו איתי ({sharedWithMe.length})
+              שותפו איתי
             </Text>
+            <View style={[styles.countBadge, { backgroundColor: theme.primaryTint }]}>
+              <Text style={[styles.tabBadge, { color: theme.primary }]}>{sharedWithMe.length}</Text>
+            </View>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -119,9 +136,12 @@ export function SharingScreen() {
               {
                 backgroundColor:
                   activeTab === "my_shares" ? theme.card : "transparent",
+                borderColor:
+                  activeTab === "my_shares" ? theme.cardBorder : "transparent",
               },
             ]}
           >
+            <View style={styles.tabContent}>
             <Text
               style={[
                 styles.tabText,
@@ -130,8 +150,12 @@ export function SharingScreen() {
                 },
               ]}
             >
-              השיתופים שלי ({myShares.length})
+              שיתפתי
             </Text>
+            <View style={[styles.countBadge, { backgroundColor: theme.primaryTint }]}>
+              <Text style={[styles.tabBadge, { color: theme.primary }]}>{myShares.length}</Text>
+            </View>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -188,10 +212,13 @@ export function SharingScreen() {
                     </View>
 
                     <View style={styles.shareDetailsRow}>
-                      <Text style={[styles.shareCode, { color: theme.primary }]}>
-                        קוד: {item.coupon?.code}
+                      <Text style={[styles.shareCode, { color: theme.textSubtle }]}>
+                        קוד: {item.coupon?.code || "לא זמין"}
                       </Text>
-                      <Text style={[styles.shareBalance, { color: theme.text }]}>
+                      <Text
+                        style={[styles.shareBalance, { color: theme.text }]}
+                        maxFontSizeMultiplier={1.3}
+                      >
                         יתרה: {formatIls(rem)}
                       </Text>
                     </View>
@@ -200,9 +227,12 @@ export function SharingScreen() {
               })
             ) : (
               <EmptyState
-                icon={<Users size={32} color={theme.primary} />}
-                title="אין קופונים ששותפו איתך"
-                subtitle="כאשר משתמשים אחרים ישתפו איתך קופונים, הם יופיעו כאן"
+                icon={<CharacterSpotlight character="helper" state="talking" />}
+                largeVisual
+                title="עדיין לא שיתפו איתך קופונים"
+                subtitle="כשמישהו ישתף קופון, הוא יופיע כאן. אפשר להתחיל ולשתף קופון משלך."
+                actionTitle="שיתוף קופון משלי"
+                onAction={() => setIsShareModalOpen(true)}
               />
             )
           ) : myShares.length > 0 ? (
@@ -250,7 +280,8 @@ export function SharingScreen() {
             })
           ) : (
             <EmptyState
-              icon={<Share2 size={32} color={theme.primary} />}
+              icon={<CharacterSpotlight character="helper" state="thinking" />}
+              largeVisual
               title="טרם שיתפת קופונים"
               subtitle="שתף בקלות קופונים עם חברים ובני משפחה"
               actionTitle="שתף קופון חדש"
@@ -303,7 +334,10 @@ export function SharingScreen() {
                     },
                   ]}
                 >
-                  <Text style={[styles.selectRem, { color: theme.primary }]}>
+                  <Text
+                    style={[styles.selectRem, { color: theme.primary }]}
+                    maxFontSizeMultiplier={1.3}
+                  >
                     {formatIls(rem)}
                   </Text>
                   <View style={styles.selectInfo}>
@@ -338,9 +372,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
     textAlign: "right",
+  },
+  titleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 16,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   safeArea: {
     flex: 1,
@@ -353,10 +392,10 @@ const styles = StyleSheet.create({
   newShareBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-    gap: 4,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    gap: 6,
   },
   newShareText: {
     color: "#ffffff",
@@ -365,22 +404,42 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: "row-reverse",
-    alignSelf: "flex-end",
-    gap: 8,
+    width: "100%",
+    gap: 4,
     padding: 4,
     borderRadius: radii.lg,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   tab: {
-    height: 38,
-    paddingHorizontal: 18,
-    borderRadius: 9,
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  tabContent: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   tabText: {
     fontSize: 13,
     fontWeight: "700",
+  },
+  tabBadge: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  countBadge: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scroll: {
     flex: 1,

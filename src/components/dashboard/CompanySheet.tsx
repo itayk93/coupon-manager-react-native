@@ -7,12 +7,12 @@ import {
   Image,
   Modal,
   Platform,
-  TouchableWithoutFeedback,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Pressable,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
@@ -254,10 +254,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.root}>
         <Animated.View style={[styles.scrim, { opacity: progress }]}>
-          {/* No press feedback: Pressable flashed a blue highlight before closing. */}
-          <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="סגירה">
-            <View style={StyleSheet.absoluteFill} />
-          </TouchableWithoutFeedback>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="סגירה" />
         </Animated.View>
 
         <Animated.View
@@ -452,9 +449,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
         {/* Enlarged code, opened by tapping a row */}
         {openCode ? (
           <View style={styles.codeOverlay}>
-            <TouchableWithoutFeedback onPress={() => setOpenCode(null)}>
-              <View style={StyleSheet.absoluteFill} />
-            </TouchableWithoutFeedback>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenCode(null)} />
 
             <View style={[styles.codeCard, { backgroundColor: theme.card }]}>
               {/* Brand strip: the same header language as the coupon cards */}

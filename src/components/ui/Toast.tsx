@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,7 +34,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
       toValue: 1,
       duration: 220,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start();
 
     const timer = setTimeout(() => {
@@ -41,7 +42,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
         toValue: 0,
         duration: 180,
         easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver,
       }).start(({ finished }) => finished && onDismiss());
     }, toast.kind === "error" ? 4200 : 2800);
 
@@ -119,7 +120,7 @@ export function ToastHost() {
   if (toasts.length === 0) return null;
 
   return (
-    <View pointerEvents="box-none" style={[styles.host, { top: insets.top + 8 }]}>
+    <View style={[styles.host, { top: insets.top + 8, pointerEvents: "box-none" }]}>
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
       ))}

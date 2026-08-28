@@ -218,8 +218,7 @@ function RootLayoutNav() {
 
           {!isReady && !launchVisible ? (
             <View
-              style={[styles.loadingOverlay, { backgroundColor: theme.background }]}
-              pointerEvents="auto"
+              style={[styles.loadingOverlay, { backgroundColor: theme.background, pointerEvents: "auto" }]}
             >
               <ActivityIndicator size="large" color={theme.primary} />
             </View>
@@ -281,10 +280,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
+    boxShadow: "0px 12px 32px rgba(15, 23, 42, 0.12)",
     elevation: 10,
   },
   webFooterText: {

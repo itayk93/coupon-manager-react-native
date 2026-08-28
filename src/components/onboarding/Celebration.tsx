@@ -37,7 +37,7 @@ export function Confetti({ active, reduceMotion }: { active: boolean; reduceMoti
 
   if (!pieces.length) return null;
 
-  return <View pointerEvents="none" style={styles.confettiLayer}>
+  return <View style={styles.confettiLayer}>
     {pieces.map((piece, index) => <ConfettiPiece key={index} piece={piece} />)}
   </View>;
 }
@@ -94,6 +94,6 @@ export function CountUp({ value, prefix = "", suffix = "", reduceMotion, style }
 }
 
 const styles = StyleSheet.create({
-  confettiLayer: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, overflow: "hidden" },
+  confettiLayer: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, overflow: "hidden", pointerEvents: "none" },
   piece: { position: "absolute", top: -20, borderRadius: 2 },
 });

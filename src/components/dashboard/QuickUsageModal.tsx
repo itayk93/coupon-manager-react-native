@@ -20,6 +20,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedUsage, useParseUsageScreenshot } from "@/hooks/useUsageAI";
+import { formatIls } from "@/lib/formatIls";
 
 type QuickUsageModalProps = {
   visible: boolean;
@@ -27,10 +28,6 @@ type QuickUsageModalProps = {
   coupons: DecryptedCoupon[];
   preselectedCoupon?: DecryptedCoupon | null;
 };
-
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
 
 export function QuickUsageModal({
   visible,

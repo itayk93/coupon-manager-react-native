@@ -236,6 +236,23 @@
     "transactions": []
   },
   {
+    "card_number": "1557296034817",
+    "transactions": [
+      {
+        "transaction_date": "04-08-2026 09:17",
+        "operation_type": "טעינה",
+        "location": "אתר עסקים B2B",
+        "recharge_amount": "250 ₪",
+        "original_amount": "-",
+        "usage_amount": "-",
+        "discount": "0 ₪",
+        "benefit_name": "-",
+        "quantity": "-",
+        "reference_number": "289301639"
+      }
+    ]
+  },
+  {
     "card_number": "1384843131964",
     "transactions": [
       {

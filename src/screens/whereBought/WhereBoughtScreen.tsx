@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ArrowRight, Crosshair, MapPin, Search } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
+import { formatIls } from "@/lib/formatIls";
 
 /* A straight port of the "איפה אכלתי" page from budget-lens-new: one blue spend
    ramp on the map, a draggable panel on top of it, and the same sections in the
@@ -27,11 +28,11 @@ import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
    the ask was for the two screens to look identical. */
 
 const BUCKETS = [
-  { min: 0, color: "#a8c7f0", label: "< ₪90" },
-  { min: 90, color: "#7aa9e8", label: "₪90+" },
-  { min: 270, color: "#4285f4", label: "₪270+" },
-  { min: 650, color: "#1a56c4", label: "₪650+" },
-  { min: 1100, color: "#0b3d91", label: "₪1,100+" },
+  { min: 0, color: "#a8c7f0", label: "פחות מ־90 ₪" },
+  { min: 90, color: "#7aa9e8", label: "90 ₪ ומעלה" },
+  { min: 270, color: "#4285f4", label: "270 ₪ ומעלה" },
+  { min: 650, color: "#1a56c4", label: "650 ₪ ומעלה" },
+  { min: 1100, color: "#0b3d91", label: "1,100 ₪ ומעלה" },
 ];
 
 const HOME: Region = { latitude: 32.07, longitude: 34.78, latitudeDelta: 1.6, longitudeDelta: 1.6 };
@@ -49,7 +50,7 @@ const SWIPE_MIN = 48;
 /* Web has no real map, only an embed; it fills the strip left above the sheet. */
 const WEB_MAP_HEIGHT = SCREEN.height - SHEET_STOPS[1];
 
-const money = (n: number) => "₪" + Math.round(n).toLocaleString("he-IL");
+const money = (n: number) => formatIls(n);
 const monthOf = (iso: string) => (iso || "").slice(0, 7);
 const dateLabel = (iso: string) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "");
 /* Weak-directional lines like "₪498 · 2×" flip inside RTL context; a leading LRM pins them. */
@@ -518,7 +519,7 @@ export function WhereBoughtScreen() {
             does not always do. This one sits on the frame's centre — the exact
             coordinates we asked for — so a place is always marked. */}
         {webCenter ? (
-          <View pointerEvents="none" style={[S.webPin, { top: WEB_MAP_HEIGHT / 2 - 34 }]}>
+          <View style={[S.webPin, { top: WEB_MAP_HEIGHT / 2 - 34, pointerEvents: "none" }]}>
             <MapPin size={38} color="#ea4335" fill="#ea4335" strokeWidth={1.4} />
           </View>
         ) : null}
@@ -695,7 +696,7 @@ export function WhereBoughtScreen() {
                 <Text style={[S.filterChipText, returningOnly && S.filterChipTextOn]}>חזרתי שוב</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setHighSpendOnly((value) => !value)} style={[S.filterChip, highSpendOnly && S.filterChipOn]}>
-                <Text style={[S.filterChipText, highSpendOnly && S.filterChipTextOn]}>מעל ₪500</Text>
+                <Text style={[S.filterChipText, highSpendOnly && S.filterChipTextOn]}>מעל 500 ₪</Text>
               </TouchableOpacity>
               {cityFilter ? (
                 <TouchableOpacity onPress={clearCityFocus} style={[S.filterChip, S.filterChipOn]}>
@@ -902,8 +903,10 @@ const S = StyleSheet.create({
     lineHeight: 12,
     textAlign: "center",
     color: "#1f2430",
-    textShadowColor: "#ffffff",
-    textShadowRadius: 3,
+    ...(Platform.select({
+      web: { textShadow: "0px 0px 3px #ffffff" },
+      default: { textShadowColor: "#ffffff", textShadowRadius: 3 },
+    }) as object),
   },
 
   appBack: {
@@ -918,10 +921,7 @@ const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.12)",
     elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
     zIndex: 14,
   },
   searchAreaBtn: {
@@ -988,11 +988,8 @@ const S = StyleSheet.create({
     overflow: "hidden",
     zIndex: 10,
     elevation: 12,
-    shadowColor: "#05070d",
-    shadowOpacity: 0.24,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: -12 },
-  },
+    boxShadow: "0px -12px 24px rgba(5, 7, 13, 0.24)",
+    },
   sheetHandle: { height: 30, alignItems: "center", justifyContent: "center" },
   sheetHandleBar: { width: 38, height: 5, borderRadius: 999, backgroundColor: "#d5d9e0" },
   panelScroll: { flex: 1 },
@@ -1011,7 +1008,7 @@ const S = StyleSheet.create({
 
   tabs: { flexDirection: "row-reverse", gap: 4, backgroundColor: "#f1f3f6", borderRadius: 11, padding: 3 },
   tab: { flex: 1, borderRadius: 7, minHeight: 40, alignItems: "center", justifyContent: "center" },
-  tabOn: { backgroundColor: "#fff", elevation: 1, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+  tabOn: { backgroundColor: "#fff", elevation: 1, boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.12)" },
   tabText: { fontSize: 14, fontWeight: "700", color: "#6d7481" },
   tabTextOn: { color: "#12141a" },
 

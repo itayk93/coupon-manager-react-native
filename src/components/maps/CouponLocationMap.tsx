@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React, { useEffect, useRef } from "react";
 import { Linking, Platform, StyleSheet, Text } from "react-native";
 import { Animated, Easing } from "react-native";
@@ -43,7 +44,7 @@ export function CouponLocationMap({
       toValue: 1,
       duration: 520,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start();
     if (Platform.OS !== "web") {
       mapRef.current?.animateToRegion(

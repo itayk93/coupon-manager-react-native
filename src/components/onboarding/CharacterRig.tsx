@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { Easing, cancelAnimation, interpolate, useAnimatedStyle, useDerivedValue, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from "react-native-reanimated";
+import Animated, { Easing, cancelAnimation, interpolate, useAnimatedStyle, useDerivedValue, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from "react-native-reanimated";
 
 /**
  * The walkthrough cast, rigged rather than rendered.
@@ -82,15 +82,49 @@ function useBlink(active: boolean, offset: number) {
   return open;
 }
 
-export function CharacterScene({ state, reduceMotion, compact }: { state: CharacterState; reduceMotion: boolean; compact?: boolean }) {
+export function CharacterScene({ state, reduceMotion, compact }: { state: CharacterState; reduceMotion?: boolean; compact?: boolean }) {
+  const systemReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion ?? systemReducedMotion;
   const scale = compact ? 0.82 : 1;
-  return <View style={styles.scene} pointerEvents="none">
+  return <View style={styles.scene}>
     <View style={[styles.cast, { transform: [{ scale }] }]}>
-      <BlueInvestigator state={state} reduceMotion={reduceMotion} />
-      <CouponProp state={state} reduceMotion={reduceMotion} />
-      <MintHelper state={state} reduceMotion={reduceMotion} />
+      <BlueInvestigator state={state} reduceMotion={shouldReduceMotion} />
+      <CouponProp state={state} reduceMotion={shouldReduceMotion} />
+      <MintHelper state={state} reduceMotion={shouldReduceMotion} />
     </View>
   </View>;
+}
+
+/** One cast member for product empty/loading states. Keeps regular screens quiet. */
+export function CharacterSpotlight({
+  character,
+  state = "talking",
+  reduceMotion,
+  size = "medium",
+}: {
+  character: "investigator" | "helper";
+  state?: CharacterState;
+  reduceMotion?: boolean;
+  size?: "small" | "medium" | "large";
+}) {
+  const systemReducedMotion = useReducedMotion();
+  const shouldReduceMotion = reduceMotion ?? systemReducedMotion;
+  const scale = size === "small" ? 0.62 : size === "large" ? 1.25 : 1;
+  const box = size === "small" ? 72 : size === "large" ? 176 : 132;
+  return (
+    <View
+      style={[styles.spotlight, { width: box, height: box, borderRadius: box / 2, pointerEvents: "none" }]}
+      accessibilityElementsHidden
+    >
+      <View style={{ transform: [{ scale }] }}>
+        {character === "investigator" ? (
+          <BlueInvestigator state={state} reduceMotion={shouldReduceMotion} />
+        ) : (
+          <MintHelper state={state} reduceMotion={shouldReduceMotion} />
+        )}
+      </View>
+    </View>
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -340,7 +374,7 @@ function CouponProp({ state, reduceMotion }: { state: CharacterState; reduceMoti
 
 /** Four sparks thrown off a celebration, on their own short arcs. */
 function Sparkles({ active }: { active: boolean }) {
-  return <View style={styles.sparkLayer} pointerEvents="none">
+  return <View style={styles.sparkLayer}>
     {[0, 1, 2, 3].map((index) => <Spark key={index} index={index} active={active} />)}
   </View>;
 }
@@ -367,8 +401,16 @@ function Spark({ index, active }: { index: number; active: boolean }) {
 const BODY = 76;
 
 const styles = StyleSheet.create({
-  scene: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
+  scene: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center", pointerEvents: "none" },
   cast: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 2 },
+  spotlight: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: "rgba(88, 223, 198, 0.12)",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
   slot: { width: 92, height: 132, alignItems: "center", justifyContent: "flex-end" },
   // The investigator reaches across the card, so it has to draw over it.
   slotFront: { zIndex: 3 },
@@ -404,14 +446,14 @@ const styles = StyleSheet.create({
   magnifierLens: { width: 26, height: 26, borderRadius: 13, borderWidth: 3.5, borderColor: BLUE_DARK, backgroundColor: "rgba(255,255,255,0.55)" },
   magnifierGlint: { position: "absolute", top: 5, left: 6, width: 7, height: 4, borderRadius: 3, backgroundColor: "#FFFFFF", opacity: 0.9, transform: [{ rotate: "-35deg" }] },
 
-  card: { width: 58, height: 74, marginBottom: 38, borderRadius: 9, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#D6E1F5", paddingTop: 12, paddingHorizontal: 9, gap: 6, overflow: "hidden", shadowColor: INK, shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  card: { width: 58, height: 74, marginBottom: 38, borderRadius: 9, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#D6E1F5", paddingTop: 12, paddingHorizontal: 9, gap: 6, overflow: "hidden", boxShadow: "0px 3px 8px rgba(22, 35, 58, 0.12)", elevation: 3 },
   cardLine: { height: 5, borderRadius: 3, backgroundColor: "#DCE5F6" },
   cardChip: { position: "absolute", bottom: 9, left: 9, width: 20, height: 14, borderRadius: 4, backgroundColor: "#FFD98A" },
-  scanBar: { position: "absolute", left: 0, right: 0, height: 3, backgroundColor: BLUE, opacity: 0.75, shadowColor: BLUE, shadowOpacity: 0.9, shadowRadius: 6 },
+  scanBar: { position: "absolute", left: 0, right: 0, height: 3, backgroundColor: BLUE, opacity: 0.75, boxShadow: "0px 0px 6px rgba(40, 100, 240, 0.9)" },
   cardCheck: { position: "absolute", left: 7, top: 7, width: 22, height: 22, borderRadius: 11, backgroundColor: "#16A34A", alignItems: "center", justifyContent: "center" },
   checkShort: { position: "absolute", width: 3, height: 7, borderRadius: 2, backgroundColor: "#FFFFFF", transform: [{ rotate: "-45deg" }, { translateX: -4 }, { translateY: 2 }] },
   checkLong: { position: "absolute", width: 3, height: 12, borderRadius: 2, backgroundColor: "#FFFFFF", transform: [{ rotate: "35deg" }, { translateX: 2 }, { translateY: -1 }] },
 
-  sparkLayer: { position: "absolute", top: 40, alignItems: "center", justifyContent: "center" },
+  sparkLayer: { position: "absolute", top: 40, alignItems: "center", justifyContent: "center", pointerEvents: "none" },
   spark: { position: "absolute", width: 8, height: 8, borderRadius: 2 },
 });

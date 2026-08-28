@@ -5,7 +5,8 @@ describe("companyKey", () => {
   it("folds case and whitespace", () => {
     expect(companyKey("GoodPharm")).toBe("goodpharm");
     expect(companyKey("  GoodPharm ")).toBe("goodpharm");
-    expect(companyKey("גוד  פארם")).toBe("גוד פארם");
+    expect(companyKey("גוד  פארם")).toBe("goodpharm");
+    expect(companyKey("גוד-פארם")).toBe("goodpharm");
   });
 
   it("treats an empty name as the empty key", () => {
@@ -23,6 +24,15 @@ describe("groupCouponsByCompany", () => {
     ]);
     expect(groups).toHaveLength(2);
     expect(groups[0].company).toBe("GoodPharm");
+    expect(groups[0].items).toHaveLength(2);
+  });
+
+  it("merges known Hebrew and English brand names", () => {
+    const groups = groupCouponsByCompany([
+      { company: "GoodPharm" },
+      { company: "גוד פארם" },
+    ]);
+    expect(groups).toHaveLength(1);
     expect(groups[0].items).toHaveLength(2);
   });
 });

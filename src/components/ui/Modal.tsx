@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React from "react";
 import {
   Modal as RNModal,
@@ -60,7 +61,7 @@ export function Modal({
       toValue: visible ? 1 : 0,
       duration: visible ? 280 : 220,
       easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver,
     }).start(({ finished }) => {
       if (finished && !visible) setMounted(false);
     });
@@ -88,7 +89,7 @@ export function Modal({
           } else {
             Animated.spring(drag, {
               toValue: 0,
-              useNativeDriver: true,
+              useNativeDriver,
               bounciness: 0,
             }).start();
           }

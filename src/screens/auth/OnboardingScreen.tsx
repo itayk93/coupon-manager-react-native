@@ -16,6 +16,7 @@ import { useCoupons } from "@/hooks/useCoupons";
 import { estimateAnnualSavings, saveOnboardingPrefs, type OnboardingGoal, type OnboardingVolume } from "@/lib/onboardingPrefs";
 import { Confetti, CountUp } from "@/components/onboarding/Celebration";
 import { CharacterScene, type CharacterState } from "@/components/onboarding/CharacterRig";
+import { formatIls } from "@/lib/formatIls";
 import { logActivity } from "@/lib/activityLog";
 
 type Mode = "profile" | "goal" | "volume" | "describe" | "preview";
@@ -234,8 +235,8 @@ export function OnboardingScreen() {
           <Confetti active reduceMotion={reduceMotion} />
           {savedNow > 0 ? <View style={styles.savingsBlock} accessibilityLabel={`חסכתם ${Math.round(savedNow)} שקלים`}>
             <Text style={styles.savingsLabel}>חסכתם כאן</Text>
-            <CountUp value={Math.round(savedNow)} prefix="₪ " reduceMotion={reduceMotion} style={styles.savingsValue} />
-            <Text style={styles.savingsFoot}>בקצב הזה זה בערך ₪{annualSavings.toLocaleString("he-IL")} בשנה</Text>
+            <CountUp value={Math.round(savedNow)} suffix=" ₪" reduceMotion={reduceMotion} style={styles.savingsValue} />
+            <Text style={styles.savingsFoot}>בקצב הזה זה בערך {formatIls(annualSavings)} בשנה</Text>
           </View> : null}
           {coupons.map((coupon, index) => <CouponSummary key={`${coupon.code}-${index}`} coupon={coupon} />)}
           {validCoupons.length !== coupons.length ? <Text style={styles.missingText}>חסר פרט באחד הקופונים. חזרו לטקסט והוסיפו חברה, קוד ושווי.</Text> : null}
@@ -294,7 +295,7 @@ function ChoiceCard({ label, hint, Icon, selected, onPress, index, reduceMotion 
 }
 
 function CouponSummary({ coupon }: { coupon: ParsedCoupon }) {
-  return <View style={styles.couponSummary}><View style={styles.check}><Check size={18} color="#fff" /></View><View style={styles.summaryCopy}><Text style={styles.company}>{coupon.company || "חברה לא זוהתה"}</Text><Text style={styles.details}>קוד {coupon.code || "חסר"} · שווי {coupon.value ?? "חסר"} ₪{coupon.cost != null ? ` · עלה ${coupon.cost} ₪` : ""}</Text></View></View>;
+  return <View style={styles.couponSummary}><View style={styles.check}><Check size={18} color="#fff" /></View><View style={styles.summaryCopy}><Text style={styles.company}>{coupon.company || "חברה לא זוהתה"}</Text><Text style={styles.details}>קוד {coupon.code || "חסר"} · שווי {coupon.value != null ? formatIls(Number(coupon.value)) : "חסר"}{coupon.cost != null ? ` · עלה ${formatIls(Number(coupon.cost))}` : ""}</Text></View></View>;
 }
 function Field(props: React.ComponentProps<typeof TextInput> & { label: string }) { return <View style={styles.field}><Text style={styles.fieldLabel}>{props.label}</Text><TextInput {...props} placeholderTextColor="#8993A4" style={styles.fieldInput} /></View>; }
 function PrimaryButton({ label, onPress, disabled, loading }: { label: string; onPress: () => void; disabled?: boolean; loading?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, disabled && styles.primaryButtonDisabled, pressed && styles.pressed]}>{loading ? <ActivityIndicator color="#fff" /> : <><Sparkles size={19} color="#fff" /><Text style={styles.primaryButtonText}>{label}</Text></>}</Pressable>; }
@@ -308,7 +309,7 @@ const styles = StyleSheet.create({
   progressFill: { height: "100%", borderRadius: 4, backgroundColor: palette.primary },
   title: { fontFamily: fonts.display, fontSize: 30, fontWeight: "800", textAlign: "center", writingDirection: "rtl", marginTop: 18 }, subtitle: { fontFamily: fonts.body, fontSize: 16, lineHeight: 24, textAlign: "center", writingDirection: "rtl", marginTop: 8, marginBottom: 22 },
   panel: { gap: 16, padding: 18, borderRadius: radii.card, backgroundColor: "#fff", borderWidth: 1, borderColor: "#DDE4EF" }, profileVisual: { height: 170, overflow: "hidden" }, talkVisual: { height: 250, position: "relative", overflow: "hidden", borderRadius: 12, backgroundColor: "#F7F9FC" }, successVisual: { height: 170, overflow: "hidden" },
-  speechBubble: { position: "absolute", top: 12, right: 12, maxWidth: "68%", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#fff", borderWidth: 1, borderColor: "#CFE0FF", shadowColor: "#172033", shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }, speechText: { fontFamily: fonts.bodyBold, fontSize: 13, lineHeight: 19, color: "#263246", textAlign: "right", writingDirection: "rtl" },
+  speechBubble: { position: "absolute", top: 12, right: 12, maxWidth: "68%", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#fff", borderWidth: 1, borderColor: "#CFE0FF", boxShadow: "0px 0px 8px rgba(23, 32, 51, 0.08)", elevation: 2 }, speechText: { fontFamily: fonts.bodyBold, fontSize: 13, lineHeight: 19, color: "#263246", textAlign: "right", writingDirection: "rtl" },
   choiceCard: { minHeight: 72, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: "#DDE4EF", backgroundColor: "#FBFCFE", flexDirection: "row-reverse", alignItems: "center", gap: 12 },
   choiceCardSelected: { borderColor: palette.primary, backgroundColor: palette.primaryTint },
   choiceIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#EAF1FC" }, choiceIconSelected: { backgroundColor: palette.primary },

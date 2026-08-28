@@ -73,3 +73,4 @@ GEMINI.md
 # the mp4 next to them. 124MB of regenerable PNGs; rerun
 # scripts/render-onboarding-character-demos.py to get them back.
 assets/onboarding/videos/*-frames/
+.env*

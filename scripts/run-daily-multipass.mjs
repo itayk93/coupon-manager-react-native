@@ -389,11 +389,9 @@ const summaryPath = path.join(root, "multipass-summary.json");
 fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2), "utf8");
 
 let emailStatus = "skipped";
-if (summary.email_required !== false) {
-  loadEnvFile(path.join(root, ".env.brevo.local"));
-  const emailResult = await runNode(path.join(root, "scripts/send-multipass-summary.mjs"), [summaryPath], { cwd: root });
-  emailStatus = /^STATUS 201$/m.test(emailResult.stdout) ? "sent" : "failed";
-}
+loadEnvFile(path.join(root, ".env.brevo.local"));
+const emailResult = await runNode(path.join(root, "scripts/send-multipass-summary.mjs"), [summaryPath], { cwd: root });
+emailStatus = /^STATUS 201$/m.test(emailResult.stdout) ? "sent" : "failed";
 console.log(JSON.stringify({
   selected: summary.selected,
   scanned: summary.scanned,

@@ -1,3 +1,4 @@
+import { useNativeDriver } from "@/lib/animation";
 import React, { useEffect, useRef } from "react";
 import {
   Animated,
@@ -38,8 +39,8 @@ function WidgetLoadingState() {
   useEffect(() => {
     const pulseAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 750, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 750, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 750, useNativeDriver }),
+        Animated.timing(pulse, { toValue: 0, duration: 750, useNativeDriver }),
       ])
     );
     const dotsAnimation = Animated.loop(
@@ -47,8 +48,8 @@ function WidgetLoadingState() {
         180,
         dots.map((dot) =>
           Animated.sequence([
-            Animated.timing(dot, { toValue: 1, duration: 360, useNativeDriver: true }),
-            Animated.timing(dot, { toValue: 0.25, duration: 360, useNativeDriver: true }),
+            Animated.timing(dot, { toValue: 1, duration: 360, useNativeDriver }),
+            Animated.timing(dot, { toValue: 0.25, duration: 360, useNativeDriver }),
           ])
         )
       )

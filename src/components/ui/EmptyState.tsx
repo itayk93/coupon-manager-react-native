@@ -11,6 +11,7 @@ type EmptyStateProps = {
   actionTitle?: string;
   onAction?: () => void;
   style?: ViewStyle;
+  largeVisual?: boolean;
 };
 
 export function EmptyState({
@@ -20,6 +21,7 @@ export function EmptyState({
   actionTitle,
   onAction,
   style,
+  largeVisual = false,
 }: EmptyStateProps) {
   const { theme } = useAppTheme();
 
@@ -36,8 +38,8 @@ export function EmptyState({
     >
       <View
         style={[
-          styles.iconCircle,
-          { backgroundColor: theme.surfaceAlt },
+        largeVisual ? styles.visualStage : styles.iconCircle,
+          { backgroundColor: largeVisual ? "transparent" : theme.surfaceAlt },
         ]}
       >
         {icon}
@@ -77,6 +79,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+  },
+  visualStage: {
+    width: 112,
+    height: 132,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginBottom: 12,
   },
   title: {
     fontFamily: fonts.bodyBold,

@@ -7,12 +7,18 @@
  * one identity without rewriting what the user originally typed.
  */
 
-/** Stable identity for grouping: trimmed, lower-cased, whitespace-collapsed. */
+const COMPANY_ALIASES: Record<string, string> = {
+  "גוד פארם": "goodpharm",
+};
+
+/** Stable identity for grouping: punctuation, case, whitespace and known aliases. */
 export function companyKey(name: string | null | undefined): string {
-  return (name || "")
+  const normalized = (name || "")
     .trim()
-    .toLowerCase()
+    .toLocaleLowerCase("he-IL")
+    .replace(/["'׳״.,()\-]/g, " ")
     .replace(/\s+/g, " ");
+  return COMPANY_ALIASES[normalized] || normalized;
 }
 
 /**

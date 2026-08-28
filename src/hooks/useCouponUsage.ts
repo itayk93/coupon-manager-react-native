@@ -151,7 +151,11 @@ export function useCouponUsageStats(coupons: DecryptedCoupon[] = []) {
 // Full usage & transaction history for a single coupon
 export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
   return useQuery({
-    queryKey: ["coupon_usage", coupon?.id],
+    // The synthetic "prior usage" and summary rows depend on the current
+    // coupon total as well as the ledger rows. Keeping the amounts in the key
+    // prevents a freshly inserted usage row from being combined with a stale
+    // coupon.used_value while the coupon query catches up.
+    queryKey: ["coupon_usage", coupon?.id, coupon?.value, coupon?.used_value],
     queryFn: async (): Promise<ConsolidatedRow[]> => {
       if (!coupon) return [];
 

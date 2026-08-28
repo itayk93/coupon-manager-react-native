@@ -142,24 +142,15 @@ export type AppTheme = ReturnType<typeof getTheme>;
 /** Card elevation from the design: a barely-there lift, not a drop shadow. */
 export const shadows = {
   card: {
-    shadowColor: "#101828",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
+    boxShadow: "0px 1px 2px rgba(16, 24, 40, 0.04)",
     elevation: 1,
   },
   lifted: {
-    shadowColor: "#101828",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    boxShadow: "0px 4px 10px rgba(16, 24, 40, 0.12)",
     elevation: 4,
   },
   brand: {
-    shadowColor: palette.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.32,
-    shadowRadius: 18,
+    boxShadow: "0px 8px 18px rgba(31, 111, 209, 0.32)",
     elevation: 6,
   },
 };

@@ -107,7 +107,10 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
           ]}
         >
           <View style={styles.companySavedWrap}>
-            <Text style={[styles.companySaved, { color: theme.primary }]}>
+            <Text
+              style={[styles.companySaved, { color: theme.primary }]}
+              maxFontSizeMultiplier={1.3}
+            >
               {formatIls(item.saved)}
             </Text>
           </View>
@@ -216,7 +219,7 @@ function SummaryStat({ label, value, color }: { label: string; value: string; co
   return (
     <View style={[styles.summaryStat, { backgroundColor: theme.surfaceAlt, borderColor: theme.border }]}>
       <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>{label}</Text>
-      <Text numberOfLines={1} style={[styles.summaryValue, { color }]}>
+      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[styles.summaryValue, { color }]}>
         {value}
       </Text>
     </View>
@@ -237,7 +240,7 @@ function Metric({
   return (
     <View style={styles.metric}>
       <Text style={[styles.metricLabel, { color: muted }]}>{label}</Text>
-      <Text numberOfLines={1} style={[styles.metricValue, { color }]}>
+      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[styles.metricValue, { color }]}>
         {value}
       </Text>
     </View>

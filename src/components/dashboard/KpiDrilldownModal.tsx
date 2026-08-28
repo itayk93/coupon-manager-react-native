@@ -168,7 +168,12 @@ export function KpiDrilldownModal({
         <Text style={[styles.totalLabel, { color: theme.textMuted }]}>
           {selectedMonth?.label} {selectedMonth?.year}
         </Text>
-        <Text style={[styles.totalValue, { color: theme.primary }]}>{formatIls(monthTotal)}</Text>
+        <Text
+          style={[styles.totalValue, { color: theme.primary }]}
+          maxFontSizeMultiplier={1.3}
+        >
+          {formatIls(monthTotal)}
+        </Text>
       </View>
 
       {monthCoupons.length === 0 ? (
@@ -234,7 +239,12 @@ export function KpiDrilldownModal({
             ]}
           >
             <Text style={[styles.totalLabel, { color: theme.textMuted }]}>סה״כ</Text>
-            <Text style={[styles.totalValue, { color: theme.primary }]}>{formatIls(total)}</Text>
+            <Text
+              style={[styles.totalValue, { color: theme.primary }]}
+              maxFontSizeMultiplier={1.3}
+            >
+              {formatIls(total)}
+            </Text>
           </View>
 
           {years.length === 0 ? (
@@ -274,7 +284,10 @@ export function KpiDrilldownModal({
                     </View>
 
                     <View style={styles.yearInfo}>
-                      <Text style={[styles.yearValue, { color: theme.primary }]}>
+                      <Text
+                        style={[styles.yearValue, { color: theme.primary }]}
+                        maxFontSizeMultiplier={1.3}
+                      >
                         {formatIls(year.value)}
                       </Text>
                       <Text style={[styles.yearCount, { color: theme.textMuted }]}>
@@ -305,7 +318,10 @@ export function KpiDrilldownModal({
                             },
                           ]}
                         >
-                          <Text style={[styles.monthValue, { color: theme.text }]}>
+                          <Text
+                            style={[styles.monthValue, { color: theme.text }]}
+                            maxFontSizeMultiplier={1.3}
+                          >
                             {formatIls(month.value)}
                           </Text>
                           <Text style={[styles.monthLabel, { color: theme.textMuted }]}>

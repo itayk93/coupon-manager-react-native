@@ -13,14 +13,19 @@ import { useRouter } from "expo-router";
 import { Bell, AlertTriangle, CheckCheck, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { useCoupons } from "@/hooks/useCoupons";
-import { useHideNotification, useInAppNotifications } from "@/hooks/useInAppNotifications";
+import {
+  useHideNotification,
+  useInAppNotifications,
+  useMarkAllNotificationsViewed,
+  useMarkNotificationViewed,
+} from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, shadows } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { notify } from "@/lib/notify";
 import { legacyHebrew, mergeNotificationFeeds } from "@/lib/notificationFeed";
-import { useMarkNotificationViewed } from "@/hooks/useInAppNotifications";
 
 type FeedItem = {
   id: string;
@@ -45,9 +50,10 @@ function iconFor(kind: string | null | undefined, color: string) {
 export function NotificationsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
-  const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
+  const { data: coupons = [], refetch, isRefetching } = useCoupons();
   const { data: inAppRows = [] } = useInAppNotifications();
   const markViewed = useMarkNotificationViewed();
+  const markAllViewed = useMarkAllNotificationsViewed();
   const hideNotification = useHideNotification();
 
   const expiringItems: FeedItem[] = coupons
@@ -99,7 +105,18 @@ export function NotificationsScreen() {
     .map((n) => n.persistedId!);
 
   const markAllRead = () => {
-    unreadIds.forEach((id) => markViewed.mutate(id));
+    markAllViewed.mutate(undefined, {
+      onSuccess: () => notify.success("כל ההתראות סומנו כנקראו"),
+      onError: () => notify.error("לא הצלחנו לסמן את ההתראות"),
+    });
+  };
+
+  const hideItem = (item: FeedItem) => {
+    if (!item.persistedId) return;
+    hideNotification.mutate(item.persistedId, {
+      onSuccess: () => notify.success("ההתראה הוסרה", item.title),
+      onError: () => notify.error("לא הצלחנו להסיר את ההתראה"),
+    });
   };
 
   const renderRow = (item: FeedItem, unread: boolean) => {
@@ -148,7 +165,21 @@ export function NotificationsScreen() {
           <Text style={[styles.message, { color: theme.textMuted }]}>{item.message}</Text>
         </View>
 
-        {item.couponId || item.link ? (
+        {item.persistedId ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`הסרת ההתראה: ${item.title}`}
+            hitSlop={4}
+            onPress={(event) => {
+              event.stopPropagation();
+              hideItem(item);
+            }}
+            disabled={hideNotification.isPending}
+            style={styles.removeButton}
+          >
+            <Trash2 size={17} color={theme.textSubtle} />
+          </TouchableOpacity>
+        ) : item.couponId || item.link ? (
           <ChevronLeft size={16} color={theme.textSubtle} style={styles.chevron} />
         ) : null}
       </TouchableOpacity>
@@ -165,15 +196,9 @@ export function NotificationsScreen() {
         rightThreshold={40}
         renderRightActions={() => (
           <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={`הסרת ההתראה: ${item.title}`}
-            onPress={() => {
-              const id = item.persistedId!;
-              const label = item.title;
-              hideNotification.mutate(id, {
-                onSuccess: () => notify.success("ההתראה הוסרה", label),
-              });
-            }}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            onPress={() => hideItem(item)}
             style={[styles.swipeAction, { backgroundColor: theme.danger }]}
           >
             <Trash2 size={18} color="#fff" />
@@ -185,9 +210,14 @@ export function NotificationsScreen() {
     );
   };
 
-  const renderSection = (label: string, items: FeedItem[], unread: boolean) =>
+  const renderSection = (label: string, items: FeedItem[], unread: boolean, showCharacter = false) =>
     items.length > 0 ? (
       <>
+        {showCharacter ? (
+          <View style={styles.actionCharacter}>
+            <CharacterSpotlight character="investigator" state="thinking" size="small" />
+          </View>
+        ) : null}
         <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>
           {label} · {items.length}
         </Text>
@@ -207,6 +237,9 @@ export function NotificationsScreen() {
           unreadIds.length > 0 ? (
             <TouchableOpacity
               onPress={markAllRead}
+              disabled={markAllViewed.isPending}
+              accessibilityRole="button"
+              accessibilityLabel="סימון כל ההתראות כנקראו"
               activeOpacity={0.85}
               style={[styles.markAllButton, { backgroundColor: theme.primary }]}
             >
@@ -231,7 +264,7 @@ export function NotificationsScreen() {
       >
         {notifications.length > 0 ? (
           <>
-            {renderSection("דורש פעולה", actionRequired, true)}
+            {renderSection("דורש פעולה", actionRequired, true, true)}
             {renderSection("עדכונים", updates, true)}
             {renderSection("היסטוריה", history, false)}
           </>
@@ -313,6 +346,18 @@ const styles = StyleSheet.create({
   },
   chevron: {
     alignSelf: "center",
+  },
+  removeButton: {
+    width: 44,
+    height: 44,
+    marginVertical: -12,
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionCharacter: {
+    alignItems: "flex-end",
+    marginBottom: -6,
   },
   groupLabel: {
     fontFamily: fonts.bodyBold,

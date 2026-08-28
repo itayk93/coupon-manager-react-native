@@ -24,6 +24,7 @@ import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { useParseCoupon, ParsedCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
@@ -311,6 +312,14 @@ export function BarcodeScannerScreen() {
                 },
               ]}
             >
+              {parseCoupon.isPending ? (
+                <View style={styles.characterLoading} accessibilityLiveRegion="polite">
+                  <CharacterSpotlight character="investigator" state="scanning" />
+                  <Text style={[styles.characterLoadingText, { color: theme.textMuted }]}>
+                    בודקים את החברה, הקוד והסכומים…
+                  </Text>
+                </View>
+              ) : null}
               <View style={styles.aiHeader}>
                 <Text style={[styles.aiTitle, { color: theme.text }]}>
                   הדבק הודעת SMS או טקסט שקיבלת
@@ -405,6 +414,16 @@ const styles = StyleSheet.create({
   imageBtnRow: {
     flexDirection: "row-reverse",
     gap: 10,
+  },
+  characterLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  characterLoadingText: {
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
   },
   tabSelector: {
     flexDirection: "row-reverse",
