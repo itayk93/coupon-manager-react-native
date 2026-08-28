@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (supabaseSession.user?.email) {
         const { data: legacyUser } = await supabase
           .from("users")
-          .select("id,email,first_name,last_name,is_admin,is_confirmed,is_deleted")
+          .select("id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
           .eq("email", supabaseSession.user.email.toLowerCase())
           .maybeSingle();
 
@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: legacyUser.email,
             first_name: legacyUser.first_name,
             last_name: legacyUser.last_name,
+            gender: legacyUser.gender,
             is_admin: Boolean(legacyUser.is_admin),
             is_confirmed: Boolean(legacyUser.is_confirmed),
           };

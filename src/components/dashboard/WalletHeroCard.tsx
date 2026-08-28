@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 12,
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 8,
   },
   balanceValue: {
     fontFamily: fonts.display,

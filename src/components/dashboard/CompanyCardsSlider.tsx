@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 
 type CompanyCardItem = {
@@ -14,7 +15,6 @@ type CompanyCardsSliderProps = {
   companyCards: CompanyCardItem[];
   selectedCompany: string | null;
   onSelectCompany: (company: string) => void;
-  onShowAll?: () => void;
 };
 
 /**
@@ -25,18 +25,31 @@ export function CompanyCardsSlider({
   companyCards,
   selectedCompany,
   onSelectCompany,
-  onShowAll,
 }: CompanyCardsSliderProps) {
   const { theme } = useAppTheme();
+  const { user } = useAuth();
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const isFemale = ["female", "f", "נקבה", "אישה"].includes(
+    user?.gender?.trim().toLowerCase() || ""
+  );
+  const showAllLabel = isFemale ? "הציגי הכול" : "הצג הכול";
+  const showLessLabel = isFemale ? "הציגי פחות" : "הצג פחות";
 
   if (companyCards.length === 0) return null;
 
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
-        {companyCards.length > 6 && onShowAll ? (
-          <TouchableOpacity onPress={onShowAll} accessibilityRole="button">
-            <Text style={[styles.showAll, { color: theme.textMuted }]}>הצגת הכול</Text>
+        {companyCards.length > 6 ? (
+          <TouchableOpacity
+            onPress={() => setIsExpanded((current) => !current)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isExpanded }}
+          >
+            <Text style={[styles.showAll, { color: theme.textMuted }]}>
+              {isExpanded ? showLessLabel : showAllLabel}
+            </Text>
           </TouchableOpacity>
         ) : <View />}
         <Text style={[styles.sectionTitle, { color: theme.text }]}> 
@@ -45,7 +58,7 @@ export function CompanyCardsSlider({
       </View>
 
       <View style={styles.grid}>
-        {companyCards.slice(0, 6).map((item) => {
+        {(isExpanded ? companyCards : companyCards.slice(0, 6)).map((item) => {
           const isSelected = selectedCompany === item.company;
           const logoUri = getCompanyLogoSource(item.company);
 

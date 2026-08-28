@@ -6,6 +6,7 @@ export type LegacyUser = {
   email: string;
   first_name: string;
   last_name: string;
+  gender: string | null;
   is_admin: boolean;
   is_confirmed: boolean;
 };
@@ -42,7 +43,7 @@ export async function clearLegacyUser(): Promise<void> {
 async function getAppUser(authUserId: string, email: string): Promise<LegacyUser> {
   const { data: linkedUser, error: linkedError } = await supabase
     .from("users")
-    .select("id,email,first_name,last_name,is_admin,is_confirmed,is_deleted")
+    .select("id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
     .eq("auth_user_id", authUserId)
     .maybeSingle();
 
@@ -51,7 +52,7 @@ async function getAppUser(authUserId: string, email: string): Promise<LegacyUser
   if (!data) {
     const { data: emailUser, error: emailError } = await supabase
       .from("users")
-      .select("id,email,first_name,last_name,is_admin,is_confirmed,is_deleted")
+      .select("id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
       .eq("email", email)
       .maybeSingle();
     if (emailError) throw emailError;
@@ -69,6 +70,7 @@ async function getAppUser(authUserId: string, email: string): Promise<LegacyUser
     email: data.email,
     first_name: data.first_name,
     last_name: data.last_name,
+    gender: data.gender,
     is_admin: Boolean(data.is_admin),
     is_confirmed: Boolean(data.is_confirmed),
   };

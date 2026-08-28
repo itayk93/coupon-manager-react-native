@@ -27,6 +27,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { companyKey } from "@/lib/companyName";
+import { widgetSelection } from "@/lib/widgetSelection";
 import { CharacterScene } from "@/components/onboarding/CharacterRig";
 
 export function DashboardScreen() {
@@ -100,9 +101,16 @@ export function DashboardScreen() {
     );
   }, [visibleCoupons, selectedCompany]);
 
-  const prioritizedCoupons = useMemo(() => {
+  const favoriteCoupons = useMemo(() => widgetSelection(filteredCoupons), [filteredCoupons]);
+
+  const expiringCoupons = useMemo(() => {
     const now = Date.now();
-    return [...filteredCoupons].sort((a, b) => {
+    const expiryLimit = now + 14 * 86400000;
+    return filteredCoupons.filter((coupon) => {
+      if (!coupon.expiration) return false;
+      const expiry = new Date(coupon.expiration).getTime();
+      return !Number.isNaN(expiry) && expiry >= now && expiry <= expiryLimit;
+    }).sort((a, b) => {
       const expiryA = a.expiration ? new Date(a.expiration).getTime() : Number.POSITIVE_INFINITY;
       const expiryB = b.expiration ? new Date(b.expiration).getTime() : Number.POSITIVE_INFINITY;
       const urgencyA = expiryA === Number.POSITIVE_INFINITY ? expiryA : Math.max(0, expiryA - now);
@@ -176,8 +184,27 @@ export function DashboardScreen() {
           companyCards={companyCards}
           selectedCompany={selectedCompany}
           onSelectCompany={handleSelectCompany}
-          onShowAll={() => router.navigate("/coupons")}
         />
+
+        {favoriteCoupons.length > 0 ? (
+          <>
+            <View style={styles.sectionHeaderOnly}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>קופונים מועדפים</Text>
+            </View>
+            {favoriteCoupons.map((coupon) => (
+              <CouponCard
+                key={`favorite-${coupon.id}`}
+                coupon={coupon}
+                tags={tagsMap[coupon.id] || []}
+                onPress={() => router.push(`/coupons/${coupon.id}`)}
+                onReportUsage={() => {
+                  setUsageCoupon(coupon);
+                  setIsUsageOpen(true);
+                }}
+              />
+            ))}
+          </>
+        ) : null}
 
         {/* Selected Company Clear Filter Header */}
         {selectedCompany ? (
@@ -212,8 +239,8 @@ export function DashboardScreen() {
         )}
 
         {/* List of Recent Active Coupons */}
-        {prioritizedCoupons.length > 0 ? (
-          prioritizedCoupons.slice(0, selectedCompany ? 12 : 3).map((coupon) => (
+        {expiringCoupons.length > 0 ? (
+          expiringCoupons.map((coupon) => (
             <CouponCard
               key={coupon.id}
               coupon={coupon}
@@ -225,7 +252,7 @@ export function DashboardScreen() {
               }}
             />
           ))
-        ) : (
+        ) : visibleCoupons.length === 0 ? (
           <EmptyState
             icon={<Sparkles size={32} color={theme.primary} />}
             title="אין קופונים להצגה"
@@ -233,7 +260,7 @@ export function DashboardScreen() {
             actionTitle="הוספת קופון"
             onAction={() => router.push("/scanner")}
           />
-        )}
+        ) : null}
       </ScrollView>
 
       {/* Modals */}
@@ -272,6 +299,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 12,
+    marginTop: 4,
+    paddingHorizontal: 4,
+  },
+  sectionHeaderOnly: {
+    alignItems: "flex-end",
     marginBottom: 12,
     marginTop: 4,
     paddingHorizontal: 4,
