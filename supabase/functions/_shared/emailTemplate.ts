@@ -220,6 +220,132 @@ export function expiryEmailHtml(options: {
 </html>`;
 }
 
+export type MultipassSummaryItem = {
+  coupon_id?: number;
+  company?: string;
+  old_usage?: number;
+  new_usage?: number;
+  delta?: number;
+  value?: number;
+  remaining_value?: number;
+  place_name?: string | null;
+  place_address?: string | null;
+};
+
+function multipassCouponCard(item: MultipassSummaryItem) {
+  const remaining = Number(item.remaining_value || 0);
+  const depleted = remaining <= 0;
+  return `
+  <tr>
+    <td style="padding:0 0 14px 0">
+      <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="${RTL};background:${COLOR.card};border:1px solid ${COLOR.cardBorder};border-radius:16px">
+        <tr>
+          <td dir="rtl" align="right" style="${RTL};background:${depleted ? COLOR.textMuted : COLOR.primary};border-radius:16px 16px 0 0;padding:15px 18px">
+            <div dir="rtl" style="${RTL};font-family:${FONT};font-size:12px;font-weight:700;color:#ffffff;opacity:.88">קופון שעודכן</div>
+            <div dir="rtl" style="${RTL};font-family:${FONT};font-size:19px;font-weight:800;color:#ffffff;padding-top:3px">
+              ${escapeHtml(String(item.company || 'קופון'))}${item.coupon_id ? ` <span style="font-size:12px;font-weight:500;opacity:.8">· #${item.coupon_id}</span>` : ''}
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 18px 6px 18px">
+            <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL}">
+              <tr>
+                <td dir="rtl" align="center" width="33%" style="${RTL};text-align:center;background:${COLOR.surface};border-radius:12px;padding:12px 6px">
+                  <div style="font-family:${FONT};font-size:11px;color:${COLOR.textMuted}">שימוש לפני</div>
+                  <div style="font-family:${FONT};font-size:17px;font-weight:800;color:${COLOR.text};padding-top:3px;white-space:nowrap">${RLM}${money(Number(item.old_usage || 0))}</div>
+                </td>
+                <td width="8" style="font-size:0">&nbsp;</td>
+                <td dir="rtl" align="center" width="33%" style="${RTL};text-align:center;background:${COLOR.primaryTint};border-radius:12px;padding:12px 6px">
+                  <div style="font-family:${FONT};font-size:11px;color:${COLOR.primary}">נוסף בשימוש</div>
+                  <div style="font-family:${FONT};font-size:17px;font-weight:800;color:${COLOR.primary};padding-top:3px;white-space:nowrap">${RLM}+${money(Number(item.delta || 0))}</div>
+                </td>
+                <td width="8" style="font-size:0">&nbsp;</td>
+                <td dir="rtl" align="center" width="33%" style="${RTL};text-align:center;background:${depleted ? COLOR.dangerBg : '#dcfce7'};border-radius:12px;padding:12px 6px">
+                  <div style="font-family:${FONT};font-size:11px;color:${depleted ? COLOR.dangerText : '#15803d'}">יתרה עכשיו</div>
+                  <div style="font-family:${FONT};font-size:17px;font-weight:800;color:${depleted ? COLOR.dangerText : '#15803d'};padding-top:3px;white-space:nowrap">${RLM}${money(remaining)}</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td dir="rtl" align="right" style="${RTL};padding:7px 18px 16px 18px">
+            <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL}">
+              <tr><td style="font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding:5px 0">שימוש מצטבר</td><td align="left" style="font-family:${FONT};font-size:14px;font-weight:700;color:${COLOR.text};text-align:left">${RLM}${money(Number(item.new_usage || 0))}</td></tr>
+              <tr><td style="font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding:5px 0">שווי הקופון</td><td align="left" style="font-family:${FONT};font-size:14px;font-weight:700;color:${COLOR.text};text-align:left">${RLM}${money(Number(item.value || 0))}</td></tr>
+              ${item.place_name ? `<tr><td style="font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding:5px 0">בית העסק</td><td align="left" style="font-family:${FONT};font-size:14px;font-weight:700;color:${COLOR.text};text-align:left">${escapeHtml(item.place_name)}</td></tr>` : ''}
+              ${item.place_address ? `<tr><td style="font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding:5px 0">כתובת</td><td align="left" style="font-family:${FONT};font-size:13px;color:${COLOR.textSecondary};text-align:left">${escapeHtml(item.place_address)}</td></tr>` : ''}
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+export function multipassSummaryEmailHtml(options: {
+  firstName: string;
+  runDate: string;
+  scanned: number;
+  failed: number;
+  skipped: number;
+  items: MultipassSummaryItem[];
+  failures: string[];
+  appUrl: string;
+}): string {
+  const { firstName, runDate, scanned, failed, skipped, items, failures, appUrl } = options;
+  const totalDelta = items.reduce((sum, item) => sum + Number(item.delta || 0), 0);
+  const totalRemaining = items.reduce((sum, item) => sum + Number(item.remaining_value || 0), 0);
+  const headline = items.length > 0
+    ? `${items.length === 1 ? 'קופון אחד עודכן' : `${items.length} קופונים עודכנו`}`
+    : 'הבדיקה הסתיימה ללא שינוי חדש';
+  const failureBlock = failures.length > 0
+    ? `<tr><td dir="rtl" style="${RTL};background:${COLOR.dangerBg};border:1px solid #fecaca;border-radius:14px;padding:14px 16px;font-family:${FONT};font-size:13px;color:${COLOR.dangerText}"><strong>מה לא הצליח</strong><br>${failures.map(escapeHtml).join('<br>')}</td></tr>`
+    : '';
+
+  return `<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escapeHtml(headline)}</title></head>
+<body dir="rtl" style="${RTL};margin:0;padding:0;background:${COLOR.shell}">
+  <div dir="rtl" style="display:none;max-height:0;overflow:hidden;opacity:0">${RLM}${escapeHtml(headline)} · שינוי כולל ${money(totalDelta)} · יתרה ${money(totalRemaining)}</div>
+  <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL};background:${COLOR.shell};padding:24px 12px">
+    <tr><td align="center">
+      <table dir="rtl" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="${RTL};width:100%;max-width:600px">
+        <tr><td dir="rtl" align="right" style="${RTL};background:${COLOR.headerBg};border-radius:20px 20px 0 0;padding:22px 24px">
+          <div style="font-family:${FONT};font-size:19px;font-weight:800;color:#fff">קופון מאסטר</div>
+          <div style="font-family:${FONT};font-size:12px;color:#cbd5e1;padding-top:3px">הארנק החכם שלך</div>
+        </td></tr>
+        <tr><td dir="rtl" align="right" style="${RTL};background:${COLOR.card};padding:26px 24px 22px">
+          <div style="font-family:${FONT};font-size:15px;color:${COLOR.textSecondary}">שלום ${escapeHtml(firstName || '')},</div>
+          <div style="font-family:${FONT};font-size:25px;font-weight:800;color:${COLOR.text};line-height:1.3;padding:7px 0 4px">${RLM}${escapeHtml(headline)}</div>
+          <div style="font-family:${FONT};font-size:13px;color:${COLOR.textMuted};padding-bottom:18px">${escapeHtml(runDate)}</div>
+
+          <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL};margin-bottom:18px">
+            <tr>
+              <td align="center" style="background:${COLOR.primaryTint};border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:${COLOR.primary}">נסרקו</div><div style="font-family:${FONT};font-size:22px;font-weight:800;color:${COLOR.primary}">${scanned}</div></td>
+              <td width="8">&nbsp;</td>
+              <td align="center" style="background:#dcfce7;border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:#15803d">שינוי כולל</div><div style="font-family:${FONT};font-size:18px;font-weight:800;color:#15803d;white-space:nowrap">${RLM}+${money(totalDelta)}</div></td>
+              <td width="8">&nbsp;</td>
+              <td align="center" style="background:${COLOR.surface};border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:${COLOR.textMuted}">נכשלו</div><div style="font-family:${FONT};font-size:22px;font-weight:800;color:${failed ? COLOR.dangerText : COLOR.text}">${failed}</div></td>
+            </tr>
+          </table>
+
+          <table dir="rtl" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="${RTL}">
+            ${items.map(multipassCouponCard).join('') || `<tr><td style="background:${COLOR.surface};border-radius:14px;padding:18px;font-family:${FONT};font-size:15px;color:${COLOR.textSecondary}">כל הקופונים שנבדקו כבר מעודכנים. לא נמצאו עסקאות חדשות.</td></tr>`}
+            ${failureBlock}
+            <tr><td align="center" style="padding:20px 0 4px"><a href="${escapeHtml(appUrl)}" style="display:inline-block;background:${COLOR.primary};color:#fff;font-family:${FONT};font-size:15px;font-weight:700;text-decoration:none;padding:13px 30px;border-radius:12px">לצפייה בקופונים שלי</a></td></tr>
+          </table>
+        </td></tr>
+        <tr><td dir="rtl" align="right" style="${RTL};background:${COLOR.surface};border-radius:0 0 20px 20px;border-top:1px solid ${COLOR.divider};padding:17px 24px">
+          <p style="margin:0;font-family:${FONT};font-size:12px;color:${COLOR.textMuted}">העדכון בוצע אוטומטית. נסרקו ${scanned} · דולגו ${skipped} · נכשלו ${failed}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
 /**
  * The chrome above, wrapped around one short message.
  *

@@ -19,6 +19,7 @@ import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall, isAdminIpAllowed } from '../_shared/auth.ts';
 import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubscribe.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
+import { multipassSummaryEmailHtml, type MultipassSummaryItem } from '../_shared/emailTemplate.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
@@ -72,22 +73,6 @@ function escapeHtml(value: string) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
   })[char] || char);
 }
-
-function shekel(value: unknown) {
-  return `${new Intl.NumberFormat('he-IL', { maximumFractionDigits: 2 }).format(Number(value || 0))} ₪`;
-}
-
-type MultipassSummaryItem = {
-  coupon_id?: number;
-  company?: string;
-  old_usage?: number;
-  new_usage?: number;
-  delta?: number;
-  value?: number;
-  remaining_value?: number;
-  place_name?: string | null;
-  place_address?: string | null;
-};
 
 function supa() {
   return createClient(
@@ -169,6 +154,7 @@ async function handleNewsletter(newsletterId: number) {
 async function handleUpdateSummary(
   userId: number,
   updated: number,
+  scanned: number,
   failed: number,
   skipped: number,
   items: MultipassSummaryItem[] = [],
@@ -179,35 +165,19 @@ async function handleUpdateSummary(
   const { data: user } = await supabase.from('users').select('email, first_name').eq('id', userId).single();
   if (!user?.email) return jsonResponse({ error: 'כתובת אימייל לא נמצאה' }, 404);
 
-  const itemCards = items.map((item) => `
-    <div style="margin:0 0 14px;border:1px solid #e6e9ef;border-radius:16px;overflow:hidden">
-      <div style="padding:14px 16px;background:#1f6fd1;color:#fff;font-size:18px;font-weight:800">
-        ${escapeHtml(String(item.company || 'קופון'))}${item.coupon_id ? ` · קופון ${item.coupon_id}` : ''}
-      </div>
-      <table role="presentation" dir="rtl" style="width:100%;border-collapse:collapse;padding:14px;background:#fff">
-        <tr><td style="padding:8px 16px;color:#667085">שימוש קודם</td><td style="padding:8px 16px;font-weight:800;text-align:left">${escapeHtml(shekel(item.old_usage))}</td></tr>
-        <tr><td style="padding:8px 16px;color:#667085">שימוש חדש</td><td style="padding:8px 16px;font-weight:800;text-align:left">${escapeHtml(shekel(item.new_usage))}</td></tr>
-        <tr><td style="padding:8px 16px;color:#667085">שינוי</td><td style="padding:8px 16px;color:#16a34a;font-weight:800;text-align:left">+${escapeHtml(shekel(item.delta))}</td></tr>
-        <tr><td style="padding:8px 16px;color:#667085">שווי הקופון</td><td style="padding:8px 16px;font-weight:800;text-align:left">${escapeHtml(shekel(item.value))}</td></tr>
-        <tr><td style="padding:8px 16px;color:#667085">יתרה זמינה</td><td style="padding:8px 16px;color:#154a8f;font-weight:800;text-align:left">${escapeHtml(shekel(item.remaining_value))}</td></tr>
-        ${item.place_name ? `<tr><td style="padding:8px 16px;color:#667085">בית עסק</td><td style="padding:8px 16px;font-weight:700;text-align:left">${escapeHtml(item.place_name)}</td></tr>` : ''}
-        ${item.place_address ? `<tr><td style="padding:8px 16px;color:#667085">כתובת</td><td style="padding:8px 16px;text-align:left">${escapeHtml(item.place_address)}</td></tr>` : ''}
-      </table>
-    </div>`).join('');
-  const failureBlock = failures.length > 0
-    ? `<div style="padding:14px;background:#fee2e2;border-radius:14px"><strong>כשלים:</strong><br>${failures.map(escapeHtml).join('<br>')}</div>`
-    : '';
   const result = await sendEmailDetailed(
     user.email,
     `סיכום עדכון Multipass יומי${runDate ? ` — ${runDate}` : ''}`,
-    `<div dir="rtl" style="max-width:640px;margin:auto;background:#faf9f6;padding:24px;font-family:Arial,sans-serif;line-height:1.7;color:#101828">
-      <h2 style="margin:0 0 6px">סיכום עדכון Multipass יומי</h2>
-      <p>שלום ${escapeHtml(user.first_name || '')},</p>
-      <p>קופונים עם שימוש חדש: <strong>${updated}</strong> · נכשלו: <strong>${failed}</strong> · דולגו: <strong>${skipped}</strong></p>
-      ${itemCards || '<div style="padding:16px;background:#fff;border:1px solid #e6e9ef;border-radius:14px">לא זוהה שימוש חדש בהרצה הזו.</div>'}
-      ${failureBlock}
-      <p><a href="https://coupons.itaykarkason.com/coupons">לצפייה בקופונים</a></p>
-    </div>`,
+    multipassSummaryEmailHtml({
+      firstName: user.first_name || '',
+      runDate,
+      scanned,
+      failed,
+      skipped,
+      items: items.slice(0, 100),
+      failures: failures.slice(0, 100),
+      appUrl: 'https://coupons.itaykarkason.com/coupons',
+    }),
   );
   return result.ok
     ? jsonResponse({ sent: 1 })
@@ -243,6 +213,7 @@ Deno.serve(async (req: Request) => {
         return await handleUpdateSummary(
           Number(body.user_id),
           Number(body.updated || 0),
+          Number(body.scanned || body.updated || 0),
           Number(body.failed || 0),
           Number(body.skipped || 0),
           Array.isArray(body.items) ? body.items : [],
@@ -256,6 +227,7 @@ Deno.serve(async (req: Request) => {
       return await handleUpdateSummary(
         user.id,
         Number(body.updated || 0),
+        Number(body.scanned || body.updated || 0),
         Number(body.failed || 0),
         Number(body.skipped || 0),
         Array.isArray(body.items) ? body.items : [],
