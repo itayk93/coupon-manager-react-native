@@ -22,17 +22,19 @@ import { safeFetch } from '../_shared/ssrf.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-async function sendEmail(
+type EmailResult = { ok: boolean; error?: string };
+
+async function sendEmailDetailed(
   to: string,
   subject: string,
   html: string,
   /** RFC 8058 headers; set for bulk mail, omitted for one-off transactional. */
   headers: Record<string, string> = {},
-): Promise<boolean> {
+): Promise<EmailResult> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
   const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') || 'hello@itaykarkason.com';
   const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'Coupon Master';
-  if (!apiKey) return false;
+  if (!apiKey) return { ok: false, error: 'BREVO_API_KEY missing' };
   try {
     const resp = await safeFetch(BREVO_API_URL, {
       method: 'POST',
@@ -46,13 +48,23 @@ async function sendEmail(
         to: [{ email: to }],
         subject,
         htmlContent: html,
-        headers,
+        ...(Object.keys(headers).length > 0 ? { headers } : {}),
       }),
     });
-    return resp.ok;
-  } catch {
-    return false;
+    if (resp.ok) return { ok: true };
+    return { ok: false, error: `Brevo ${resp.status}: ${(await resp.text()).slice(0, 500)}` };
+  } catch (error) {
+    return { ok: false, error: String(error) };
   }
+}
+
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  headers: Record<string, string> = {},
+): Promise<boolean> {
+  return (await sendEmailDetailed(to, subject, html, headers)).ok;
 }
 
 function escapeHtml(value: string) {
@@ -143,7 +155,7 @@ async function handleUpdateSummary(userId: number, updated: number, failed: numb
   const { data: user } = await supabase.from('users').select('email, first_name').eq('id', userId).single();
   if (!user?.email) return jsonResponse({ error: 'כתובת אימייל לא נמצאה' }, 404);
 
-  const ok = await sendEmail(
+  const result = await sendEmailDetailed(
     user.email,
     'עדכון יתרות הקופונים הסתיים',
     `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.7">
@@ -155,7 +167,9 @@ async function handleUpdateSummary(userId: number, updated: number, failed: numb
       <p><a href="https://coupons.itaykarkason.com/coupons">לצפייה בקופונים</a></p>
     </div>`,
   );
-  return ok ? jsonResponse({ sent: 1 }) : jsonResponse({ error: 'שליחת המייל נכשלה' }, 502);
+  return result.ok
+    ? jsonResponse({ sent: 1 })
+    : jsonResponse({ error: 'שליחת המייל נכשלה', detail: result.error }, 502);
 }
 
 Deno.serve(async (req: Request) => {
