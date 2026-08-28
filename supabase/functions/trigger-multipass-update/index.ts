@@ -151,6 +151,14 @@ function dispatchMultipassWorkflow(couponCodes: string[], provider: CiProvider):
     : dispatchGitHubWorkflow(couponCodes);
 }
 
+function jerusalemHour(): number {
+  return Number(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jerusalem',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date()));
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
@@ -158,13 +166,20 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const userId = Number(body.user_id);
     const couponId = body.coupon_id ? Number(body.coupon_id) : null;
+    const cronRequest = isCronRequest(req);
 
     if (!Number.isFinite(userId) || userId <= 0) {
       return jsonResponse({ error: 'user_id חסר או לא תקין' }, 400);
     }
-    if (!isCronRequest(req)) {
+    if (!cronRequest) {
       const authenticatedUser = await requireUser(req);
       requireSameUser(userId, authenticatedUser);
+    }
+    if (cronRequest) {
+      const hour = jerusalemHour();
+      if (hour < 8 || hour > 23) {
+        return jsonResponse({ success: true, dispatched: false, message: 'Outside scheduled hours', hour });
+      }
     }
 
     const supabase = supa();
@@ -181,7 +196,7 @@ Deno.serve(async (req: Request) => {
     const { data: coupons, error } = await query;
     if (error) throw error;
 
-    const eligibleCoupons = (coupons || []).filter((coupon) => {
+    const eligibleCoupons = cronRequest ? (coupons || []) : (coupons || []).filter((coupon) => {
       if (!coupon.last_scraped) return true;
       const views = [coupon.last_detail_view, coupon.last_company_view, coupon.last_code_view]
         .filter(Boolean)
