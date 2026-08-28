@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   getPushState,
-  maybePromptPushOnFirstPwaLaunch,
   sendTestPushToUser,
   subscribeToPushNotifications,
   unsubscribeFromPushNotifications,
@@ -38,11 +37,6 @@ export function usePwaNotifications() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  useEffect(() => {
-    if (!user?.email || !profile?.id) return;
-    void maybePromptPushOnFirstPwaLaunch(user.email);
-  }, [user?.email, profile?.id]);
 
   const enable = useCallback(async () => {
     if (!user?.email || !profile?.id) {
