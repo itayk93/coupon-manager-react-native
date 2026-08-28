@@ -107,7 +107,7 @@ export function WidgetSettingsScreen() {
 
   const add = (coupon: DecryptedCoupon) => {
     if (isFull) {
-      notify.error(`ניתן לבחור עד ${MAX_WIDGET_COUPONS} קופונים`);
+      notify.error(`אפשר לבחור עד ${MAX_WIDGET_COUPONS} קופונים`);
       return;
     }
     updateCoupon.mutate({

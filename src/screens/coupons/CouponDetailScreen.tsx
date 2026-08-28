@@ -741,7 +741,7 @@ export function CouponDetailScreen() {
             })
           ) : (
             <Text style={{ color: theme.textMuted, fontSize: 13, textAlign: "center", paddingVertical: 12 }}>
-              טרם נרשמו שימושים לקופון זה
+              עוד לא נרשמו שימושים בקופון
             </Text>
           )}
         </View>

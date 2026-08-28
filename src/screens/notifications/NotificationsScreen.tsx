@@ -71,8 +71,8 @@ export function NotificationsScreen() {
         id: `exp-${c.id}`,
         couponId: c.id,
         couponPublicId: c.public_id,
-        title: `הקופון של ${c.company} עומד לפוג!`,
-        message: `נותרו ${days} ימים למימוש יתרה של ${formatIls((c.value || 0) - (c.used_value || 0))}`,
+        title: `${c.company} מחכה למימוש`,
+        message: `נשארו ${days} ימים ו־${formatIls((c.value || 0) - (c.used_value || 0))} לנצל.`,
         type: "warning",
         urgent: days <= 3,
         date: days <= 3 ? "היום" : `בעוד ${days} ימים`,
@@ -266,15 +266,15 @@ export function NotificationsScreen() {
       >
         {notifications.length > 0 ? (
           <>
-            {renderSection("דורש פעולה", actionRequired, true, true)}
+            {renderSection("שווה לבדוק", actionRequired, true, true)}
             {renderSection("עדכונים", updates, true)}
             {renderSection("היסטוריה", history, false)}
           </>
         ) : (
           <EmptyState
             icon={<Bell size={32} color={theme.primary} />}
-            title="אין התראות חדשות"
-            subtitle="כל הקופונים שלך מעודכנים ובטוחים. נעדכן אותך כשיתקרב תאריך תפוגה!"
+            title="הכול שקט כאן"
+            subtitle="כשיהיה משהו ששווה לדעת על הקופונים, נעדכן כאן."
           />
         )}
       </ScrollView>

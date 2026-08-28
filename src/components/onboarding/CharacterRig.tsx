@@ -31,6 +31,14 @@ const MINT_DARK = "#2FB49B";
 const MINT_LIGHT = "#BFF3E9";
 const INK = "#16233A";
 
+/** Bubble tints behind a lone character, matched to the card it sits on. */
+const BUBBLE = {
+  mint: "rgba(88, 223, 198, 0.16)",
+  blue: "rgba(40, 100, 240, 0.12)",
+  success: "rgba(22, 163, 74, 0.12)",
+  none: "transparent",
+} as const;
+
 /** Whether the state is a one-shot reaction rather than a loop. */
 function isCelebration(state: CharacterState) {
   return state === "cheering" || state === "success";
@@ -101,11 +109,14 @@ export function CharacterSpotlight({
   state = "talking",
   reduceMotion,
   size = "medium",
+  tone = "mint",
 }: {
   character: "investigator" | "helper";
   state?: CharacterState;
   reduceMotion?: boolean;
   size?: "small" | "medium" | "large";
+  /** Tint of the bubble behind the character, so it sits on its host card. */
+  tone?: "mint" | "blue" | "success" | "none";
 }) {
   const systemReducedMotion = useReducedMotion();
   const shouldReduceMotion = reduceMotion ?? systemReducedMotion;
@@ -113,7 +124,7 @@ export function CharacterSpotlight({
   const box = size === "small" ? 72 : size === "large" ? 176 : 132;
   return (
     <View
-      style={[styles.spotlight, { width: box, height: box, borderRadius: box / 2, pointerEvents: "none" }]}
+      style={[styles.spotlight, { width: box, height: box, borderRadius: box / 2, backgroundColor: BUBBLE[tone], pointerEvents: "none" }]}
       accessibilityElementsHidden
     >
       <View style={{ transform: [{ scale }] }}>
@@ -126,6 +137,15 @@ export function CharacterSpotlight({
     </View>
   );
 }
+
+/** Bubble fills behind a single character. Kept low-contrast so the mascot,
+ *  not the disc, is what the eye lands on. */
+const TONES: Record<"mint" | "blue" | "success" | "plain", string> = {
+  mint: "rgba(88, 223, 198, 0.12)",
+  blue: "rgba(40, 100, 240, 0.10)",
+  success: "rgba(22, 163, 74, 0.10)",
+  plain: "transparent",
+};
 
 /* ------------------------------------------------------------------ *
  * Blue investigator — leans in, and sweeps the glass while we parse.
@@ -417,7 +437,7 @@ const styles = StyleSheet.create({
 
   shadow: { position: "absolute", bottom: 2, width: 60, height: 11, borderRadius: 6, backgroundColor: INK, opacity: 0.2 },
   bodyAnchor: { alignItems: "center", justifyContent: "flex-end", marginBottom: 8 },
-  body: { width: BODY, height: BODY + 8, borderRadius: 30, alignItems: "center", overflow: "visible" },
+  body: { width: BODY, height: BODY + 8, borderRadius: 34, alignItems: "center", overflow: "visible" },
   bodyBlue: { backgroundColor: BLUE },
   bodyMint: { backgroundColor: MINT },
   belly: { position: "absolute", bottom: 8, width: BODY - 26, height: 30, borderRadius: 16, opacity: 0.55 },
@@ -426,13 +446,13 @@ const styles = StyleSheet.create({
   antenna: { position: "absolute", top: -13, width: 4, height: 15, borderRadius: 2 },
   antennaTip: { position: "absolute", top: -20, width: 11, height: 11, borderRadius: 6 },
 
-  face: { flexDirection: "row", gap: 12, marginTop: 20 },
-  eye: { width: 17, height: 19, borderRadius: 9, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
-  pupil: { width: 9, height: 9, borderRadius: 5, backgroundColor: INK, alignItems: "center", justifyContent: "center" },
-  glint: { position: "absolute", top: 1, right: 1, width: 3.5, height: 3.5, borderRadius: 2, backgroundColor: "#FFFFFF" },
-  blush: { position: "absolute", top: 44, width: 11, height: 6, borderRadius: 4, opacity: 0.45 },
-  blushLeft: { left: 9 },
-  blushRight: { right: 9 },
+  face: { flexDirection: "row", gap: 11, marginTop: 18 },
+  eye: { width: 20, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+  pupil: { width: 11, height: 11, borderRadius: 6, backgroundColor: INK, alignItems: "center", justifyContent: "center" },
+  glint: { position: "absolute", top: 1.5, right: 1.5, width: 4.5, height: 4.5, borderRadius: 2.5, backgroundColor: "#FFFFFF" },
+  blush: { position: "absolute", top: 46, width: 13, height: 8, borderRadius: 5, opacity: 0.5 },
+  blushLeft: { left: 7 },
+  blushRight: { right: 7 },
   mouth: { marginTop: 7, width: 16, height: 6, borderRadius: 4, backgroundColor: INK, opacity: 0.85 },
   // Over-rounded and clipped: only the lower arc of the border shows.
   smile: { marginTop: 5, width: 22, height: 14, borderRadius: 11, borderWidth: 3, borderColor: INK, borderTopColor: "transparent", borderLeftColor: "transparent", borderRightColor: "transparent", opacity: 0.85 },

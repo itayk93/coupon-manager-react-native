@@ -568,11 +568,11 @@ export function CouponsListScreen() {
             <EmptyState
               icon={<CharacterSpotlight character="investigator" state={search || selectedTag ? "thinking" : "talking"} />}
               largeVisual
-              title="לא נמצאו קופונים"
+              title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
               subtitle={
                 search || selectedTag
-                  ? "נסה לשנות את מילות החיפוש או הסינון"
-                  : "הוסף את הקופון הראשון שלך עכשיו!"
+                  ? "אפשר לנסות חיפוש אחר או לנקות את הסינון."
+                  : "הקופון הראשון שלך מתחיל כאן."
               }
               actionTitle="הוספת קופון"
               onAction={() => router.push("/coupons/add")}

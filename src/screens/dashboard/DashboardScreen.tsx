@@ -28,7 +28,7 @@ import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
-import { CharacterScene } from "@/components/onboarding/CharacterRig";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { couponRouteId } from "@/lib/couponId";
 
 export function DashboardScreen() {
@@ -157,7 +157,9 @@ export function DashboardScreen() {
             accessibilityRole="button"
             accessibilityLabel="הקופון נשמר בארנק. סגירת ההודעה"
           >
-            <View style={styles.successVisual}><CharacterScene state="success" compact /></View>
+            <View style={styles.successVisual}>
+              <CharacterSpotlight character="helper" state="cheering" size="small" tone="success" />
+            </View>
             <View style={styles.successCopy}>
               <Text style={[styles.successTitle, { color: theme.successText }]}>הקופון נשמר בארנק</Text>
               <Text style={[styles.successText, { color: theme.successText }]}>הוא מוכן למימוש. לחיצה סוגרת את ההודעה.</Text>
@@ -256,8 +258,8 @@ export function DashboardScreen() {
         ) : visibleCoupons.length === 0 ? (
           <EmptyState
             icon={<Sparkles size={32} color={theme.primary} />}
-            title="אין קופונים להצגה"
-            subtitle="הוסף את הקופון הראשון שלך ותתחיל לחסוך כסף!"
+            title="הארנק מחכה לקופון הראשון"
+            subtitle="מוסיפים קופון ומתחילים לשמור על כל שקל."
             actionTitle="הוספת קופון"
             onAction={() => router.push("/scanner")}
           />
@@ -346,18 +348,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   successCard: {
-    minHeight: 116,
     flexDirection: "row-reverse",
     alignItems: "center",
     borderRadius: 18,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 14,
-    overflow: "hidden",
+    gap: 14,
   },
+  // One mascot, at its own size, with room around it. The old box was 128x110
+  // with overflow hidden and cropped a three-figure scene down to a sliver.
   successVisual: {
-    width: 128,
-    height: 110,
-    overflow: "hidden",
+    width: 76,
+    height: 76,
   },
   successCopy: {
     flex: 1,

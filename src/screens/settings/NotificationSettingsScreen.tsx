@@ -198,7 +198,7 @@ export function NotificationSettingsScreen() {
   if (prefsLoading || !prefs) {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
-        <Header title="העדפות התראות" />
+        <Header title="ההתראות שלי" />
         <ActivityIndicator style={styles.loader} size="large" color={theme.primary} />
       </SafeAreaView>
     );
@@ -211,7 +211,7 @@ export function NotificationSettingsScreen() {
       : [...current, days];
 
     if (next.length === 0) {
-      setWindowError("חובה לבחור לפחות חלון תזכורת אחד");
+      setWindowError("צריך להשאיר לפחות תזכורת אחת");
       return;
     }
 
@@ -280,7 +280,7 @@ export function NotificationSettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
-      <Header title="העדפות התראות" />
+      <Header title="ההתראות שלי" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -314,10 +314,9 @@ export function NotificationSettingsScreen() {
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.groupTitle, { color: theme.textMuted }]}>מה נשלח אליך</Text>
+          <Text style={[styles.groupTitle, { color: theme.textMuted }]}>על מה לעדכן</Text>
           <Text style={[styles.hint, { color: theme.textSubtle }]}>
-            כל סוג הודעה בנפרד. מה שכיבית כאן פשוט לא יישלח — הכל תמיד ממשיך
-            להופיע ברשימת ההתראות באפליקציה
+            בוחרים מה מגיע בפוש או במייל. הכול עדיין נשמר כאן באפליקציה.
           </Text>
           {NOTIFICATION_TYPES.map((meta) => meta.id === "nearby_store" ? (
             <NearbyCard key={meta.id} meta={meta} nearby={nearby} theme={theme} />
@@ -336,11 +335,11 @@ export function NotificationSettingsScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.groupHeader}>
-            <Text style={[styles.groupTitle, { color: theme.textMuted }]}>חלונות תזכורת</Text>
+            <Text style={[styles.groupTitle, { color: theme.textMuted }]}>מתי להזכיר</Text>
             <Clock size={18} color={theme.textMuted} />
           </View>
           <Text style={[styles.hint, { color: theme.textSubtle }]}>
-            בחר מתי לקבל התראה לפני שהקופון פוקע
+            כמה זמן לפני שקופון פג לשלוח תזכורת?
           </Text>
           {WINDOW_OPTIONS.map((option) => {
             const selected = (prefs.windows || []).includes(option.value);
@@ -377,21 +376,20 @@ export function NotificationSettingsScreen() {
             theme={theme}
           />
           <Text style={[styles.hint, { color: theme.textSubtle }]}>
-            כשמופעל, קופון שקרוב לפוג יזכיר לעצמו כל יום בערוצים שבחרת למעלה,
-            ולא רק בחלונות הקבועים
+            כשקופון ממש קרוב לפוג, נשלח תזכורת בכל יום בערוצים שנבחרו.
           </Text>
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.groupTitle, { color: theme.textMuted }]}>סטטוס Push</Text>
+          <Text style={[styles.groupTitle, { color: theme.textMuted }]}>פוש במכשיר הזה</Text>
           <Text style={[styles.statusText, { color: theme.textMuted }]}>
             {!native.isSupported && !pwa.isSupported
               ? "Push לא נתמך במכשיר הזה"
               : deviceReady
-                ? "המכשיר הזה רשום לקבלת התראות"
+                ? "הפוש פעיל ומוכן"
                 : blockedBySystem
                   ? "ההתראות חסומות בהגדרות המכשיר"
-                  : "המכשיר הזה לא רשום — הפעל את המתג למעלה"}
+                  : "הפוש עדיין כבוי — אפשר להפעיל למעלה"}
           </Text>
           {(native.isSupported || pwa.isSupported) && deviceReady && (
             <TouchableOpacity

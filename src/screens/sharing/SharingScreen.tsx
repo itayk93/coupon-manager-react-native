@@ -265,7 +265,7 @@ export function SharingScreen() {
                           {item.coupon?.company}
                         </Text>
                         <Text style={[styles.sharedWithText, { color: theme.textMuted }]}>
-                          {`שיתפתי את ${item.coupon?.company || "הקופון"} עם ${item.shared_with?.email || "משתמש שטרם נרשם"}`}
+                          {`שיתפתי את ${item.coupon?.company || "הקופון"} עם ${item.shared_with?.email || "מישהו שעוד לא הצטרף"}`}
                         </Text>
                       </View>
                       <Image
@@ -282,8 +282,8 @@ export function SharingScreen() {
             <EmptyState
               icon={<CharacterSpotlight character="helper" state="thinking" />}
               largeVisual
-              title="טרם שיתפת קופונים"
-              subtitle="שתף בקלות קופונים עם חברים ובני משפחה"
+              title="עוד לא שיתפת קופונים"
+              subtitle="יש קופון שווה? שולחים לחברים ולמשפחה בקליק."
               actionTitle="שתף קופון חדש"
               onAction={() => setIsShareModalOpen(true)}
             />
@@ -296,7 +296,7 @@ export function SharingScreen() {
         visible={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         title="שיתוף קופון עם חבר"
-        subtitle="הזן את כתובת המייל של המשתמש ובחר קופון"
+        subtitle="בוחרים קופון ומוסיפים את המייל של מי שמקבל"
       >
         <View style={{ paddingVertical: 6 }}>
           <Input

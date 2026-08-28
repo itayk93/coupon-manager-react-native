@@ -44,52 +44,52 @@ export type NotificationTypeMeta = {
 export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta> = {
   expiry: {
     id: 'expiry',
-    label: 'קופון עומד לפוג',
+    label: 'רגע לפני שקופון פג',
     defaults: { email: true, push: true, in_app: true },
   },
   monthly_summary: {
     id: 'monthly_summary',
-    label: 'סיכום חודשי',
+    label: 'החודש שלך במספרים',
     defaults: { email: true, push: false, in_app: true },
   },
   idle_money: {
     id: 'idle_money',
-    label: 'כסף ששוכב בארנק',
+    label: 'יתרה שמחכה למימוש',
     defaults: { email: true, push: true, in_app: true },
   },
   share_received: {
     id: 'share_received',
-    label: 'שיתפו איתך קופון',
+    label: 'קופון חדש נחת בארנק',
     defaults: { email: true, push: true, in_app: true },
   },
   balance_updated: {
     id: 'balance_updated',
-    label: 'יתרה התעדכנה',
+    label: 'יש יתרה חדשה',
     defaults: { email: false, push: true, in_app: true },
   },
   coupon_finished: {
     id: 'coupon_finished',
-    label: 'סיימת קופון',
+    label: 'קופון נוצל עד הסוף',
     defaults: { email: false, push: true, in_app: true },
   },
   savings_milestone: {
     id: 'savings_milestone',
-    label: 'אבני דרך בחיסכון',
+    label: 'החיסכון עולה שלב',
     defaults: { email: true, push: false, in_app: true },
   },
   coupon_milestone: {
     id: 'coupon_milestone',
-    label: 'אבני דרך בארנק',
+    label: 'הארנק עולה שלב',
     defaults: { email: false, push: false, in_app: true },
   },
   expired_unused: {
     id: 'expired_unused',
-    label: 'קופון פג בלי שנוצל',
+    label: 'יתרה שלא הספקנו לנצל',
     defaults: { email: true, push: false, in_app: true },
   },
   nearby_store: {
     id: 'nearby_store',
-    label: 'אתה ליד חנות עם קופון',
+    label: 'קופון מחכה ממש לידך',
     // The device raises this one itself, from a geofence, with no server
     // involved — so push is the only channel that can carry it.
     defaults: { email: false, push: true, in_app: false },
@@ -137,8 +137,8 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
     case 'expiry': {
       const names: string[] = payload.names || [];
       return {
-        title: names.length === 1 ? 'קופון עומד לפוג' : 'קופונים עומדים לפוג',
-        body: `הקופונים הבאים עומדים לפוג ${payload.when}: ${names.join(', ')}`,
+        title: names.length === 1 ? 'רגע לפני שהקופון פג' : 'כמה קופונים מחכים למימוש',
+        body: `שווה לבדוק לפני שהם פגים ${payload.when}: ${names.join(', ')}`,
         link: '/coupons',
       };
     }
@@ -148,8 +148,8 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         ? ' זה החודש הכי טוב שלך עד עכשיו 🎉'
         : '';
       return {
-        title: 'הסיכום החודשי שלך',
-        body: `ב${label} חסכת ${money(payload.amount)}.${best}`,
+        title: 'החודש שלך במספרים',
+        body: `ב${label} נחסכו ${money(payload.amount)}.${best}`,
         link: '/statistics',
       };
     }
@@ -158,15 +158,15 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
       // those. Older rows carry no ids and still land on the full wallet.
       const ids = Array.isArray(payload.couponIds) ? payload.couponIds : [];
       return {
-        title: 'יש לך כסף שמחכה',
-        body: `${money(payload.amount)} יושבים בארנק כבר ${monthsPhrase(payload.months)} בלי שנגעת בהם. שווה מבט.`,
+        title: 'יש יתרה שמחכה בארנק',
+        body: `${money(payload.amount)} מחכים כבר ${monthsPhrase(payload.months)} למימוש. שווה להציץ.`,
         link: ids.length ? `/coupons?ids=${ids.join(',')}` : '/coupons',
       };
     }
     case 'share_received':
       return {
-        title: 'שיתפו איתך קופון',
-        body: `${payload.fromName} שיתף איתך קופון של ${payload.company}. הוא כבר מחכה לך בארנק.`,
+        title: 'קופון חדש נחת בארנק',
+        body: `${payload.fromName} שלחו לך קופון של ${payload.company}. הוא כבר מחכה בארנק.`,
         link: '/sharing',
       };
     case 'balance_updated': {
@@ -175,8 +175,8 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         ? ` ועוד ${extra === 1 ? 'קופון אחד' : `${extra} קופונים`} התעדכנו.`
         : '';
       return {
-        title: 'עדכנו לך את היתרה',
-        body: `בדקנו בשבילך: היתרה ב${payload.company} עומדת עכשיו על ${money(payload.balance)}.${alsoOthers}`,
+        title: 'יש יתרה חדשה',
+        body: `עדכון קטן: נשארו ${money(payload.balance)} ב${payload.company}.${alsoOthers}`,
         link: extra > 0 || (!payload.couponPublicId && !payload.couponId)
           ? '/coupons'
           : `/coupons/${payload.couponPublicId || payload.couponId}`,
@@ -184,14 +184,14 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
     }
     case 'coupon_finished':
       return {
-        title: 'סגרת קופון 💪',
-        body: `סיימת את הקופון של ${payload.company}. חסכת עליו ${money(payload.saved)}.`,
+        title: 'הקופון נוצל עד הסוף 💪',
+        body: `${payload.company} נסגר עם חיסכון של ${money(payload.saved)}.`,
         link: '/statistics',
       };
     case 'savings_milestone':
       return {
-        title: 'אבן דרך',
-        body: `עברת ${money(payload.threshold)} חיסכון מצטבר. הכל התחיל מקופון אחד 🎉`,
+        title: 'החיסכון עלה שלב',
+        body: `${money(payload.threshold)} כבר נחסכו. הכול התחיל מקופון אחד 🎉`,
         link: '/statistics',
       };
     case 'coupon_milestone':
@@ -204,16 +204,16 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
       };
     case 'nearby_store':
       return {
-        title: `יש לך קופון ב${payload.company}`,
-        body: `אתה ממש ליד. נשארו לך ${money(payload.remaining)} לנצל כאן.`,
+        title: `${payload.company} ממש קרוב`,
+        body: `יש כאן קופון עם ${money(payload.remaining)} שעוד אפשר לנצל.`,
         link: payload.couponPublicId || payload.couponId
           ? `/coupons/${payload.couponPublicId || payload.couponId}`
           : '/coupons',
       };
     case 'expired_unused':
       return {
-        title: 'קופון פג בלי שנוצל',
-        body: `הקופון ב${payload.company} פג עם ${money(payload.remaining)} שלא נוצלו. שנזכיר לך מוקדם יותר בפעם הבאה?`,
+        title: 'יתרה שלא הספקנו לנצל',
+        body: `הקופון ב${payload.company} פג עם ${money(payload.remaining)}. בפעם הבאה נוכל להזכיר מוקדם יותר.`,
         link: '/notification-settings',
       };
     default:

@@ -79,7 +79,7 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
   if (companySavings.length === 0) {
     return (
       <Text style={[styles.emptyText, { color: theme.textMuted }]}>
-        לא נמצאו חסכונות להצגה. הוסף קופונים כדי לראות את הפירוט!
+        עוד אין חסכונות להציג. מוסיפים קופון והפירוט יתחיל להתמלא.
       </Text>
     );
   }
