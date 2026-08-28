@@ -481,7 +481,7 @@ private struct CouponLargeView: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, 6)
+                .padding(.bottom, 12)
             }
             .padding(.top, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
