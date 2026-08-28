@@ -5,8 +5,10 @@ import { decryptCouponCodes } from '../_shared/encryption.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
 type DispatchResult =
-  | { success: true; runId: string | null; runUrl: string | null; workflow: string; ref: string }
+  | { success: true; provider: 'github' | 'gitlab'; runId: string | null; runUrl: string | null; workflow: string; ref: string }
   | { success: false; error: string };
+
+type CiProvider = 'github' | 'gitlab';
 
 function supa() {
   return createClient(
@@ -15,7 +17,7 @@ function supa() {
   );
 }
 
-async function dispatchMultipassWorkflow(couponCodes: string[]): Promise<DispatchResult> {
+async function dispatchGitHubWorkflow(couponCodes: string[]): Promise<DispatchResult> {
   const githubToken = Deno.env.get('GITHUB_TOKEN');
   if (!githubToken) return { success: false, error: 'GITHUB_TOKEN not configured' };
 
@@ -71,7 +73,61 @@ async function dispatchMultipassWorkflow(couponCodes: string[]): Promise<Dispatc
     // Best effort only.
   }
 
-  return { success: true, runId, runUrl, workflow: workflowId, ref: workflowRef };
+  return { success: true, provider: 'github', runId, runUrl, workflow: workflowId, ref: workflowRef };
+}
+
+async function dispatchGitLabPipeline(couponCodes: string[]): Promise<DispatchResult> {
+  const triggerToken = Deno.env.get('MULTIPASS_GITLAB_TRIGGER_TOKEN');
+  const projectId = Deno.env.get('MULTIPASS_GITLAB_PROJECT_ID');
+  const pipelineRef = Deno.env.get('MULTIPASS_GITLAB_REF') || 'main';
+
+  if (!triggerToken) return { success: false, error: 'MULTIPASS_GITLAB_TRIGGER_TOKEN not configured' };
+  if (!projectId) return { success: false, error: 'MULTIPASS_GITLAB_PROJECT_ID not configured' };
+
+  const safeCodes = couponCodes.map((code) => code.trim()).filter(Boolean);
+  if (!safeCodes.length) return { success: false, error: 'No coupon codes provided' };
+
+  const body = new URLSearchParams({
+    token: triggerToken,
+    ref: pipelineRef,
+    'variables[CARD_NUMBER]': safeCodes.join(','),
+  });
+  const triggerUrl = `https://gitlab.com/api/v4/projects/${encodeURIComponent(projectId)}/trigger/pipeline`;
+  const response = await safeFetch(triggerUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `GitLab pipeline trigger failed: ${response.status} ${await response.text()}`,
+    };
+  }
+
+  const payload = await response.json();
+  return {
+    success: true,
+    provider: 'gitlab',
+    runId: payload?.id ? String(payload.id) : null,
+    runUrl: payload?.web_url ?? null,
+    workflow: 'scrape_multipass',
+    ref: pipelineRef,
+  };
+}
+
+function scheduledProvider(): CiProvider {
+  const mode = Deno.env.get('MULTIPASS_CI_MODE')?.trim().toLowerCase() || 'github';
+  if (mode === 'gitlab') return 'gitlab';
+  if (mode === 'alternate') return new Date().getUTCHours() % 2 === 0 ? 'github' : 'gitlab';
+  return 'github';
+}
+
+function dispatchMultipassWorkflow(couponCodes: string[], provider: CiProvider): Promise<DispatchResult> {
+  return provider === 'gitlab'
+    ? dispatchGitLabPipeline(couponCodes)
+    : dispatchGitHubWorkflow(couponCodes);
 }
 
 Deno.serve(async (req: Request) => {
@@ -115,7 +171,10 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, dispatched: false, message: 'No active Multipass coupons found' });
     }
 
-    const dispatchResult = await dispatchMultipassWorkflow(couponCodes);
+    const requestedProvider = body.provider === 'github' || body.provider === 'gitlab'
+      ? body.provider
+      : scheduledProvider();
+    const dispatchResult = await dispatchMultipassWorkflow(couponCodes, requestedProvider);
     if (!dispatchResult.success) {
       return jsonResponse({ success: false, error: dispatchResult.error }, 502);
     }
@@ -124,6 +183,7 @@ Deno.serve(async (req: Request) => {
       success: true,
       dispatched: true,
       count: couponCodes.length,
+      provider: dispatchResult.provider,
       run_id: dispatchResult.runId,
       run_url: dispatchResult.runUrl,
       workflow: dispatchResult.workflow,
