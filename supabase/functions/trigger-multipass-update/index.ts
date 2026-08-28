@@ -5,10 +5,10 @@ import { decryptCouponCodes } from '../_shared/encryption.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
 type DispatchResult =
-  | { success: true; provider: 'github' | 'gitlab'; runId: string | null; runUrl: string | null; workflow: string; ref: string }
+  | { success: true; provider: 'github' | 'circleci'; runId: string | null; runUrl: string | null; workflow: string; ref: string }
   | { success: false; error: string };
 
-type CiProvider = 'github' | 'gitlab';
+type CiProvider = 'github' | 'circleci';
 
 function supa() {
   return createClient(
@@ -76,42 +76,51 @@ async function dispatchGitHubWorkflow(couponCodes: string[]): Promise<DispatchRe
   return { success: true, provider: 'github', runId, runUrl, workflow: workflowId, ref: workflowRef };
 }
 
-async function dispatchGitLabPipeline(couponCodes: string[]): Promise<DispatchResult> {
-  const triggerToken = Deno.env.get('MULTIPASS_GITLAB_TRIGGER_TOKEN');
-  const projectId = Deno.env.get('MULTIPASS_GITLAB_PROJECT_ID');
-  const pipelineRef = Deno.env.get('MULTIPASS_GITLAB_REF') || 'main';
+async function dispatchCircleCIPipeline(couponCodes: string[]): Promise<DispatchResult> {
+  const apiToken = Deno.env.get('CIRCLECI_API_TOKEN');
+  const projectSlug = Deno.env.get('CIRCLECI_PROJECT_SLUG') || 'gh/itayk93/scrape_multipass';
+  const pipelineRef = Deno.env.get('MULTIPASS_CIRCLECI_REF') || 'main';
 
-  if (!triggerToken) return { success: false, error: 'MULTIPASS_GITLAB_TRIGGER_TOKEN not configured' };
-  if (!projectId) return { success: false, error: 'MULTIPASS_GITLAB_PROJECT_ID not configured' };
+  if (!apiToken) return { success: false, error: 'CIRCLECI_API_TOKEN not configured' };
 
   const safeCodes = couponCodes.map((code) => code.trim()).filter(Boolean);
   if (!safeCodes.length) return { success: false, error: 'No coupon codes provided' };
 
-  const body = new URLSearchParams({
-    token: triggerToken,
-    ref: pipelineRef,
-    'variables[CARD_NUMBER]': safeCodes.join(','),
-  });
-  const triggerUrl = `https://gitlab.com/api/v4/projects/${encodeURIComponent(projectId)}/trigger/pipeline`;
+  const encodedSlug = projectSlug.split('/').map(encodeURIComponent).join('/');
+  const triggerUrl = `https://circleci.com/api/v2/project/${encodedSlug}/pipeline`;
   const response = await safeFetch(triggerUrl, {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
+    headers: {
+      'Circle-Token': apiToken,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      branch: pipelineRef,
+      parameters: {
+        run_scrape: true,
+        card_number: safeCodes.join(','),
+      },
+    }),
   });
 
   if (!response.ok) {
     return {
       success: false,
-      error: `GitLab pipeline trigger failed: ${response.status} ${await response.text()}`,
+      error: `CircleCI pipeline trigger failed: ${response.status} ${await response.text()}`,
     };
   }
 
   const payload = await response.json();
+  const pipelineNumber = payload?.number ? String(payload.number) : null;
+  const webVcs = projectSlug.startsWith('gh/') ? 'github' : projectSlug.split('/')[0];
+  const webProject = projectSlug.split('/').slice(1).join('/');
   return {
     success: true,
-    provider: 'gitlab',
+    provider: 'circleci',
     runId: payload?.id ? String(payload.id) : null,
-    runUrl: payload?.web_url ?? null,
+    runUrl: pipelineNumber
+      ? `https://app.circleci.com/pipelines/${webVcs}/${webProject}/${pipelineNumber}`
+      : null,
     workflow: 'scrape_multipass',
     ref: pipelineRef,
   };
@@ -119,14 +128,14 @@ async function dispatchGitLabPipeline(couponCodes: string[]): Promise<DispatchRe
 
 function scheduledProvider(): CiProvider {
   const mode = Deno.env.get('MULTIPASS_CI_MODE')?.trim().toLowerCase() || 'github';
-  if (mode === 'gitlab') return 'gitlab';
-  if (mode === 'alternate') return new Date().getUTCHours() % 2 === 0 ? 'github' : 'gitlab';
+  if (mode === 'circleci') return 'circleci';
+  if (mode === 'alternate') return new Date().getUTCHours() % 2 === 0 ? 'github' : 'circleci';
   return 'github';
 }
 
 function dispatchMultipassWorkflow(couponCodes: string[], provider: CiProvider): Promise<DispatchResult> {
-  return provider === 'gitlab'
-    ? dispatchGitLabPipeline(couponCodes)
+  return provider === 'circleci'
+    ? dispatchCircleCIPipeline(couponCodes)
     : dispatchGitHubWorkflow(couponCodes);
 }
 
@@ -171,7 +180,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, dispatched: false, message: 'No active Multipass coupons found' });
     }
 
-    const requestedProvider = body.provider === 'github' || body.provider === 'gitlab'
+    const requestedProvider = body.provider === 'github' || body.provider === 'circleci'
       ? body.provider
       : scheduledProvider();
     const dispatchResult = await dispatchMultipassWorkflow(couponCodes, requestedProvider);
