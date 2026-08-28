@@ -34,11 +34,14 @@ import { useMyReferralStatus } from "@/hooks/useReferral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
+import { useProfile } from "@/hooks/useProfile";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 
 export function SettingsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { user, isAdmin, signOut } = useAuth();
+  const { data: profile } = useProfile();
   const biometric = useBiometricAuth();
   // Absent for anyone outside a referral chain, which is how the pilot stays
   // closed without a feature flag to remember to turn off later.
@@ -111,16 +114,7 @@ export function SettingsScreen() {
             ) : null}
           </View>
 
-          <View
-            style={[
-              styles.avatarCircle,
-              { backgroundColor: theme.primary },
-            ]}
-          >
-            <Text style={[styles.avatarLetter, styles.avatarLetterOnBrand]}>
-              {(user?.first_name?.[0] || user?.email?.[0] || "U").toUpperCase()}
-            </Text>
-          </View>
+          <ProfileAvatar value={profile?.profile_image} size={54} />
         </TouchableOpacity>
 
         {/* Admin Dashboard Entry (if Admin) */}

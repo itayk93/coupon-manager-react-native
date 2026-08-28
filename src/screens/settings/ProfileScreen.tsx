@@ -7,8 +7,9 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { User, Lock, Mail, Shield } from "lucide-react-native";
+import { Camera, Check, User, Lock, Mail, Shield } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { linkSocialProvider, SocialProvider } from "@/lib/socialAuth";
+import { Modal } from "@/components/ui/Modal";
+import { PROFILE_AVATARS, ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { uploadProfileImage } from "@/lib/profileImage";
 
 export function ProfileScreen() {
   const router = useRouter();
@@ -39,6 +43,43 @@ export function ProfileScreen() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [linkedProviders, setLinkedProviders] = useState<SocialProvider[]>([]);
   const [linkingProvider, setLinkingProvider] = useState<SocialProvider | null>(null);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+
+  const saveAvatar = async (profileImage: string) => {
+    try {
+      await updateProfile.mutateAsync({ profile_image: profileImage });
+      setAvatarPickerOpen(false);
+      notify.success("תמונת הפרופיל עודכנה");
+    } catch {
+      // useUpdateProfile presents the database error to the user.
+    }
+  };
+
+  const pickProfileImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      notify.warning("נדרשת הרשאה לגלריה", "אפשרו גישה לתמונות כדי להעלות תמונת פרופיל.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+
+    setAvatarLoading(true);
+    try {
+      const publicUrl = await uploadProfileImage(result.assets[0]);
+      await saveAvatar(publicUrl);
+    } catch (error: any) {
+      notify.error("העלאת התמונה נכשלה", error.message || "נסו שוב.");
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
 
   const loadLinkedProviders = useCallback(async () => {
     const { data, error } = await supabase.auth.getUserIdentities();
@@ -119,6 +160,21 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setAvatarPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="החלפת תמונת פרופיל"
+          style={styles.avatarSection}
+        >
+          <View style={[styles.editAvatarBadge, { backgroundColor: theme.primary }]}>
+            <Camera size={16} color="#FFFFFF" />
+          </View>
+          <ProfileAvatar value={profile?.profile_image} size={96} />
+          <Text style={[styles.avatarTitle, { color: theme.text }]}>תמונת פרופיל</Text>
+          <Text style={[styles.avatarHint, { color: theme.textMuted }]}>לחצו כדי לבחור דמות או להעלות תמונה</Text>
+        </TouchableOpacity>
+
         {/* Personal Details Card */}
         <View
           style={[
@@ -270,6 +326,49 @@ export function ProfileScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      <Modal
+        visible={avatarPickerOpen}
+        onClose={() => setAvatarPickerOpen(false)}
+        title="בחירת תמונת פרופיל"
+        subtitle="20 דמויות של Coupon Master או תמונה מהגלריה"
+      >
+        <TouchableOpacity
+          onPress={pickProfileImage}
+          disabled={avatarLoading}
+          style={[styles.uploadButton, { borderColor: theme.primary, backgroundColor: theme.primaryTint }]}
+        >
+          <Text style={[styles.uploadButtonText, { color: theme.primary }]}>
+            {avatarLoading ? "מעלה תמונה..." : "העלאה מהגלריה"}
+          </Text>
+          <Camera size={20} color={theme.primary} />
+        </TouchableOpacity>
+        <View style={styles.avatarGrid}>
+          {PROFILE_AVATARS.map((avatar) => {
+            const selected = profile?.profile_image === avatar;
+            return (
+              <TouchableOpacity
+                key={avatar}
+                onPress={() => saveAvatar(avatar)}
+                disabled={updateProfile.isPending || avatarLoading}
+                accessibilityRole="button"
+                accessibilityLabel={`בחירת דמות ${avatar.split(":")[1]}`}
+                style={[
+                  styles.avatarOption,
+                  { borderColor: selected ? theme.primary : "transparent" },
+                ]}
+              >
+                <ProfileAvatar value={avatar} size={64} />
+                {selected ? (
+                  <View style={[styles.selectedBadge, { backgroundColor: theme.primary }]}>
+                    <Check size={12} color="#FFFFFF" strokeWidth={3} />
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -286,6 +385,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingBottom: 40,
   },
+  avatarSection: { alignItems: "center", marginBottom: 18, position: "relative" },
+  editAvatarBadge: { position: "absolute", zIndex: 2, top: 66, marginLeft: 68, width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "#FFFFFF" },
+  avatarTitle: { fontFamily: fonts.display, fontSize: 17, fontWeight: "800", marginTop: 10 },
+  avatarHint: { fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
+  uploadButton: { minHeight: 52, borderRadius: radii.lg, borderWidth: 1, flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18 },
+  uploadButtonText: { fontFamily: fonts.bodyBold, fontSize: 15, fontWeight: "700" },
+  avatarGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", gap: 10 },
+  avatarOption: { width: "21%", alignItems: "center", padding: 4, borderRadius: 40, borderWidth: 3, position: "relative" },
+  selectedBadge: { position: "absolute", left: 0, bottom: 2, width: 21, height: 21, borderRadius: 11, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#FFFFFF" },
   card: {
     borderRadius: 22,
     padding: 18,
