@@ -68,6 +68,18 @@ function supa() {
   );
 }
 
+function isMultipassCronRequest(req: Request): boolean {
+  const presented = req.headers.get('x-cron-token') || '';
+  const expected = Deno.env.get('MULTIPASS_CRON_TOKEN') || '';
+  if (!presented || !expected || presented.length !== expected.length) return false;
+
+  let mismatch = 0;
+  for (let i = 0; i < presented.length; i += 1) {
+    mismatch |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 async function wrapMarketingEmail(html: string, userPublicId: string, email: string) {
   const unsubscribeUrl = await buildUnsubscribeUrl(userPublicId, email);
   if (!unsubscribeUrl) return html;
@@ -171,7 +183,7 @@ Deno.serve(async (req: Request) => {
 
     if (mode === 'newsletter') return await handleNewsletter(body.newsletter_id);
     if (mode === 'multipass_update_summary') {
-      if (isServiceRoleCall(req)) {
+      if (isServiceRoleCall(req) || isMultipassCronRequest(req)) {
         return await handleUpdateSummary(
           Number(body.user_id),
           Number(body.updated || 0),
