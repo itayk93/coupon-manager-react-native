@@ -115,7 +115,7 @@ type KpiDrilldownModalProps = {
   onClose: () => void;
   config: KpiConfig | null;
   coupons: DecryptedCoupon[];
-  onOpenCoupon: (couponId: number) => void;
+  onOpenCoupon: (coupon: DecryptedCoupon) => void;
   expandedYear: string | null;
   onExpandedYearChange: (year: string | null) => void;
   selectedMonth: KpiMonthSelection | null;
@@ -185,7 +185,7 @@ export function KpiDrilldownModal({
           <CouponCard
             key={coupon.id}
             coupon={coupon}
-            onPress={() => onOpenCoupon(coupon.id)}
+            onPress={() => onOpenCoupon(coupon)}
             onReportUsage={() => setUsageCoupon(coupon)}
           />
         ))

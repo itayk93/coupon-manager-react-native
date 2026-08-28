@@ -199,7 +199,7 @@ private struct CouponCardView: View {
     @Environment(\.layoutDirection) private var layoutDirection
 
     private var couponURL: URL {
-        URL(string: "couponmaster:///coupons/\(coupon.id)") ?? URL(string: "couponmaster:///")!
+        URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))") ?? URL(string: "couponmaster:///")!
     }
 
     var body: some View {

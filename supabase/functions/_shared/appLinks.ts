@@ -12,7 +12,8 @@
  * claim files on every test run.
  */
 
-import { referralUrl } from "./referralCodes";
+// @ts-ignore Deno requires the explicit extension; native tsconfig does not.
+import { referralUrl } from "./referralCodes.ts";
 
 /**
  * A referral invite. Not built by an email, but it goes out through a share

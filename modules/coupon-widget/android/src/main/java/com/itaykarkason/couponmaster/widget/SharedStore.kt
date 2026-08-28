@@ -46,6 +46,7 @@ object SharedStore {
       val item = optJSONObject(index) ?: return@mapNotNull null
       WidgetCoupon(
         id = item.optInt("id", 0),
+        publicId = item.optString("publicId", "").ifBlank { null },
         company = item.optString("company", ""),
         code = item.optString("code", ""),
         remainingValue = item.optDouble("remainingValue", 0.0),
@@ -60,6 +61,7 @@ object SharedStore {
 
 data class WidgetCoupon(
   val id: Int,
+  val publicId: String?,
   val company: String,
   val code: String,
   val remainingValue: Double,

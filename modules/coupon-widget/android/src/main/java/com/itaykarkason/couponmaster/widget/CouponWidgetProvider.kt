@@ -125,7 +125,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
 
       setOnClickPendingIntent(
         cardId.root,
-        openAppIntent(context, "couponmaster:///coupons/${coupon.id}"),
+        openAppIntent(context, "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"),
       )
     }
   }

@@ -159,10 +159,14 @@ async function notifyUsage(body: Record<string, unknown>) {
 
   const message = `זוהה שימוש חדש ב-${company}: ${delta.toFixed(2)} ₪`;
   const db = adminClient();
+  const { data: coupon } = couponId > 0
+    ? await db.from('coupon').select('public_id').eq('id', couponId).eq('user_id', userId).maybeSingle()
+    : { data: null };
+  const couponRouteId = coupon?.public_id || (couponId > 0 ? String(couponId) : null);
   await db.from('notifications').insert({
     user_id: userId,
     message,
-    link: couponId > 0 ? `/coupons/${couponId}` : '/notifications',
+    link: couponRouteId ? `/coupons/${couponRouteId}` : '/notifications',
     shown: false,
     viewed: false,
     hide_from_view: false,
@@ -171,7 +175,7 @@ async function notifyUsage(body: Record<string, unknown>) {
   const push = await sendPushToUser(db, userId, {
     title: 'קופון מאסטר',
     body: message,
-    url: couponId > 0 ? `/coupons/${couponId}` : '/notifications',
+    url: couponRouteId ? `/coupons/${couponRouteId}` : '/notifications',
     tag: `multipass-usage-${userId}`,
     renotify: true,
   });

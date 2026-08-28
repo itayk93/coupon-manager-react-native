@@ -41,6 +41,11 @@ function assertId(value: unknown): number {
   return id;
 }
 
+function publicId(value: unknown): string | null {
+  const id = typeof value === 'string' ? value.trim() : '';
+  return /^cpn_[0-9a-f]{20}$/.test(id) ? id : null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeadersFor(req) });
   try {
@@ -54,8 +59,11 @@ Deno.serve(async (req) => {
       return jsonResponseFor(req, { data: await Promise.all((data || []).map(decryptCoupon)) });
     }
     if (body.action === 'get') {
-      const id = assertId(body.id);
-      const { data, error } = await db.from('coupon').select('*').eq('id', id).eq('user_id', user.id).maybeSingle();
+      const opaqueId = publicId(body.publicId);
+      const query = db.from('coupon').select('*').eq('user_id', user.id);
+      const { data, error } = opaqueId
+        ? await query.eq('public_id', opaqueId).maybeSingle()
+        : await query.eq('id', assertId(body.id)).maybeSingle();
       if (error) throw error;
       if (!data) throw new Error('NOT_FOUND');
       return jsonResponseFor(req, { data: await decryptCoupon(data) });

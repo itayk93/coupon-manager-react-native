@@ -30,6 +30,7 @@ import { legacyHebrew, mergeNotificationFeeds } from "@/lib/notificationFeed";
 type FeedItem = {
   id: string;
   couponId?: number;
+  couponPublicId?: string;
   title: string;
   message: string;
   type: "warning" | "system";
@@ -69,6 +70,7 @@ export function NotificationsScreen() {
       return {
         id: `exp-${c.id}`,
         couponId: c.id,
+        couponPublicId: c.public_id,
         title: `הקופון של ${c.company} עומד לפוג!`,
         message: `נותרו ${days} ימים למימוש יתרה של ${formatIls((c.value || 0) - (c.used_value || 0))}`,
         type: "warning",
@@ -125,7 +127,7 @@ export function NotificationsScreen() {
         activeOpacity={0.6}
         onPress={() => {
           if (item.persistedId && unread) markViewed.mutate(item.persistedId);
-          if (item.couponId) router.push(`/coupons/${item.couponId}`);
+          if (item.couponId) router.push(`/coupons/${item.couponPublicId || item.couponId}`);
           // Each kind points at the screen that answers it: savings at the chart,
           // a share at the sharing list, an expiry at the coupons.
           else if (item.link) router.push(item.link as any);

@@ -3,6 +3,7 @@ import { requireOptionalNativeModule } from "expo";
 /** One coupon card rendered inside the widget. */
 export type WidgetCouponPayload = {
   id: number;
+  publicId: string;
   company: string;
   /** Already decrypted — the widget never sees ciphertext. */
   code: string;

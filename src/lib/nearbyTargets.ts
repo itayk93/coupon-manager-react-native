@@ -24,6 +24,7 @@ export type NearbyTarget = {
   id: string;
   company: string;
   couponId: number;
+  couponPublicId?: string | null;
   remaining: number;
   latitude: number;
   longitude: number;
@@ -40,6 +41,7 @@ export type NearbyPlace = {
 
 export type NearbyCoupon = {
   id: number;
+  public_id?: string | null;
   company: string;
   value: number | null;
   used_value: number | null;
@@ -94,6 +96,7 @@ export function buildTargets(coupons: NearbyCoupon[], places: NearbyPlace[]): Ne
       id,
       company: coupon.company,
       couponId: coupon.id,
+      couponPublicId: coupon.public_id,
       remaining: remainingOf(coupon),
       latitude: place.latitude,
       longitude: place.longitude,
@@ -119,4 +122,3 @@ export function mayAlert(lastAlertAt: number | undefined, now: Date): boolean {
   if (lastAlertAt && now.getTime() - lastAlertAt < REPEAT_COOLDOWN_MS) return false;
   return true;
 }
-

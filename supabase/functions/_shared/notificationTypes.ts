@@ -177,7 +177,9 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
       return {
         title: 'עדכנו לך את היתרה',
         body: `בדקנו בשבילך: היתרה ב${payload.company} עומדת עכשיו על ${money(payload.balance)}.${alsoOthers}`,
-        link: extra > 0 || !payload.couponId ? '/coupons' : `/coupons/${payload.couponId}`,
+        link: extra > 0 || (!payload.couponPublicId && !payload.couponId)
+          ? '/coupons'
+          : `/coupons/${payload.couponPublicId || payload.couponId}`,
       };
     }
     case 'coupon_finished':
@@ -204,7 +206,9 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
       return {
         title: `יש לך קופון ב${payload.company}`,
         body: `אתה ממש ליד. נשארו לך ${money(payload.remaining)} לנצל כאן.`,
-        link: payload.couponId ? `/coupons/${payload.couponId}` : '/coupons',
+        link: payload.couponPublicId || payload.couponId
+          ? `/coupons/${payload.couponPublicId || payload.couponId}`
+          : '/coupons',
       };
     case 'expired_unused':
       return {

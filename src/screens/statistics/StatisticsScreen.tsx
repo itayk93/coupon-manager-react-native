@@ -27,6 +27,8 @@ import {
 import { CompanySavingsBreakdown } from "@/components/dashboard/CompanySavingsBreakdown";
 import { StatusDrilldownModal } from "@/components/dashboard/StatusDrilldownModal";
 import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownModal";
+import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import { couponRouteId } from "@/lib/couponId";
 
 export function StatisticsScreen() {
   const router = useRouter();
@@ -38,8 +40,8 @@ export function StatisticsScreen() {
   const [expandedYear, setExpandedYear] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<KpiMonthSelection | null>(null);
 
-  const handleOpenCoupon = (couponId: number) => {
-    router.push(`/coupons/${couponId}`);
+  const handleOpenCoupon = (coupon: DecryptedCoupon) => {
+    router.push(`/coupons/${couponRouteId(coupon)}`);
   };
 
   const totalValue = useMemo(

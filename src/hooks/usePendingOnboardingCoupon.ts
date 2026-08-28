@@ -40,8 +40,8 @@ export function usePendingOnboardingCoupon() {
         await clearCouponDraft();
         await clearOnboardingCouponDrafts();
         notify.success(drafts.length > 1 ? `${drafts.length} קופונים נשמרו בארנק` : "הקופון הראשון נשמר בארנק");
-        const couponId = Number((created as { id?: number })?.id);
-        router.replace(Number.isFinite(couponId) ? `/coupons/${couponId}` : "/(tabs)");
+        const couponPublicId = (created as { public_id?: string })?.public_id;
+        router.replace(couponPublicId ? `/coupons/${couponPublicId}` : "/(tabs)");
       })
       .catch((error) => {
         console.error("Pending onboarding coupon claim failed:", error);

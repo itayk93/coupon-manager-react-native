@@ -131,11 +131,11 @@ function DeleteConfirm({
 export function CouponDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const parsedId = Number(id);
-  const couponId = Number.isInteger(parsedId) ? parsedId : undefined;
+  const couponIdentifier = typeof id === "string" ? id : undefined;
   const { theme } = useAppTheme();
 
-  const { data: coupon, isLoading } = useCoupon(couponId);
+  const { data: coupon, isLoading } = useCoupon(couponIdentifier);
+  const couponId = coupon?.id;
   const { data: tags = [] } = useCouponTags(couponId);
   const { data: history = [] } = useCouponUsageHistory(coupon || null);
   const deleteCoupon = useDeleteCoupon();
@@ -156,7 +156,7 @@ export function CouponDetailScreen() {
   // Feeds the automatic balance updater, same as the legacy app.
   const { markDetailViewed } = useCouponViewTracking();
   React.useEffect(() => {
-    if (couponId === undefined) return;
+    if (!couponId) return;
     void markDetailViewed(couponId);
     logActivity("view_coupon", { couponId });
   }, [couponId, markDetailViewed]);
@@ -264,7 +264,7 @@ export function CouponDetailScreen() {
         rightAction={
           <View style={styles.headerRightGroup}>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: "/coupons/edit", params: { couponId: String(coupon.id) } })}
+              onPress={() => router.push({ pathname: "/coupons/edit", params: { couponId: coupon.public_id } })}
               style={[styles.headerIconBtn, { backgroundColor: theme.surfaceAlt }]}
             >
               <Edit3 size={18} color={theme.text} />

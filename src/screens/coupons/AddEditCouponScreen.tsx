@@ -50,11 +50,10 @@ export function AddEditCouponScreen() {
     initialDescription?: string;
   }>();
 
-  const parsedId = Number(params.couponId);
-  const couponId = Number.isInteger(parsedId) ? parsedId : undefined;
-  const isEditing = couponId !== undefined;
+  const couponIdentifier = params.couponId;
+  const isEditing = couponIdentifier !== undefined;
 
-  const { data: existingCoupon, isLoading, isError } = useCoupon(couponId);
+  const { data: existingCoupon, isLoading, isError } = useCoupon(couponIdentifier);
 
   if (isEditing && (isLoading || (!existingCoupon && !isError))) {
     return (

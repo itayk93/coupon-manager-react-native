@@ -7,6 +7,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { couponRouteId } from "@/lib/couponId";
 
 /**
  * A dismissible strip above the wallet card for coupons that expire within
@@ -142,7 +143,7 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           onPress={() =>
             expiring.length > 1
               ? setExpanded((prev) => !prev)
-              : router.push(`/coupons/${soonest.coupon.id}`)
+              : router.push(`/coupons/${couponRouteId(soonest.coupon)}`)
           }
           style={styles.headPressable}
         >
@@ -165,7 +166,7 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
             <TouchableOpacity
               key={coupon.id}
               activeOpacity={0.8}
-              onPress={() => router.push(`/coupons/${coupon.id}`)}
+              onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
               style={[styles.itemRow, { borderColor: tone.border }]}
             >
               <ChevronLeft size={16} color={tone.text} />

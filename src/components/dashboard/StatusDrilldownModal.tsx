@@ -9,6 +9,7 @@ import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { couponRouteId } from "@/lib/couponId";
 
 export type CouponStatusFilter = "active" | "used" | "expired";
 
@@ -120,7 +121,7 @@ export function StatusDrilldownModal({
               coupon={coupon}
               onPress={() => {
                 onClose();
-                router.push(`/coupons/${coupon.id}`);
+                router.push(`/coupons/${couponRouteId(coupon)}`);
               }}
               onReportUsage={() => setUsageCoupon(coupon)}
             />

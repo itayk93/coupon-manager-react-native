@@ -19,6 +19,7 @@ import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
+import { couponRouteId } from "@/lib/couponId";
 
 
 type CouponCardProps = {
@@ -211,7 +212,7 @@ export function CouponCard({
       } else {
         router.push({
           pathname: "/coupons/edit",
-          params: { couponId: String(coupon.id) },
+          params: { couponId: couponRouteId(coupon) },
         });
       }
     } else {

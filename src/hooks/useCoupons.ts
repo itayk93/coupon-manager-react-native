@@ -43,17 +43,25 @@ export function useCoupons() {
   });
 }
 
-export function useCoupon(couponId: number | undefined) {
+export function useCoupon(couponIdentifier: string | number | undefined) {
   const { user } = useAuth();
+  const publicId = typeof couponIdentifier === "string" && couponIdentifier.startsWith("cpn_")
+    ? couponIdentifier
+    : undefined;
+  const legacyId = publicId === undefined && couponIdentifier !== undefined
+    ? Number(couponIdentifier)
+    : undefined;
+  const hasValidIdentifier = publicId !== undefined
+    || (Number.isSafeInteger(legacyId) && (legacyId as number) > 0);
 
   return useQuery({
-    queryKey: ["coupon", couponId],
+    queryKey: ["coupon", couponIdentifier],
     queryFn: async () => {
-      if (!user || !couponId) throw new Error("Invalid request");
+      if (!user || !hasValidIdentifier) throw new Error("Invalid request");
 
-      return couponVault<DecryptedCoupon>({ action: "get", id: couponId });
+      return couponVault<DecryptedCoupon>({ action: "get", id: legacyId, publicId });
     },
-    enabled: !!user && !!couponId,
+    enabled: !!user && hasValidIdentifier,
   });
 }
 

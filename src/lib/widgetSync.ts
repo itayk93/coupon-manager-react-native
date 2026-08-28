@@ -24,6 +24,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
 
   const selected: WidgetCouponPayload[] = chosen.map((coupon) => ({
     id: coupon.id,
+    publicId: coupon.public_id,
     company: coupon.company,
     code: coupon.code,
     remainingValue: couponRemainingValue(coupon),

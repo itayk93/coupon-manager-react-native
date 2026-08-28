@@ -33,6 +33,7 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
+import { couponRouteId } from "@/lib/couponId";
 import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
@@ -557,7 +558,7 @@ export function CouponsListScreen() {
                 if (isSelectMode) {
                   toggleSelect(item.id);
                 } else {
-                  router.push(`/coupons/${item.id}`);
+                  router.push(`/coupons/${couponRouteId(item)}`);
                 }
               }}
               onReportUsage={() => setUsageCoupon(item)}

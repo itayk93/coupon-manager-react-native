@@ -29,6 +29,7 @@ import { isSpendableCoupon } from "@/lib/couponTotals";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
 import { CharacterScene } from "@/components/onboarding/CharacterRig";
+import { couponRouteId } from "@/lib/couponId";
 
 export function DashboardScreen() {
   const router = useRouter();
@@ -196,7 +197,7 @@ export function DashboardScreen() {
                 key={`favorite-${coupon.id}`}
                 coupon={coupon}
                 tags={tagsMap[coupon.id] || []}
-                onPress={() => router.push(`/coupons/${coupon.id}`)}
+                onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
                 onReportUsage={() => {
                   setUsageCoupon(coupon);
                   setIsUsageOpen(true);
@@ -245,7 +246,7 @@ export function DashboardScreen() {
               key={coupon.id}
               coupon={coupon}
               tags={tagsMap[coupon.id] || []}
-              onPress={() => router.push(`/coupons/${coupon.id}`)}
+              onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
               onReportUsage={() => {
                 setUsageCoupon(coupon);
                 setIsUsageOpen(true);

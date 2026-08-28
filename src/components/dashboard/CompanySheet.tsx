@@ -31,6 +31,7 @@ import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateShort, daysUntil } from "@/lib/formatDate";
 import { companyKey } from "@/lib/companyName";
+import { couponRouteId } from "@/lib/couponId";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -197,14 +198,14 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
     onClose();
     router.push({
       pathname: "/coupons/edit",
-      params: { couponId: String(coupon.id) },
+      params: { couponId: couponRouteId(coupon) },
     });
   };
 
   const handleOpenDetail = (coupon: DecryptedCoupon) => {
     setOpenCode(null);
     onClose();
-    router.push(`/coupons/${coupon.id}`);
+    router.push(`/coupons/${couponRouteId(coupon)}`);
   };
 
   const handleReportUsage = (coupon: DecryptedCoupon) => {

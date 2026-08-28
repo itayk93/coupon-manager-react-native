@@ -27,6 +27,7 @@ import { safeFetch } from '../_shared/ssrf.ts';
 
 type Coupon = {
   id: number;
+  public_id: string;
   company: string;
   source: string | null;
   auto_download_details: string | null;
@@ -42,6 +43,8 @@ type Coupon = {
 };
 
 type UpdatedCouponSummary = {
+  id: number;
+  publicId: string;
   company: string;
   oldRemaining: number;
   newRemaining: number;
@@ -123,7 +126,7 @@ Deno.serve(async (req: Request) => {
 
     let query = supabase
       .from('coupon')
-      .select('id, company, source, auto_download_details, value, used_value, buyme_coupon_url, auto_update, user_id, last_scraped, last_detail_view, last_company_view, last_code_view')
+      .select('id, public_id, company, source, auto_download_details, value, used_value, buyme_coupon_url, auto_update, user_id, last_scraped, last_detail_view, last_company_view, last_code_view')
       .eq('user_id', userId)
       .eq('auto_update', true)
       .neq('status', 'נוצל');
@@ -174,6 +177,7 @@ Deno.serve(async (req: Request) => {
         if (newUsed !== coupon.used_value) {
           changedCoupons.push({
             id: coupon.id,
+            publicId: coupon.public_id,
             company: coupon.company,
             oldRemaining,
             newRemaining,
@@ -252,6 +256,7 @@ Deno.serve(async (req: Request) => {
             company: lead.company,
             balance: lead.newRemaining,
             couponId: lead.id,
+            couponPublicId: lead.publicId,
             extra: changedCoupons.length - 1,
           },
           // The user asked for this refresh and is watching it happen; holding

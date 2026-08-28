@@ -6,6 +6,7 @@ let couponWidgetDataKey = "CouponWidgetData"
 
 struct WidgetCoupon: Codable, Identifiable {
     let id: Int
+    let publicId: String?
     let company: String
     /// Already decrypted by the app — the widget never handles ciphertext.
     let code: String

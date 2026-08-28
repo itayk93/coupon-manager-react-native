@@ -243,7 +243,7 @@ TaskManager.defineTask(NEARBY_TASK, async ({ data, error }: any) => {
     content: {
       title: line.title,
       body: line.body,
-      data: { url: `/coupons/${target.couponId}`, type: "nearby_store" },
+      data: { url: `/coupons/${target.couponPublicId || target.couponId}`, type: "nearby_store" },
     },
     // null means now: the person is standing there.
     trigger: null,
