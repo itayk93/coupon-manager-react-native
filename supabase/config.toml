@@ -28,6 +28,11 @@ verify_jwt = true
 [functions.trigger-multipass-update]
 verify_jwt = true
 
+[functions.multipass-daily-codes]
+# Called by the CI scraper. Authentication is enforced inside the function
+# with MULTIPASS_CRON_TOKEN; no user JWT is available to the scheduled job.
+verify_jwt = false
+
 [functions.coupon-vault]
 verify_jwt = true
 

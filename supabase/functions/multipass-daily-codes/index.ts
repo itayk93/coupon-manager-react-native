@@ -9,8 +9,11 @@ const GOOGLE_PLACES_TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:s
 
 type CouponRow = {
   id: number;
+  user_id: number;
   company: string;
   code: string;
+  value: number;
+  used_value: number;
   status: string;
   auto_download_details: string | null;
   last_scraped: string | null;
@@ -35,7 +38,169 @@ async function sha256(value: string): Promise<string> {
 
 async function requireDailyToken(req: Request) {
   const token = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1] || '';
-  if (!token || await sha256(token) !== TOKEN_SHA256) throw new Error('UNAUTHENTICATED');
+  const cronToken = req.headers.get('x-cron-token') || '';
+  const expectedCronToken = Deno.env.get('MULTIPASS_CRON_TOKEN') || '';
+  let mismatch = cronToken.length ^ expectedCronToken.length;
+  for (let index = 0; index < Math.max(cronToken.length, expectedCronToken.length); index += 1) {
+    mismatch |= (cronToken.charCodeAt(index) || 0) ^ (expectedCronToken.charCodeAt(index) || 0);
+  }
+  const cronMatches = cronToken.length > 0 && mismatch === 0;
+  if (!cronMatches && (!token || await sha256(token) !== TOKEN_SHA256)) throw new Error('UNAUTHENTICATED');
+}
+
+function normalizeCard(value: unknown) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function parseAmount(value: unknown) {
+  const amount = Number.parseFloat(String(value ?? '').replace(/[^\d.,-]/g, '').replace(',', '.'));
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function parseTransactionDate(value: unknown): string | null {
+  const match = String(value || '').match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (!match) return null;
+  const [, day, month, year, hour = '0', minute = '0'] = match;
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour) - 2, Number(minute))).toISOString();
+}
+
+type ScrapeTransaction = {
+  transaction_date?: string;
+  location?: string;
+  recharge_amount?: string | number;
+  usage_amount?: string | number;
+  reference_number?: string;
+};
+
+type ScrapeResult = { card_number?: string; transactions?: ScrapeTransaction[] };
+
+async function processScrapeResults(body: Record<string, unknown>) {
+  const results = Array.isArray(body.results) ? body.results as ScrapeResult[] : [];
+  const rawFailures = Array.isArray(body.failures) ? body.failures as Array<Record<string, unknown>> : [];
+  if (results.length > 100 || rawFailures.length > 100) throw new Error('INVALID_INPUT');
+
+  const db = adminClient();
+  const { data: couponData, error: couponError } = await db.from('coupon')
+    .select('id,user_id,company,code,value,used_value,status,auto_download_details,last_scraped,last_detail_view,last_company_view,last_code_view')
+    .eq('auto_download_details', 'Multipass');
+  if (couponError) throw couponError;
+
+  const couponsByCard = new Map<string, CouponRow>();
+  for (const coupon of (couponData || []) as CouponRow[]) {
+    const card = normalizeCard(await decryptCouponValue(coupon.code));
+    if (card) couponsByCard.set(card, coupon);
+  }
+
+  const items: Array<Record<string, unknown>> = [];
+  const failures = rawFailures.map((failure) => {
+    const coupon = couponsByCard.get(normalizeCard(failure.card_number));
+    return `${coupon?.company || 'קופון לא מזוהה'}: ${String(failure.error || 'scraper failed')}`;
+  });
+  let processed = 0;
+  const now = new Date().toISOString();
+
+  for (const cardResult of results) {
+    const coupon = couponsByCard.get(normalizeCard(cardResult.card_number));
+    if (!coupon) {
+      failures.push('התקבלה תוצאה לכרטיס שלא נמצא במערכת');
+      continue;
+    }
+
+    const { data: existingRows, error: existingError } = await db.from('coupon_transaction')
+      .select('reference_number')
+      .eq('coupon_id', coupon.id)
+      .not('reference_number', 'is', null);
+    if (existingError) throw existingError;
+    const existingRefs = new Set((existingRows || []).map((row) => String(row.reference_number)));
+    const newTransactions = [];
+    let newestUsage: ScrapeTransaction | null = null;
+
+    for (const transaction of Array.isArray(cardResult.transactions) ? cardResult.transactions : []) {
+      const reference = String(transaction.reference_number || '').trim() || null;
+      if (reference && existingRefs.has(reference)) continue;
+      const usageAmount = parseAmount(transaction.usage_amount);
+      const rechargeAmount = parseAmount(transaction.recharge_amount);
+      newTransactions.push({
+        coupon_id: coupon.id,
+        transaction_date: parseTransactionDate(transaction.transaction_date),
+        location: String(transaction.location || '').trim() || null,
+        recharge_amount: rechargeAmount || null,
+        usage_amount: usageAmount || null,
+        reference_number: reference,
+        source: 'Multipass',
+      });
+      if (reference) existingRefs.add(reference);
+      if (usageAmount > 0) newestUsage = transaction;
+    }
+    if (newTransactions.length > 0) {
+      const { error } = await db.from('coupon_transaction').insert(newTransactions);
+      if (error) throw error;
+    }
+
+    const { data: allTransactions, error: totalsError } = await db.from('coupon_transaction')
+      .select('usage_amount,recharge_amount')
+      .eq('coupon_id', coupon.id)
+      .eq('source', 'Multipass');
+    if (totalsError) throw totalsError;
+    const usedTotal = (allTransactions || []).reduce((sum, tx) => sum + Number(tx.usage_amount || 0), 0);
+    const rechargeTotal = (allTransactions || []).reduce((sum, tx) => sum + Number(tx.recharge_amount || 0), 0);
+    const newValue = rechargeTotal > 0 ? rechargeTotal : Number(coupon.value || 0);
+    const oldUsed = Number(coupon.used_value || 0);
+    const newUsed = Math.max(0, Math.min(newValue, usedTotal));
+    const delta = Math.max(0, newUsed - oldUsed);
+    const status = newUsed >= newValue ? 'נוצל' : 'פעיל';
+    const { error: updateError } = await db.from('coupon').update({
+      value: newValue,
+      used_value: newUsed,
+      status,
+      last_scraped: now,
+    }).eq('id', coupon.id);
+    if (updateError) throw updateError;
+    processed += 1;
+
+    if (delta > 0) {
+      const location = String(newestUsage?.location || '').trim();
+      const place = location ? await geocodeAddress(location).catch(() => null) : null;
+      const { error: usageError } = await db.from('coupon_usage').insert({
+        coupon_id: coupon.id,
+        used_amount: delta,
+        action: 'Multipass',
+        details: 'עדכון אוטומטי via Multipass CI flow',
+        timestamp: now,
+        place_name: place?.place_name || location || null,
+        place_address: place?.place_address || null,
+        latitude: place?.latitude ?? null,
+        longitude: place?.longitude ?? null,
+      });
+      if (usageError) throw usageError;
+      await notifyUsage({ user_id: coupon.user_id, coupon_id: coupon.id, company: coupon.company, delta }).catch(() => null);
+      items.push({
+        coupon_id: coupon.id,
+        company: coupon.company,
+        old_usage: oldUsed,
+        new_usage: newUsed,
+        delta,
+        value: newValue,
+        remaining_value: Math.max(0, newValue - newUsed),
+        place_name: place?.place_name || location || null,
+        place_address: place?.place_address || null,
+      });
+    }
+  }
+
+  return {
+    user_id: Number((couponData || [])[0]?.user_id || 1),
+    selected: results.length + rawFailures.length,
+    scanned: results.length,
+    updated: items.length,
+    processed,
+    failed: failures.length,
+    skipped: 0,
+    no_change: items.length === 0,
+    items,
+    failures,
+    run_date: new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }),
+  };
 }
 
 function shouldUpdateCoupon(coupon: CouponRow): boolean {
@@ -196,6 +361,9 @@ Deno.serve(async (req: Request) => {
     if (action === 'notify') {
       return jsonResponseFor(req, { result: await notifyUsage(body) });
     }
+    if (action === 'process_results') {
+      return jsonResponseFor(req, { result: await processScrapeResults(body) });
+    }
 
     const ids = Array.isArray(body.coupon_ids)
       ? body.coupon_ids.map(Number).filter((id: number) => Number.isSafeInteger(id) && id > 0)
@@ -203,7 +371,7 @@ Deno.serve(async (req: Request) => {
 
     let query = adminClient()
       .from('coupon')
-      .select('id,company,code,status,auto_download_details,last_scraped,last_detail_view,last_company_view,last_code_view')
+      .select('id,user_id,company,code,value,used_value,status,auto_download_details,last_scraped,last_detail_view,last_company_view,last_code_view')
       .eq('status', 'פעיל')
       .eq('auto_download_details', 'Multipass')
       .order('id');
