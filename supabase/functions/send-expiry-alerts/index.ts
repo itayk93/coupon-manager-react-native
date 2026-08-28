@@ -52,10 +52,11 @@ type PreferenceRow = {
   type_channels: DeliveryPrefs['type_channels'];
 };
 
-type UserRow = { id: number; email: string; first_name: string | null };
+type UserRow = { id: number; public_id: string; email: string; first_name: string | null };
 
 type CouponRow = {
   id: number;
+  public_id: string;
   user_id: number;
   company: string;
   value: number;
@@ -194,7 +195,7 @@ Deno.serve(async (req: Request) => {
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || '';
 
     const [{ data: users }, { data: prefRows }] = await Promise.all([
-      supabase.from('users').select('id, email, first_name').eq('is_deleted', false),
+      supabase.from('users').select('id, public_id, email, first_name').eq('is_deleted', false),
       supabase.from('notification_preferences')
         .select('user_id, email, push, in_app, windows, quiet_until, timezone, daily_within, type_channels'),
     ]);
@@ -247,7 +248,7 @@ Deno.serve(async (req: Request) => {
 
     const [{ data: coupons }, { data: subscriptions }] = await Promise.all([
       supabase.from('coupon')
-        .select('id, user_id, company, value, used_value, expiration')
+        .select('id, public_id, user_id, company, value, used_value, expiration')
         .eq('status', ACTIVE_STATUS)
         .in('user_id', dueUserIds)
         .in('expiration', [...allTargetDates]),
@@ -410,11 +411,11 @@ Deno.serve(async (req: Request) => {
                 expiration: c.expiration,
               })),
               appUrl: appBaseUrl
-                ? couponsUrl(appBaseUrl, emailClaimed.map((c) => c.id))
+                ? couponsUrl(appBaseUrl, emailClaimed.map((c) => c.public_id))
                 : null,
-              unsubscribeUrl: await buildUnsubscribeUrl(user.id, user.email),
+              unsubscribeUrl: await buildUnsubscribeUrl(user.public_id, user.email),
             }),
-            await buildUnsubscribeHeaders(user.id, user.email),
+            await buildUnsubscribeHeaders(user.public_id, user.email),
           );
           if (ok) emailCount += 1;
           await settle('email', days, emailClaimed, ok);

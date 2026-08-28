@@ -24,7 +24,12 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 const DEFAULT_SEND_HOUR = 9;
 
-export type DeliveryUser = { id: number; email: string | null; first_name: string | null };
+export type DeliveryUser = {
+  id: number;
+  public_id: string;
+  email: string | null;
+  first_name: string | null;
+};
 
 export type DeliveryPrefs = {
   email: boolean;
@@ -215,9 +220,9 @@ export async function deliver(
         highlight,
         ctaLabel,
         appUrl: appBase ? notificationUrl(appBase, copy.link) : null,
-        unsubscribeUrl: await buildUnsubscribeUrl(user.id, user.email),
+        unsubscribeUrl: await buildUnsubscribeUrl(user.public_id, user.email),
       }),
-      await buildUnsubscribeHeaders(user.id, user.email),
+      await buildUnsubscribeHeaders(user.public_id, user.email),
     );
   }
 

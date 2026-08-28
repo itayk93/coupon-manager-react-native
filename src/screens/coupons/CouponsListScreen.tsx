@@ -65,11 +65,11 @@ export function CouponsListScreen() {
   // A notification links here with the exact coupons it was written about, so
   // the list opens on those and not on the whole wallet. Cleared from the
   // banner, which is the only way back to everything.
-  const [focusIds, setFocusIds] = useState<number[] | null>(() => {
+  const [focusIds, setFocusIds] = useState<string[] | null>(() => {
     const parsed = String(params.ids ?? "")
       .split(",")
-      .map((value) => Number(value.trim()))
-      .filter((value) => Number.isFinite(value) && value > 0);
+      .map((value) => value.trim())
+      .filter((value) => /^cpn_[0-9a-f]{20}$/.test(value) || /^[1-9][0-9]*$/.test(value));
     return parsed.length ? parsed : null;
   });
 
@@ -129,7 +129,7 @@ export function CouponsListScreen() {
 
   const matchedCoupons = useMemo(() => {
     return coupons.filter((coupon) => {
-      if (focusIds && !focusIds.includes(coupon.id)) return false;
+      if (focusIds && !focusIds.includes(coupon.public_id) && !focusIds.includes(String(coupon.id))) return false;
 
       // Search
       if (!matchesCouponSearch(coupon, search)) return false;

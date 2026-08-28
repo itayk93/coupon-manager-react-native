@@ -68,8 +68,8 @@ function supa() {
   );
 }
 
-async function wrapMarketingEmail(html: string, userId: number, email: string) {
-  const unsubscribeUrl = await buildUnsubscribeUrl(userId, email);
+async function wrapMarketingEmail(html: string, userPublicId: string, email: string) {
+  const unsubscribeUrl = await buildUnsubscribeUrl(userPublicId, email);
   if (!unsubscribeUrl) return html;
 
   return `${html}
@@ -91,7 +91,7 @@ async function handleNewsletter(newsletterId: number) {
   // Subscribers who have not opted out
   const { data: users } = await supabase
     .from('users')
-    .select('id, email, first_name')
+    .select('id, public_id, email, first_name')
     .eq('newsletter_subscription', true)
     .eq('is_deleted', false);
 
@@ -104,10 +104,10 @@ async function handleNewsletter(newsletterId: number) {
     if (optedOut.has(u.id)) continue;
     const html = await wrapMarketingEmail(
       nl.custom_html || `<div dir="rtl"><h1>${nl.main_title || nl.title}</h1>${nl.content || ''}</div>`,
-      u.id,
+      u.public_id,
       u.email,
     );
-    const ok = await sendEmail(u.email, nl.title, html, await buildUnsubscribeHeaders(u.id, u.email));
+    const ok = await sendEmail(u.email, nl.title, html, await buildUnsubscribeHeaders(u.public_id, u.email));
     await supabase.from('newsletter_sendings').insert({
       newsletter_id: newsletterId,
       user_id: u.id,
@@ -181,7 +181,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const user = await requireUser(req);
-      requireSameUser(body.user_id, user.id);
+      requireSameUser(body.user_id, user);
       return await handleUpdateSummary(user.id, Number(body.updated || 0), Number(body.failed || 0), Number(body.skipped || 0));
     }
     if (mode === 'test') {

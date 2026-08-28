@@ -1915,6 +1915,7 @@ export type Database = {
           gender: string | null
           google_id: string | null
           id: number
+          public_id: string
           is_admin: boolean
           is_confirmed: boolean
           is_deleted: boolean | null
@@ -1941,6 +1942,7 @@ export type Database = {
           gender?: string | null
           google_id?: string | null
           id?: number
+          public_id?: string
           is_admin?: boolean
           is_confirmed?: boolean
           is_deleted?: boolean | null
@@ -1967,6 +1969,7 @@ export type Database = {
           gender?: string | null
           google_id?: string | null
           id?: number
+          public_id?: string
           is_admin?: boolean
           is_confirmed?: boolean
           is_deleted?: boolean | null

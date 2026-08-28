@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { publicUserId } from "@/lib/userId";
 
 export function useTriggerAutoUpdate() {
   const queryClient = useQueryClient();
@@ -11,7 +12,7 @@ export function useTriggerAutoUpdate() {
     mutationFn: async (couponId?: number) => {
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase.functions.invoke("update-balance", {
-        body: { user_id: user.id, coupon_id: couponId ?? null },
+        body: { user_id: publicUserId(user), coupon_id: couponId ?? null },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

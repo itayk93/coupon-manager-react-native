@@ -23,7 +23,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { action, user_id, step } = await req.json();
     const authenticatedUser = await requireUser(req);
-    requireSameUser(user_id, authenticatedUser.id);
+    requireSameUser(user_id, authenticatedUser);
     const userId = authenticatedUser.id;
 
     if (!Number.isFinite(userId) || userId <= 0) {

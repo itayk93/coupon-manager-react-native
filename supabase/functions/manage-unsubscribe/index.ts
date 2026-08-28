@@ -84,8 +84,15 @@ async function parseToken(payloadPart: string, signaturePart: string, secret: st
   const expectedSignature = await signPayload(payload, secret);
   if (!timingSafeEqual(expectedSignature, signaturePart)) return null;
 
-  const parsed = JSON.parse(payload) as { user_id?: number; email?: string; type?: string };
-  if (!parsed.user_id || !parsed.email || parsed.type !== 'unsubscribe') return null;
+  const parsed = JSON.parse(payload) as {
+    user_public_id?: string;
+    user_id?: number;
+    email?: string;
+    type?: string;
+  };
+  const hasIdentity = /^usr_[0-9a-f]{20}$/.test(parsed.user_public_id || '')
+    || (Number.isSafeInteger(parsed.user_id) && Number(parsed.user_id) > 0);
+  if (!hasIdentity || !parsed.email || parsed.type !== 'unsubscribe') return null;
   return parsed;
 }
 
@@ -126,8 +133,8 @@ Deno.serve(async (req: Request) => {
     const supabase = supa();
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, email')
-      .eq('id', tokenPayload.user_id)
+      .select('id, public_id, email')
+      .eq(tokenPayload.user_public_id ? 'public_id' : 'id', tokenPayload.user_public_id || tokenPayload.user_id)
       .eq('email', tokenPayload.email)
       .maybeSingle();
 

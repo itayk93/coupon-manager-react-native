@@ -31,7 +31,7 @@ export function normalizeBase(base: string): string {
  * Where the expiry email's button lands: straight at the coupon when there is
  * only one, at the list when there are several.
  */
-export function couponsUrl(base: string, couponIds: number[]): string {
+export function couponsUrl(base: string, couponIds: Array<string | number>): string {
   const root = normalizeBase(base);
   return couponIds.length === 1 ? `${root}/coupons/${couponIds[0]}` : `${root}/coupons`;
 }

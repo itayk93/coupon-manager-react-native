@@ -41,7 +41,7 @@ export function usePwaNotifications() {
 
   useEffect(() => {
     if (!user?.email || !profile?.id) return;
-    void maybePromptPushOnFirstPwaLaunch(user.email, profile.id);
+    void maybePromptPushOnFirstPwaLaunch(user.email);
   }, [user?.email, profile?.id]);
 
   const enable = useCallback(async () => {
@@ -50,7 +50,7 @@ export function usePwaNotifications() {
     }
     setIsBusy(true);
     try {
-      await subscribeToPushNotifications(user.email, profile.id);
+      await subscribeToPushNotifications(user.email);
       await refresh();
     } finally {
       setIsBusy(false);
@@ -73,7 +73,7 @@ export function usePwaNotifications() {
     }
     setIsBusy(true);
     try {
-      await sendTestPushToUser(user.email, profile.id);
+      await sendTestPushToUser(user.email);
     } finally {
       setIsBusy(false);
     }

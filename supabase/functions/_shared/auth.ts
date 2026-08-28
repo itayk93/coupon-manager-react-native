@@ -6,13 +6,19 @@ export async function requireUser(req: Request) {
   const client = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!, { global: { headers: { Authorization: `Bearer ${token}` } } });
   const { data: { user }, error } = await client.auth.getUser(token);
   if (error || !user?.email) throw new Error('UNAUTHENTICATED');
-  const result = await client.from('users').select('id,email,is_admin,is_deleted').eq('email', user.email.toLowerCase()).maybeSingle();
+  const result = await client.from('users').select('id,public_id,email,is_admin,is_deleted').eq('email', user.email.toLowerCase()).maybeSingle();
   if (result.error || !result.data || result.data.is_deleted) throw new Error('FORBIDDEN');
   return result.data;
 }
 
-export function requireSameUser(requestedId: unknown, authenticatedId: number) {
-  if (Number(requestedId) !== authenticatedId) throw new Error('FORBIDDEN');
+export function requireSameUser(
+  requestedId: unknown,
+  authenticatedUser: { id: number; public_id: string },
+) {
+  const requested = String(requestedId ?? '').trim();
+  if (requested !== authenticatedUser.public_id && requested !== String(authenticatedUser.id)) {
+    throw new Error('FORBIDDEN');
+  }
 }
 
 /** Like requireUser, but also demands the admin flag on the resolved row. */

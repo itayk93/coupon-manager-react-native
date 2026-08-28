@@ -22,18 +22,18 @@ async function signPayload(payload: string, secret: string): Promise<string> {
   return toBase64Url(new Uint8Array(signature));
 }
 
-export async function createUnsubscribeToken(userId: number, email: string): Promise<string | null> {
+export async function createUnsubscribeToken(userPublicId: string, email: string): Promise<string | null> {
   const secret = Deno.env.get('UNSUBSCRIBE_SECRET');
   if (!secret) return null;
-  const payload = JSON.stringify({ user_id: userId, email, type: 'unsubscribe' });
+  const payload = JSON.stringify({ user_public_id: userPublicId, email, type: 'unsubscribe' });
   return `${toBase64Url(textEncoder.encode(payload))}.${await signPayload(payload, secret)}`;
 }
 
 /** Null when UNSUBSCRIBE_SECRET or APP_BASE_URL is unset — callers omit the footer. */
-export async function buildUnsubscribeUrl(userId: number, email: string): Promise<string | null> {
+export async function buildUnsubscribeUrl(userPublicId: string, email: string): Promise<string | null> {
   const appBaseUrl = Deno.env.get('APP_BASE_URL');
   if (!appBaseUrl) return null;
-  const token = await createUnsubscribeToken(userId, email);
+  const token = await createUnsubscribeToken(userPublicId, email);
   if (!token) return null;
   return unsubscribeUrl(appBaseUrl, token);
 }
@@ -50,12 +50,12 @@ export async function buildUnsubscribeUrl(userId: number, email: string): Promis
  * degrades to "no headers" rather than a broken unsubscribe.
  */
 export async function buildUnsubscribeHeaders(
-  userId: number,
+  userPublicId: string,
   email: string,
 ): Promise<Record<string, string>> {
   const functionsBase = Deno.env.get('SUPABASE_URL');
   if (!functionsBase) return {};
-  const token = await createUnsubscribeToken(userId, email);
+  const token = await createUnsubscribeToken(userPublicId, email);
   if (!token) return {};
   const endpoint =
     `${functionsBase.replace(/\/$/, '')}/functions/v1/manage-unsubscribe` +

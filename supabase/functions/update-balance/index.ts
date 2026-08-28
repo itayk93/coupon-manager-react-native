@@ -108,7 +108,7 @@ Deno.serve(async (req: Request) => {
     const { user_id, coupon_id } = await req.json();
     if (!user_id) return jsonResponse({ error: 'user_id חסר' }, 400);
     const authenticatedUser = await requireUser(req);
-    requireSameUser(user_id, authenticatedUser.id);
+    requireSameUser(user_id, authenticatedUser);
     const userId = authenticatedUser.id;
 
     const supabase = createClient(
@@ -228,7 +228,7 @@ Deno.serve(async (req: Request) => {
       // user's preferences entirely, so someone who had turned everything off
       // still got a buzz whenever a balance moved.
       const [{ data: recipient }, { data: prefRow }, { data: subscriptions }] = await Promise.all([
-        serviceSupabase.from('users').select('id, email, first_name').eq('id', userId).maybeSingle(),
+        serviceSupabase.from('users').select('id, public_id, email, first_name').eq('id', userId).maybeSingle(),
         serviceSupabase.from('notification_preferences')
           .select('email, push, in_app, quiet_until, timezone, type_channels')
           .eq('user_id', userId).maybeSingle(),

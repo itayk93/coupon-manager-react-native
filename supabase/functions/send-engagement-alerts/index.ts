@@ -43,12 +43,13 @@ const EXPIRED_LOOKBACK_DAYS = 3;
 const SAVINGS_THRESHOLDS = [1000, 5000, 10000, 20000, 50000, 100000];
 const COUPON_COUNTS = [1, 10, 50, 100];
 
-type UserRow = { id: number; email: string; first_name: string | null };
+type UserRow = { id: number; public_id: string; email: string; first_name: string | null };
 
 type PrefRow = DeliveryPrefs & { user_id: number };
 
 type CouponRow = {
   id: number;
+  public_id: string;
   user_id: number;
   company: string;
   value: number | null;
@@ -141,7 +142,7 @@ Deno.serve(async (req) => {
     const supabase = createServiceClient();
 
     const [{ data: users }, { data: prefRows }] = await Promise.all([
-      supabase.from('users').select('id, email, first_name'),
+      supabase.from('users').select('id, public_id, email, first_name'),
       supabase.from('notification_preferences')
         .select('user_id, email, push, in_app, quiet_until, timezone, type_channels'),
     ]);
@@ -156,7 +157,7 @@ Deno.serve(async (req) => {
 
     const [{ data: coupons }, { data: subscriptions }] = await Promise.all([
       supabase.from('coupon')
-        .select('id, user_id, company, value, cost, used_value, status, expiration, date_added, last_detail_view, last_code_view')
+        .select('id, public_id, user_id, company, value, cost, used_value, status, expiration, date_added, last_detail_view, last_code_view')
         .in('user_id', userIds),
       supabase.from('push_subscriptions')
         .select('endpoint, subscription, kind, expo_token, user_id')
@@ -191,7 +192,7 @@ Deno.serve(async (req) => {
       if (!userCoupons.length) continue;
 
       const deliveryUser: DeliveryUser = {
-        id: user.id, email: user.email, first_name: user.first_name,
+        id: user.id, public_id: user.public_id, email: user.email, first_name: user.first_name,
       };
       const prefs = prefsFor(prefsByUser.get(user.id));
       const subscriptions = subsByUser.get(user.id) || [];
@@ -240,7 +241,7 @@ Deno.serve(async (req) => {
           {
             amount: idleAmount,
             months: Math.floor(IDLE_DAYS / 30),
-            couponIds: idle.map((coupon) => coupon.id),
+            couponIds: idle.map((coupon) => coupon.public_id),
           },
           monthKey,
           money(idleAmount),

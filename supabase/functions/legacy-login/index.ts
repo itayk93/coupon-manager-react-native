@@ -132,7 +132,7 @@ Deno.serve(async (request) => {
 
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id,email,password,first_name,last_name,is_admin,is_confirmed,is_deleted,auth_user_id')
+      .select('id,public_id,email,password,first_name,last_name,is_admin,is_confirmed,is_deleted,auth_user_id')
       .eq('email', email)
       .maybeSingle();
 
@@ -163,6 +163,7 @@ Deno.serve(async (request) => {
       token_hash: tokenHash,
       user: {
         id: user.id,
+        public_id: user.public_id,
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,

@@ -138,7 +138,7 @@ export async function getPushState(): Promise<PushState> {
   }
 }
 
-export async function subscribeToPushNotifications(userEmail: string, userId: number) {
+export async function subscribeToPushNotifications(userEmail: string) {
   const support = assertPushSupport();
   if (!support.supported) {
     throw new Error(support.reason || 'Push לא נתמך בדפדפן זה.');
@@ -173,7 +173,6 @@ export async function subscribeToPushNotifications(userEmail: string, userId: nu
     action: 'subscribe',
     subscription: subscription.toJSON(),
     platform: toPlatformLabel(),
-    user_id: userId,
     user_email: userEmail,
   });
 }
@@ -192,11 +191,10 @@ export async function unsubscribeFromPushNotifications() {
   }
 }
 
-export async function sendTestPushToUser(userEmail: string, userId: number) {
+export async function sendTestPushToUser(userEmail: string) {
   return invokePushFunction({
     action: 'test-user',
     user_email: userEmail,
-    user_id: userId,
     payload: {
       title: 'קופון מאסטר',
       body: 'זוהי התראת בדיקה. מערכת ה-Push פעילה.',
@@ -208,8 +206,8 @@ export async function sendTestPushToUser(userEmail: string, userId: number) {
   });
 }
 
-export async function maybePromptPushOnFirstPwaLaunch(userEmail?: string, userId?: number) {
-  if (!userEmail || !userId || typeof window === 'undefined') return;
+export async function maybePromptPushOnFirstPwaLaunch(userEmail?: string) {
+  if (!userEmail || typeof window === 'undefined') return;
 
   const support = assertPushSupport();
   if (!support.supported || !support.isStandalone) return;
@@ -232,7 +230,7 @@ export async function maybePromptPushOnFirstPwaLaunch(userEmail?: string, userId
 
     inFlight = true;
     try {
-      await subscribeToPushNotifications(userEmail, userId);
+      await subscribeToPushNotifications(userEmail);
       cleanup();
     } catch {
       if (Notification.permission !== 'default') {

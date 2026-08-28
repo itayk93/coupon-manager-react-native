@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { publicUserId } from '@/lib/userId';
 
 export type TourStepKey = 'index' | 'add_coupon' | 'coupon_detail';
 
@@ -24,7 +25,7 @@ export function useUserTour() {
       const { data, error } = await supabase.functions.invoke('manage-user-tour', {
         body: {
           action: 'get',
-          user_id: user.id,
+          user_id: publicUserId(user),
         },
       });
       if (error) throw error;
@@ -40,7 +41,7 @@ export function useUserTour() {
       const { data, error } = await supabase.functions.invoke('manage-user-tour', {
         body: {
           action: 'mark_step',
-          user_id: user.id,
+          user_id: publicUserId(user),
           step,
         },
       });

@@ -164,7 +164,7 @@ Deno.serve(async (req: Request) => {
     }
     if (!isCronRequest(req)) {
       const authenticatedUser = await requireUser(req);
-      requireSameUser(userId, authenticatedUser.id);
+      requireSameUser(userId, authenticatedUser);
     }
 
     const supabase = supa();

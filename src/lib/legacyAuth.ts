@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type LegacyUser = {
   id: number;
+  /** Opaque external identity. Optional only for sessions cached before rollout. */
+  public_id?: string;
   email: string;
   first_name: string;
   last_name: string;
@@ -43,7 +45,7 @@ export async function clearLegacyUser(): Promise<void> {
 async function getAppUser(authUserId: string, email: string): Promise<LegacyUser> {
   const { data: linkedUser, error: linkedError } = await supabase
     .from("users")
-    .select("id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
+    .select("id,public_id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
     .eq("auth_user_id", authUserId)
     .maybeSingle();
 
@@ -52,7 +54,7 @@ async function getAppUser(authUserId: string, email: string): Promise<LegacyUser
   if (!data) {
     const { data: emailUser, error: emailError } = await supabase
       .from("users")
-      .select("id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
+      .select("id,public_id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
       .eq("email", email)
       .maybeSingle();
     if (emailError) throw emailError;
@@ -67,6 +69,7 @@ async function getAppUser(authUserId: string, email: string): Promise<LegacyUser
 
   return {
     id: data.id,
+    public_id: data.public_id,
     email: data.email,
     first_name: data.first_name,
     last_name: data.last_name,

@@ -47,7 +47,7 @@ function prefsFor(row: any): DeliveryPrefs {
 
 async function loadRecipient(supabase: any, userId: number) {
   const [{ data: user }, { data: prefs }, { data: subs }] = await Promise.all([
-    supabase.from('users').select('id, email, first_name').eq('id', userId).maybeSingle(),
+    supabase.from('users').select('id, public_id, email, first_name').eq('id', userId).maybeSingle(),
     supabase.from('notification_preferences')
       .select('email, push, in_app, quiet_until, timezone, type_channels')
       .eq('user_id', userId).maybeSingle(),
