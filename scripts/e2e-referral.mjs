@@ -365,6 +365,18 @@ try {
   )).rows;
   check('and opens on the one ladder everybody is on', ladder.length === 3, JSON.stringify(ladder));
 
+  // The partner is the one person in a chain who is never attributed, so for a
+  // long time they were also the one person `my_referral_status` had nothing to
+  // say about — a partner who opened the invite screen was told invites were
+  // not open for their account, while their link sat in the admin panel.
+  const partnerStatus = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/my_referral_status`, {
+    method: 'POST',
+    headers: { apikey: process.env.SUPABASE_ANON_KEY, authorization: `Bearer ${partnerUser.token}`, 'content-type': 'application/json' },
+    body: '{}',
+  }).then((r) => r.json());
+  check('a fresh partner can read their own code from the invite screen',
+    partnerStatus?.[0]?.code === createdCode, JSON.stringify(partnerStatus));
+
   const twice = await adminRpc('referral_create_campaign_for_user', { p_user_id: partnerUser.appId });
   check('a second live campaign for the same person is refused', twice.status >= 400, `got ${twice.status}`);
 
