@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CheckCircle, Clock, Gift, TrendingUp, Users, XCircle } from "lucide-react-native";
+import { CheckCircle, ChevronLeft, Clock, FileText, Star, XCircle, Zap } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -18,9 +19,16 @@ import { useMyReferralStatus } from "@/hooks/useReferral";
 import { useMyApplication, useSubmitApplication } from "@/hooks/useReferralApplication";
 import { fonts, radii, shadows } from "@/lib/theme";
 
+const REWARDS = [
+  { target: 10, metric: "מופעלים", prize: "קופון 50₪", emoji: "🎁", color: "#3b82f6" },
+  { target: 25, metric: "מופעלים", prize: "קופון 50₪", emoji: "🏆", color: "#8b5cf6" },
+  { target: 25, metric: "שנשארו", prize: "100₪ בביט", emoji: "💸", color: "#10b981" },
+];
+
 export function ReferralProgramScreen() {
   const { theme } = useAppTheme();
-  const { session, user } = useAuth();
+  const router = useRouter();
+  const { session } = useAuth();
   const { data: referralStatus, isLoading: loadingStatus } = useMyReferralStatus();
   const { data: application, isLoading: loadingApp } = useMyApplication();
   const submit = useSubmitApplication();
@@ -40,171 +48,164 @@ export function ReferralProgramScreen() {
       <Header title="תוכנית השותפים" showBack />
       <ScrollView contentContainerStyle={styles.content}>
 
-        <View style={[styles.heroCard, { backgroundColor: theme.primary }]}>
-          <View style={styles.heroMascot}>
-            <CharacterSpotlight character="investigator" state="talking" size="small" tone="none" />
+        {/* ── Hero ── */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroGradient}>
+            <CharacterSpotlight character="investigator" state="talking" size="medium" tone="none" />
+            <Text style={styles.heroTitle}>הזמינו חברים.{"\n"}קבלו פרסים.</Text>
+            <Text style={styles.heroTag}>תוכנית השותפים של קופון מאסטר</Text>
           </View>
-          <Text style={styles.heroTitle}>הרוויחו מהפניות לקופון מאסטר</Text>
-          <Text style={styles.heroSub}>
-            הזמינו חברים, עקבו אחרי ההתקדמות, וקבלו תגמולים אמיתיים
-          </Text>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>איך זה עובד?</Text>
-
-        <View style={styles.stepsContainer}>
-          <StepCard
-            icon={<Users size={24} color={theme.primary} />}
-            title="הגישו בקשה"
-            description="מלאו את הטופס למטה ונחזור אליכם"
-            theme={theme}
-          />
-          <StepCard
-            icon={<Gift size={24} color={theme.primary} />}
-            title="קבלו קישור אישי"
-            description="לאחר אישור תקבלו קישור ייחודי לשיתוף"
-            theme={theme}
-          />
-          <StepCard
-            icon={<TrendingUp size={24} color={theme.primary} />}
-            title="הזמינו והרוויחו"
-            description="כל חבר שנרשם ומשתמש באפליקציה מקדם אתכם לפרסים"
-            theme={theme}
-          />
+        {/* ── Steps ── */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>3 צעדים פשוטים</Text>
+        <View style={styles.stepsRow}>
+          <StepBubble n={1} label="הגישו בקשה" icon="📝" theme={theme} />
+          <View style={[styles.stepLine, { backgroundColor: theme.border }]} />
+          <StepBubble n={2} label="קבלו קישור" icon="🔗" theme={theme} />
+          <View style={[styles.stepLine, { backgroundColor: theme.border }]} />
+          <StepBubble n={3} label="הרוויחו!" icon="🎉" theme={theme} />
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>תנאי התוכנית</Text>
-
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <TermRow label="שלב 1 — הפעלה" value="המשתמש מוסיף קופון + 3 ימים פעילים תוך 30 יום" theme={theme} />
-          <TermRow label="שלב 2 — שימור" value="2 ימים פעילים נוספים בימים 31–60" theme={theme} />
-          <Text style={[styles.termNote, { color: theme.textMuted }]}>
-            משתמש ״שנשאר״ = עבר גם הפעלה וגם שימור. כלומר הוא פעיל באמת ולא רק נרשם.
-          </Text>
-          <View style={styles.divider} />
-          <TermRow label="10 משתמשים מופעלים" value="קופון 50₪" theme={theme} highlight />
-          <TermRow label="25 משתמשים מופעלים" value="קופון 50₪" theme={theme} highlight />
-          <TermRow label="25 משתמשים שנשארו" value="100₪ במזומן" theme={theme} highlight />
-          <View style={styles.divider} />
-          <Text style={[styles.termNote, { color: theme.textMuted }]}>
-            הפניות עקיפות נספרות גם — אם מישהו שהזמנתם הופך שותף בעצמו, המשתמשים שלו נספרים גם לכם.
-          </Text>
+        {/* ── Rewards ── */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>מה מרוויחים?</Text>
+        <View style={styles.rewardsStack}>
+          {REWARDS.map((r, i) => (
+            <View key={i} style={[styles.rewardCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <View style={[styles.rewardBadge, { backgroundColor: r.color }]}>
+                <Text style={styles.rewardEmoji}>{r.emoji}</Text>
+              </View>
+              <View style={styles.rewardBody}>
+                <Text style={[styles.rewardTarget, { color: theme.text }]}>
+                  {r.target} משתמשים {r.metric}
+                </Text>
+                <Text style={[styles.rewardPrize, { color: r.color }]}>{r.prize}</Text>
+              </View>
+              <Star size={16} color={r.color} />
+            </View>
+          ))}
         </View>
 
+        {/* ── How it counts ── */}
+        <View style={[styles.infoCard, { backgroundColor: "#eff6ff", borderColor: "#bfdbfe" }]}>
+          <Zap size={18} color="#3b82f6" />
+          <View style={styles.infoBody}>
+            <Text style={[styles.infoTitle, { color: "#1e40af" }]}>איך סופרים?</Text>
+            <Text style={[styles.infoText, { color: "#1e40af" }]}>
+              <Text style={{ fontFamily: fonts.bodyBold }}>הפעלה</Text> = המשתמש הוסיף קופון + 3 ימים פעילים תוך 30 יום{"\n"}
+              <Text style={{ fontFamily: fonts.bodyBold }}>שימור</Text> = 2 ימים פעילים נוספים בימים 31–60{"\n"}
+              הפניות עקיפות נספרות גם — שותף שהבאתם מזמין אנשים? נספר גם לכם 🤝
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Mascot helper + Status / Form ── */}
         {(loadingStatus || loadingApp) ? (
           <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 24 }} />
         ) : isPartner ? (
-          <View style={[styles.statusCard, { backgroundColor: "#dcfce7", borderColor: "#86efac" }]}>
-            <CheckCircle size={24} color="#16a34a" />
-            <Text style={[styles.statusText, { color: "#16a34a" }]}>
-              את/ה כבר שותף/ה פעיל/ה! עברו למסך ההזמנות כדי לשתף את הקישור שלכם.
-            </Text>
-          </View>
+          <StatusBanner
+            bg="#dcfce7" border="#86efac" color="#16a34a"
+            icon={<CheckCircle size={22} color="#16a34a" />}
+            text="את/ה כבר שותף/ה! עברו למסך ההזמנות כדי לשתף."
+          />
         ) : wasApproved ? (
-          <View style={[styles.statusCard, { backgroundColor: "#dcfce7", borderColor: "#86efac" }]}>
-            <CheckCircle size={24} color="#16a34a" />
-            <Text style={[styles.statusText, { color: "#16a34a" }]}>
-              הבקשה אושרה! ניצור איתכם קשר בקרוב.
-            </Text>
-          </View>
+          <StatusBanner
+            bg="#dcfce7" border="#86efac" color="#16a34a"
+            icon={<CheckCircle size={22} color="#16a34a" />}
+            text="הבקשה אושרה! ניצור איתכם קשר בקרוב."
+          />
         ) : hasPending ? (
-          <View style={[styles.statusCard, { backgroundColor: "#fef9c3", borderColor: "#fde047" }]}>
-            <Clock size={24} color="#ca8a04" />
-            <Text style={[styles.statusText, { color: "#ca8a04" }]}>
-              הבקשה שלכם התקבלה וממתינה לאישור. ניצור איתכם קשר בהקדם.
-            </Text>
-          </View>
+          <StatusBanner
+            bg="#fef9c3" border="#fde047" color="#ca8a04"
+            icon={<Clock size={22} color="#ca8a04" />}
+            text="הבקשה התקבלה וממתינה לאישור ⏳"
+          />
         ) : (
           <>
             {wasRejected ? (
-              <View style={[styles.statusCard, { backgroundColor: "#fee2e2", borderColor: "#fca5a5" }]}>
-                <XCircle size={24} color="#dc2626" />
-                <Text style={[styles.statusText, { color: "#dc2626" }]}>
-                  הבקשה הקודמת לא אושרה.{application?.review_note ? ` (${application.review_note})` : ""} ניתן להגיש שוב.
-                </Text>
-              </View>
+              <StatusBanner
+                bg="#fee2e2" border="#fca5a5" color="#dc2626"
+                icon={<XCircle size={22} color="#dc2626" />}
+                text={`הבקשה הקודמת לא אושרה.${application?.review_note ? ` (${application.review_note})` : ""} ניתן להגיש שוב.`}
+              />
             ) : null}
 
-            <View style={styles.formHeader}>
-              <CharacterSpotlight character="helper" state="cheering" size="small" tone="mint" />
-              <Text style={[styles.sectionTitle, { color: theme.text, flex: 1 }]}>הגשת בקשה</Text>
-            </View>
-
-            {!session ? (
-              <Text style={[styles.loginNote, { color: theme.textMuted }]}>
-                יש להתחבר כדי להגיש בקשה
-              </Text>
-            ) : (
-              <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <FormField
-                  label="שם מלא *"
-                  value={fullName}
-                  onChange={setFullName}
-                  placeholder="השם שיופיע בעמוד השותפים"
-                  theme={theme}
-                />
-                <FormField
-                  label="אימייל *"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="כתובת אימייל ליצירת קשר"
-                  theme={theme}
-                  keyboardType="email-address"
-                />
-                <FormField
-                  label="טלפון"
-                  value={phone}
-                  onChange={setPhone}
-                  placeholder="אופציונלי"
-                  theme={theme}
-                  keyboardType="phone-pad"
-                />
-                <FormField
-                  label="למה אתם רוצים להצטרף?"
-                  value={reason}
-                  onChange={setReason}
-                  placeholder="ספרו לנו קצת על עצמכם..."
-                  theme={theme}
-                  multiline
-                />
-
-                <TouchableOpacity
-                  style={[styles.submitBtn, { backgroundColor: theme.primary, opacity: submit.isPending ? 0.6 : 1 }]}
-                  onPress={() => submit.mutate({ fullName, email, phone, reason })}
-                  disabled={submit.isPending || !fullName.trim() || !email.trim()}
-                >
-                  {submit.isPending ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.submitText}>שליחת בקשה</Text>
-                  )}
-                </TouchableOpacity>
+            <View style={styles.formSection}>
+              <View style={styles.formTitleRow}>
+                <CharacterSpotlight character="helper" state="cheering" size="small" tone="mint" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 0 }]}>רוצים להצטרף?</Text>
+                  <Text style={[styles.formSubtitle, { color: theme.textMuted }]}>מלאו את הפרטים ונחזור אליכם</Text>
+                </View>
               </View>
-            )}
+
+              {!session ? (
+                <View style={[styles.loginCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                  <Text style={[styles.loginNote, { color: theme.textMuted }]}>
+                    יש להתחבר כדי להגיש בקשה
+                  </Text>
+                </View>
+              ) : (
+                <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                  <FormField label="שם מלא *" value={fullName} onChange={setFullName} placeholder="איך קוראים לכם?" theme={theme} />
+                  <FormField label="אימייל *" value={email} onChange={setEmail} placeholder="your@email.com" theme={theme} keyboardType="email-address" />
+                  <FormField label="טלפון" value={phone} onChange={setPhone} placeholder="אופציונלי" theme={theme} keyboardType="phone-pad" />
+                  <FormField label="למה אתם רוצים להצטרף?" value={reason} onChange={setReason} placeholder="ספרו לנו קצת..." theme={theme} multiline />
+
+                  <TouchableOpacity
+                    style={[styles.submitBtn, { opacity: submit.isPending ? 0.6 : 1 }]}
+                    onPress={() => submit.mutate({ fullName, email, phone, reason })}
+                    disabled={submit.isPending || !fullName.trim() || !email.trim()}
+                    activeOpacity={0.8}
+                  >
+                    {submit.isPending ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.submitText}>שליחת בקשה 🚀</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </>
         )}
 
-        <View style={{ height: 40 }} />
+        {/* ── Legal terms link ── */}
+        <TouchableOpacity
+          style={[styles.termsLink, { borderColor: theme.border }]}
+          onPress={() => router.push("/referral-terms")}
+          activeOpacity={0.7}
+        >
+          <FileText size={16} color={theme.textMuted} />
+          <Text style={[styles.termsLinkText, { color: theme.textMuted }]}>תנאי התחרות המלאים</Text>
+          <ChevronLeft size={14} color={theme.textMuted} />
+        </TouchableOpacity>
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function StepCard({ icon, title, description, theme }: { icon: React.ReactNode; title: string; description: string; theme: any }) {
+/* ─── Sub-components ─── */
+
+function StepBubble({ n, label, icon, theme }: { n: number; label: string; icon: string; theme: any }) {
   return (
-    <View style={[styles.stepCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-      {icon}
-      <Text style={[styles.stepTitle, { color: theme.text }]}>{title}</Text>
-      <Text style={[styles.stepDesc, { color: theme.textMuted }]}>{description}</Text>
+    <View style={styles.stepBubble}>
+      <View style={[styles.stepCircle, { backgroundColor: theme.primary }]}>
+        <Text style={styles.stepIcon}>{icon}</Text>
+      </View>
+      <Text style={[styles.stepNum, { color: theme.primary }]}>{n}</Text>
+      <Text style={[styles.stepLabel, { color: theme.text }]}>{label}</Text>
     </View>
   );
 }
 
-function TermRow({ label, value, theme, highlight }: { label: string; value: string; theme: any; highlight?: boolean }) {
+function StatusBanner({ bg, border, color, icon, text }: { bg: string; border: string; color: string; icon: React.ReactNode; text: string }) {
   return (
-    <View style={styles.termRow}>
-      <Text style={[styles.termLabel, { color: highlight ? theme.primary : theme.text }]}>{label}</Text>
-      <Text style={[styles.termValue, { color: theme.textMuted }]}>{value}</Text>
+    <View style={[styles.statusCard, { backgroundColor: bg, borderColor: border }]}>
+      {icon}
+      <Text style={[styles.statusText, { color }]}>{text}</Text>
     </View>
   );
 }
@@ -234,42 +235,154 @@ function FormField({ label, value, onChange, placeholder, theme, keyboardType, m
   );
 }
 
+/* ─── Styles ─── */
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  content: { padding: 16, gap: 16 },
-  heroCard: { borderRadius: radii.lg, padding: 24, gap: 8, alignItems: "center", overflow: "hidden" },
-  heroMascot: { marginBottom: 4 },
-  formHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 8 },
-  heroTitle: { fontFamily: fonts.display, fontSize: 22, color: "#fff", textAlign: "center" },
-  heroSub: { fontFamily: fonts.body, fontSize: 14, color: "rgba(255,255,255,0.85)", textAlign: "center" },
-  sectionTitle: { fontFamily: fonts.displaySemi, fontSize: 18, textAlign: "right", marginTop: 8 },
-  stepsContainer: { gap: 10 },
-  stepCard: {
-    borderRadius: radii.md, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 6,
-    alignItems: "center", ...shadows.card,
+  content: { padding: 16, gap: 20 },
+
+  heroCard: { borderRadius: 20, overflow: "hidden" },
+  heroGradient: {
+    backgroundColor: "#1d4ed8",
+    padding: 28,
+    alignItems: "center",
+    gap: 12,
   },
-  stepTitle: { fontFamily: fonts.bodyBold, fontSize: 15 },
-  stepDesc: { fontFamily: fonts.body, fontSize: 13, textAlign: "center" },
-  card: { borderRadius: radii.lg, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 10, ...shadows.card },
-  termRow: { gap: 2 },
-  termLabel: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "right" },
-  termValue: { fontFamily: fonts.body, fontSize: 13, textAlign: "right" },
-  termNote: { fontFamily: fonts.body, fontSize: 12, textAlign: "right", lineHeight: 18 },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: "#e2e8f0", marginVertical: 4 },
+  heroTitle: {
+    fontFamily: fonts.display,
+    fontSize: 28,
+    color: "#fff",
+    textAlign: "center",
+    lineHeight: 38,
+  },
+  heroTag: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+
+  sectionTitle: {
+    fontFamily: fonts.displaySemi,
+    fontSize: 20,
+    textAlign: "right",
+    marginTop: 4,
+  },
+
+  stepsRow: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: 0,
+  },
+  stepBubble: { alignItems: "center", width: 80, gap: 4 },
+  stepCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepIcon: { fontSize: 22 },
+  stepNum: { fontFamily: fonts.display, fontSize: 13 },
+  stepLabel: { fontFamily: fonts.bodyBold, fontSize: 11, textAlign: "center" },
+  stepLine: { height: 2, flex: 1, marginTop: 26, borderRadius: 1 },
+
+  rewardsStack: { gap: 10 },
+  rewardCard: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...shadows.card,
+  },
+  rewardBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rewardEmoji: { fontSize: 22 },
+  rewardBody: { flex: 1, gap: 2 },
+  rewardTarget: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "right" },
+  rewardPrize: { fontFamily: fonts.display, fontSize: 16, textAlign: "right" },
+
+  infoCard: {
+    flexDirection: "row-reverse",
+    gap: 10,
+    padding: 14,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+  },
+  infoBody: { flex: 1, gap: 4 },
+  infoTitle: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "right" },
+  infoText: { fontFamily: fonts.body, fontSize: 12, textAlign: "right", lineHeight: 20 },
+
   statusCard: {
-    flexDirection: "row-reverse", alignItems: "center", gap: 12,
-    borderRadius: radii.md, borderWidth: 1, padding: 16,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    padding: 16,
   },
   statusText: { fontFamily: fonts.body, fontSize: 14, flex: 1, textAlign: "right" },
-  loginNote: { fontFamily: fonts.body, fontSize: 14, textAlign: "center", marginTop: 8 },
-  fieldGroup: { gap: 4 },
+
+  formSection: { gap: 12 },
+  formTitleRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
+  formSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "right" },
+  formCard: {
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 18,
+    gap: 14,
+    ...shadows.card,
+  },
+  loginCard: {
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 24,
+    alignItems: "center",
+  },
+  loginNote: { fontFamily: fonts.body, fontSize: 14, textAlign: "center" },
+
+  fieldGroup: { gap: 6 },
   fieldLabel: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "right" },
   input: {
-    borderRadius: radii.md, borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12, paddingVertical: 10,
-    fontFamily: fonts.body, fontSize: 14, textAlign: "right",
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    textAlign: "right",
   },
   inputMultiline: { minHeight: 80, textAlignVertical: "top" },
-  submitBtn: { borderRadius: radii.md, paddingVertical: 14, alignItems: "center", marginTop: 8 },
-  submitText: { fontFamily: fonts.bodyBold, fontSize: 16, color: "#fff" },
+
+  submitBtn: {
+    backgroundColor: "#1d4ed8",
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  submitText: { fontFamily: fonts.display, fontSize: 17, color: "#fff" },
+
+  termsLink: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  termsLinkText: { fontFamily: fonts.body, fontSize: 13 },
 });
