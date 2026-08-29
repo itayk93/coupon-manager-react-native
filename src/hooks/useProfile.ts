@@ -41,7 +41,7 @@ export function useUpdateProfile() {
         .from("users")
         .update(updates)
         .eq("email", user.email)
-        .select()
+        .select(USER_COLUMNS)
         .single();
 
       if (error) throw error;
