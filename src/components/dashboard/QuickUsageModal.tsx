@@ -27,6 +27,12 @@ type QuickUsageModalProps = {
   onClose: () => void;
   coupons: DecryptedCoupon[];
   preselectedCoupon?: DecryptedCoupon | null;
+  /**
+   * A screenshot handed over from outside the app (the system share sheet).
+   * Detection runs on it as soon as the modal opens, so the user lands straight
+   * on the results instead of picking the image again.
+   */
+  initialScreenshotBase64?: string | null;
 };
 
 export function QuickUsageModal({
@@ -34,6 +40,7 @@ export function QuickUsageModal({
   onClose,
   coupons,
   preselectedCoupon,
+  initialScreenshotBase64,
 }: QuickUsageModalProps) {
   const { theme } = useAppTheme();
   const recordUsage = useRecordUsage();
@@ -237,6 +244,23 @@ export function QuickUsageModal({
       console.error(e);
     }
   };
+
+  // Screenshots arriving from the share sheet skip the picker entirely.
+  useEffect(() => {
+    if (!visible || !initialScreenshotBase64) return;
+    let cancelled = false;
+    setError("");
+    parseUsage
+      .mutateAsync(initialScreenshotBase64)
+      .then((usages) => {
+        if (!cancelled) setDetectedUsages(usages);
+      })
+      .catch((e) => console.error(e));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialScreenshotBase64]);
 
   const updateDetectedUsage = (id: string, field: keyof ParsedUsage, value: string | number) => {
     setDetectedUsages((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));

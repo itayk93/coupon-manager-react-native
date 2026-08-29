@@ -35,6 +35,7 @@ import { BiometricGate } from "@/components/layout/BiometricGate";
 import { BrandLaunchVideo } from "@/components/layout/BrandLaunchVideo";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
+import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -205,6 +206,7 @@ function RootLayoutNav() {
           />
           <BottomNav />
           <BiometricGate />
+          <SharedScreenshotUsage />
           <ConfirmHost />
           <ToastHost />
 

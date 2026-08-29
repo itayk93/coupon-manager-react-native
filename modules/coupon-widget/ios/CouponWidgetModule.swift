@@ -5,6 +5,10 @@ import WidgetKit
 public let couponWidgetAppGroup = "group.com.itaykarkason.couponmaster"
 public let couponWidgetDataKey = "CouponWidgetData"
 
+/// Written by the share extension, read once by the app.
+/// Keep in sync with `targets/share/ShareViewController.swift`.
+public let couponSharedImageName = "shared-usage-screenshot.jpg"
+
 public class CouponWidgetModule: Module {
   public func definition() -> ModuleDefinition {
     Name("CouponWidget")
@@ -29,6 +33,19 @@ public class CouponWidgetModule: Module {
       let logos = container.appendingPathComponent("logos", isDirectory: true)
       try? FileManager.default.createDirectory(at: logos, withIntermediateDirectories: true)
       return logos.path
+    }
+
+    /// Hands over the screenshot the share extension left behind, if any, and
+    /// clears it so the same image is never imported twice.
+    Function("consumeSharedImage") { () -> String? in
+      guard let container = FileManager.default
+        .containerURL(forSecurityApplicationGroupIdentifier: couponWidgetAppGroup)
+      else { return nil }
+
+      let file = container.appendingPathComponent(couponSharedImageName)
+      guard let data = try? Data(contentsOf: file) else { return nil }
+      try? FileManager.default.removeItem(at: file)
+      return data.base64EncodedString()
     }
 
     Function("reloadWidgets") {

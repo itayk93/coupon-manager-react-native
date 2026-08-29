@@ -45,6 +45,7 @@ type CouponWidgetNativeModule = {
   setWidgetData(json: string): void;
   getWidgetData(): string | null;
   getSharedDirectory(): string | null;
+  consumeSharedImage(): string | null;
   reloadWidgets(): void;
 };
 
@@ -83,4 +84,13 @@ export function reloadWidgets(): void {
 /** Directory readable by both the app and the widget, or null off-device. */
 export function getSharedDirectory(): string | null {
   return native?.getSharedDirectory() ?? null;
+}
+
+/**
+ * A screenshot the user shared into the app from another app's share sheet,
+ * as base64 JPEG, or null when nothing is waiting. Reading it clears it, so a
+ * second call returns null until the next share.
+ */
+export function consumeSharedImage(): string | null {
+  return native?.consumeSharedImage?.() ?? null;
 }

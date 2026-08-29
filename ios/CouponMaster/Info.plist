@@ -34,13 +34,13 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+coupon-master</string>
+          <string>com.googleusercontent.apps.100904281039-2i02vthc885npv27pabi81eb12l1p11i</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.googleusercontent.apps.100904281039-2i02vthc885npv27pabi81eb12l1p11i</string>
+          <string>exp+coupon-master</string>
         </array>
       </dict>
     </array>
@@ -57,18 +57,24 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSBonjourServices</key>
+    <array>
+      <string>_expo._tcp</string>
+    </array>
     <key>NSCameraUsageDescription</key>
     <string>אפליקציה זו זקוקה לגישה למצלמה כדי לסרוק קודי קופון וברקודים.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>אפליקציה זו זקוקה לגישה לתמונות כדי לזהות פרטי שובר מצילום מסך.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>אפליקציה זו משתמשת ב-Face ID כדי לפתוח את הארנק שלך בצורה מאובטחת.</string>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>האפליקציה משתמשת במיקום שלך רק לאחר לחיצה על 'המיקום שלי', כדי לרשום היכן השתמשת בקופון.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>כדי להזכיר לך על קופון כשאתה ליד החנות. הבדיקה נעשית על המכשיר בלבד — המיקום שלך לא נשלח לשום מקום.</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>כדי להזכיר לך על קופון כשאתה ליד החנות, גם כשהאפליקציה סגורה. הבדיקה נעשית על המכשיר בלבד.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>האפליקציה משתמשת במיקום שלך רק לאחר לחיצה על 'המיקום שלי', כדי לרשום היכן השתמשת בקופון.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>אפליקציה זו זקוקה לגישה לתמונות כדי לזהות פרטי שובר מצילום מסך.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -77,6 +83,7 @@
     <string>$(RCT_METRO_PORT)</string>
     <key>UIBackgroundModes</key>
     <array>
+      <string>fetch</string>
       <string>location</string>
     </array>
     <key>UILaunchStoryboardName</key>

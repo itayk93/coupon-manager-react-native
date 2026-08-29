@@ -3132,7 +3132,7 @@ SPEC CHECKSUMS:
   ExpoModulesWorkletsAdapter: 970a0961ae66725e0adef3756ac12f0ba4122b57
   ExpoNotifications: 25e39e13c6c6f4bd599d3cf7992ca9e3b098d3e0
   ExpoRouter: a1fb93f5a12e2da8c892ab3eb270243c4021a698
-  ExpoSensors: e71c7b6cb0c09d3427ef6ae29c69532a10c86b05
+  ExpoSensors: 72ef8fec74066637a021b3390a35a416ad0ba951
   ExpoSharing: e4e2fbfafd062306474c3b8211319e40d86e9a7c
   ExpoSplashScreen: 9c11c0c7dd0c57853244d0ae640a63e42ede8ffd
   ExpoSymbols: 0efd93edf0f825bf3c762582b0769dd3b296235c

@@ -1,7 +1,20 @@
 package com.itaykarkason.couponmaster.widget
 
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Base64
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import java.io.ByteArrayOutputStream
+
+/**
+ * Screenshots arrive at full screen resolution and the app base64-encodes them
+ * into an edge function request, so cap the long edge before uploading.
+ * Keep in sync with `targets/share/ShareViewController.swift`.
+ */
+private const val MAX_DIMENSION = 1600
 
 class CouponWidgetModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -26,8 +39,63 @@ class CouponWidgetModule : Module() {
       }
     }
 
+    /**
+     * Hands over an image shared into the app through the system share sheet
+     * (ACTION_SEND), then clears the intent so the same picture is never
+     * imported twice.
+     */
+    Function("consumeSharedImage") {
+      val activity = appContext.currentActivity
+      val intent = activity?.intent
+      val uri: Uri? = when {
+        intent == null -> null
+        intent.action != Intent.ACTION_SEND -> null
+        intent.type?.startsWith("image/") != true -> null
+        else -> extraStream(intent)
+      }
+
+      if (uri == null) null else {
+        intent!!.action = null
+        intent.removeExtra(Intent.EXTRA_STREAM)
+        readScaledImage(activity!!, uri)
+      }
+    }
+
     Function("reloadWidgets") {
       appContext.reactContext?.let { CouponWidgetProvider.refreshAll(it) }
     }
+  }
+}
+
+@Suppress("DEPRECATION")
+private fun extraStream(intent: Intent): Uri? =
+  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+  } else {
+    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+  }
+
+private fun readScaledImage(context: android.content.Context, uri: Uri): String? {
+  val resolver = context.contentResolver
+
+  val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+  resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+
+  val longest = maxOf(bounds.outWidth, bounds.outHeight)
+  if (longest <= 0) return null
+
+  // Power-of-two subsampling is what BitmapFactory supports, and it decodes the
+  // smaller image directly rather than allocating the full-size one first.
+  var sample = 1
+  while (longest / sample > MAX_DIMENSION) sample *= 2
+
+  val options = BitmapFactory.Options().apply { inSampleSize = sample }
+  val bitmap = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
+    ?: return null
+
+  return ByteArrayOutputStream().use { out ->
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out)
+    bitmap.recycle()
+    Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
   }
 }
