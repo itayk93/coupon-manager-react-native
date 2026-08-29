@@ -165,8 +165,8 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
     }
     case 'share_received':
       return {
-        title: 'קופון חדש נחת בארנק',
-        body: `${payload.fromName} שלחו לך קופון של ${payload.company}. הוא כבר מחכה בארנק.`,
+        title: 'מחכה לך הזמנה לשיתוף קופון',
+        body: `${payload.fromName} הזמינו אותך לקבל קופון של ${payload.company}. הקופון ייפתח רק לאחר אישורך.`,
         link: '/sharing',
       };
     case 'balance_updated': {

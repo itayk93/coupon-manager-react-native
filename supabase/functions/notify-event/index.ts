@@ -99,7 +99,20 @@ Deno.serve(async (req) => {
 
       const result = await deliver(supabase, {
         user: recipient.user,
-        prefs: recipient.prefs,
+        // Share invitations are transactional mail: without the invitation the
+        // recipient cannot know there is a decision waiting. Push and in-app
+        // still follow their preferences.
+        prefs: {
+          ...recipient.prefs,
+          email: true,
+          type_channels: {
+            ...(recipient.prefs.type_channels || {}),
+            share_received: {
+              ...(recipient.prefs.type_channels?.share_received || {}),
+              email: true,
+            },
+          },
+        },
         subscriptions: recipient.subscriptions,
         type: 'coupon_finished',
         payload: { company: coupon.company, saved },
@@ -141,7 +154,7 @@ Deno.serve(async (req) => {
         payload: { fromName, company: coupon.company },
         // Per coupon per recipient: re-sharing the same coupon after revoking
         // it should not ring twice.
-        dedupeKey: `${coupon.id}:${recipientRow.id}`,
+        dedupeKey: null,
         respectQuietHours: false,
         ctaLabel: 'לראות את הקופון',
       });

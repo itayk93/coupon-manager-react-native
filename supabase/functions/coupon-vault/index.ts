@@ -60,12 +60,19 @@ Deno.serve(async (req) => {
     }
     if (body.action === 'get') {
       const opaqueId = publicId(body.publicId);
-      const query = db.from('coupon').select('*').eq('user_id', user.id);
+      const query = db.from('coupon').select('*');
       const { data, error } = opaqueId
         ? await query.eq('public_id', opaqueId).maybeSingle()
         : await query.eq('id', assertId(body.id)).maybeSingle();
       if (error) throw error;
       if (!data) throw new Error('NOT_FOUND');
+      if (data.user_id !== user.id) {
+        const { data: grant } = await db.from('coupon_shares').select('id')
+          .eq('coupon_id', data.id).eq('shared_with_user_id', user.id)
+          .eq('share_type', 'shared').eq('status', 'accepted')
+          .gt('share_expires_at', new Date().toISOString()).maybeSingle();
+        if (!grant) throw new Error('NOT_FOUND');
+      }
       return jsonResponseFor(req, { data: await decryptCoupon(data) });
     }
     if (body.action === 'create') {
@@ -85,9 +92,15 @@ Deno.serve(async (req) => {
       return jsonResponseFor(req, { data: await decryptCoupon(data) });
     }
     if (body.action === 'shared_with_me') {
-      const { data, error } = await db.from('coupon_shares').select('*, coupon:coupon_id(id,company,description,value,used_value,code,expiration), shared_by:shared_by_user_id(email,first_name,last_name)').eq('shared_with_user_id', user.id).eq('status', 'accepted').gt('share_expires_at', new Date().toISOString()).order('created_at', { ascending: false });
+      const { data, error } = await db.from('coupon_shares').select('*, coupon:coupon_id(id,company,description,value,used_value,code,expiration), shared_by:shared_by_user_id(email,first_name,last_name)').eq('shared_with_user_id', user.id).in('status', ['pending', 'accepted']).gt('share_expires_at', new Date().toISOString()).order('created_at', { ascending: false });
       if (error) throw error;
-      const hydrated = await Promise.all((data || []).map(async (share) => ({ ...share, coupon: share.coupon ? await decryptCoupon(share.coupon) : null })));
+      const hydrated = await Promise.all((data || []).map(async (share) => {
+        const coupon = share.coupon ? await decryptCoupon(share.coupon) : null;
+        // Invitation reveals its subject, not its secret. Code becomes visible
+        // only after the recipient explicitly accepts.
+        if (coupon && share.status === 'pending') coupon.code = null;
+        return { ...share, coupon };
+      }));
       return jsonResponseFor(req, { data: hydrated });
     }
     if (body.action === 'my_shares') {
@@ -99,14 +112,48 @@ Deno.serve(async (req) => {
     if (body.action === 'create_share') {
       const couponId = assertId(body.couponId);
       const email = String(body.recipientEmail || '').trim().toLowerCase();
+      const shareType = body.shareType === 'transfer' ? 'transfer' : body.shareType === 'shared' ? 'shared' : null;
+      if (!/^\S+@\S+\.\S+$/.test(email) || !shareType) throw new Error('INVALID_INPUT');
       const { data: coupon } = await db.from('coupon').select('id').eq('id', couponId).eq('user_id', user.id).maybeSingle();
       if (!coupon) throw new Error('NOT_FOUND');
       const { data: target } = await db.from('users').select('id').eq('email', email).maybeSingle();
       if (!target || target.id === user.id) throw new Error('RECIPIENT_NOT_FOUND');
+      const { data: existing } = await db.from('coupon_shares').select('id')
+        .eq('coupon_id', couponId).eq('shared_with_user_id', target.id)
+        .in('status', ['pending', 'accepted']).maybeSingle();
+      if (existing) throw new Error('SHARE_ALREADY_EXISTS');
       const expires = new Date(); expires.setDate(expires.getDate() + 30);
-      const { data, error } = await db.from('coupon_shares').insert({ coupon_id: couponId, shared_by_user_id: user.id, shared_with_user_id: target.id, share_token: crypto.randomUUID(), share_expires_at: expires.toISOString(), status: 'accepted', created_at: new Date().toISOString() }).select('id').single();
+      const { data, error } = await db.from('coupon_shares').insert({ coupon_id: couponId, shared_by_user_id: user.id, shared_with_user_id: target.id, recipient_email: email, share_type: shareType, share_token: crypto.randomUUID(), share_expires_at: expires.toISOString(), status: 'pending', created_at: new Date().toISOString() }).select('id').single();
       if (error) throw error;
-      return jsonResponseFor(req, { data }, 201);
+      // Invitation and mail are one server-side workflow. Waiting here avoids
+      // losing the mail when the app closes immediately after the mutation.
+      let emailSent = false;
+      try {
+        const notificationResponse = await fetch(`${Deno.env.get('SUPABASE_URL')!}/functions/v1/notify-event`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: req.headers.get('Authorization') || '',
+          },
+          body: JSON.stringify({ event: 'share_received', couponId, recipientEmail: email }),
+        });
+        const notification = await notificationResponse.json();
+        emailSent = notificationResponse.ok && notification?.result?.email === true;
+      } catch (notificationError) {
+        console.error('coupon-vault invitation notification', notificationError);
+      }
+      return jsonResponseFor(req, { data: { ...data, emailSent } }, 201);
+    }
+    if (body.action === 'respond_to_share') {
+      const id = assertId(body.id);
+      if (typeof body.accept !== 'boolean') throw new Error('INVALID_INPUT');
+      const callerDb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: req.headers.get('Authorization') || '' } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data, error } = await callerDb.rpc('respond_to_coupon_share', { p_share_id: id, p_accept: body.accept });
+      if (error) throw error;
+      return jsonResponseFor(req, { data: data?.[0] || null });
     }
     if (body.action === 'revoke_share') {
       const id = assertId(body.id);
@@ -118,7 +165,7 @@ Deno.serve(async (req) => {
     throw new Error('INVALID_ACTION');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'INTERNAL_ERROR';
-    const status = message === 'UNAUTHENTICATED' ? 401 : message === 'FORBIDDEN' ? 403 : message === 'NOT_FOUND' ? 404 : message.startsWith('INVALID_') || message === 'RECIPIENT_NOT_FOUND' ? 400 : 500;
+    const status = message === 'UNAUTHENTICATED' ? 401 : message === 'FORBIDDEN' ? 403 : message === 'NOT_FOUND' ? 404 : message === 'SHARE_ALREADY_EXISTS' ? 409 : message.startsWith('INVALID_') || message === 'RECIPIENT_NOT_FOUND' ? 400 : 500;
     console.error('coupon-vault', message);
     return jsonResponseFor(req, { error: message }, status);
   }

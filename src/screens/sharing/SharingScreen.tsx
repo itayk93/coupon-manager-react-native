@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Share2, Users, UserCheck, Plus, X, Trash2 } from "lucide-react-native";
+import { Plus, Trash2 } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
   useMyShares,
   useCreateShare,
   useRevokeShare,
+  useRespondToShare,
+  type ShareType,
 } from "@/hooks/useSharing";
 import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
@@ -40,10 +42,12 @@ export function SharingScreen() {
 
   const createShare = useCreateShare();
   const revokeShare = useRevokeShare();
+  const respondToShare = useRespondToShare();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [shareType, setShareType] = useState<ShareType>("shared");
   const [emailError, setEmailError] = useState("");
 
   const handleCreateShare = async () => {
@@ -60,10 +64,12 @@ export function SharingScreen() {
       await createShare.mutateAsync({
         couponId: selectedCouponId,
         recipientEmail: recipientEmail.trim(),
+        shareType,
       });
       setIsShareModalOpen(false);
       setRecipientEmail("");
       setSelectedCouponId(null);
+      setShareType("shared");
     } catch (e) {
       console.error(e);
     }
@@ -222,6 +228,26 @@ export function SharingScreen() {
                         יתרה: {formatIls(rem)}
                       </Text>
                     </View>
+                    {item.status === "pending" ? (
+                      <View style={styles.invitationActions}>
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          onPress={() => respondToShare.mutate({ shareId: item.id, accept: false })}
+                          style={[styles.secondaryAction, { borderColor: theme.border }]}
+                        >
+                          <Text style={[styles.secondaryActionText, { color: theme.textMuted }]}>דחייה</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          onPress={() => respondToShare.mutate({ shareId: item.id, accept: true })}
+                          style={[styles.primaryAction, { backgroundColor: theme.primary }]}
+                        >
+                          <Text style={styles.primaryActionText}>
+                            {item.share_type === "transfer" ? "אישור קבלת הקופון" : "אישור השיתוף"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
                   </View>
                 );
               })
@@ -249,15 +275,15 @@ export function SharingScreen() {
                   ]}
                 >
                   <View style={styles.shareCardHeader}>
-                    <TouchableOpacity
-                      onPress={() => handleRevoke(item.id, item.coupon?.company)}
-                      style={styles.revokeBtn}
-                    >
-                      <Trash2 size={16} color={theme.danger} />
-                      <Text style={[styles.revokeText, { color: theme.danger }]}>
-                        בטל
-                      </Text>
-                    </TouchableOpacity>
+                    {item.status === "pending" || item.status === "accepted" ? (
+                      <TouchableOpacity
+                        onPress={() => handleRevoke(item.id, item.coupon?.company)}
+                        style={styles.revokeBtn}
+                      >
+                        <Trash2 size={16} color={theme.danger} />
+                        <Text style={[styles.revokeText, { color: theme.danger }]}>בטל</Text>
+                      </TouchableOpacity>
+                    ) : <View />}
 
                     <View style={styles.companyGroup}>
                       <View style={{ alignItems: "flex-end" }}>
@@ -266,6 +292,11 @@ export function SharingScreen() {
                         </Text>
                         <Text style={[styles.sharedWithText, { color: theme.textMuted }]}>
                           {`שיתפתי את ${item.coupon?.company || "הקופון"} עם ${item.shared_with?.email || "מישהו שעוד לא הצטרף"}`}
+                        </Text>
+                        <Text style={[styles.sharedWithText, { color: theme.primary }]}>
+                          {item.status === "pending"
+                            ? `ממתין לאישור · ${item.share_type === "transfer" ? "העברת בעלות" : "שימוש משותף"}`
+                            : item.share_type === "transfer" ? "הועבר" : "שיתוף פעיל"}
                         </Text>
                       </View>
                       <Image
@@ -311,6 +342,26 @@ export function SharingScreen() {
             }}
             error={emailError}
           />
+
+          <Text style={[styles.fieldLabel, { color: theme.text }]}>
+            סוג השיתוף *
+          </Text>
+          <View style={styles.shareTypeRow}>
+            <TouchableOpacity
+              onPress={() => setShareType("shared")}
+              style={[styles.shareTypeOption, { borderColor: shareType === "shared" ? theme.primary : theme.border, backgroundColor: shareType === "shared" ? theme.primaryMuted : theme.inputBg }]}
+            >
+              <Text style={[styles.shareTypeTitle, { color: theme.text }]}>שימוש משותף</Text>
+              <Text style={[styles.shareTypeDescription, { color: theme.textMuted }]}>שניכם משתמשים באותה יתרה</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShareType("transfer")}
+              style={[styles.shareTypeOption, { borderColor: shareType === "transfer" ? theme.primary : theme.border, backgroundColor: shareType === "transfer" ? theme.primaryMuted : theme.inputBg }]}
+            >
+              <Text style={[styles.shareTypeTitle, { color: theme.text }]}>העברת בעלות</Text>
+              <Text style={[styles.shareTypeDescription, { color: theme.textMuted }]}>הקופון עובר אליו אחרי אישור</Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={[styles.fieldLabel, { color: theme.text }]}>
             בחר קופון לשיתוף *
@@ -549,4 +600,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
   },
+  invitationActions: {
+    flexDirection: "row-reverse",
+    gap: 8,
+    marginTop: 12,
+  },
+  primaryAction: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  primaryActionText: { color: "#fff", fontSize: 13, fontWeight: "800" },
+  secondaryAction: {
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+  },
+  secondaryActionText: { fontSize: 13, fontWeight: "700" },
+  shareTypeRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 14 },
+  shareTypeOption: { flex: 1, minHeight: 74, borderWidth: 1, borderRadius: 12, padding: 10, alignItems: "flex-end" },
+  shareTypeTitle: { fontSize: 13, fontWeight: "800", textAlign: "right" },
+  shareTypeDescription: { fontSize: 11, marginTop: 3, textAlign: "right" },
 });

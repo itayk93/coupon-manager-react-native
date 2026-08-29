@@ -4,12 +4,13 @@ import { CouponShare } from "@/integrations/supabase";
 import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
 import { logActivity } from "@/lib/activityLog";
-import { notifyEvent } from "@/lib/notifyEvent";
 
 export type PopulatedShare = CouponShare & {
   coupon: { id: number; company: string; description: string | null; value: number; used_value: number; code: string; expiration: string | null };
   shared_by: { email: string; first_name: string; last_name: string };
 };
+
+export type ShareType = "shared" | "transfer";
 
 export function useSharedWithMe() {
   const { user } = useAuth();
@@ -31,19 +32,36 @@ export function useCreateShare() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ couponId, recipientEmail }: { couponId: number; recipientEmail: string }) => {
+    mutationFn: async ({ couponId, recipientEmail, shareType }: { couponId: number; recipientEmail: string; shareType: ShareType }) => {
       if (!user) throw new Error("Not authenticated");
-      await couponVault({ action: "create_share", couponId, recipientEmail });
-      return true;
+      return couponVault<{ id: number; emailSent: boolean }>({ action: "create_share", couponId, recipientEmail, shareType });
     },
-    onSuccess: (_result, { couponId, recipientEmail }) => {
-      // The person on the other end has no idea this happened until we say so.
-      notifyEvent("share_received", { couponId, recipientEmail });
+    onSuccess: (result, { couponId }) => {
       // The recipient's address is deliberately not recorded.
       logActivity("share_coupon", { couponId });
       queryClient.invalidateQueries({ queryKey: ["my_shares"] });
+      if (result.emailSent) notify.success("הזמנת השיתוף נשלחה במייל");
+      else notify.error("השיתוף נשמר, אך שליחת המייל נכשלה");
     },
     onError: (error: any) => notify.error("שגיאה בשיתוף הקופון", error.message),
+  });
+}
+
+export function useRespondToShare() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ shareId, accept }: { shareId: number; accept: boolean }) => {
+      if (!user) throw new Error("Not authenticated");
+      return couponVault({ action: "respond_to_share", id: shareId, accept });
+    },
+    onSuccess: (_result, { accept }) => {
+      queryClient.invalidateQueries({ queryKey: ["shared_with_me"] });
+      queryClient.invalidateQueries({ queryKey: ["my_shares"] });
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      notify.success(accept ? "השיתוף אושר" : "ההזמנה נדחתה");
+    },
+    onError: (error: any) => notify.error("שגיאה במענה לשיתוף", error.message),
   });
 }
 

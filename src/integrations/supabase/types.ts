@@ -371,7 +371,9 @@ export type Database = {
           revocation_token: string | null
           revocation_token_expires_at: string | null
           revoked_at: string | null
+          recipient_email: string | null
           share_expires_at: string
+          share_type: string
           share_token: string
           shared_by_user_id: number
           shared_with_user_id: number | null
@@ -387,7 +389,9 @@ export type Database = {
           revocation_token?: string | null
           revocation_token_expires_at?: string | null
           revoked_at?: string | null
+          recipient_email?: string | null
           share_expires_at: string
+          share_type?: string
           share_token: string
           shared_by_user_id: number
           shared_with_user_id?: number | null
@@ -403,7 +407,9 @@ export type Database = {
           revocation_token?: string | null
           revocation_token_expires_at?: string | null
           revoked_at?: string | null
+          recipient_email?: string | null
           share_expires_at?: string
+          share_type?: string
           share_token?: string
           shared_by_user_id?: number
           shared_with_user_id?: number | null
