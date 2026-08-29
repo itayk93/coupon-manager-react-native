@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { supabase } from "@/integrations/supabase/client";
 
-const ANDROID_CHANNEL_ID = "expiry-alerts";
+export const ANDROID_CHANNEL_ID = "expiry-alerts";
 
 /**
  * Without a handler, a notification that arrives while the app is open is
@@ -20,7 +20,7 @@ Notifications.setNotificationHandler({
 });
 
 /** Android shows nothing as a heads-up until a channel exists. */
-async function ensureAndroidChannel() {
+export async function ensureAndroidChannel() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
     name: "תזכורות תפוגה",

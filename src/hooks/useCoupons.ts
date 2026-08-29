@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
 import { logActivity } from "@/lib/activityLog";
+import { loadOfflineCoupons, saveOfflineCoupons } from "@/lib/offlineCoupons";
 
 export type DecryptedCoupon = Omit<
   Coupon,
@@ -37,7 +38,18 @@ export function useCoupons() {
     queryFn: async () => {
       if (!user) throw new Error("Not authenticated");
 
-      return couponVault<DecryptedCoupon[]>({ action: "list" });
+      try {
+        const coupons = await couponVault<DecryptedCoupon[]>({ action: "list" });
+        void saveOfflineCoupons(user.id, coupons);
+        return coupons;
+      } catch (error) {
+        // No connection is the common case here, and a wallet the user cannot
+        // open in a shop is worse than a slightly stale one. Fall back to the
+        // last mirrored list; if there is none, the error stands.
+        const cached = await loadOfflineCoupons(user.id);
+        if (cached) return cached;
+        throw error;
+      }
     },
     enabled: !!user,
   });

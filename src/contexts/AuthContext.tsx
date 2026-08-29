@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { flushActivityLog, logActivity } from "@/lib/activityLog";
 import { claimPendingReferral, resetReferralClaim } from "@/lib/referralClaim";
+import { clearOfflineCoupons } from "@/lib/offlineCoupons";
 
 type AuthContextType = {
   session: LegacyUser | null;
@@ -123,6 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await clearLegacyUser();
       // Whoever signs in next on this phone gets their own chance to claim.
       await resetReferralClaim();
+      // The offline mirror holds coupon codes and CVVs; it must not outlive the
+      // session that fetched them.
+      await clearOfflineCoupons();
       setSession(null);
       setUser(null);
       setIsAdmin(false);

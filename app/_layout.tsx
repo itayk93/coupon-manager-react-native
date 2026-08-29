@@ -41,6 +41,7 @@ import { ToastHost } from "@/components/ui/Toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
+import { useLocalExpiryAlerts } from "@/hooks/useLocalExpiryAlerts";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
@@ -144,6 +145,7 @@ function RootLayoutNav() {
   const { theme } = useAppTheme();
   const { isReady: authReady } = useAuthGuard();
   useWidgetSync();
+  useLocalExpiryAlerts();
   usePendingOnboardingCoupon();
   useScreenTracking();
   const { width } = useWindowDimensions();
