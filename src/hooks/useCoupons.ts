@@ -27,6 +27,7 @@ export type DecryptedCoupon = Omit<
   xtra_coupon_url: string | null;
   cvv: string | null;
   card_exp: string | null;
+  is_shared_with_me?: boolean;
 };
 
 // Helper function to decrypt a single coupon

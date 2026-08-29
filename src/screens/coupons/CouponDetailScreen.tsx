@@ -177,6 +177,7 @@ export function CouponDetailScreen() {
 
   const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
+  const isSharedWithMe = coupon.is_shared_with_me === true;
   const usageLocations = history.filter(
     (row) =>
       row.source_table !== "sum_row" &&
@@ -271,21 +272,23 @@ export function CouponDetailScreen() {
         showBack
         onBack={() => router.back()}
         rightAction={
-          <View style={styles.headerRightGroup}>
-            <TouchableOpacity
-              onPress={() => router.push({ pathname: "/coupons/edit", params: { couponId: coupon.public_id } })}
-              style={[styles.headerIconBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <Edit3 size={18} color={theme.text} />
-            </TouchableOpacity>
+          isSharedWithMe ? undefined : (
+            <View style={styles.headerRightGroup}>
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: "/coupons/edit", params: { couponId: coupon.public_id } })}
+                style={[styles.headerIconBtn, { backgroundColor: theme.surfaceAlt }]}
+              >
+                <Edit3 size={18} color={theme.text} />
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleDelete}
-              style={[styles.headerIconBtn, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}
-            >
-              <Trash2 size={18} color={theme.danger} />
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={[styles.headerIconBtn, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}
+              >
+                <Trash2 size={18} color={theme.danger} />
+              </TouchableOpacity>
+            </View>
+          )
         }
       />
 
@@ -594,7 +597,7 @@ export function CouponDetailScreen() {
               היסטוריית שימושים וטעינות
             </Text>
             <View style={styles.historyHeaderActions}>
-              {history.some((h) => h.source_table !== "sum_row" && typeof h.id === "number") ? (
+              {!isSharedWithMe && history.some((h) => h.source_table !== "sum_row" && typeof h.id === "number") ? (
                 <TouchableOpacity
                   onPress={() => {
                     setPendingDeleteId(null);

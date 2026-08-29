@@ -54,9 +54,31 @@ Deno.serve(async (req) => {
     const db = admin();
 
     if (body.action === 'list') {
-      const { data, error } = await db.from('coupon').select('*').eq('user_id', user.id).order('date_added', { ascending: false });
-      if (error) throw error;
-      return jsonResponseFor(req, { data: await Promise.all((data || []).map(decryptCoupon)) });
+      const { data: owned, error: ownedError } = await db.from('coupon').select('*').eq('user_id', user.id);
+      if (ownedError) throw ownedError;
+
+      const { data: sharedRows, error: sharedError } = await db
+        .from('coupon_shares')
+        .select('coupon:coupon_id(*)')
+        .eq('shared_with_user_id', user.id)
+        .eq('share_type', 'shared')
+        .eq('status', 'accepted')
+        .gt('share_expires_at', new Date().toISOString());
+      if (sharedError) throw sharedError;
+
+      const byId = new Map<number, Record<string, unknown>>();
+      for (const coupon of owned || []) byId.set(coupon.id, { ...coupon, is_shared_with_me: false });
+      for (const row of sharedRows || []) {
+        const coupon = row.coupon as Record<string, unknown> | null;
+        if (coupon && typeof coupon.id === 'number' && !byId.has(coupon.id)) {
+          byId.set(coupon.id, { ...coupon, is_shared_with_me: true });
+        }
+      }
+
+      const coupons = Array.from(byId.values()).sort((a, b) =>
+        String(b.date_added || '').localeCompare(String(a.date_added || ''))
+      );
+      return jsonResponseFor(req, { data: await Promise.all(coupons.map(decryptCoupon)) });
     }
     if (body.action === 'get') {
       const opaqueId = publicId(body.publicId);
@@ -66,14 +88,16 @@ Deno.serve(async (req) => {
         : await query.eq('id', assertId(body.id)).maybeSingle();
       if (error) throw error;
       if (!data) throw new Error('NOT_FOUND');
+      let isSharedWithMe = false;
       if (data.user_id !== user.id) {
         const { data: grant } = await db.from('coupon_shares').select('id')
           .eq('coupon_id', data.id).eq('shared_with_user_id', user.id)
           .eq('share_type', 'shared').eq('status', 'accepted')
           .gt('share_expires_at', new Date().toISOString()).maybeSingle();
         if (!grant) throw new Error('NOT_FOUND');
+        isSharedWithMe = true;
       }
-      return jsonResponseFor(req, { data: await decryptCoupon(data) });
+      return jsonResponseFor(req, { data: await decryptCoupon({ ...data, is_shared_with_me: isSharedWithMe }) });
     }
     if (body.action === 'create') {
       const input = await encryptedInput(body.coupon);
@@ -92,7 +116,7 @@ Deno.serve(async (req) => {
       return jsonResponseFor(req, { data: await decryptCoupon(data) });
     }
     if (body.action === 'shared_with_me') {
-      const { data, error } = await db.from('coupon_shares').select('*, coupon:coupon_id(id,company,description,value,used_value,code,expiration), shared_by:shared_by_user_id(email,first_name,last_name)').eq('shared_with_user_id', user.id).in('status', ['pending', 'accepted']).gt('share_expires_at', new Date().toISOString()).order('created_at', { ascending: false });
+      const { data, error } = await db.from('coupon_shares').select('*, coupon:coupon_id(id,public_id,company,description,value,used_value,code,expiration), shared_by:shared_by_user_id(email,first_name,last_name)').eq('shared_with_user_id', user.id).in('status', ['pending', 'accepted']).gt('share_expires_at', new Date().toISOString()).order('created_at', { ascending: false });
       if (error) throw error;
       const hydrated = await Promise.all((data || []).map(async (share) => {
         const coupon = share.coupon ? await decryptCoupon(share.coupon) : null;

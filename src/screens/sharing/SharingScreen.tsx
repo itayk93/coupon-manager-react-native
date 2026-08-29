@@ -25,6 +25,7 @@ import {
 } from "@/hooks/useSharing";
 import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
+import { couponRouteId } from "@/lib/couponId";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -49,6 +50,9 @@ export function SharingScreen() {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [shareType, setShareType] = useState<ShareType>("shared");
   const [emailError, setEmailError] = useState("");
+  const shareableCoupons = coupons.filter(
+    (c) => !c.is_shared_with_me && Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0
+  );
 
   const handleCreateShare = async () => {
     if (!selectedCouponId) {
@@ -188,8 +192,21 @@ export function SharingScreen() {
                   (item.coupon?.value || 0) - (item.coupon?.used_value || 0)
                 );
                 return (
-                  <View
+                  <TouchableOpacity
                     key={item.id}
+                    accessibilityRole={item.status === "accepted" ? "button" : undefined}
+                    accessibilityLabel={
+                      item.status === "accepted"
+                        ? `פתיחת פרטי קופון של ${item.coupon?.company || "קופון"}`
+                        : undefined
+                    }
+                    activeOpacity={item.status === "accepted" ? 0.82 : 1}
+                    disabled={item.status !== "accepted" || !item.coupon}
+                    onPress={() => {
+                      if (item.status === "accepted" && item.coupon) {
+                        router.push(`/coupons/${couponRouteId(item.coupon)}`);
+                      }
+                    }}
                     style={[
                       styles.shareCard,
                       {
@@ -248,7 +265,7 @@ export function SharingScreen() {
                         </TouchableOpacity>
                       </View>
                     ) : null}
-                  </View>
+                  </TouchableOpacity>
                 );
               })
             ) : (
@@ -286,14 +303,23 @@ export function SharingScreen() {
                     ) : <View />}
 
                     <View style={styles.companyGroup}>
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text style={[styles.companyTitle, { color: theme.text }]}>
+                      <View style={styles.companyCopy}>
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.companyTitle, { color: theme.text }]}
+                        >
                           {item.coupon?.company}
                         </Text>
-                        <Text style={[styles.sharedWithText, { color: theme.textMuted }]}>
+                        <Text
+                          numberOfLines={2}
+                          style={[styles.sharedWithText, { color: theme.textMuted }]}
+                        >
                           {`שיתפתי את ${item.coupon?.company || "הקופון"} עם ${item.shared_with?.email || "מישהו שעוד לא הצטרף"}`}
                         </Text>
-                        <Text style={[styles.sharedWithText, { color: theme.primary }]}>
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.sharedWithText, { color: theme.primary }]}
+                        >
                           {item.status === "pending"
                             ? `ממתין לאישור · ${item.share_type === "transfer" ? "העברת בעלות" : "שימוש משותף"}`
                             : item.share_type === "transfer" ? "הועבר" : "שיתוף פעיל"}
@@ -368,7 +394,7 @@ export function SharingScreen() {
           </Text>
 
           <ScrollView style={{ maxHeight: 220, marginBottom: 14 }}>
-            {coupons.filter((c) => Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0).map((c) => {
+            {shareableCoupons.map((c) => {
               const isSelected = selectedCouponId === c.id;
               const rem = Math.max(0, (c.value || 0) - (c.used_value || 0));
               return (
@@ -511,9 +537,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   companyGroup: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 10,
+  },
+  companyCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
   },
   shareLogo: {
     width: 36,
@@ -524,10 +557,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 15,
     fontWeight: "800",
+    width: "100%",
+    textAlign: "right",
   },
   sharedWithText: {
     fontSize: 11,
     marginTop: 2,
+    width: "100%",
+    textAlign: "right",
   },
   shareBadge: {
     backgroundColor: "rgba(59, 130, 246, 0.15)",
@@ -557,6 +594,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   revokeBtn: {
+    flexShrink: 0,
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 4,

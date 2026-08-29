@@ -6,7 +6,7 @@ import { couponVault } from "@/lib/couponVault";
 import { logActivity } from "@/lib/activityLog";
 
 export type PopulatedShare = CouponShare & {
-  coupon: { id: number; company: string; description: string | null; value: number; used_value: number; code: string; expiration: string | null };
+  coupon: { id: number; public_id?: string | null; company: string; description: string | null; value: number; used_value: number; code: string | null; expiration: string | null };
   shared_by: { email: string; first_name: string; last_name: string };
 };
 
