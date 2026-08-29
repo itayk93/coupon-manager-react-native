@@ -21,6 +21,14 @@ export const notify = {
     pushToast("warning", title, message);
   },
 
+  undo: (title: string, message: string, onUndo: () => void, duration = 5000) => {
+    pushToast("warning", title, message, {
+      actionLabel: "ביטול",
+      onAction: onUndo,
+      duration,
+    });
+  },
+
   confirm: (title: string, message: string, onConfirm: () => void, confirmText = "אישור") => {
     pushConfirm(title, message, onConfirm, confirmText);
   },

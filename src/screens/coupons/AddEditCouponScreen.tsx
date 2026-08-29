@@ -10,7 +10,7 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Building2, ChevronLeft, Plus, X } from "lucide-react-native";
+import { Building2, ChevronDown, ChevronLeft, Plus, X } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { DateField } from "@/components/ui/DateField";
@@ -99,11 +99,13 @@ function CouponForm({
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
+  const [showAdvanced, setShowAdvanced] = React.useState(Boolean(existingCoupon));
 
   const {
     isEditing,
     showAutoUsageUpdater,
     isSaving,
+    canSubmit,
     company,
     code,
     setCode,
@@ -249,6 +251,25 @@ function CouponForm({
             placeholder="בחירת תאריך"
             helperText="בחירה מלוח השנה (פורמט: שנה-חודש-יום)"
           />
+
+          <TouchableOpacity
+            onPress={() => setShowAdvanced((value) => !value)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showAdvanced }}
+            style={[styles.advancedToggle, { backgroundColor: theme.surfaceAlt, borderColor: theme.border }]}
+          >
+            <ChevronDown
+              size={18}
+              color={theme.primary}
+              style={{ transform: [{ rotate: showAdvanced ? "180deg" : "0deg" }] }}
+            />
+            <View style={styles.switchLabelContainer}>
+              <Text style={[styles.switchLabel, { color: theme.text }]}>פרטים נוספים</Text>
+              <Text style={[styles.switchSub, { color: theme.textMuted }]}>הערות, קישור, פרטי כרטיס, עדכון אוטומטי ותגיות</Text>
+            </View>
+          </TouchableOpacity>
+
+          {showAdvanced ? <>
 
           {/* Description */}
           <Input
@@ -401,11 +422,13 @@ function CouponForm({
               </View>
             ))}
           </View>
+          </> : null}
 
           <Button
             title={isEditing ? "שמור שינויים" : "הוסף קופון לארנק"}
             onPress={handleSubmit}
             loading={isSaving}
+            disabled={!canSubmit || isSaving}
             style={{ marginTop: 18 }}
           />
         </View>
@@ -490,6 +513,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  advancedToggle: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 14,

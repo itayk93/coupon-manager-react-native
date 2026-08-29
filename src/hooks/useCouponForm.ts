@@ -167,6 +167,12 @@ export function useCouponForm({
       includeCardInfo,
     });
 
+  useEffect(() => {
+    if (isEditing) return;
+    const timer = setTimeout(() => void persistDraft(), 600);
+    return () => clearTimeout(timer);
+  }, [cardExp, code, company, cost, cvv, description, expiration, includeCardInfo, isEditing, redemptionUrl, value]);
+
   /**
    * Tags are a second write, and the coupon is already saved by the time it
    * runs. Failing it must not read as "the coupon was not saved" — that sends
@@ -245,6 +251,7 @@ export function useCouponForm({
     isEditing,
     showAutoUsageUpdater,
     isSaving: addCoupon.isPending || updateCoupon.isPending,
+    canSubmit: Object.keys(validateCouponForm(currentFields())).length === 0,
 
     company,
     setCompany,

@@ -4,6 +4,24 @@ import { isSpendableCoupon } from "@/lib/couponTotals";
 
 const KEY = "offline:coupons:v1";
 
+export type OfflineWalletStatus = { usingCache: boolean; savedAt: number | null };
+let offlineStatus: OfflineWalletStatus = { usingCache: false, savedAt: null };
+const offlineListeners = new Set<() => void>();
+
+export function subscribeOfflineWallet(listener: () => void): () => void {
+  offlineListeners.add(listener);
+  return () => offlineListeners.delete(listener);
+}
+
+export function getOfflineWalletStatus(): OfflineWalletStatus {
+  return offlineStatus;
+}
+
+function setOfflineStatus(next: OfflineWalletStatus) {
+  offlineStatus = next;
+  offlineListeners.forEach((listener) => listener());
+}
+
 /**
  * Hard ceiling on what the wallet mirror may occupy on the device.
  *
@@ -61,6 +79,7 @@ export async function saveOfflineCoupons(
 ): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY, fitToBudget({ userId, savedAt: Date.now(), coupons }));
+    setOfflineStatus({ usingCache: false, savedAt: Date.now() });
   } catch {
     // Storage full or unavailable — the mirror is an optimisation, not a store.
   }
@@ -76,7 +95,9 @@ export async function loadOfflineCoupons(
     const snapshot = JSON.parse(raw) as Snapshot;
     if (String(snapshot.userId) !== String(userId)) return null;
     if (Date.now() - snapshot.savedAt > MAX_AGE_MS) return null;
-    return Array.isArray(snapshot.coupons) ? snapshot.coupons : null;
+    if (!Array.isArray(snapshot.coupons)) return null;
+    setOfflineStatus({ usingCache: true, savedAt: snapshot.savedAt });
+    return snapshot.coupons;
   } catch {
     return null;
   }
@@ -89,6 +110,7 @@ export async function loadOfflineCoupons(
 export async function clearOfflineCoupons(): Promise<void> {
   try {
     await AsyncStorage.removeItem(KEY);
+    setOfflineStatus({ usingCache: false, savedAt: null });
   } catch {
     // Nothing useful to do — the next sign-in overwrites it anyway.
   }

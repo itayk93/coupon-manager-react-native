@@ -2,7 +2,8 @@ import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, Home, Handshake, Share2, Ticket, User } from "lucide-react-native";
+import { Bell, Home, Share2, Ticket, User } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -21,22 +22,26 @@ type Item = {
 // Statistics and "איפה קניתי" are reached from the account page rather than
 // from here: six bars left each label under ten points of type, and neither
 // screen is somewhere people go mid-task.
-function buildItems(isAdmin: boolean): Item[] {
+function buildItems(): Item[] {
   return [
     { label: "דשבורד", path: "/", Icon: Home, match: [] },
     { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
     { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
-    {
-      label: "שותפים",
-      // Admins land straight on the panel's referrals tab, not on its default one.
-      path: isAdmin ? "/admin?tab=referrals" : "/invite",
-      Icon: Handshake,
-      match: isAdmin
-        ? ["/admin"]
-        : ["/invite", "/referral-program"],
-    },
     { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
-    { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", ...(isAdmin ? [] : ["/admin"])] },
+    {
+      label: "חשבון",
+      path: "/settings",
+      Icon: User,
+      match: [
+        "/settings",
+        "/profile",
+        "/invite",
+        "/referral-program",
+        "/statistics",
+        "/where-bought",
+        "/admin",
+      ],
+    },
   ];
 }
 
@@ -60,10 +65,10 @@ export function BottomNav() {
   const segments = useSegments();
   const insets = useSafeAreaInsets();
   const { theme } = useAppTheme();
-  const { session, isAdmin } = useAuth();
+  const { session } = useAuth();
   const { data: notifications = [] } = useInAppNotifications();
   const unread = notifications.filter((item) => !item.viewed).length;
-  const items = buildItems(isAdmin);
+  const items = buildItems();
 
   if (!session || segments[0] === "(auth)") return null;
 
@@ -85,14 +90,22 @@ export function BottomNav() {
           <TouchableOpacity
             key={item.path}
             activeOpacity={0.7}
-            onPress={() => router.navigate(item.path)}
+            onPress={() => {
+              if (!active) void Haptics.selectionAsync().catch(() => {});
+              router.navigate(item.path);
+            }}
             style={styles.item}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityLabel={item.label}
             accessibilityState={{ selected: active }}
           >
-            <View>
-              <item.Icon color={color} size={20} strokeWidth={1.8} />
+            <View
+              style={[
+                styles.iconPill,
+                active && { backgroundColor: theme.primaryTint },
+              ]}
+            >
+              <item.Icon color={color} size={22} strokeWidth={active ? 2.3 : 1.8} />
               {item.path === "/notifications" && unread > 0 ? (
                 <View style={[styles.badge, { borderColor: theme.card }]}>
                   <Text style={styles.badgeText} numberOfLines={1}>
@@ -118,10 +131,18 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 54,
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
+    gap: 2,
+  },
+  iconPill: {
+    minWidth: 44,
+    height: 28,
+    paddingHorizontal: 11,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
   // Counter sits on the bell's left, per the design. It is a pill rather than
   // a circle so "10+" widens instead of spilling out of a fixed disc.
@@ -153,7 +174,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: fonts.bodyBold,
-    fontSize: 9.5,
+    fontSize: 11,
     fontWeight: "800",
     lineHeight: 15,
   },

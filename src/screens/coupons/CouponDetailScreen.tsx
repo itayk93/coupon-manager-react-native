@@ -13,7 +13,9 @@ import {
   Share,
   Switch,
   Linking,
+  Platform,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import {
@@ -60,6 +62,8 @@ import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
+import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Confirmation for deleting a history record. It unfolds under the row it
@@ -133,6 +137,7 @@ export function CouponDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const couponIdentifier = typeof id === "string" ? id : undefined;
   const { theme } = useAppTheme();
+  const queryClient = useQueryClient();
 
   const { data: coupon, isLoading } = useCoupon(couponIdentifier);
   const couponId = coupon?.id;
@@ -165,9 +170,7 @@ export function CouponDetailScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="טוען קופון..." showBack onBack={() => router.back()} />
-        <View style={styles.loadingContainer}>
-          <Text style={{ color: theme.textMuted }}>טוען נתוני קופון...</Text>
-        </View>
+        <CouponDetailsSkeleton />
       </SafeAreaView>
     );
   }
@@ -186,14 +189,20 @@ export function CouponDetailScreen() {
     : null;
 
   const handleDelete = () => {
-    notify.confirm(
-      "מחיקת קופון",
-      `האם אתה בטוח שברצונך למחוק את הקופון של ${coupon.company}?`,
-      async () => {
-        await deleteCoupon.mutateAsync(coupon.id);
-        router.back();
+    if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    const snapshots = queryClient.getQueriesData<DecryptedCoupon[]>({ queryKey: ["coupons"] });
+    snapshots.forEach(([key, list]) => {
+      if (list) queryClient.setQueryData(key, list.filter((item) => item.id !== coupon.id));
+    });
+    router.back();
+    const timer = setTimeout(() => void deleteCoupon.mutateAsync(coupon.id), 5000);
+    notify.undo(
+      "הקופון הוסר",
+      `הקופון של ${coupon.company} יימחק בעוד 5 שניות.`,
+      () => {
+        clearTimeout(timer);
+        snapshots.forEach(([key, list]) => queryClient.setQueryData(key, list));
       },
-      "מחק"
     );
   };
 
@@ -423,15 +432,6 @@ export function CouponDetailScreen() {
 
         {/* Action Buttons Row */}
         <View style={styles.actionsGrid}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setIsUsageOpen(true)}
-            style={[styles.actionBtn, { backgroundColor: theme.primary }]}
-          >
-            <ReceiptText size={18} color="#ffffff" />
-            <Text style={styles.actionBtnTextWhite}>דיווח שימוש</Text>
-          </TouchableOpacity>
-
           {!isFullyUsed && coupon.is_one_time ? (
             <TouchableOpacity
               activeOpacity={0.85}
@@ -747,6 +747,24 @@ export function CouponDetailScreen() {
         </View>
       </ScrollView>
 
+      {!isFullyUsed ? (
+        <View style={[styles.bottomActionBar, { backgroundColor: theme.card, borderTopColor: theme.cardBorder }]}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              if (Platform.OS !== "web") void Haptics.selectionAsync().catch(() => {});
+              setIsUsageOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="דיווח על שימוש בקופון"
+            style={[styles.primaryBottomAction, { backgroundColor: theme.primary }]}
+          >
+            <ReceiptText size={20} color="#ffffff" />
+            <Text style={styles.actionBtnTextWhite}>דיווח שימוש</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       <QuickUsageModal
         visible={isUsageOpen}
         onClose={() => setIsUsageOpen(false)}
@@ -803,18 +821,32 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   headerRightGroup: {
     flexDirection: "row",
     gap: 8,
   },
   headerIconBtn: {
-    width: 38,
-    height: 38,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  bottomActionBar: {
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  primaryBottomAction: {
+    minHeight: 52,
+    borderRadius: 14,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   companyBox: {
     borderRadius: 22,
@@ -1072,8 +1104,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   showMapButton: {
-    width: 30,
-    height: 30,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 15,
@@ -1100,8 +1132,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   historyDeleteBtn: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",

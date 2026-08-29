@@ -20,12 +20,13 @@ import {
   RefreshCw,
   SlidersHorizontal,
   X,
-  Sparkles,
   QrCode,
+  ReceiptText,
 } from "lucide-react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCoupons, useBulkDeleteCoupons, useDeleteCoupon, DecryptedCoupon } from "@/hooks/useCoupons";
+import { Swipeable } from "react-native-gesture-handler";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { useCouponTagsMap } from "@/hooks/useTags";
@@ -38,6 +39,9 @@ import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
+import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
+import { WifiOff } from "lucide-react-native";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
@@ -60,7 +64,9 @@ export function CouponsListScreen() {
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const bulkDelete = useBulkDeleteCoupons();
+  const deleteCoupon = useDeleteCoupon();
   const triggerAutoUpdate = useTriggerAutoUpdate();
+  const offline = useOfflineWalletStatus();
 
   // A notification links here with the exact coupons it was written about, so
   // the list opens on those and not on the whole wallet. Cleared from the
@@ -86,6 +92,7 @@ export function CouponsListScreen() {
   );
   const [showAllCompanies, setShowAllCompanies] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
@@ -129,6 +136,7 @@ export function CouponsListScreen() {
 
   const matchedCoupons = useMemo(() => {
     return coupons.filter((coupon) => {
+      if (pendingDeleteIds.includes(coupon.id)) return false;
       if (focusIds && !focusIds.includes(coupon.public_id) && !focusIds.includes(String(coupon.id))) return false;
 
       // Search
@@ -144,7 +152,7 @@ export function CouponsListScreen() {
 
       return true;
     });
-  }, [coupons, focusIds, search, selectedCompany, selectedTag, tagsMap]);
+  }, [coupons, focusIds, pendingDeleteIds, search, selectedCompany, selectedTag, tagsMap]);
 
   const sections = useMemo(() => {
     const active: DecryptedCoupon[] = [];
@@ -236,15 +244,37 @@ export function CouponsListScreen() {
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
-    notify.confirm(
-      "מחיקת קופונים",
-      `האם אתה בטוח שברצונך למחוק ${selectedIds.length} קופונים שנבחרו?`,
-      async () => {
-        await bulkDelete.mutateAsync(selectedIds);
-        setSelectedIds([]);
-        setIsSelectMode(false);
+    const ids = [...selectedIds];
+    setPendingDeleteIds((current) => [...new Set([...current, ...ids])]);
+    setSelectedIds([]);
+    setIsSelectMode(false);
+    const timer = setTimeout(
+      () => void bulkDelete.mutateAsync(ids).finally(() => setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id)))),
+      5000,
+    );
+    notify.undo(
+      `${ids.length} קופונים הוסרו`,
+      "המחיקה תתבצע בעוד 5 שניות.",
+      () => {
+        clearTimeout(timer);
+        setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id)));
       },
-      "מחק"
+    );
+  };
+
+  const handleUndoableDelete = (coupon: DecryptedCoupon) => {
+    setPendingDeleteIds((current) => [...new Set([...current, coupon.id])]);
+    const timer = setTimeout(
+      () => void deleteCoupon.mutateAsync(coupon.id).finally(() => setPendingDeleteIds((current) => current.filter((id) => id !== coupon.id))),
+      5000,
+    );
+    notify.undo(
+      "הקופון הוסר",
+      `הקופון של ${coupon.company} יימחק בעוד 5 שניות.`,
+      () => {
+        clearTimeout(timer);
+        setPendingDeleteIds((current) => current.filter((id) => id !== coupon.id));
+      },
     );
   };
 
@@ -297,6 +327,15 @@ export function CouponsListScreen() {
       </View>
 
       <View style={styles.container}>
+        {offline.usingCache ? (
+          <View
+            style={[styles.offlineBanner, { backgroundColor: theme.warningBg, borderColor: theme.warning }]}
+            accessibilityRole="alert"
+          >
+            <WifiOff size={16} color={theme.warningText} />
+            <Text style={[styles.offlineText, { color: theme.warningText }]}>מצב אופליין — מוצגים הנתונים האחרונים שנשמרו</Text>
+          </View>
+        ) : null}
         {focusIds ? (
           <View style={[styles.focusBanner, { backgroundColor: theme.primaryTint }]}>
             <Text style={[styles.focusText, { color: theme.primary }]}>
@@ -548,7 +587,32 @@ export function CouponsListScreen() {
             </View>
           )}
           renderItem={({ item }: { item: DecryptedCoupon }) => (
-            <CouponCard
+            <Swipeable
+              overshootLeft={false}
+              overshootRight={false}
+              friction={2}
+              renderLeftActions={() => (
+                <TouchableOpacity
+                  onPress={() => setUsageCoupon(item)}
+                  accessibilityLabel={`דיווח שימוש בקופון של ${item.company}`}
+                  style={[styles.swipeAction, { backgroundColor: theme.success }]}
+                >
+                  <ReceiptText size={20} color="#ffffff" />
+                  <Text style={styles.swipeActionText}>שימוש</Text>
+                </TouchableOpacity>
+              )}
+              renderRightActions={() => (
+                <TouchableOpacity
+                  onPress={() => handleUndoableDelete(item)}
+                  accessibilityLabel={`מחיקת הקופון של ${item.company}`}
+                  style={[styles.swipeAction, { backgroundColor: theme.danger }]}
+                >
+                  <Trash2 size={20} color="#ffffff" />
+                  <Text style={styles.swipeActionText}>מחיקה</Text>
+                </TouchableOpacity>
+              )}
+            >
+              <CouponCard
               coupon={item}
               tags={tagsMap[item.id] || []}
               selected={selectedIds.includes(item.id)}
@@ -562,10 +626,13 @@ export function CouponsListScreen() {
                 }
               }}
               onReportUsage={() => setUsageCoupon(item)}
-            />
+              />
+            </Swipeable>
           )}
           ListEmptyComponent={
-            <EmptyState
+            isLoading ? (
+              <View>{[1, 2, 3].map((item) => <CouponCardSkeleton key={item} />)}</View>
+            ) : <EmptyState
               icon={<CharacterSpotlight character="investigator" state={search || selectedTag ? "thinking" : "talking"} />}
               largeVisual
               title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
@@ -622,8 +689,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
+    height: 44,
+    width: 44,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -632,9 +699,41 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     paddingHorizontal: 12,
-    height: 38,
+    minHeight: 44,
     borderRadius: 12,
     gap: 6,
+  },
+  offlineBanner: {
+    minHeight: 44,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  offlineText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    textAlign: "right",
+  },
+  swipeAction: {
+    width: 88,
+    minHeight: 88,
+    marginBottom: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+  },
+  swipeActionText: {
+    color: "#ffffff",
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    fontWeight: "800",
   },
   addBtnText: {
     color: "#ffffff",
@@ -687,6 +786,7 @@ const styles = StyleSheet.create({
   statusTab: {
     minWidth: 92,
     flexGrow: 1,
+    minHeight: 44,
     paddingVertical: 8,
     borderRadius: radii.pill,
     borderWidth: 1,
@@ -702,7 +802,7 @@ const styles = StyleSheet.create({
     // An explicit height is required: inside a flex:1 column with the coupon
     // list as a sibling, an auto-height horizontal ScrollView gets squashed to
     // a few pixels and the chips render clipped on top of each other.
-    height: 38,
+    height: 46,
     flexGrow: 0,
     flexShrink: 0,
     marginBottom: 12,
@@ -725,7 +825,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   tagChip: {
-    height: 34,
+    height: 44,
     justifyContent: "center",
     paddingHorizontal: 16,
     borderRadius: radii.pill,
@@ -739,7 +839,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    height: 34,
+    height: 44,
     justifyContent: "center",
     paddingHorizontal: 12,
     borderRadius: radii.pill,

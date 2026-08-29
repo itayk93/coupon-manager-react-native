@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    height: 40,
+    minHeight: 44,
     borderRadius: radii.md,
     flexDirection: "row-reverse",
     alignItems: "center",

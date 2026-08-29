@@ -13,6 +13,9 @@ export type ToastPayload = {
   kind: ToastKind;
   title: string;
   message?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  duration?: number;
 };
 
 type Listener = (toast: ToastPayload) => void;
@@ -21,8 +24,13 @@ let listener: Listener | null = null;
 let nextId = 1;
 
 /** Queue a toast. No-ops until the host is mounted. */
-export function pushToast(kind: ToastKind, title: string, message?: string) {
-  listener?.({ id: nextId++, kind, title, message });
+export function pushToast(
+  kind: ToastKind,
+  title: string,
+  message?: string,
+  options?: Pick<ToastPayload, "actionLabel" | "onAction" | "duration">,
+) {
+  listener?.({ id: nextId++, kind, title, message, ...options });
 }
 
 function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () => void }) {
@@ -44,10 +52,10 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
         easing: Easing.in(Easing.cubic),
         useNativeDriver,
       }).start(({ finished }) => finished && onDismiss());
-    }, toast.kind === "error" ? 4200 : 2800);
+    }, toast.duration ?? (toast.kind === "error" ? 4200 : 2800));
 
     return () => clearTimeout(timer);
-  }, [anim, onDismiss, toast.kind]);
+  }, [anim, onDismiss, toast.duration, toast.kind]);
 
   const accent =
     toast.kind === "success"
@@ -88,6 +96,19 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
       </View>
 
       <Icon size={18} color={accent} />
+
+      {toast.actionLabel && toast.onAction ? (
+        <Pressable
+          onPress={() => {
+            toast.onAction?.();
+            onDismiss();
+          }}
+          accessibilityRole="button"
+          style={[styles.action, { backgroundColor: theme.primaryTint }]}
+        >
+          <Text style={[styles.actionText, { color: theme.primary }]}>{toast.actionLabel}</Text>
+        </Pressable>
+      ) : null}
 
       <Pressable onPress={onDismiss} hitSlop={8} accessibilityLabel="סגירה">
         <X size={15} color={theme.textSubtle} />
@@ -169,5 +190,18 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     textAlign: "right",
     marginTop: 2,
+  },
+  action: {
+    minWidth: 44,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: radii.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "800",
   },
 });
