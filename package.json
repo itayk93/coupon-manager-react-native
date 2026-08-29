@@ -24,6 +24,7 @@
     "build:sim:ios": "eas build --profile development-simulator --platform ios",
     "build:ios:device": "./build-ios.command",
     "test": "vitest run",
+    "size": "expo export --platform ios --output-dir .expo/size-report >/dev/null && du -sh .expo/size-report/_expo .expo/size-report/assets",
     "check:links": "node scripts/check-deep-links.mjs",
     "e2e:activity-log": "node scripts/e2e-activity-log.mjs",
     "e2e:browser:create": "node scripts/e2e-browser-fixture.mjs create",
