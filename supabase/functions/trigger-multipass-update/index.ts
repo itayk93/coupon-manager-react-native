@@ -8,7 +8,14 @@ type DispatchResult =
   | { success: true; provider: 'github' | 'circleci'; runId: string | null; runUrl: string | null; workflow: string; ref: string }
   | { success: false; error: string };
 
-type CiProvider = 'github' | 'circleci';
+type RunLog = {
+  userId: number;
+  status: string;
+  jobId?: string | null;
+  failedCount?: number;
+  skippedCount?: number;
+  message: Record<string, unknown>;
+};
 
 function supa() {
   return createClient(
@@ -29,7 +36,11 @@ function isCronRequest(req: Request): boolean {
   return mismatch === 0;
 }
 
-async function dispatchGitHubWorkflow(couponCodes: string[]): Promise<DispatchResult> {
+async function dispatchGitHubWorkflow(
+  couponCodes: string[],
+  fallbackFromCircle = false,
+  circleciRunId: string | null = null,
+): Promise<DispatchResult> {
   const githubToken = Deno.env.get('GITHUB_TOKEN');
   if (!githubToken) return { success: false, error: 'GITHUB_TOKEN not configured' };
 
@@ -58,6 +69,8 @@ async function dispatchGitHubWorkflow(couponCodes: string[]): Promise<DispatchRe
       ref: workflowRef,
       inputs: {
         [inputKey]: safeCodes.join(inputSeparator),
+        fallback_from_circle: fallbackFromCircle ? 'true' : 'false',
+        circleci_run_id: circleciRunId || '',
       },
     }),
   });
@@ -138,17 +151,25 @@ async function dispatchCircleCIPipeline(couponCodes: string[]): Promise<Dispatch
   };
 }
 
-function scheduledProvider(): CiProvider {
-  const mode = Deno.env.get('MULTIPASS_CI_MODE')?.trim().toLowerCase() || 'github';
-  if (mode === 'circleci') return 'circleci';
-  if (mode === 'alternate') return new Date().getUTCHours() % 2 === 0 ? 'github' : 'circleci';
-  return 'github';
+function compactError(error: string): string {
+  return error.replace(/\s+/g, ' ').trim().slice(0, 1500);
 }
 
-function dispatchMultipassWorkflow(couponCodes: string[], provider: CiProvider): Promise<DispatchResult> {
-  return provider === 'circleci'
-    ? dispatchCircleCIPipeline(couponCodes)
-    : dispatchGitHubWorkflow(couponCodes);
+async function recordRun(log: RunLog): Promise<string | null> {
+  const { error } = await supa().from('auto_update_runs').insert({
+    user_id: log.userId,
+    triggered_by_user_id: log.userId,
+    run_type: 'multipass_ci',
+    status: log.status,
+    started_at: new Date().toISOString(),
+    finished_at: new Date().toISOString(),
+    updated_count: 0,
+    failed_count: log.failedCount || 0,
+    skipped_count: log.skippedCount || 0,
+    job_id: log.jobId || null,
+    message: JSON.stringify(log.message),
+  });
+  return error ? compactError(error.message) : null;
 }
 
 function jerusalemHour(): number {
@@ -166,6 +187,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const userId = Number(body.user_id);
     const couponId = body.coupon_id ? Number(body.coupon_id) : null;
+    const action = String(body.action || 'dispatch');
     const cronRequest = isCronRequest(req);
 
     if (!Number.isFinite(userId) || userId <= 0) {
@@ -175,7 +197,27 @@ Deno.serve(async (req: Request) => {
       const authenticatedUser = await requireUser(req);
       requireSameUser(userId, authenticatedUser);
     }
-    if (cronRequest) {
+    if (action === 'github_failure') {
+      if (!cronRequest) return jsonResponse({ error: 'UNAUTHENTICATED' }, 401);
+      const githubRunId = String(body.github_run_id || '').trim() || null;
+      const loggingError = await recordRun({
+        userId,
+        status: 'failed',
+        jobId: githubRunId,
+        failedCount: 2,
+        message: {
+          event: 'multipass_ci_double_failure',
+          primary: 'circleci',
+          fallback: 'github',
+          circleci_run_id: String(body.circleci_run_id || '').trim() || null,
+          github_run_id: githubRunId,
+          error: compactError(String(body.error || 'GitHub Actions fallback failed')),
+        },
+      });
+      return jsonResponse({ success: true, recorded: true, status: 'failed', logging_error: loggingError });
+    }
+
+    if (cronRequest && action === 'dispatch') {
       const hour = jerusalemHour();
       if (hour < 8 || hour > 23) {
         return jsonResponse({ success: true, dispatched: false, message: 'Outside scheduled hours', hour });
@@ -206,26 +248,146 @@ Deno.serve(async (req: Request) => {
     const encryptedCodes = eligibleCoupons.map((coupon) => coupon.code).filter(Boolean);
     const couponCodes = await decryptCouponCodes(encryptedCodes);
     if (!couponCodes.length) {
+      if (action === 'circleci_failure') {
+        const loggingError = await recordRun({
+          userId,
+          status: 'circleci_failed_no_pending_coupons',
+          jobId: String(body.circleci_run_id || '').trim() || null,
+          failedCount: 1,
+          message: {
+            event: 'circleci_failure',
+            fallback_dispatched: false,
+            reason: 'No coupons remained eligible after the CircleCI run',
+          },
+        });
+        return jsonResponse({ success: true, dispatched: false, recorded: true, logging_error: loggingError });
+      }
       return jsonResponse({ success: true, dispatched: false, message: 'No active Multipass coupons found' });
     }
 
-    const requestedProvider = body.provider === 'github' || body.provider === 'circleci'
-      ? body.provider
-      : scheduledProvider();
-    const dispatchResult = await dispatchMultipassWorkflow(couponCodes, requestedProvider);
-    if (!dispatchResult.success) {
-      return jsonResponse({ success: false, error: dispatchResult.error }, 502);
+    if (action === 'circleci_failure') {
+      if (!cronRequest) return jsonResponse({ error: 'UNAUTHENTICATED' }, 401);
+      const circleciError = compactError(String(body.error || 'CircleCI job failed'));
+      const circleciRunId = String(body.circleci_run_id || '').trim() || null;
+      const fallbackResult = await dispatchGitHubWorkflow(couponCodes, true, circleciRunId);
+      if (!fallbackResult.success) {
+        const githubError = compactError(fallbackResult.error);
+        const loggingError = await recordRun({
+          userId,
+          status: 'failed',
+          jobId: circleciRunId,
+          failedCount: 2,
+          message: {
+            event: 'multipass_ci_double_failure',
+            primary: 'circleci',
+            fallback: 'github',
+            coupon_count: couponCodes.length,
+            circleci_error: circleciError,
+            github_error: githubError,
+          },
+        });
+        return jsonResponse({ success: false, error: githubError, fallback: 'github', logging_error: loggingError }, 502);
+      }
+
+      const loggingError = await recordRun({
+        userId,
+        status: 'fallback_dispatched',
+        jobId: fallbackResult.runId,
+        failedCount: 1,
+        message: {
+          event: 'circleci_failure',
+          primary: 'circleci',
+          fallback: 'github',
+          coupon_count: couponCodes.length,
+          circleci_run_id: circleciRunId,
+          circleci_error: circleciError,
+          github_run_id: fallbackResult.runId,
+          github_run_url: fallbackResult.runUrl,
+        },
+      });
+      return jsonResponse({
+        success: true,
+        dispatched: true,
+        fallback: true,
+        provider: fallbackResult.provider,
+        count: couponCodes.length,
+        run_id: fallbackResult.runId,
+        run_url: fallbackResult.runUrl,
+        logging_error: loggingError,
+      });
     }
 
+    const circleResult = await dispatchCircleCIPipeline(couponCodes);
+    if (!circleResult.success) {
+      const circleciError = compactError(circleResult.error);
+      const fallbackResult = await dispatchGitHubWorkflow(couponCodes, true, 'dispatch_failed');
+      if (!fallbackResult.success) {
+        const githubError = compactError(fallbackResult.error);
+        const loggingError = await recordRun({
+          userId,
+          status: 'failed',
+          failedCount: 2,
+          message: {
+            event: 'multipass_ci_double_failure',
+            primary: 'circleci',
+            fallback: 'github',
+            coupon_count: couponCodes.length,
+            circleci_error: circleciError,
+            github_error: githubError,
+          },
+        });
+        return jsonResponse({ success: false, error: githubError, primary_error: circleciError, logging_error: loggingError }, 502);
+      }
+
+      const loggingError = await recordRun({
+        userId,
+        status: 'fallback_dispatched',
+        jobId: fallbackResult.runId,
+        failedCount: 1,
+        message: {
+          event: 'circleci_dispatch_failure',
+          primary: 'circleci',
+          fallback: 'github',
+          coupon_count: couponCodes.length,
+          circleci_error: circleciError,
+          github_run_id: fallbackResult.runId,
+          github_run_url: fallbackResult.runUrl,
+        },
+      });
+      return jsonResponse({
+        success: true,
+        dispatched: true,
+        fallback: true,
+        count: couponCodes.length,
+        provider: fallbackResult.provider,
+        run_id: fallbackResult.runId,
+        run_url: fallbackResult.runUrl,
+        logging_error: loggingError,
+      });
+    }
+
+    const loggingError = await recordRun({
+      userId,
+      status: 'circleci_dispatched',
+      jobId: circleResult.runId,
+      message: {
+        event: 'circleci_dispatch',
+        provider: 'circleci',
+        coupon_count: couponCodes.length,
+        run_id: circleResult.runId,
+        run_url: circleResult.runUrl,
+      },
+    });
     return jsonResponse({
       success: true,
       dispatched: true,
       count: couponCodes.length,
-      provider: dispatchResult.provider,
-      run_id: dispatchResult.runId,
-      run_url: dispatchResult.runUrl,
-      workflow: dispatchResult.workflow,
-      ref: dispatchResult.ref,
+      provider: circleResult.provider,
+      run_id: circleResult.runId,
+      run_url: circleResult.runUrl,
+      workflow: circleResult.workflow,
+      ref: circleResult.ref,
+      logging_error: loggingError,
     });
   } catch (error) {
     return jsonResponse({ error: String(error) }, 500);
