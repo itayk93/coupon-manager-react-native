@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated as NativeAnimated, Dimensions, Easing as NativeEasing, PanResponder, StyleSheet, View } from "react-native";
 import Animated, { Easing, cancelAnimation, interpolate, useAnimatedStyle, useDerivedValue, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from "react-native-reanimated";
 
 /**
@@ -90,16 +90,156 @@ function useBlink(active: boolean, offset: number) {
   return open;
 }
 
+/**
+ * The Worklets display-link queue aborts on some iOS 26 ProMotion devices.
+ * Keep the detailed rig in its stable pose and animate the whole character
+ * through React Native's native animation driver instead.
+ */
+function useSafeMascotMotion(active: boolean, period = 1700) {
+  const progress = useRef(new NativeAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (!active) {
+      progress.stopAnimation();
+      progress.setValue(0);
+      return;
+    }
+
+    const animation = NativeAnimated.loop(
+      NativeAnimated.sequence([
+        NativeAnimated.timing(progress, {
+          toValue: 1,
+          duration: period / 2,
+          easing: NativeEasing.inOut(NativeEasing.ease),
+          useNativeDriver: true,
+        }),
+        NativeAnimated.timing(progress, {
+          toValue: 0,
+          duration: period / 2,
+          easing: NativeEasing.inOut(NativeEasing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [active, period, progress]);
+
+  return {
+    transform: [
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
+      { rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ["-1deg", "1deg"] }) },
+    ],
+  };
+}
+
+/**
+ * Baby-schema face: oversized eyes, a double glint, high blush and a smile.
+ * The old rig gave the investigator a flat bar for a mouth, which reads as
+ * glum at small sizes — every cast member smiles now.
+ */
+function StaticFace({ blush = INK, blink }: { blush?: string; blink?: NativeAnimated.Value }) {
+  const lidStyle = blink ? { transform: [{ scaleY: blink }] } : undefined;
+  return <>
+    <View style={styles.face}>
+      <NativeAnimated.View style={[styles.eye, lidStyle]}>
+        <View style={styles.pupil}><View style={styles.glint} /><View style={styles.glintSmall} /></View>
+      </NativeAnimated.View>
+      <NativeAnimated.View style={[styles.eye, lidStyle]}>
+        <View style={styles.pupil}><View style={styles.glint} /><View style={styles.glintSmall} /></View>
+      </NativeAnimated.View>
+    </View>
+    <View style={[styles.blush, styles.blushLeft, { backgroundColor: blush }]} />
+    <View style={[styles.blush, styles.blushRight, { backgroundColor: blush }]} />
+    <View style={styles.smile} />
+  </>;
+}
+
+/** Blink on the native driver, for the rig that cannot run worklets. */
+function useSafeBlink(active: boolean, offset = 0) {
+  const open = useRef(new NativeAnimated.Value(1)).current;
+  useEffect(() => {
+    if (!active) {
+      open.stopAnimation();
+      open.setValue(1);
+      return;
+    }
+    const shut = (d: number) => NativeAnimated.timing(open, { toValue: 0.08, duration: d, useNativeDriver: true });
+    const opened = (d: number) => NativeAnimated.timing(open, { toValue: 1, duration: d, useNativeDriver: true });
+    // Uneven spacing — a metronome blink is the tell that nothing is alive.
+    const loop = NativeAnimated.loop(NativeAnimated.sequence([
+      NativeAnimated.delay(2000 + offset),
+      shut(70), opened(90),
+      NativeAnimated.delay(220),
+      shut(60), opened(80),
+      NativeAnimated.delay(1700),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [active, offset, open]);
+  return open;
+}
+
+function SafeInvestigator({ animate = true }: { animate?: boolean }) {
+  const blink = useSafeBlink(animate, 0);
+  return <View style={[styles.slot, styles.slotFront]}>
+    <View style={styles.shadow} />
+    <View style={styles.bodyAnchor}>
+      <View style={[styles.body, styles.bodyBlue]}>
+        <View style={[styles.cap, { backgroundColor: BLUE_DARK }]} />
+        <View style={[styles.capBrim, { backgroundColor: BLUE_DARK }]} />
+        <View style={[styles.belly, { backgroundColor: BLUE_LIGHT }]} />
+        <StaticFace blush={BLUE_DARK} blink={blink} />
+      </View>
+      <View style={[styles.arm, styles.armRight, { backgroundColor: BLUE_DARK, transform: [{ rotate: "20deg" }] }]}>
+        <View style={styles.magnifier}>
+          <View style={styles.magnifierLens} />
+          <View style={styles.magnifierGlint} />
+        </View>
+      </View>
+    </View>
+  </View>;
+}
+
+function SafeHelper({ animate = true }: { animate?: boolean }) {
+  const blink = useSafeBlink(animate, 900);
+  return <View style={styles.slot}>
+    <View style={styles.shadow} />
+    <View style={styles.bodyAnchor}>
+      <View style={[styles.body, styles.bodyMint]}>
+        <View style={[styles.antenna, { backgroundColor: MINT_DARK }]} />
+        <View style={[styles.antennaTip, { backgroundColor: MINT_LIGHT }]} />
+        <View style={[styles.belly, { backgroundColor: MINT_LIGHT }]} />
+        <StaticFace blush={MINT_DARK} blink={blink} />
+      </View>
+      <View style={[styles.arm, styles.armLeft, { backgroundColor: MINT_DARK, transform: [{ rotate: "-35deg" }] }]}>
+        <View style={[styles.hand, { backgroundColor: MINT_DARK }]} />
+      </View>
+    </View>
+  </View>;
+}
+
+function SafeCoupon() {
+  return <View style={styles.card}>
+    <View style={[styles.cardLine, { width: 40 }]} />
+    <View style={[styles.cardLine, { width: 26 }]} />
+    <View style={styles.cardChip} />
+  </View>;
+}
+
 export function CharacterScene({ state, reduceMotion, compact }: { state: CharacterState; reduceMotion?: boolean; compact?: boolean }) {
   const systemReducedMotion = useReducedMotion();
-  const shouldReduceMotion = reduceMotion ?? systemReducedMotion;
+  const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
+  const safeMotionStyle = useSafeMascotMotion(shouldAnimate, state === "scanning" ? 1050 : 1700);
   const scale = compact ? 0.82 : 1;
   return <View style={styles.scene}>
-    <View style={[styles.cast, { transform: [{ scale }] }]}>
-      <BlueInvestigator state={state} reduceMotion={shouldReduceMotion} />
-      <CouponProp state={state} reduceMotion={shouldReduceMotion} />
-      <MintHelper state={state} reduceMotion={shouldReduceMotion} />
-    </View>
+    <NativeAnimated.View style={safeMotionStyle}>
+      <View style={[styles.cast, { transform: [{ scale }] }]}>
+        <SafeInvestigator />
+        <SafeCoupon />
+        <SafeHelper />
+      </View>
+    </NativeAnimated.View>
   </View>;
 }
 
@@ -119,22 +259,180 @@ export function CharacterSpotlight({
   tone?: "mint" | "blue" | "success" | "none";
 }) {
   const systemReducedMotion = useReducedMotion();
-  const shouldReduceMotion = reduceMotion ?? systemReducedMotion;
-  const scale = size === "small" ? 0.62 : size === "large" ? 1.25 : 1;
-  const box = size === "small" ? 72 : size === "large" ? 176 : 132;
+  const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
+  const safeMotionStyle = useSafeMascotMotion(shouldAnimate, state === "scanning" ? 950 : 1600);
+  const box = size === "small" ? 88 : size === "large" ? 176 : 132;
+  // The rig is SLOT_H tall; derive the scale from the bubble instead of
+  // hard-coding it, so the character sits inside the disc rather than
+  // spilling out of the top of it (which is what made the small size look
+  // like a cropped sticker).
+  const scale = (box * 0.92) / SLOT_H;
+  const ring = character === "investigator" ? "rgba(40, 100, 240, 0.18)" : "rgba(88, 223, 198, 0.28)";
   return (
     <View
-      style={[styles.spotlight, { width: box, height: box, borderRadius: box / 2, backgroundColor: BUBBLE[tone], pointerEvents: "none" }]}
+      style={[
+        styles.spotlight,
+        {
+          width: box,
+          height: box,
+          borderRadius: box / 2,
+          backgroundColor: BUBBLE[tone],
+          borderColor: ring,
+          pointerEvents: "none",
+        },
+      ]}
       accessibilityElementsHidden
     >
-      <View style={{ transform: [{ scale }] }}>
+      <View style={[styles.spotlightGloss, { borderRadius: box / 2 }]} />
+      <NativeAnimated.View style={[styles.spotlightBody, safeMotionStyle, { transform: [...safeMotionStyle.transform, { scale }] }]}>
         {character === "investigator" ? (
-          <BlueInvestigator state={state} reduceMotion={shouldReduceMotion} />
+          <SafeInvestigator animate={shouldAnimate} />
         ) : (
-          <MintHelper state={state} reduceMotion={shouldReduceMotion} />
+          <SafeHelper animate={shouldAnimate} />
         )}
-      </View>
+      </NativeAnimated.View>
     </View>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Floating mascot — no disc, drag it anywhere.
+ * ------------------------------------------------------------------ */
+
+/**
+ * The mascot as a free-floating overlay the user can drag with a finger.
+ *
+ * The bubble is gone: a tinted disc behind the character ate list width and
+ * read as a placeholder avatar. This one sits above the content with nothing
+ * behind it, so the only thing on screen is the character.
+ *
+ * The drag is a plain PanResponder over an `Animated.ValueXY` on the native
+ * driver — no gesture-handler dependency, and the pointer stays glued to the
+ * mascot because the offset is flattened on release rather than reset.
+ */
+export function FloatingMascot({
+  character = "investigator",
+  size = 88,
+  initial,
+  bottomInset = 8,
+  leftInset = EDGE_GUARD,
+  reduceMotion,
+}: {
+  character?: "investigator" | "helper";
+  /** Rendered height in points; the rig scales to fit it. */
+  size?: number;
+  /** Starting offset from the resting spot, in points. */
+  initial?: { x: number; y: number };
+  /** Gap kept above the tab bar at rest. */
+  bottomInset?: number;
+  /** Gap kept from the left edge at rest. */
+  leftInset?: number;
+  reduceMotion?: boolean;
+}) {
+  const systemReducedMotion = useReducedMotion();
+  const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
+  const idleStyle = useSafeMascotMotion(shouldAnimate);
+  const scale = size / SLOT_H;
+  const width = 92 * scale;
+
+  const screen = Dimensions.get("window");
+  // The mascot rests bottom-left, just above the tab bar; anchoring the view
+  // there and dragging from {0,0} keeps the resting spot correct on every
+  // screen height instead of computing a top offset that drifts per device.
+  const start = initial ?? { x: 0, y: 0 };
+  const pan = useRef(new NativeAnimated.ValueXY(start)).current;
+  const position = useRef({ ...start });
+  const grabbed = useRef(new NativeAnimated.Value(0)).current;
+  const tilt = useRef(new NativeAnimated.Value(0)).current;
+
+  useEffect(() => {
+    const id = pan.addListener((value) => { position.current = value; });
+    return () => pan.removeListener(id);
+  }, [pan]);
+
+  const responder = useRef(
+    PanResponder.create({
+      // Claim the gesture only once it is a real drag, so a scroll that starts
+      // on the mascot still scrolls the list underneath.
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
+      onPanResponderGrant: () => {
+        pan.setOffset({ ...position.current });
+        pan.setValue({ x: 0, y: 0 });
+        NativeAnimated.spring(grabbed, { toValue: 1, useNativeDriver: true, friction: 6 }).start();
+      },
+      // Written out rather than through `Animated.event` so the same handler
+      // can drive the tilt: lean into the direction of travel. A body that
+      // translates without rotating reads as a cursor dragging an image; the
+      // tilt is what makes it read as weight being pulled along.
+      onPanResponderMove: (_e, g) => {
+        pan.setValue({ x: g.dx, y: g.dy });
+        tilt.setValue(Math.max(-14, Math.min(14, g.vx * 9)));
+      },
+      onPanResponderRelease: (_e, g) => {
+        pan.flattenOffset();
+        NativeAnimated.spring(grabbed, { toValue: 0, useNativeDriver: true, friction: 6 }).start();
+        NativeAnimated.spring(tilt, { toValue: 0, useNativeDriver: true, friction: 4, tension: 90 }).start();
+
+        // Offsets are relative to the bottom-left rest spot: x grows right,
+        // y grows down, so the reachable box is x >= 0 and y <= 0.
+        const maxX = Math.max(0, screen.width - width - leftInset - 8);
+        // x >= 0 already keeps it out of the back-gesture strip, since the
+        // rest spot sits at leftInset.
+        const minY = -Math.max(0, screen.height - size - 160);
+        const settle = () => {
+          // A mascot flung past the bezel can never be dragged back, so it
+          // always ends inside the reachable box.
+          const x = Math.min(Math.max(position.current.x, 0), maxX);
+          const y = Math.min(Math.max(position.current.y, minY), 0);
+          if (x === position.current.x && y === position.current.y) return;
+          NativeAnimated.spring(pan, { toValue: { x, y }, useNativeDriver: false, friction: 6, tension: 70 }).start();
+        };
+
+        // Carry the throw: `decay` keeps the release velocity and bleeds it off,
+        // instead of the mascot stopping dead the instant the finger lifts.
+        const flick = NativeAnimated.decay(pan, {
+          velocity: { x: g.vx, y: g.vy },
+          deceleration: 0.994,
+          useNativeDriver: false,
+        });
+        // Cut the slide short the moment it leaves the box, then spring back —
+        // letting decay run to a stop first would send it far off screen and
+        // make the return trip feel like a separate animation.
+        const guard = pan.addListener(({ x, y }) => {
+          if (x < -24 || x > maxX + 24 || y > 24 || y < minY - 24) {
+            flick.stop();
+          }
+        });
+        flick.start(() => {
+          pan.removeListener(guard);
+          settle();
+        });
+      },
+    })
+  ).current;
+
+  const liftStyle = {
+    transform: [
+      { scale: grabbed.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] }) },
+      { rotate: tilt.interpolate({ inputRange: [-14, 14], outputRange: ["14deg", "-14deg"] }) },
+    ],
+  };
+
+  return (
+    <NativeAnimated.View
+      {...responder.panHandlers}
+      // A rig is mostly round, so its corners are dead space; the slop gives
+      // back the points a finger aims at but misses.
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      accessibilityElementsHidden
+      style={[styles.floating, { width, height: size, left: leftInset, bottom: bottomInset, transform: pan.getTranslateTransform() }]}
+    >
+      <NativeAnimated.View style={liftStyle}>
+        <NativeAnimated.View style={[styles.floatingBody, idleStyle, { transform: [...idleStyle.transform, { scale }] }]}>
+          {character === "investigator" ? <SafeInvestigator animate={shouldAnimate} /> : <SafeHelper animate={shouldAnimate} />}
+        </NativeAnimated.View>
+      </NativeAnimated.View>
+    </NativeAnimated.View>
   );
 }
 
@@ -419,6 +717,14 @@ function Spark({ index, active }: { index: number; active: boolean }) {
 }
 
 const BODY = 76;
+const SLOT_H = 132;
+/**
+ * iOS reserves roughly the first 20pt of the screen edge for the interactive
+ * back gesture, and that gesture is handled below React Native — a
+ * PanResponder cannot outvote it. So the mascot simply never rests or lands
+ * inside that strip: a touch on it is then always a touch on the mascot.
+ */
+const EDGE_GUARD = 28;
 
 const styles = StyleSheet.create({
   scene: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center", pointerEvents: "none" },
@@ -429,9 +735,18 @@ const styles = StyleSheet.create({
     borderRadius: 66,
     backgroundColor: "rgba(88, 223, 198, 0.12)",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "transparent",
+    overflow: "hidden",
   },
-  slot: { width: 92, height: 132, alignItems: "center", justifyContent: "flex-end" },
+  // A soft top-light on the disc, so the bubble reads as a bead of glass
+  // rather than a flat swatch behind the mascot.
+  spotlightGloss: { position: "absolute", top: 0, left: 0, right: 0, bottom: "45%", backgroundColor: "rgba(255,255,255,0.35)" },
+  spotlightBody: { alignItems: "center", justifyContent: "flex-end" },
+  floating: { position: "absolute", alignItems: "center", justifyContent: "center", zIndex: 20 },
+  floatingBody: { alignItems: "center", justifyContent: "center" },
+  slot: { width: 92, height: SLOT_H, alignItems: "center", justifyContent: "flex-end" },
   // The investigator reaches across the card, so it has to draw over it.
   slotFront: { zIndex: 3 },
 
@@ -446,16 +761,17 @@ const styles = StyleSheet.create({
   antenna: { position: "absolute", top: -13, width: 4, height: 15, borderRadius: 2 },
   antennaTip: { position: "absolute", top: -20, width: 11, height: 11, borderRadius: 6 },
 
-  face: { flexDirection: "row", gap: 11, marginTop: 18 },
-  eye: { width: 20, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
-  pupil: { width: 11, height: 11, borderRadius: 6, backgroundColor: INK, alignItems: "center", justifyContent: "center" },
-  glint: { position: "absolute", top: 1.5, right: 1.5, width: 4.5, height: 4.5, borderRadius: 2.5, backgroundColor: "#FFFFFF" },
-  blush: { position: "absolute", top: 46, width: 13, height: 8, borderRadius: 5, opacity: 0.5 },
+  face: { flexDirection: "row", gap: 9, marginTop: 16 },
+  eye: { width: 23, height: 25, borderRadius: 11, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+  pupil: { width: 13, height: 13, borderRadius: 7, backgroundColor: INK, alignItems: "center", justifyContent: "center" },
+  glint: { position: "absolute", top: 1.5, right: 1.5, width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#FFFFFF" },
+  glintSmall: { position: "absolute", bottom: 2, left: 2, width: 3, height: 3, borderRadius: 1.5, backgroundColor: "#FFFFFF", opacity: 0.8 },
+  blush: { position: "absolute", top: 48, width: 15, height: 9, borderRadius: 5, opacity: 0.55 },
   blushLeft: { left: 7 },
   blushRight: { right: 7 },
   mouth: { marginTop: 7, width: 16, height: 6, borderRadius: 4, backgroundColor: INK, opacity: 0.85 },
   // Over-rounded and clipped: only the lower arc of the border shows.
-  smile: { marginTop: 5, width: 22, height: 14, borderRadius: 11, borderWidth: 3, borderColor: INK, borderTopColor: "transparent", borderLeftColor: "transparent", borderRightColor: "transparent", opacity: 0.85 },
+  smile: { position: "absolute", top: 52, width: 24, height: 15, borderRadius: 11, borderWidth: 3, borderColor: INK, borderTopColor: "transparent", borderLeftColor: "transparent", borderRightColor: "transparent", opacity: 0.85 },
 
   arm: { position: "absolute", top: 38, width: 10, height: 34, borderRadius: 5, transformOrigin: "top center", alignItems: "center" },
   armRight: { right: -11 },

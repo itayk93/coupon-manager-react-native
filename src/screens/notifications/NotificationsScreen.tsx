@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { Bell, AlertTriangle, CheckCheck, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { FloatingMascot } from "@/components/onboarding/CharacterRig";
 import { useCoupons } from "@/hooks/useCoupons";
 import {
   useHideNotification,
@@ -212,14 +212,9 @@ export function NotificationsScreen() {
     );
   };
 
-  const renderSection = (label: string, items: FeedItem[], unread: boolean, showCharacter = false) =>
+  const renderSection = (label: string, items: FeedItem[], unread: boolean) =>
     items.length > 0 ? (
       <>
-        {showCharacter ? (
-          <View style={styles.actionCharacter}>
-            <CharacterSpotlight character="investigator" state="thinking" size="small" />
-          </View>
-        ) : null}
         <Text style={[styles.groupLabel, { color: theme.textSubtle }]}>
           {label} · {items.length}
         </Text>
@@ -266,7 +261,7 @@ export function NotificationsScreen() {
       >
         {notifications.length > 0 ? (
           <>
-            {renderSection("שווה לבדוק", actionRequired, true, true)}
+            {renderSection("שווה לבדוק", actionRequired, true)}
             {renderSection("עדכונים", updates, true)}
             {renderSection("היסטוריה", history, false)}
           </>
@@ -278,6 +273,8 @@ export function NotificationsScreen() {
           />
         )}
       </ScrollView>
+
+      {notifications.length > 0 ? <FloatingMascot character="investigator" /> : null}
     </SafeAreaView>
   );
 }
@@ -356,10 +353,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-  },
-  actionCharacter: {
-    alignItems: "flex-end",
-    marginBottom: -6,
   },
   groupLabel: {
     fontFamily: fonts.bodyBold,

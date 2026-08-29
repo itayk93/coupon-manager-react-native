@@ -82,7 +82,13 @@ export function BottomNav() {
           >
             <View>
               <item.Icon color={color} size={20} strokeWidth={1.8} />
-              {item.path === "/notifications" && unread > 0 ? <View style={styles.dot} /> : null}
+              {item.path === "/notifications" && unread > 0 ? (
+                <View style={[styles.badge, { borderColor: theme.card }]}>
+                  <Text style={styles.badgeText} numberOfLines={1}>
+                    {unread >= 10 ? "10+" : unread}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <Text style={[styles.label, { color }]}>{item.label}</Text>
           </TouchableOpacity>
@@ -106,14 +112,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 3,
   },
-  dot: {
+  // Counter sits on the bell's left, per the design. It is a pill rather than
+  // a circle so "10+" widens instead of spilling out of a fixed disc.
+  badge: {
     position: "absolute",
-    top: -2,
-    right: -3,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: -7,
+    left: -15,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
+    paddingHorizontal: 4,
     backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center",
+    // A ring in the bar's own color keeps the badge legible where it laps the
+    // bell's outline.
+    borderWidth: 1.5,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    fontWeight: "800",
+    // lineHeight matched to the pill and font padding off: the default Android
+    // padding pushes the digits below the center.
+    lineHeight: 11,
+    includeFontPadding: false,
+    textAlign: "center",
   },
   label: {
     fontFamily: fonts.bodyBold,
