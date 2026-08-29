@@ -23,6 +23,7 @@
     "submit:android:internal": "eas submit --profile production --platform android",
     "build:sim:ios": "eas build --profile development-simulator --platform ios",
     "build:ios:device": "./build-ios.command",
+    "build:android:device": "./build-android.command",
     "test": "vitest run",
     "size": "expo export --platform ios --output-dir .expo/size-report >/dev/null && du -sh .expo/size-report/_expo .expo/size-report/assets",
     "check:links": "node scripts/check-deep-links.mjs",
@@ -31,6 +32,8 @@
     "e2e:browser:cleanup": "node scripts/e2e-browser-fixture.mjs cleanup",
     "e2e:notifications": "node scripts/e2e-notifications.mjs",
     "e2e:referral": "node scripts/e2e-referral.mjs",
+    "qa:android:devices": "./scripts/qa-android-devices.sh",
+    "qa:android:screens": "./scripts/qa-android-screen-matrix.sh",
     "typecheck": "tsc --noEmit -p tsconfig.native.json",
     "multipass:daily": "HEADLESS=true node scripts/run-daily-multipass.mjs"
   },

@@ -75,6 +75,15 @@ export function BottomNav() {
         },
       ]}
     >
+      {Platform.OS === "android" ? (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.systemNavSeparator,
+            { bottom: insets.bottom, backgroundColor: theme.border },
+          ]}
+        />
+      ) : null}
       {items.map((item) => {
         const active = isActive(item, pathname);
         const color = active ? theme.primary : theme.textSubtle;
@@ -112,6 +121,13 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     borderTopWidth: 1,
     paddingTop: 10,
+    position: "relative",
+  },
+  systemNavSeparator: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
   },
   item: {
     flex: 1,

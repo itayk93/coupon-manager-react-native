@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
 import { ChevronRight, Bell } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,15 +30,7 @@ export function Header({
   const { user } = useAuth();
 
   return (
-    <SafeAreaView
-      style={[
-        styles.safeArea,
-        {
-          backgroundColor: theme.card,
-          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-        },
-      ]}
-    >
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.card }]}>
       <View
         style={[
           styles.container,

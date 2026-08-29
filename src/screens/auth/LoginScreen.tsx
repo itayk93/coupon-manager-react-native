@@ -13,6 +13,7 @@ import {
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Mail, Lock } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 import { Input } from "@/components/ui/input";
 import { signInLegacy } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +22,17 @@ import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { signInWithSocialProvider } from "@/lib/socialAuth";
 import { logActivity } from "@/lib/activityLog";
+
+function AppleLogo() {
+  return (
+    <Svg width={19} height={23} viewBox="0 0 24 24" accessibilityElementsHidden>
+      <Path
+        fill="#ffffff"
+        d="M17.05 12.54c-.03-3.18 2.6-4.72 2.72-4.79a5.84 5.84 0 0 0-4.6-2.49c-1.94-.2-3.82 1.16-4.81 1.16-1.01 0-2.54-1.14-4.18-1.1a6.08 6.08 0 0 0-5.12 3.12c-2.23 3.86-.57 9.53 1.57 12.65 1.07 1.53 2.32 3.24 3.96 3.18 1.6-.07 2.2-1.02 4.13-1.02 1.91 0 2.48 1.02 4.15.98 1.72-.03 2.8-1.53 3.82-3.08a12.6 12.6 0 0 0 1.75-3.56 5.5 5.5 0 0 1-3.39-5.05ZM13.9 3.2A5.56 5.56 0 0 0 15.17-.8a5.65 5.65 0 0 0-3.65 1.9 5.3 5.3 0 0 0-1.3 3.86A4.68 4.68 0 0 0 13.9 3.2Z"
+      />
+    </Svg>
+  );
+}
 
 export function LoginScreen() {
   const router = useRouter();
@@ -189,7 +201,7 @@ export function LoginScreen() {
                 disabled={socialLoading !== null}
                 style={[styles.socialBtn, styles.appleBtn]}
               >
-                <Text style={styles.appleIcon}></Text>
+                <AppleLogo />
                 <Text style={[styles.socialText, styles.appleText]}>
                   {socialLoading === "apple" ? "מתחבר..." : "המשך עם Apple"}
                 </Text>
@@ -343,10 +355,6 @@ const styles = StyleSheet.create({
   appleBtn: {
     backgroundColor: "#000000",
     borderColor: "#000000",
-  },
-  appleIcon: {
-    color: "#ffffff",
-    fontSize: 21,
   },
   appleText: {
     color: "#ffffff",

@@ -21,7 +21,7 @@ import {
   useSegments,
 } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import {
   Heebo_400Regular,
@@ -200,14 +200,19 @@ function RootLayoutNav() {
             isDesktopWeb && styles.shellDesktop,
           ]}
         >
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: "slide_from_right",
-              contentStyle: { backgroundColor: theme.background },
-            }}
-          />
-          <BottomNav />
+          <SafeAreaView
+            edges={Platform.OS === "android" ? ["top"] : []}
+            style={[styles.appViewport, { backgroundColor: theme.background }]}
+          >
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "slide_from_right",
+                contentStyle: { backgroundColor: theme.background },
+              }}
+            />
+            <BottomNav />
+          </SafeAreaView>
           <BiometricGate />
           <SharedScreenshotUsage />
           <ConfirmHost />
@@ -277,6 +282,9 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     position: "relative",
+  },
+  appViewport: {
+    flex: 1,
   },
   shellDesktop: {
     maxWidth: 430,

@@ -8,6 +8,8 @@ import {
   TextInput,
   Platform,
   ActivityIndicator,
+  ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -31,6 +33,8 @@ import { notify } from "@/lib/notify";
 export function BarcodeScannerScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const { width, fontScale } = useWindowDimensions();
+  const compactLayout = width < 380 || fontScale > 1.2;
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   // `onBarcodeScanned` fires several times per second, and a state update does
@@ -180,11 +184,12 @@ export function BarcodeScannerScreen() {
 
       <View style={styles.container}>
         {/* Top Mode Selector Tabs */}
-        <View style={styles.tabSelector}>
+        <View style={[styles.tabSelector, compactLayout && styles.tabSelectorCompact]}>
           <TouchableOpacity
             onPress={() => setActiveTab("ai")}
             style={[
               styles.tabBtn,
+              compactLayout && styles.tabBtnCompact,
               {
                 backgroundColor:
                   activeTab === "ai"
@@ -211,6 +216,7 @@ export function BarcodeScannerScreen() {
             onPress={() => setActiveTab("camera")}
             style={[
               styles.tabBtn,
+              compactLayout && styles.tabBtnCompact,
               {
                 backgroundColor:
                   activeTab === "camera"
@@ -302,7 +308,12 @@ export function BarcodeScannerScreen() {
             )}
           </View>
         ) : (
-          <View style={styles.aiContainer}>
+          <ScrollView
+            style={styles.aiContainer}
+            contentContainerStyle={styles.aiContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <View
               style={[
                 styles.aiCard,
@@ -351,7 +362,7 @@ export function BarcodeScannerScreen() {
                 אפשר גם לצרף תמונה של השובר
               </Text>
 
-              <View style={styles.imageBtnRow}>
+              <View style={[styles.imageBtnRow, compactLayout && styles.imageBtnRowCompact]}>
                 <View style={{ flex: 1 }}>
                   <Button
                     title="בחר מהגלריה"
@@ -381,7 +392,7 @@ export function BarcodeScannerScreen() {
                 style={{ marginTop: 16 }}
               />
             </View>
-          </View>
+          </ScrollView>
         )}
 
         <View style={styles.manualAddContainer}>
@@ -415,6 +426,9 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     gap: 10,
   },
+  imageBtnRowCompact: {
+    flexDirection: "column",
+  },
   characterLoading: {
     alignItems: "center",
     justifyContent: "center",
@@ -430,6 +444,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 14,
   },
+  tabSelectorCompact: {
+    flexDirection: "column",
+  },
   tabBtn: {
     flex: 1,
     flexDirection: "row-reverse",
@@ -438,6 +455,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     gap: 8,
+  },
+  tabBtnCompact: {
+    flex: 0,
+    minHeight: 48,
   },
   tabBtnText: {
     fontSize: 14,
@@ -552,6 +573,9 @@ const styles = StyleSheet.create({
   },
   aiContainer: {
     flex: 1,
+  },
+  aiContent: {
+    paddingBottom: 4,
   },
   aiCard: {
     borderRadius: 24,

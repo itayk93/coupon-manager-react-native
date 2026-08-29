@@ -46,6 +46,16 @@ npm run ios            # or: npm run android
 Use a separate Supabase project for local development. Never reuse production
 credentials or production coupon data.
 
+To build a standalone Release APK, install it on a connected Android device and
+launch it:
+
+```bash
+npm run build:android:device
+```
+
+Enable USB debugging on the device and approve the computer when prompted. Use
+`npm run build:android:device -- --clean` to force a clean native rebuild.
+
 `npm start` alone expects a dev client. The app uses native modules, so Expo Go
 will not run it — build once with `npm run ios` / `npm run android` first.
 
