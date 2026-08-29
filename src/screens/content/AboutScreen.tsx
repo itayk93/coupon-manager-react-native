@@ -35,7 +35,7 @@ export function AboutScreen() {
             <Sparkles size={36} color={theme.primary} />
           </View>
           <Text style={[styles.title, { color: theme.text }]}>
-            Coupon Master
+            קופון מאסטר
           </Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>
             הארנק הדיגיטלי המתקדם בישראל לניהול קופונים ושוברים

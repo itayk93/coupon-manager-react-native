@@ -92,7 +92,7 @@ export const exportCouponsToPDF = (coupons: DecryptedCoupon[]) => {
   let y = 48;
 
   doc.setFontSize(16);
-  doc.text('Coupon Master - coupons export', pageWidth - 40, y, { align: 'right' });
+  doc.text('קופון מאסטר - coupons export', pageWidth - 40, y, { align: 'right' });
   y += 30;
   doc.setFontSize(10);
 

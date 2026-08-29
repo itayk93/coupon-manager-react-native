@@ -35,7 +35,7 @@ async function sendEmailDetailed(
 ): Promise<EmailResult> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
   const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') || 'hello@itaykarkason.com';
-  const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'Coupon Master';
+  const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'קופון מאסטר';
   if (!apiKey) return { ok: false, error: 'BREVO_API_KEY missing' };
   try {
     const resp = await safeFetch(BREVO_API_URL, {
@@ -239,8 +239,8 @@ Deno.serve(async (req: Request) => {
     if (mode === 'test') {
       const ok = await sendEmail(
         body.to,
-        'מייל בדיקה - Coupon Master',
-        '<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.6"><h2>Coupon Master מחובר למייל</h2><p>זהו מייל בדיקה. שירות Brevo עובד בהצלחה.</p></div>',
+        'מייל בדיקה - קופון מאסטר',
+        '<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.6"><h2>קופון מאסטר מחובר למייל</h2><p>זהו מייל בדיקה. שירות Brevo עובד בהצלחה.</p></div>',
       );
       return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחה נכשלה דרך Brevo' }, 502);
     }
@@ -251,7 +251,7 @@ Deno.serve(async (req: Request) => {
       if (!subject || !details) return jsonResponse({ error: 'חסרים נושא ופרטי תקלה' }, 400);
 
       const html = `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.7">
-        <h2>דיווח תקלה חדש - Coupon Master</h2>
+        <h2>דיווח תקלה חדש - קופון מאסטר</h2>
         <p><strong>נושא:</strong> ${escapeHtml(subject)}</p>
         <p><strong>פרטים:</strong></p>
         <p style="white-space:pre-wrap">${escapeHtml(details)}</p>

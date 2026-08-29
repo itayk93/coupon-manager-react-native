@@ -2,6 +2,7 @@
 module.exports = {
   type: "widget",
   name: "CouponWidget",
+  displayName: "קופון מאסטר",
   icon: "../../assets/icon.png",
   deploymentTarget: "16.0",
   entitlements: {

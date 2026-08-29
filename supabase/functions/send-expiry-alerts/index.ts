@@ -167,7 +167,7 @@ async function sendEmail(
       body: JSON.stringify({
         sender: {
           email: Deno.env.get('BREVO_SENDER_EMAIL') || 'hello@itaykarkason.com',
-          name: Deno.env.get('BREVO_SENDER_NAME') || 'Coupon Master',
+          name: Deno.env.get('BREVO_SENDER_NAME') || 'קופון מאסטר',
         },
         to: [{ email: to }],
         subject,

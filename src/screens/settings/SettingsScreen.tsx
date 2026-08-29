@@ -296,7 +296,7 @@ export function SettingsScreen() {
               <ChevronLeft size={18} color={theme.textMuted} />
               <View style={styles.menuItemLabelGroup}>
                 <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  אודות Coupon Master
+                  אודות קופון מאסטר
                 </Text>
                 <HelpCircle size={20} color={theme.textMuted} />
               </View>

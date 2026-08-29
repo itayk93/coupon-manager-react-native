@@ -331,7 +331,7 @@ export function ProfileScreen() {
         visible={avatarPickerOpen}
         onClose={() => setAvatarPickerOpen(false)}
         title="בחירת תמונת פרופיל"
-        subtitle="20 דמויות של Coupon Master או תמונה מהגלריה"
+        subtitle="20 דמויות של קופון מאסטר או תמונה מהגלריה"
       >
         <TouchableOpacity
           onPress={pickProfileImage}

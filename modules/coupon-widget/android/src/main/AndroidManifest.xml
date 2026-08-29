@@ -4,7 +4,7 @@
   <application>
     <receiver
       android:name="com.itaykarkason.couponmaster.widget.CouponWidgetProvider"
-      android:label="Coupon Master"
+      android:label="קופון מאסטר"
       android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

@@ -90,7 +90,7 @@ export function useAdminMfa() {
 
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: `Coupon Manager Admin ${Date.now()}`,
+        friendlyName: `Coupon Master Admin ${Date.now()}`,
       });
       if (enrollError) throw enrollError;
 
