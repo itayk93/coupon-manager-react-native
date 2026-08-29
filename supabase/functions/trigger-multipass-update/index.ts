@@ -196,7 +196,7 @@ Deno.serve(async (req: Request) => {
     const { data: coupons, error } = await query;
     if (error) throw error;
 
-    const eligibleCoupons = cronRequest ? (coupons || []) : (coupons || []).filter((coupon) => {
+    const eligibleCoupons = (coupons || []).filter((coupon) => {
       if (!coupon.last_scraped) return true;
       const views = [coupon.last_detail_view, coupon.last_company_view, coupon.last_code_view]
         .filter(Boolean)
