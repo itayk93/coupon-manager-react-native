@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   TextInput,
   Image,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Users,
   Building2,
@@ -46,10 +46,21 @@ import { notify } from "@/lib/notify";
 
 type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals";
 
+const TAB_KEYS: AdminTab[] = ["users", "companies", "tags", "messages", "referrals"];
+
 export function AdminDashboardScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
+
+  // The bottom bar's שותפים tab points here with ?tab=referrals. Reading it in
+  // an effect rather than as the initial state matters: the screen stays
+  // mounted, so a second tap must still move the tab.
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  useEffect(() => {
+    if (!tabParam) return;
+    if (TAB_KEYS.includes(tabParam as AdminTab)) setActiveTab(tabParam as AdminTab);
+  }, [tabParam]);
 
   // Users
   const [userSearch, setUserSearch] = useState("");

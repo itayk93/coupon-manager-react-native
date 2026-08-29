@@ -28,7 +28,8 @@ function buildItems(isAdmin: boolean): Item[] {
     { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
     {
       label: "שותפים",
-      path: isAdmin ? "/admin" : "/invite",
+      // Admins land straight on the panel's referrals tab, not on its default one.
+      path: isAdmin ? "/admin?tab=referrals" : "/invite",
       Icon: Handshake,
       match: isAdmin
         ? ["/admin"]
@@ -41,6 +42,7 @@ function buildItems(isAdmin: boolean): Item[] {
 
 function isActive(item: Item, pathname: string) {
   if (item.path === "/") return pathname === "/" || pathname === "/index";
+  // item.path may carry a query string; matching is on `match` alone.
   return item.match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
 }
 
