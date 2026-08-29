@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, Home, Share2, Ticket, User } from "lucide-react-native";
+import { Bell, Home, Handshake, Share2, Ticket, User } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -25,13 +25,14 @@ function buildItems(isAdmin: boolean): Item[] {
   return [
     { label: "דשבורד", path: "/", Icon: Home, match: [] },
     { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
+    { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
     {
-      label: "שיתופים",
+      label: "שותפים",
       path: isAdmin ? "/admin" : "/invite",
-      Icon: Share2,
+      Icon: Handshake,
       match: isAdmin
         ? ["/admin"]
-        : ["/invite", "/sharing", "/referral-program"],
+        : ["/invite", "/referral-program"],
     },
     { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
     { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", ...(isAdmin ? [] : ["/admin"])] },
