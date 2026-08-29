@@ -145,18 +145,9 @@ function RootLayoutNav() {
   useWidgetSync();
   usePendingOnboardingCoupon();
   useScreenTracking();
-  const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > 480;
-  // A cold-start deep link already asks the native navigator to restore a
-  // non-root route. Running the launch video at the same time makes the initial
-  // transition and the video teardown flush competing frame callbacks. On iOS
-  // this aborts Hermes/Worklets when the app is opened from the widget. Deep
-  // links therefore go straight to their destination; regular launches keep
-  // the branded reveal.
-  const [launchVisible, setLaunchVisible] = useState(
-    Platform.OS !== "web" && pathname === "/",
-  );
+  const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web");
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
   // for headings and figures in the redesign.
@@ -173,10 +164,10 @@ function RootLayoutNav() {
   const isReady = authReady && (fontsLoaded || Boolean(fontError));
 
   useEffect(() => {
-    if (!launchVisible && (fontsLoaded || fontError)) {
+    if (Platform.OS === "web" && (fontsLoaded || fontError)) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontError, fontsLoaded, launchVisible]);
+  }, [fontError, fontsLoaded]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 

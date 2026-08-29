@@ -37,7 +37,6 @@ import { couponRouteId } from "@/lib/couponId";
 import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
@@ -566,7 +565,7 @@ export function CouponsListScreen() {
           )}
           ListEmptyComponent={
             <EmptyState
-              icon={<CharacterSpotlight character="investigator" state={search || selectedTag ? "thinking" : "talking"} />}
+              icon={<Search size={56} color={theme.primary} strokeWidth={1.6} />}
               largeVisual
               title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
               subtitle={
