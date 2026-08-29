@@ -130,3 +130,20 @@ select public.refresh_referral_progress();
   כל טבלאות ה-referral חסומות ב-RLS מאחורי `is_app_admin()`, כך שמשתמש רגיל
   מקבל אפס שורות מ-Postgres. בדיקה מלאה מקצה לקצה מול הפרודקשן:
   `npm run e2e:referral` (יוצר חשבונות זמניים ומוחק אחריו הכול).
+
+## נספח: תיקון היסטוריית מיגרציות (2026-08-29)
+
+חלק מהמיגרציות הורצו בעבר ישירות מול הפרויקט המרוחק (Dashboard/MCP) ולא דרך
+`supabase db push`. התוצאה הייתה טבלת היסטוריה עם 21 רשומות שלא היו קיימות
+מקומית, ו-`db push` שסירב לרוץ.
+
+התיקון: `supabase migration repair --status reverted` על הרשומות הכפולות,
+`--status applied` על הקבצים המקומיים שתוכנם כבר קיים ב-DB, ואז `db push` על
+שלוש המיגרציות שבאמת חסרו. `migration repair` נוגע רק ברישום — הוא לא מריץ ולא
+מבטל SQL.
+
+מסקנה תפעולית: כל שינוי סכימה עובר דרך קובץ ב-`supabase/migrations` ודרך
+`db push`. הרצה ידנית ב-Dashboard יוצרת את הפער הזה מחדש.
+
+מיגרציות צריכות להיות ניתנות להרצה חוזרת: `create table if not exists`,
+`create or replace function`, ו-`drop policy if exists` לפני `create policy`.

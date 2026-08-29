@@ -18,14 +18,17 @@ create table if not exists public.referral_applications (
 
 alter table public.referral_applications enable row level security;
 
+drop policy if exists "admins see all applications" on public.referral_applications;
 create policy "admins see all applications"
   on public.referral_applications for select
   using (public.is_app_admin());
 
+drop policy if exists "users see own applications" on public.referral_applications;
 create policy "users see own applications"
   on public.referral_applications for select
   using (user_id = public.app_user_id());
 
+drop policy if exists "authenticated can insert" on public.referral_applications;
 create policy "authenticated can insert"
   on public.referral_applications for insert
   with check (true);

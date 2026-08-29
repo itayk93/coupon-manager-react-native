@@ -88,6 +88,12 @@ verify_jwt = true
 # the model spend is always attributable to an account.
 verify_jwt = true
 
+[functions.send-verification-code]
+# Public by necessity: it is what a person calls while creating an account, so
+# there is no session to present yet. It hands back nothing but {sent:true} —
+# never the code — and Auth still rate-limits how often a fresh one is minted.
+verify_jwt = false
+
 [functions.send-password-reset]
 # Public by necessity: a person who cannot sign in is the only one who needs
 # it. Nothing is returned either way, so it cannot be used to ask whether an
@@ -100,3 +106,10 @@ verify_jwt = false
 # body would be the only thing saying who is being added to a partner's chain,
 # and that partner is paid per user.
 verify_jwt = true
+
+# TOTP is what the admin panel asks for before it will draw anything. Stated
+# here so a local stack behaves like production instead of failing enrollment
+# with an unexplained error.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

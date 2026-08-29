@@ -16,7 +16,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Mail, Lock, User } from "lucide-react-native";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -25,7 +24,6 @@ import { logActivity } from "@/lib/activityLog";
 export function RegisterScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
-  const { refreshUser } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -65,37 +63,42 @@ export function RegisterScreen() {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      // 1. Create in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-          data: {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
+      // Not signUp(): that mails Supabase's own confirmation link on the
+      // built-in SMTP, whose quota is a couple of messages an hour for the
+      // whole project. The function below creates the same unconfirmed user
+      // and sends the six-digit code through Brevo, like the rest of our mail.
+      const { data, error: sendError } = await supabase.functions.invoke(
+        "send-verification-code",
+        {
+          body: {
+            mode: "signup",
+            email: normalizedEmail,
+            password,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
           },
-        },
-      });
+        }
+      );
 
-      if (authError) throw authError;
-      if (!authData.user?.identities?.length) {
-        throw new Error("כבר קיים חשבון עם האימייל הזה. התחברו בשיטה הקיימת וקשרו שיטה נוספת מהפרופיל.");
+      if (sendError) {
+        const detail = (sendError as any).context?.json
+          ? await (sendError as any).context.json().catch(() => null)
+          : null;
+        const code = detail?.error ?? data?.error;
+        throw new Error(
+          code === "EMAIL_TAKEN"
+            ? "כבר קיים חשבון עם האימייל הזה. התחברו בשיטה הקיימת וקשרו שיטה נוספת מהפרופיל."
+            : "לא הצלחנו לשלוח את קוד האימות. נסו שוב בעוד רגע."
+        );
       }
 
-      logActivity("register_success", {
-        metadata: { needs_verification: !authData.session },
+      logActivity("register_success", { metadata: { needs_verification: true } });
+
+      router.replace({
+        pathname: "/(auth)/onboarding",
+        params: { pendingVerification: normalizedEmail },
       });
-
-      if (!authData.session) {
-        router.replace({
-          pathname: "/(auth)/onboarding",
-          params: { pendingVerification: normalizedEmail },
-        });
-        return;
-      }
-
-      await refreshUser();
-      router.replace("/(auth)/onboarding");
+      return;
     } catch (err: any) {
       notify.error("שגיאה בהרשמה", err.message || "אירעה שגיאה בעת ההרשמה");
     } finally {

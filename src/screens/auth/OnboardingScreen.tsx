@@ -185,9 +185,11 @@ export function OnboardingScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
-          <Pressable onPress={back} style={styles.iconButton} accessibilityLabel="חזרה"><ChevronRight size={24} color={theme.text} /></Pressable>
+          {steps.indexOf(mode) > 0
+            ? <Pressable onPress={back} style={styles.iconButton} accessibilityLabel="חזרה"><ChevronRight size={24} color={theme.text} /></Pressable>
+            : <View style={styles.iconButton} />}
           <ProgressBar step={step} total={steps.length} reduceMotion={reduceMotion} trackColor={theme.border} />
-          <Pressable onPress={finish} style={styles.skipButton}><Text style={styles.skipText}>אפשר לדלג, הקופונים יחכו לך</Text></Pressable>
+          <Pressable onPress={finish} style={styles.skipButton}><Text style={styles.skipText}>דלג</Text></Pressable>
         </View>
 
         <Animated.View key={mode} entering={reduceMotion ? undefined : FadeIn.duration(220)}>
@@ -303,7 +305,7 @@ function PrimaryButton({ label, onPress, disabled, loading }: { label: string; o
 const styles = StyleSheet.create({
   flex: { flex: 1 }, safe: { flex: 1 }, centered: { alignItems: "center", justifyContent: "center" }, content: { flexGrow: 1, padding: 20, paddingBottom: 40 },
   topRow: { minHeight: 62, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: 8 }, iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  skipButton: { maxWidth: 150, minHeight: 44, justifyContent: "center" }, skipText: { color: palette.primary, fontFamily: fonts.bodyBold, fontSize: 12, lineHeight: 17, textAlign: "left", writingDirection: "rtl" },
+  skipButton: { minWidth: 44, minHeight: 44, justifyContent: "center" }, skipText: { color: palette.primary, fontFamily: fonts.bodyBold, fontSize: 15, lineHeight: 20, textAlign: "left", writingDirection: "rtl" },
   // Mirrored so the fill grows from the right, with the rest of the RTL layout.
   progressTrack: { flex: 1, height: 7, borderRadius: 4, overflow: "hidden", transform: [{ scaleX: -1 }] },
   progressFill: { height: "100%", borderRadius: 4, backgroundColor: palette.primary },
