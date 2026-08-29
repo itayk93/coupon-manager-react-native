@@ -3,6 +3,7 @@
 //   mode: "newsletter"           -> send a newsletter to all subscribed users
 //   mode: "test"                 -> send a single test email
 //   mode: "issue_report"         -> send a support report to the admin
+//   mode: "referral_application"  -> notify admin about a new partner application
 //
 // Expiry reminders moved to send-expiry-alerts (email + push + in-app).
 //
@@ -263,6 +264,28 @@ Deno.serve(async (req: Request) => {
         html,
       );
       return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחת הדיווח נכשלה' }, 502);
+    }
+    if (mode === 'referral_application') {
+      const fullName = String(body.full_name || '').trim().slice(0, 200);
+      const email = String(body.email || '').trim().slice(0, 254);
+      const phone = String(body.phone || '').trim().slice(0, 30);
+      const reason = String(body.reason || '').trim().slice(0, 2000);
+      if (!fullName || !email) return jsonResponse({ error: 'missing name/email' }, 400);
+
+      const html = `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.7">
+        <h2>בקשה חדשה לתוכנית השותפים</h2>
+        <p><strong>שם:</strong> ${escapeHtml(fullName)}</p>
+        <p><strong>אימייל:</strong> ${escapeHtml(email)}</p>
+        ${phone ? `<p><strong>טלפון:</strong> ${escapeHtml(phone)}</p>` : ''}
+        ${reason ? `<p><strong>סיבה:</strong></p><p style="white-space:pre-wrap">${escapeHtml(reason)}</p>` : ''}
+        <p style="margin-top:16px;color:#666">ניתן לאשר או לדחות מלוח הבקרה באפליקציה.</p>
+      </div>`;
+      const ok = await sendEmail(
+        'itayk93@gmail.com',
+        `בקשה לתוכנית שותפים: ${fullName}`,
+        html,
+      );
+      return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'שליחת המייל נכשלה' }, 502);
     }
     return jsonResponse({ error: 'mode לא חוקי' }, 400);
   } catch (err) {

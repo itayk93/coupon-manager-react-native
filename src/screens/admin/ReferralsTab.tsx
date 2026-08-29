@@ -18,6 +18,11 @@ import { Modal } from "@/components/ui/Modal";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useManageUsers } from "@/hooks/useAdminManagement";
 import {
+  ReferralApplication,
+  useReferralApplications,
+  useReviewApplication,
+} from "@/hooks/useReferralApplication";
+import {
   ReferralCampaignOverview,
   ReferralRow,
   summarizeReferrals,
@@ -92,11 +97,166 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 
 export function ReferralsTab() {
   const [openCampaignId, setOpenCampaignId] = useState<number | null>(null);
+  const [tab, setTab] = useState<"partners" | "applications">("partners");
+  const { theme } = useAppTheme();
+
+  if (tab === "applications") {
+    return (
+      <View style={styles.tabContent}>
+        <TabSwitcher current={tab} onChange={setTab} theme={theme} />
+        <ApplicationsList />
+      </View>
+    );
+  }
 
   return openCampaignId === null ? (
-    <PartnerList onOpen={setOpenCampaignId} />
+    <View style={styles.tabContent}>
+      <TabSwitcher current={tab} onChange={setTab} theme={theme} />
+      <PartnerList onOpen={setOpenCampaignId} />
+    </View>
   ) : (
     <PartnerDetail campaignId={openCampaignId} onBack={() => setOpenCampaignId(null)} />
+  );
+}
+
+function TabSwitcher({
+  current,
+  onChange,
+  theme,
+}: {
+  current: "partners" | "applications";
+  onChange: (t: "partners" | "applications") => void;
+  theme: any;
+}) {
+  const { data: apps = [] } = useReferralApplications();
+  const pending = apps.filter((a) => a.status === "pending").length;
+
+  return (
+    <View style={[styles.tabSwitcher, { borderColor: theme.border }]}>
+      <TouchableOpacity
+        style={[styles.tabBtn, current === "partners" && { backgroundColor: theme.primary }]}
+        onPress={() => onChange("partners")}
+      >
+        <Text style={[styles.tabBtnText, { color: current === "partners" ? "#fff" : theme.text }]}>
+          שותפים
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.tabBtn, current === "applications" && { backgroundColor: theme.primary }]}
+        onPress={() => onChange("applications")}
+      >
+        <Text style={[styles.tabBtnText, { color: current === "applications" ? "#fff" : theme.text }]}>
+          בקשות{pending > 0 ? ` (${pending})` : ""}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function ApplicationsList() {
+  const { theme } = useAppTheme();
+  const { data: apps = [], isLoading } = useReferralApplications();
+  const review = useReviewApplication();
+  const [noteId, setNoteId] = useState<number | null>(null);
+  const [note, setNote] = useState("");
+
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
+  const statusColor: Record<string, string> = {
+    pending: "#f59e0b",
+    approved: "#10b981",
+    rejected: "#ef4444",
+  };
+  const statusLabel: Record<string, string> = {
+    pending: "ממתין",
+    approved: "אושר",
+    rejected: "נדחה",
+  };
+
+  return (
+    <FlatList
+      data={apps}
+      keyExtractor={(a) => String(a.id)}
+      contentContainerStyle={{ padding: 16, gap: 12 }}
+      ListEmptyComponent={
+        <Text style={[styles.muted, { color: theme.textMuted, marginTop: 24 }]}>
+          אין בקשות
+        </Text>
+      }
+      renderItem={({ item }) => (
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <View style={styles.cardHead}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>{item.full_name}</Text>
+            <Text style={[styles.badge, { color: statusColor[item.status] }]}>
+              {statusLabel[item.status]}
+            </Text>
+          </View>
+          <Text style={[styles.rowMeta, { color: theme.textMuted }]}>{item.email}</Text>
+          {item.phone ? (
+            <Text style={[styles.rowMeta, { color: theme.textMuted }]}>{item.phone}</Text>
+          ) : null}
+          {item.reason ? (
+            <Text style={[styles.rowMeta, { color: theme.text, marginTop: 4 }]}>{item.reason}</Text>
+          ) : null}
+          <Text style={[styles.rowMeta, { color: theme.textMuted, marginTop: 4 }]}>
+            {formatDate(item.created_at)}
+          </Text>
+
+          {item.status === "pending" ? (
+            <View style={{ gap: 8, marginTop: 8 }}>
+              {noteId === item.id ? (
+                <TextInput
+                  placeholder="הערה (אופציונלי)..."
+                  placeholderTextColor={theme.textMuted}
+                  value={note}
+                  onChangeText={setNote}
+                  style={[styles.noteInput, { color: theme.text, borderColor: theme.border }]}
+                />
+              ) : null}
+              <View style={styles.actionRow}>
+                <Button
+                  title="אשר"
+                  size="sm"
+                  onPress={() => {
+                    review.mutate({ id: item.id, status: "approved", note: note || undefined });
+                    setNoteId(null);
+                    setNote("");
+                  }}
+                  disabled={review.isPending}
+                />
+                <Button
+                  title="דחה"
+                  size="sm"
+                  variant="outline"
+                  onPress={() => {
+                    if (noteId !== item.id) {
+                      setNoteId(item.id);
+                      return;
+                    }
+                    review.mutate({ id: item.id, status: "rejected", note: note || undefined });
+                    setNoteId(null);
+                    setNote("");
+                  }}
+                  disabled={review.isPending}
+                />
+              </View>
+            </View>
+          ) : null}
+
+          {item.review_note ? (
+            <Text style={[styles.rowMeta, { color: theme.textMuted, fontStyle: "italic" }]}>
+              הערה: {item.review_note}
+            </Text>
+          ) : null}
+        </View>
+      )}
+    />
   );
 }
 
@@ -300,6 +460,14 @@ function PartnerCard({
           <Summary label="נפסלו" value={partner.rejected} theme={theme} tint={theme.danger} />
         ) : null}
       </View>
+
+      {(partner.indirect_joined > 0 || partner.indirect_activated > 0 || partner.indirect_retained > 0) ? (
+        <View style={styles.summaryRow}>
+          <Summary label="עקיף: הצטרפו" value={partner.indirect_joined} theme={theme} tint="#8b5cf6" />
+          <Summary label="עקיף: הופעלו" value={partner.indirect_activated} theme={theme} tint="#8b5cf6" />
+          <Summary label="עקיף: נשארו" value={partner.indirect_retained} theme={theme} tint="#8b5cf6" />
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -698,7 +866,14 @@ function formatDate(value: string | null): string {
 }
 
 const styles = StyleSheet.create({
-  tabContent: { flex: 1 },
+  tabContent: { flex: 1, gap: 0 },
+  tabSwitcher: {
+    flexDirection: rowStart,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginBottom: 8,
+  },
+  tabBtn: { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 0 },
+  tabBtnText: { fontFamily: fonts.bodyBold, fontSize: 14 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   muted: { fontFamily: fonts.body, fontSize: 14, textAlign: "center" },
 

@@ -35,6 +35,10 @@ export type ReferralCampaignOverview = {
   in_review: number;
   rejected: number;
   last_join_at: string | null;
+  parent_campaign_id: number | null;
+  indirect_joined: number;
+  indirect_activated: number;
+  indirect_retained: number;
 };
 
 export type ReferralReward = {
@@ -104,7 +108,7 @@ export function useReferralCampaignOverview() {
         .order("active", { ascending: false })
         .order("id");
       if (error) throw error;
-      return (data ?? []) as ReferralCampaignOverview[];
+      return (data ?? []) as unknown as ReferralCampaignOverview[];
     },
     enabled: isAdmin,
   });

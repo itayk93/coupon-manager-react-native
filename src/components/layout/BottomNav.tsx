@@ -21,13 +21,22 @@ type Item = {
 // Statistics and "איפה קניתי" are reached from the account page rather than
 // from here: six bars left each label under ten points of type, and neither
 // screen is somewhere people go mid-task.
-const ITEMS: Item[] = [
-  { label: "דשבורד", path: "/", Icon: Home, match: [] },
-  { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
-  { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
-  { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
-  { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", "/admin"] },
-];
+function buildItems(isAdmin: boolean): Item[] {
+  return [
+    { label: "דשבורד", path: "/", Icon: Home, match: [] },
+    { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
+    {
+      label: "שיתופים",
+      path: isAdmin ? "/admin" : "/invite",
+      Icon: Share2,
+      match: isAdmin
+        ? ["/admin"]
+        : ["/invite", "/sharing", "/referral-program"],
+    },
+    { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
+    { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", ...(isAdmin ? [] : ["/admin"])] },
+  ];
+}
 
 function isActive(item: Item, pathname: string) {
   if (item.path === "/") return pathname === "/" || pathname === "/index";
@@ -48,12 +57,11 @@ export function BottomNav() {
   const segments = useSegments();
   const insets = useSafeAreaInsets();
   const { theme } = useAppTheme();
-  const { session } = useAuth();
+  const { session, isAdmin } = useAuth();
   const { data: notifications = [] } = useInAppNotifications();
   const unread = notifications.filter((item) => !item.viewed).length;
+  const items = buildItems(isAdmin);
 
-  // The nav belongs to the signed-in app, not the auth screens. Owning this
-  // here keeps the root layout from having to thread visibility through.
   if (!session || segments[0] === "(auth)") return null;
 
   return (
@@ -67,7 +75,7 @@ export function BottomNav() {
         },
       ]}
     >
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const active = isActive(item, pathname);
         const color = active ? theme.primary : theme.textSubtle;
         return (

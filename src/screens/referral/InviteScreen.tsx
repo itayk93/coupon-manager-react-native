@@ -13,6 +13,7 @@ import * as Clipboard from "expo-clipboard";
 import { Copy, Share2 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useRouter } from "expo-router";
 import { useMyReferralStatus } from "@/hooks/useReferral";
 import { referralShareMessage, referralUrl } from "@/lib/referral";
 import { fonts, radii, shadows } from "@/lib/theme";
@@ -29,6 +30,7 @@ const APP_BASE_URL = "https://coupons.itaykarkason.com";
  */
 export function InviteScreen() {
   const { theme } = useAppTheme();
+  const router = useRouter();
   const { data: status, isLoading } = useMyReferralStatus();
 
   if (isLoading) {
@@ -50,6 +52,14 @@ export function InviteScreen() {
           <Text style={[styles.muted, { color: theme.textMuted }]}>
             ההזמנות אינן פתוחות בחשבון הזה כרגע.
           </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/referral-program")}
+            style={{ marginTop: 16 }}
+          >
+            <Text style={[styles.muted, { color: theme.primary }]}>
+              רוצה להצטרף לתוכנית השותפים? לחצו כאן
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
