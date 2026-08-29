@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { CheckCircle, Clock, Gift, TrendingUp, Users, XCircle } from "lucide-react-native";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +41,9 @@ export function ReferralProgramScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         <View style={[styles.heroCard, { backgroundColor: theme.primary }]}>
+          <View style={styles.heroMascot}>
+            <CharacterSpotlight character="investigator" state="talking" size="small" tone="none" />
+          </View>
           <Text style={styles.heroTitle}>הרוויחו מהפניות לקופון מאסטר</Text>
           <Text style={styles.heroSub}>
             הזמינו חברים, עקבו אחרי ההתקדמות, וקבלו תגמולים אמיתיים
@@ -121,7 +125,10 @@ export function ReferralProgramScreen() {
               </View>
             ) : null}
 
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>הגשת בקשה</Text>
+            <View style={styles.formHeader}>
+              <CharacterSpotlight character="helper" state="cheering" size="small" tone="mint" />
+              <Text style={[styles.sectionTitle, { color: theme.text, flex: 1 }]}>הגשת בקשה</Text>
+            </View>
 
             {!session ? (
               <Text style={[styles.loginNote, { color: theme.textMuted }]}>
@@ -230,7 +237,9 @@ function FormField({ label, value, onChange, placeholder, theme, keyboardType, m
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { padding: 16, gap: 16 },
-  heroCard: { borderRadius: radii.lg, padding: 24, gap: 8, alignItems: "center" },
+  heroCard: { borderRadius: radii.lg, padding: 24, gap: 8, alignItems: "center", overflow: "hidden" },
+  heroMascot: { marginBottom: 4 },
+  formHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 8 },
   heroTitle: { fontFamily: fonts.display, fontSize: 22, color: "#fff", textAlign: "center" },
   heroSub: { fontFamily: fonts.body, fontSize: 14, color: "rgba(255,255,255,0.85)", textAlign: "center" },
   sectionTitle: { fontFamily: fonts.displaySemi, fontSize: 18, textAlign: "right", marginTop: 8 },
