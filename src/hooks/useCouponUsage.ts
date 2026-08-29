@@ -288,7 +288,7 @@ export function useRecordUsage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  return useMutation({
+  const singleMutation = useMutation({
     mutationFn: async ({
       couponId,
         usedAmount,
@@ -349,6 +349,40 @@ export function useRecordUsage() {
       notify.error("שגיאה ברישום השימוש", error.message);
     },
   });
+
+  const batchMutation = useMutation({
+    mutationFn: async ({ couponId, usages, importId }: {
+      couponId: number;
+      usages: Array<{ amount: number; details: string; placeName: string; placeAddress: string; latitude: number | null; longitude: number | null; usedAt: string | null }>;
+      importId?: string;
+    }) => {
+      if (!user) throw new Error("Not authenticated");
+      const importKey = importId || `manual-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { data, error } = await supabase.rpc("record_coupon_usage_batch", {
+        p_coupon_id: couponId,
+        p_import_key: importKey,
+        p_usages: usages.map((item) => ({
+          amount: item.amount, details: item.details, place_name: item.placeName,
+          place_address: item.placeAddress, latitude: item.latitude,
+          longitude: item.longitude, used_at: item.usedAt,
+        })),
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return { newUsed: Number(row?.new_used || 0), fullyUsed: Boolean(row?.fully_used), insertedCount: Number(row?.inserted_count || 0) };
+    },
+    onSuccess: (data, variables) => {
+      logActivity("record_coupon_usage", { couponId: variables.couponId, metadata: { batch: true, count: data.insertedCount } });
+      if (data.fullyUsed) notifyEvent("coupon_finished", { couponId: variables.couponId });
+      queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
+      queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      queryClient.invalidateQueries({ queryKey: ["coupon", variables.couponId] });
+    },
+    onError: (error: any) => notify.error("שגיאה ברישום השימושים", error.message),
+  });
+
+  return { ...singleMutation, mutateBatchAsync: batchMutation.mutateAsync, isBatchPending: batchMutation.isPending };
 }
 
 export function useDeleteTransactionRecord() {

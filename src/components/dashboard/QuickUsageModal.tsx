@@ -21,6 +21,8 @@ import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedUsage, useParseUsageScreenshot } from "@/hooks/useUsageAI";
 import { formatIls } from "@/lib/formatIls";
+import { matchCouponCode } from "@/lib/couponCodeMatch";
+import { useRouter } from "expo-router";
 
 type QuickUsageModalProps = {
   visible: boolean;
@@ -33,6 +35,9 @@ type QuickUsageModalProps = {
    * on the results instead of picking the image again.
    */
   initialScreenshotBase64?: string | null;
+  importId?: string | null;
+  onImportCompleted?: () => void;
+  onImportPaused?: () => void;
 };
 
 export function QuickUsageModal({
@@ -41,7 +46,11 @@ export function QuickUsageModal({
   coupons,
   preselectedCoupon,
   initialScreenshotBase64,
+  importId,
+  onImportCompleted,
+  onImportPaused,
 }: QuickUsageModalProps) {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const recordUsage = useRecordUsage();
   const parseUsage = useParseUsageScreenshot();
@@ -49,7 +58,7 @@ export function QuickUsageModal({
   const activeCoupons = coupons.filter((c) => c.status !== "נוצל");
 
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(
-    preselectedCoupon ? preselectedCoupon.id : activeCoupons[0]?.id || null
+    preselectedCoupon ? preselectedCoupon.id : null
   );
   const [amount, setAmount] = useState("");
   const [details, setDetails] = useState("");
@@ -64,12 +73,16 @@ export function QuickUsageModal({
   const [isConfirmingFullUse, setIsConfirmingFullUse] = useState(false);
   const [detectedUsages, setDetectedUsages] = useState<ParsedUsage[]>([]);
   const [savingDetected, setSavingDetected] = useState(false);
+  const [detectedCouponCode, setDetectedCouponCode] = useState<string | null>(null);
+  const [detectedCompany, setDetectedCompany] = useState<string | null>(null);
+  const [detectionWarnings, setDetectionWarnings] = useState<string[]>([]);
+  const [matchState, setMatchState] = useState<"idle" | "matched" | "not-found" | "ambiguous">("idle");
   const resolvedPlaceQuery = useRef("");
 
   useEffect(() => {
     if (!visible) return;
     setSelectedCouponId(
-      preselectedCoupon ? preselectedCoupon.id : activeCoupons[0]?.id ?? null
+      preselectedCoupon ? preselectedCoupon.id : null
     );
     setAmount("");
     setDetails("");
@@ -83,6 +96,10 @@ export function QuickUsageModal({
     setIsPickerOpen(false);
     setIsConfirmingFullUse(false);
     setDetectedUsages([]);
+    setDetectedCouponCode(null);
+    setDetectedCompany(null);
+    setDetectionWarnings([]);
+    setMatchState("idle");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, preselectedCoupon?.id]);
 
@@ -239,8 +256,9 @@ export function QuickUsageModal({
     }
     setError("");
     try {
-      setDetectedUsages(await parseUsage.mutateAsync(base64));
+      applyParsedResult(await parseUsage.mutateAsync(base64));
     } catch (e) {
+      setError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
       console.error(e);
     }
   };
@@ -252,15 +270,38 @@ export function QuickUsageModal({
     setError("");
     parseUsage
       .mutateAsync(initialScreenshotBase64)
-      .then((usages) => {
-        if (!cancelled) setDetectedUsages(usages);
+      .then((parsed) => {
+        if (!cancelled) applyParsedResult(parsed);
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
+        console.error(e);
+      });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, initialScreenshotBase64]);
+
+  const applyParsedResult = (parsed: Awaited<ReturnType<typeof parseUsage.mutateAsync>>) => {
+    setDetectedUsages(parsed.usages);
+    setDetectedCouponCode(parsed.couponCode);
+    setDetectedCompany(parsed.companyName);
+    setDetectionWarnings(parsed.warnings);
+    const match = matchCouponCode(parsed.couponCode, coupons);
+    if (match.kind === "exact" || (match.kind === "partial" && parsed.couponCodeConfidence >= 0.75)) {
+      setSelectedCouponId(match.coupon.id);
+      setMatchState("matched");
+      return;
+    }
+    setSelectedCouponId(null);
+    if (match.kind === "ambiguous" || match.kind === "partial") {
+      setMatchState("ambiguous");
+      setIsPickerOpen(true);
+    } else {
+      setMatchState("not-found");
+    }
+  };
 
   const updateDetectedUsage = (id: string, field: keyof ParsedUsage, value: string | number) => {
     setDetectedUsages((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
@@ -275,19 +316,9 @@ export function QuickUsageModal({
     setSavingDetected(true);
     setError("");
     try {
-      for (const item of valid) {
-        await recordUsage.mutateAsync({
-          couponId: selectedCouponId,
-          usedAmount: item.amount,
-          details: item.details,
-          placeName: item.placeName,
-          placeAddress: item.placeAddress,
-          latitude: item.latitude,
-          longitude: item.longitude,
-          timestamp: item.usedAt,
-        });
-      }
+      await recordUsage.mutateBatchAsync({ couponId: selectedCouponId, usages: valid, importId: importId || undefined });
       setDetectedUsages([]);
+      onImportCompleted?.();
       onClose();
     } catch (e) {
       console.error(e);
@@ -304,6 +335,31 @@ export function QuickUsageModal({
       subtitle="הורד סכום שנוצל מיתרת הקופון"
     >
       <View style={styles.container}>
+        {parseUsage.isPending ? (
+          <View style={[styles.processingCard, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.processingTitle, { color: theme.text }]}>ה־AI קורא את הקופון</Text>
+            <Text style={[styles.processingText, { color: theme.textMuted }]}>מזהים קוד, שימושים ומקומות…</Text>
+          </View>
+        ) : null}
+
+        {matchState === "not-found" ? (
+          <View style={[styles.notFoundCard, { borderColor: theme.warning, backgroundColor: theme.surfaceAlt }]}>
+            <Text style={[styles.notFoundTitle, { color: theme.text }]}>הקופון לא נמצא</Text>
+            <Text style={[styles.notFoundText, { color: theme.textMuted }]}>הקוד {detectedCouponCode || "לא זוהה"} לא קיים בקופונים שלך. יכול להיות שעדיין לא הכנסת אותו?</Text>
+            <Button title="הוספת הקופון" onPress={() => {
+              onImportPaused?.();
+              router.push({ pathname: "/coupons/add", params: { initialCode: detectedCouponCode || "", initialCompany: detectedCompany || "", returnToUsageImport: "1" } });
+            }} />
+            <Button title="בחירת קופון קיים" variant="secondary" onPress={() => setIsPickerOpen(true)} />
+          </View>
+        ) : null}
+
+        {matchState === "ambiguous" ? (
+          <Text style={[styles.matchWarning, { color: theme.warning }]}>נמצאו כמה אפשרויות. צריך לבחור קופון.</Text>
+        ) : null}
+        {detectionWarnings.map((warning) => <Text key={warning} style={[styles.matchWarning, { color: theme.warning }]}>{warning}</Text>)}
+
         {/* Coupon Selector */}
         <Text style={[styles.label, { color: theme.text }]}>בחר קופון</Text>
         <TouchableOpacity
@@ -343,6 +399,7 @@ export function QuickUsageModal({
             </Text>
           )}
         </TouchableOpacity>
+        {error && !detectedUsages.length ? <Text style={[styles.batchError, { color: theme.danger }]}>{error}</Text> : null}
 
         <TouchableOpacity
           onPress={pickUsageScreenshot}
@@ -415,6 +472,7 @@ export function QuickUsageModal({
                     onPress={() => {
                       setSelectedCouponId(item.id);
                       setIsPickerOpen(false);
+                      setMatchState("matched");
                       setIsConfirmingFullUse(false);
                       setError("");
                     }}
@@ -582,6 +640,13 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 4,
   },
+  processingCard: { borderWidth: 1.5, borderRadius: 18, padding: 22, alignItems: "center", gap: 10, marginBottom: 16 },
+  processingTitle: { fontSize: 18, fontWeight: "800", textAlign: "center" },
+  processingText: { fontSize: 14, textAlign: "center" },
+  notFoundCard: { borderWidth: 1.5, borderRadius: 18, padding: 16, gap: 10, marginBottom: 16 },
+  notFoundTitle: { fontSize: 18, fontWeight: "800", textAlign: "right" },
+  notFoundText: { fontSize: 14, lineHeight: 21, textAlign: "right" },
+  matchWarning: { fontSize: 14, fontWeight: "700", textAlign: "right", marginBottom: 10 },
   mapLabel: {
     fontSize: 14,
     fontWeight: "600",

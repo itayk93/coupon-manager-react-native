@@ -45,7 +45,8 @@ type CouponWidgetNativeModule = {
   setWidgetData(json: string): void;
   getWidgetData(): string | null;
   getSharedDirectory(): string | null;
-  consumeSharedImage(): string | null;
+  peekSharedImport(): string | null;
+  completeSharedImport(): void;
   reloadWidgets(): void;
 };
 
@@ -91,6 +92,19 @@ export function getSharedDirectory(): string | null {
  * as base64 JPEG, or null when nothing is waiting. Reading it clears it, so a
  * second call returns null until the next share.
  */
-export function consumeSharedImage(): string | null {
-  return native?.consumeSharedImage?.() ?? null;
+export type SharedUsageImport = {
+  id: string;
+  createdAt: string;
+  state: "pending";
+  imageBase64: string;
+};
+
+export function peekSharedImport(): SharedUsageImport | null {
+  const json = native?.peekSharedImport?.();
+  if (!json) return null;
+  try { return JSON.parse(json) as SharedUsageImport; } catch { return null; }
+}
+
+export function completeSharedImport(): void {
+  native?.completeSharedImport?.();
 }

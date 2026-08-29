@@ -8,6 +8,7 @@ public let couponWidgetDataKey = "CouponWidgetData"
 /// Written by the share extension, read once by the app.
 /// Keep in sync with `targets/share/ShareViewController.swift`.
 public let couponSharedImageName = "shared-usage-screenshot.jpg"
+public let couponSharedImportName = "shared-usage-import.json"
 
 public class CouponWidgetModule: Module {
   public func definition() -> ModuleDefinition {
@@ -35,17 +36,30 @@ public class CouponWidgetModule: Module {
       return logos.path
     }
 
-    /// Hands over the screenshot the share extension left behind, if any, and
-    /// clears it so the same image is never imported twice.
-    Function("consumeSharedImage") { () -> String? in
+    /// Returns the pending import without deleting it. The image is acknowledged
+    /// only after a successful batch save or an explicit user cancellation.
+    Function("peekSharedImport") { () -> String? in
       guard let container = FileManager.default
         .containerURL(forSecurityApplicationGroupIdentifier: couponWidgetAppGroup)
       else { return nil }
 
       let file = container.appendingPathComponent(couponSharedImageName)
+      let jobFile = container.appendingPathComponent(couponSharedImportName)
       guard let data = try? Data(contentsOf: file) else { return nil }
-      try? FileManager.default.removeItem(at: file)
-      return data.base64EncodedString()
+      guard let jobData = try? Data(contentsOf: jobFile),
+            var job = try? JSONSerialization.jsonObject(with: jobData) as? [String: Any]
+      else { return nil }
+      job["imageBase64"] = data.base64EncodedString()
+      guard let payload = try? JSONSerialization.data(withJSONObject: job) else { return nil }
+      return String(data: payload, encoding: .utf8)
+    }
+
+    Function("completeSharedImport") { () in
+      guard let container = FileManager.default
+        .containerURL(forSecurityApplicationGroupIdentifier: couponWidgetAppGroup)
+      else { return }
+      try? FileManager.default.removeItem(at: container.appendingPathComponent(couponSharedImageName))
+      try? FileManager.default.removeItem(at: container.appendingPathComponent(couponSharedImportName))
     }
 
     Function("reloadWidgets") {

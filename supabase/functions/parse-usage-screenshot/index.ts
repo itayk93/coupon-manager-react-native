@@ -10,6 +10,10 @@ const schema = {
   type: "object",
   additionalProperties: false,
   properties: {
+    couponCode: { type: ["string", "null"] },
+    couponCodeConfidence: { type: "number", minimum: 0, maximum: 1 },
+    companyName: { type: ["string", "null"] },
+    warnings: { type: "array", items: { type: "string" } },
     usages: {
       type: "array",
       minItems: 1,
@@ -26,7 +30,7 @@ const schema = {
       },
     },
   },
-  required: ["usages"],
+  required: ["couponCode", "couponCodeConfidence", "companyName", "warnings", "usages"],
 };
 
 Deno.serve(async (req: Request) => {
@@ -50,7 +54,7 @@ Deno.serve(async (req: Request) => {
         max_completion_tokens: 2048,
         response_format: { type: "json_schema", json_schema: { name: "coupon_usages", strict: true, schema } },
         messages: [
-          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון כל שימוש שמופיע בו. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
+          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. couponCode הוא הקוד בדיוק כפי שנראה, ללא ניחוש; אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
           { role: "user", content: [
             { type: "text", text: "קרא את כל השימושים בצילום. אל תדלג על שורות." },
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
@@ -73,7 +77,13 @@ Deno.serve(async (req: Request) => {
           prompt_tokens: payload.usage?.prompt_tokens ?? null, completion_tokens: payload.usage?.completion_tokens ?? null,
           total_tokens: payload.usage?.total_tokens ?? null, response_text: payload.choices?.[0]?.message?.content ?? null });
     } catch { /* logging must not break parsing */ }
-    return jsonResponse({ usages });
+    return jsonResponse({
+      couponCode: typeof output.couponCode === "string" ? output.couponCode.trim() : null,
+      couponCodeConfidence: Math.max(0, Math.min(1, Number(output.couponCodeConfidence) || 0)),
+      companyName: typeof output.companyName === "string" ? output.companyName.trim() : null,
+      warnings: Array.isArray(output.warnings) ? output.warnings.map(String).slice(0, 5) : [],
+      usages,
+    });
   } catch (error) {
     return jsonResponse({ error: String(error) }, 500);
   }

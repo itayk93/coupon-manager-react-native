@@ -13,9 +13,17 @@ export type ParsedUsage = {
   longitude: number | null;
 };
 
+export type ParsedUsageScreenshot = {
+  couponCode: string | null;
+  couponCodeConfidence: number;
+  companyName: string | null;
+  warnings: string[];
+  usages: ParsedUsage[];
+};
+
 export function useParseUsageScreenshot() {
   return useMutation({
-    mutationFn: async (imageBase64: string): Promise<ParsedUsage[]> => {
+    mutationFn: async (imageBase64: string): Promise<ParsedUsageScreenshot> => {
       const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
         body: { imageBase64 },
       });
@@ -25,23 +33,20 @@ export function useParseUsageScreenshot() {
         throw new Error("לא זוהו שימושים בצילום המסך");
       }
 
-      return Promise.all(
-        data.usages.map(async (usage: any, index: number) => {
-          const placeName = String(usage.placeName || "").trim();
-          let placeAddress = "";
-          let latitude: number | null = null;
-          let longitude: number | null = null;
+      const placeQueries = [...new Set(data.usages.map((usage: any) => String(usage.placeName || "").trim()).filter(Boolean))] as string[];
+      const places = new Map<string, { placeAddress: string; latitude: number | null; longitude: number | null }>();
+      await Promise.all(placeQueries.map(async (placeName) => {
+        const result = await supabase.functions.invoke("geocode-address", { body: { query: placeName } });
+        places.set(placeName, {
+          placeAddress: !result.error && result.data?.result ? result.data.result.address || "" : "",
+          latitude: !result.error && result.data?.result ? result.data.result.latitude ?? null : null,
+          longitude: !result.error && result.data?.result ? result.data.result.longitude ?? null : null,
+        });
+      }));
 
-          if (placeName) {
-            const result = await supabase.functions.invoke("geocode-address", {
-              body: { query: placeName },
-            });
-            if (!result.error && result.data?.result) {
-              placeAddress = result.data.result.address || "";
-              latitude = result.data.result.latitude ?? null;
-              longitude = result.data.result.longitude ?? null;
-            }
-          }
+      const usages = data.usages.map((usage: any, index: number) => {
+          const placeName = String(usage.placeName || "").trim();
+          const place = places.get(placeName);
 
           return {
             id: `${Date.now()}-${index}`,
@@ -49,12 +54,18 @@ export function useParseUsageScreenshot() {
             placeName,
             usedAt: usage.usedAt || null,
             details: String(usage.details || "שימוש שזוהה מצילום מסך"),
-            placeAddress,
-            latitude,
-            longitude,
+            placeAddress: place?.placeAddress || "",
+            latitude: place?.latitude ?? null,
+            longitude: place?.longitude ?? null,
           };
-        })
-      );
+        });
+      return {
+        couponCode: typeof data.couponCode === "string" ? data.couponCode.trim() : null,
+        couponCodeConfidence: Number(data.couponCodeConfidence) || 0,
+        companyName: typeof data.companyName === "string" ? data.companyName.trim() : null,
+        warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
+        usages,
+      };
     },
     onError: (error: any) => notify.error("לא הצלחנו לפענח את הצילום", error.message),
   });

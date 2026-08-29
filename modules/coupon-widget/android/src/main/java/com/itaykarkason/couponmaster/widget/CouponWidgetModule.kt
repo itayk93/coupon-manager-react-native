@@ -8,6 +8,10 @@ import android.util.Base64
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.time.Instant
+import java.util.UUID
+import org.json.JSONObject
 
 /**
  * Screenshots arrive at full screen resolution and the app base64-encodes them
@@ -39,12 +43,16 @@ class CouponWidgetModule : Module() {
       }
     }
 
-    /**
-     * Hands over an image shared into the app through the system share sheet
-     * (ACTION_SEND), then clears the intent so the same picture is never
-     * imported twice.
-     */
-    Function("consumeSharedImage") {
+    Function("peekSharedImport") {
+      val context = appContext.reactContext ?: return@Function null
+      val cachedImage = File(context.filesDir, "shared-usage-screenshot.jpg")
+      val cachedJob = File(context.filesDir, "shared-usage-import.json")
+      if (cachedImage.exists() && cachedJob.exists()) {
+        val job = JSONObject(cachedJob.readText())
+        job.put("imageBase64", Base64.encodeToString(cachedImage.readBytes(), Base64.NO_WRAP))
+        return@Function job.toString()
+      }
+
       val activity = appContext.currentActivity
       val intent = activity?.intent
       val uri: Uri? = when {
@@ -54,11 +62,25 @@ class CouponWidgetModule : Module() {
         else -> extraStream(intent)
       }
 
-      if (uri == null) null else {
-        intent!!.action = null
-        intent.removeExtra(Intent.EXTRA_STREAM)
-        readScaledImage(activity!!, uri)
-      }
+      if (uri == null) return@Function null
+      val image = readScaledImage(activity!!, uri) ?: return@Function null
+      val bytes = Base64.decode(image, Base64.NO_WRAP)
+      cachedImage.writeBytes(bytes)
+      val job = JSONObject()
+        .put("id", UUID.randomUUID().toString())
+        .put("createdAt", Instant.now().toString())
+        .put("state", "pending")
+      cachedJob.writeText(job.toString())
+      intent!!.action = null
+      intent.removeExtra(Intent.EXTRA_STREAM)
+      job.put("imageBase64", image).toString()
+    }
+
+    Function("completeSharedImport") {
+      val context = appContext.reactContext ?: return@Function false
+      File(context.filesDir, "shared-usage-screenshot.jpg").delete()
+      File(context.filesDir, "shared-usage-import.json").delete()
+      true
     }
 
     Function("reloadWidgets") {

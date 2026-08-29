@@ -25,7 +25,7 @@ import {
 } from "lucide-react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useCoupons, useBulkDeleteCoupons, useDeleteCoupon, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { Swipeable } from "react-native-gesture-handler";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -64,7 +64,6 @@ export function CouponsListScreen() {
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const bulkDelete = useBulkDeleteCoupons();
-  const deleteCoupon = useDeleteCoupon();
   const triggerAutoUpdate = useTriggerAutoUpdate();
   const offline = useOfflineWalletStatus();
 
@@ -258,22 +257,6 @@ export function CouponsListScreen() {
       () => {
         clearTimeout(timer);
         setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id)));
-      },
-    );
-  };
-
-  const handleUndoableDelete = (coupon: DecryptedCoupon) => {
-    setPendingDeleteIds((current) => [...new Set([...current, coupon.id])]);
-    const timer = setTimeout(
-      () => void deleteCoupon.mutateAsync(coupon.id).finally(() => setPendingDeleteIds((current) => current.filter((id) => id !== coupon.id))),
-      5000,
-    );
-    notify.undo(
-      "הקופון הוסר",
-      `הקופון של ${coupon.company} יימחק בעוד 5 שניות.`,
-      () => {
-        clearTimeout(timer);
-        setPendingDeleteIds((current) => current.filter((id) => id !== coupon.id));
       },
     );
   };
@@ -591,24 +574,14 @@ export function CouponsListScreen() {
               overshootLeft={false}
               overshootRight={false}
               friction={2}
-              renderLeftActions={() => (
+              renderRightActions={() => (
                 <TouchableOpacity
                   onPress={() => setUsageCoupon(item)}
                   accessibilityLabel={`דיווח שימוש בקופון של ${item.company}`}
                   style={[styles.swipeAction, { backgroundColor: theme.success }]}
                 >
                   <ReceiptText size={20} color="#ffffff" />
-                  <Text style={styles.swipeActionText}>שימוש</Text>
-                </TouchableOpacity>
-              )}
-              renderRightActions={() => (
-                <TouchableOpacity
-                  onPress={() => handleUndoableDelete(item)}
-                  accessibilityLabel={`מחיקת הקופון של ${item.company}`}
-                  style={[styles.swipeAction, { backgroundColor: theme.danger }]}
-                >
-                  <Trash2 size={20} color="#ffffff" />
-                  <Text style={styles.swipeActionText}>מחיקה</Text>
+                  <Text style={styles.swipeActionText}>דיווח שימוש</Text>
                 </TouchableOpacity>
               )}
             >

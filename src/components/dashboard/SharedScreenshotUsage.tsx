@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
-import { consumeSharedImage } from "coupon-widget";
+import { completeSharedImport, peekSharedImport, SharedUsageImport } from "coupon-widget";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
@@ -16,15 +16,15 @@ import { useCoupons } from "@/hooks/useCoupons";
  */
 export function SharedScreenshotUsage() {
   const { user } = useAuth();
-  const { data: coupons = [] } = useCoupons();
-  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const { data: coupons = [], isLoading: couponsLoading } = useCoupons();
+  const [pendingImport, setPendingImport] = useState<SharedUsageImport | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
     const check = () => {
-      const pending = consumeSharedImage();
-      if (pending) setScreenshot(pending);
+      const pending = peekSharedImport();
+      if (pending) setPendingImport(pending);
     };
 
     check();
@@ -32,16 +32,25 @@ export function SharedScreenshotUsage() {
       if (state === "active") check();
     });
     return () => subscription.remove();
-  }, [user]);
+  }, [user, coupons.length]);
 
-  if (!screenshot) return null;
+  if (!pendingImport || couponsLoading) return null;
 
   return (
     <QuickUsageModal
       visible
-      onClose={() => setScreenshot(null)}
+      onClose={() => {
+        completeSharedImport();
+        setPendingImport(null);
+      }}
       coupons={coupons}
-      initialScreenshotBase64={screenshot}
+      initialScreenshotBase64={pendingImport.imageBase64}
+      importId={pendingImport.id}
+      onImportPaused={() => setPendingImport(null)}
+      onImportCompleted={() => {
+        completeSharedImport();
+        setPendingImport(null);
+      }}
     />
   );
 }

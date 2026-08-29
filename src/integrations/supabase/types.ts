@@ -2118,6 +2118,10 @@ export type Database = {
           fully_used: boolean
         }[]
       }
+      record_coupon_usage_batch: {
+        Args: { p_coupon_id: number; p_usages: Json; p_import_key: string }
+        Returns: { new_used: number; fully_used: boolean; inserted_count: number }[]
+      }
       claim_referral: {
         Args: { p_code: string; p_install_hash?: string; p_user_id: number }
         Returns: string

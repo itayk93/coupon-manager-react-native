@@ -50,6 +50,7 @@ import { fonts } from "@/lib/theme";
 // the system can hand an event to it, including on a cold start where the app
 // was launched by that event.
 import "@/lib/nearbyAlerts";
+import { peekSharedImport } from "coupon-widget";
 
 // Hebrew RTL must be enabled before the first layout pass, so this runs at
 // module scope rather than in an effect.
@@ -150,7 +151,7 @@ function RootLayoutNav() {
   useScreenTracking();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > 480;
-  const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web");
+  const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web" && !peekSharedImport());
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
   // for headings and figures in the redesign.
