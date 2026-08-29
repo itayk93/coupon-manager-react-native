@@ -9,7 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CheckCircle, ChevronLeft, Clock, FileText, Star, XCircle, Zap } from "lucide-react-native";
+import {
+  CheckCircle,
+  ChevronLeft,
+  Clock,
+  ClipboardList,
+  FileText,
+  Gift,
+  Link2,
+  Rocket,
+  Star,
+  TrendingUp,
+  XCircle,
+  Zap,
+} from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { Header } from "@/components/ui/Header";
@@ -20,9 +33,15 @@ import { useMyApplication, useSubmitApplication } from "@/hooks/useReferralAppli
 import { fonts, radii, shadows } from "@/lib/theme";
 
 const REWARDS = [
-  { target: 10, metric: "מופעלים", prize: "קופון 50₪", emoji: "🎁", color: "#3b82f6" },
-  { target: 25, metric: "מופעלים", prize: "קופון 50₪", emoji: "🏆", color: "#8b5cf6" },
-  { target: 25, metric: "שנשארו", prize: "100₪ בביט", emoji: "💸", color: "#10b981" },
+  { target: 10, metric: "מופעלים", prize: "קופון 50₪", icon: Gift, color: "#3b82f6" },
+  { target: 25, metric: "מופעלים", prize: "קופון 50₪", icon: Star, color: "#8b5cf6" },
+  { target: 25, metric: "שנשארו", prize: "100₪ בביט", icon: TrendingUp, color: "#10b981" },
+];
+
+const STEPS = [
+  { n: 1, label: "הגישו בקשה", Icon: ClipboardList },
+  { n: 2, label: "קבלו קישור", Icon: Link2 },
+  { n: 3, label: "הרוויחו", Icon: Rocket },
 ];
 
 export function ReferralProgramScreen() {
@@ -60,11 +79,18 @@ export function ReferralProgramScreen() {
         {/* ── Steps ── */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>3 צעדים פשוטים</Text>
         <View style={styles.stepsRow}>
-          <StepBubble n={1} label="הגישו בקשה" icon="📝" theme={theme} />
-          <View style={[styles.stepLine, { backgroundColor: theme.border }]} />
-          <StepBubble n={2} label="קבלו קישור" icon="🔗" theme={theme} />
-          <View style={[styles.stepLine, { backgroundColor: theme.border }]} />
-          <StepBubble n={3} label="הרוויחו!" icon="🎉" theme={theme} />
+          {STEPS.map((step, i) => (
+            <React.Fragment key={step.n}>
+              {i > 0 && <View style={[styles.stepLine, { backgroundColor: theme.border }]} />}
+              <View style={styles.stepBubble}>
+                <View style={[styles.stepCircle, { backgroundColor: theme.primary }]}>
+                  <step.Icon size={22} color="#fff" strokeWidth={2} />
+                </View>
+                <Text style={[styles.stepNum, { color: theme.primary }]}>{step.n}</Text>
+                <Text style={[styles.stepLabel, { color: theme.text }]}>{step.label}</Text>
+              </View>
+            </React.Fragment>
+          ))}
         </View>
 
         {/* ── Rewards ── */}
@@ -73,7 +99,7 @@ export function ReferralProgramScreen() {
           {REWARDS.map((r, i) => (
             <View key={i} style={[styles.rewardCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
               <View style={[styles.rewardBadge, { backgroundColor: r.color }]}>
-                <Text style={styles.rewardEmoji}>{r.emoji}</Text>
+                <r.icon size={22} color="#fff" strokeWidth={2} />
               </View>
               <View style={styles.rewardBody}>
                 <Text style={[styles.rewardTarget, { color: theme.text }]}>
@@ -81,7 +107,6 @@ export function ReferralProgramScreen() {
                 </Text>
                 <Text style={[styles.rewardPrize, { color: r.color }]}>{r.prize}</Text>
               </View>
-              <Star size={16} color={r.color} />
             </View>
           ))}
         </View>
@@ -92,14 +117,14 @@ export function ReferralProgramScreen() {
           <View style={styles.infoBody}>
             <Text style={[styles.infoTitle, { color: "#1e40af" }]}>איך סופרים?</Text>
             <Text style={[styles.infoText, { color: "#1e40af" }]}>
-              <Text style={{ fontFamily: fonts.bodyBold }}>הפעלה</Text> = המשתמש הוסיף קופון + 3 ימים פעילים תוך 30 יום{"\n"}
-              <Text style={{ fontFamily: fonts.bodyBold }}>שימור</Text> = 2 ימים פעילים נוספים בימים 31–60{"\n"}
-              הפניות עקיפות נספרות גם — שותף שהבאתם מזמין אנשים? נספר גם לכם 🤝
+              <Text style={styles.bold}>הפעלה</Text> = המשתמש הוסיף קופון + 3 ימים פעילים תוך 30 יום{"\n"}
+              <Text style={styles.bold}>שימור</Text> = 2 ימים פעילים נוספים בימים 31–60{"\n"}
+              הפניות עקיפות נספרות גם — שותף שהבאתם מזמין אנשים? נספר גם לכם.
             </Text>
           </View>
         </View>
 
-        {/* ── Mascot helper + Status / Form ── */}
+        {/* ── Status / Form ── */}
         {(loadingStatus || loadingApp) ? (
           <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 24 }} />
         ) : isPartner ? (
@@ -118,7 +143,7 @@ export function ReferralProgramScreen() {
           <StatusBanner
             bg="#fef9c3" border="#fde047" color="#ca8a04"
             icon={<Clock size={22} color="#ca8a04" />}
-            text="הבקשה התקבלה וממתינה לאישור ⏳"
+            text="הבקשה התקבלה וממתינה לאישור. ניצור איתכם קשר בהקדם."
           />
         ) : (
           <>
@@ -161,7 +186,7 @@ export function ReferralProgramScreen() {
                     {submit.isPending ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={styles.submitText}>שליחת בקשה 🚀</Text>
+                      <Text style={styles.submitText}>שליחת בקשה</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -188,18 +213,6 @@ export function ReferralProgramScreen() {
 }
 
 /* ─── Sub-components ─── */
-
-function StepBubble({ n, label, icon, theme }: { n: number; label: string; icon: string; theme: any }) {
-  return (
-    <View style={styles.stepBubble}>
-      <View style={[styles.stepCircle, { backgroundColor: theme.primary }]}>
-        <Text style={styles.stepIcon}>{icon}</Text>
-      </View>
-      <Text style={[styles.stepNum, { color: theme.primary }]}>{n}</Text>
-      <Text style={[styles.stepLabel, { color: theme.text }]}>{label}</Text>
-    </View>
-  );
-}
 
 function StatusBanner({ bg, border, color, icon, text }: { bg: string; border: string; color: string; icon: React.ReactNode; text: string }) {
   return (
@@ -250,6 +263,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: fonts.display,
+    fontWeight: "800",
     fontSize: 28,
     color: "#fff",
     textAlign: "center",
@@ -257,6 +271,7 @@ const styles = StyleSheet.create({
   },
   heroTag: {
     fontFamily: fonts.body,
+    fontWeight: "400",
     fontSize: 13,
     color: "rgba(255,255,255,0.7)",
     textAlign: "center",
@@ -269,6 +284,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontFamily: fonts.displaySemi,
+    fontWeight: "700",
     fontSize: 20,
     textAlign: "right",
     marginTop: 4,
@@ -288,9 +304,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stepIcon: { fontSize: 22 },
-  stepNum: { fontFamily: fonts.display, fontSize: 13 },
-  stepLabel: { fontFamily: fonts.bodyBold, fontSize: 11, textAlign: "center" },
+  stepNum: { fontFamily: fonts.display, fontWeight: "800", fontSize: 13 },
+  stepLabel: { fontFamily: fonts.bodyBold, fontWeight: "700", fontSize: 11, textAlign: "center" },
   stepLine: { height: 2, flex: 1, marginTop: 26, borderRadius: 1 },
 
   rewardsStack: { gap: 10 },
@@ -310,10 +325,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  rewardEmoji: { fontSize: 22 },
   rewardBody: { flex: 1, gap: 2 },
-  rewardTarget: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "right" },
-  rewardPrize: { fontFamily: fonts.display, fontSize: 16, textAlign: "right" },
+  rewardTarget: { fontFamily: fonts.bodyBold, fontWeight: "700", fontSize: 14, textAlign: "right" },
+  rewardPrize: { fontFamily: fonts.display, fontWeight: "800", fontSize: 16, textAlign: "right" },
+
+  bold: { fontFamily: fonts.bodyBold, fontWeight: "700" },
 
   infoCard: {
     flexDirection: "row-reverse",
@@ -323,8 +339,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   infoBody: { flex: 1, gap: 4 },
-  infoTitle: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "right" },
-  infoText: { fontFamily: fonts.body, fontSize: 12, textAlign: "right", lineHeight: 20 },
+  infoTitle: { fontFamily: fonts.bodyBold, fontWeight: "700", fontSize: 14, textAlign: "right" },
+  infoText: { fontFamily: fonts.body, fontWeight: "400", fontSize: 12, textAlign: "right", lineHeight: 20 },
 
   statusCard: {
     flexDirection: "row-reverse",
@@ -334,11 +350,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
   },
-  statusText: { fontFamily: fonts.body, fontSize: 14, flex: 1, textAlign: "right" },
+  statusText: { fontFamily: fonts.body, fontWeight: "400", fontSize: 14, flex: 1, textAlign: "right" },
 
   formSection: { gap: 12 },
   formTitleRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
-  formSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "right" },
+  formSubtitle: { fontFamily: fonts.body, fontWeight: "400", fontSize: 13, textAlign: "right" },
   formCard: {
     borderRadius: radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
@@ -352,16 +368,17 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: "center",
   },
-  loginNote: { fontFamily: fonts.body, fontSize: 14, textAlign: "center" },
+  loginNote: { fontFamily: fonts.body, fontWeight: "400", fontSize: 14, textAlign: "center" },
 
   fieldGroup: { gap: 6 },
-  fieldLabel: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "right" },
+  fieldLabel: { fontFamily: fonts.bodyBold, fontWeight: "700", fontSize: 13, textAlign: "right" },
   input: {
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontFamily: fonts.body,
+    fontWeight: "400",
     fontSize: 14,
     textAlign: "right",
   },
@@ -374,7 +391,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 4,
   },
-  submitText: { fontFamily: fonts.display, fontSize: 17, color: "#fff" },
+  submitText: { fontFamily: fonts.display, fontWeight: "800", fontSize: 17, color: "#fff" },
 
   termsLink: {
     flexDirection: "row-reverse",
@@ -384,5 +401,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  termsLinkText: { fontFamily: fonts.body, fontSize: 13 },
+  termsLinkText: { fontFamily: fonts.body, fontWeight: "400", fontSize: 13 },
 });
