@@ -9,7 +9,7 @@ export const SCHEDULED_TASKS_COLUMNS = 'id,created_at,created_by_user_id,descrip
 
 export const TASK_EXECUTION_LOGS_COLUMNS = 'id,task_id,status,executed_at,execution_time_seconds,result_message,error_message,additional_data' as const;
 
-export const NEWSLETTERS_COLUMNS = 'id,created_at,created_by,title,content,main_title,additional_title,greeting_title,greeting_content,website_features_section,highlight_icon,highlight_text,telegram_bot_section,footer_message,custom_html,image_path,newsletter_type,scheduled_send_time,is_published,is_sent,sent_count,show_telegram_button' as const;
+export const NEWSLETTERS_COLUMNS = 'id,created_at,created_by,title,content,main_title,custom_html,image_path,newsletter_type,is_published,is_sent,sent_count,show_telegram_button' as const;
 
 export const ADMIN_MESSAGES_COLUMNS = 'id,created_at,message_text,link_url,link_text' as const;
 
@@ -25,7 +25,7 @@ export const FEATURE_ACCESS_COLUMNS = 'id,feature_name,access_mode' as const;
 
 export const USER_FEATURE_OVERRIDES_COLUMNS = 'id,user_id,feature_key,is_enabled,created_at,updated_at' as const;
 
-export const ADMIN_SETTINGS_COLUMNS = 'id,setting_key,setting_type,setting_value,description,created_at,updated_at' as const;
+export const ADMIN_SETTINGS_COLUMNS = 'id,setting_key,setting_value,description,created_at,updated_at' as const;
 
 export const OPT_OUTS_COLUMNS = 'user_id,opted_out,timestamp' as const;
 

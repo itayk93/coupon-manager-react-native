@@ -14,4 +14,4 @@
  * query resolve to an error type instead of the row.
  */
 // prettier-ignore
-export const USER_COLUMNS = 'id,public_id,email,first_name,last_name,age,gender,region,is_confirmed,is_admin,slots,slots_automatic_coupons,created_at,profile_description,profile_image,coupons_sold_count,is_deleted,google_id,newsletter_subscription,telegram_monthly_summary,newsletter_image,allow_widget_access,push_token,auth_user_id' as const;
+export const USER_COLUMNS = 'id,public_id,email,first_name,last_name,gender,is_confirmed,is_admin,slots,slots_automatic_coupons,created_at,profile_description,profile_image,is_deleted,google_id,newsletter_subscription,telegram_monthly_summary,allow_widget_access,push_token,auth_user_id' as const;

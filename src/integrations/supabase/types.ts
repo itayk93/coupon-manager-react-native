@@ -44,7 +44,6 @@ export type Database = {
           description: string | null
           id: number
           setting_key: string
-          setting_type: string
           setting_value: string | null
           updated_at: string | null
         }
@@ -53,7 +52,6 @@ export type Database = {
           description?: string | null
           id?: number
           setting_key: string
-          setting_type: string
           setting_value?: string | null
           updated_at?: string | null
         }
@@ -62,7 +60,6 @@ export type Database = {
           description?: string | null
           id?: number
           setting_key?: string
-          setting_type?: string
           setting_value?: string | null
           updated_at?: string | null
         }
@@ -366,10 +363,6 @@ export type Database = {
           coupon_id: number
           created_at: string | null
           id: number
-          revocation_requested_at: string | null
-          revocation_requested_by: number | null
-          revocation_token: string | null
-          revocation_token_expires_at: string | null
           revoked_at: string | null
           recipient_email: string | null
           share_expires_at: string
@@ -384,10 +377,6 @@ export type Database = {
           coupon_id: number
           created_at?: string | null
           id?: number
-          revocation_requested_at?: string | null
-          revocation_requested_by?: number | null
-          revocation_token?: string | null
-          revocation_token_expires_at?: string | null
           revoked_at?: string | null
           recipient_email?: string | null
           share_expires_at: string
@@ -402,10 +391,6 @@ export type Database = {
           coupon_id?: number
           created_at?: string | null
           id?: number
-          revocation_requested_at?: string | null
-          revocation_requested_by?: number | null
-          revocation_token?: string | null
-          revocation_token_expires_at?: string | null
           revoked_at?: string | null
           recipient_email?: string | null
           share_expires_at?: string
@@ -583,15 +568,9 @@ export type Database = {
       gpt_usage: {
         Row: {
           completion_tokens: number | null
-          cost_ils: number | null
-          cost_usd: number | null
           created: string | null
-          exchange_rate: number | null
           gpt_usage_id: number
-          id: string | null
           model: string | null
-          object: string | null
-          prompt_text: string | null
           prompt_tokens: number | null
           response_text: string | null
           total_tokens: number | null
@@ -599,15 +578,9 @@ export type Database = {
         }
         Insert: {
           completion_tokens?: number | null
-          cost_ils?: number | null
-          cost_usd?: number | null
           created?: string | null
-          exchange_rate?: number | null
           gpt_usage_id?: number
-          id?: string | null
           model?: string | null
-          object?: string | null
-          prompt_text?: string | null
           prompt_tokens?: number | null
           response_text?: string | null
           total_tokens?: number | null
@@ -615,15 +588,9 @@ export type Database = {
         }
         Update: {
           completion_tokens?: number | null
-          cost_ils?: number | null
-          cost_usd?: number | null
           created?: string | null
-          exchange_rate?: number | null
           gpt_usage_id?: number
-          id?: string | null
           model?: string | null
-          object?: string | null
-          prompt_text?: string | null
           prompt_tokens?: number | null
           response_text?: string | null
           total_tokens?: number | null
@@ -642,7 +609,6 @@ export type Database = {
       newsletter_sendings: {
         Row: {
           delivery_status: string | null
-          error_message: string | null
           id: number
           newsletter_id: number
           sent_at: string | null
@@ -650,7 +616,6 @@ export type Database = {
         }
         Insert: {
           delivery_status?: string | null
-          error_message?: string | null
           id?: number
           newsletter_id: number
           sent_at?: string | null
@@ -658,7 +623,6 @@ export type Database = {
         }
         Update: {
           delivery_status?: string | null
-          error_message?: string | null
           id?: number
           newsletter_id?: number
           sent_at?: string | null
@@ -683,76 +647,49 @@ export type Database = {
       }
       newsletters: {
         Row: {
-          additional_title: string | null
           content: string | null
           created_at: string | null
           created_by: number
           custom_html: string | null
-          footer_message: string | null
-          greeting_content: string | null
-          greeting_title: string | null
-          highlight_icon: string | null
-          highlight_text: string | null
           id: number
           image_path: string | null
           is_published: boolean | null
           is_sent: boolean | null
           main_title: string | null
           newsletter_type: string | null
-          scheduled_send_time: string | null
           sent_count: number | null
           show_telegram_button: boolean | null
-          telegram_bot_section: string | null
           title: string
-          website_features_section: string | null
         }
         Insert: {
-          additional_title?: string | null
           content?: string | null
           created_at?: string | null
           created_by: number
           custom_html?: string | null
-          footer_message?: string | null
-          greeting_content?: string | null
-          greeting_title?: string | null
-          highlight_icon?: string | null
-          highlight_text?: string | null
           id?: number
           image_path?: string | null
           is_published?: boolean | null
           is_sent?: boolean | null
           main_title?: string | null
           newsletter_type?: string | null
-          scheduled_send_time?: string | null
           sent_count?: number | null
           show_telegram_button?: boolean | null
-          telegram_bot_section?: string | null
           title: string
-          website_features_section?: string | null
         }
         Update: {
-          additional_title?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: number
           custom_html?: string | null
-          footer_message?: string | null
-          greeting_content?: string | null
-          greeting_title?: string | null
-          highlight_icon?: string | null
-          highlight_text?: string | null
           id?: number
           image_path?: string | null
           is_published?: boolean | null
           is_sent?: boolean | null
           main_title?: string | null
           newsletter_type?: string | null
-          scheduled_send_time?: string | null
           sent_count?: number | null
           show_telegram_button?: boolean | null
-          telegram_bot_section?: string | null
           title?: string
-          website_features_section?: string | null
         }
         Relationships: [
           {
@@ -1646,7 +1583,6 @@ export type Database = {
         Row: {
           action: string
           activity_id: number
-          as_info: string | null
           browser: string | null
           city: string | null
           country: string | null
@@ -1655,22 +1591,16 @@ export type Database = {
           device: string | null
           duration: number | null
           extra_metadata: Json | null
-          geo_location: string | null
           ip_address: string | null
-          isp: string | null
           lat: number | null
-          lon: number | null
-          org: string | null
           region: string | null
           timestamp: string | null
           timezone: string | null
           user_id: number | null
-          zip: string | null
         }
         Insert: {
           action: string
           activity_id?: number
-          as_info?: string | null
           browser?: string | null
           city?: string | null
           country?: string | null
@@ -1679,22 +1609,16 @@ export type Database = {
           device?: string | null
           duration?: number | null
           extra_metadata?: Json | null
-          geo_location?: string | null
           ip_address?: string | null
-          isp?: string | null
           lat?: number | null
-          lon?: number | null
-          org?: string | null
           region?: string | null
           timestamp?: string | null
           timezone?: string | null
           user_id?: number | null
-          zip?: string | null
         }
         Update: {
           action?: string
           activity_id?: number
-          as_info?: string | null
           browser?: string | null
           city?: string | null
           country?: string | null
@@ -1703,17 +1627,12 @@ export type Database = {
           device?: string | null
           duration?: number | null
           extra_metadata?: Json | null
-          geo_location?: string | null
           ip_address?: string | null
-          isp?: string | null
           lat?: number | null
-          lon?: number | null
-          org?: string | null
           region?: string | null
           timestamp?: string | null
           timezone?: string | null
           user_id?: number | null
-          zip?: string | null
         }
         Relationships: [
           {
@@ -1911,10 +1830,8 @@ export type Database = {
       }
       users: {
         Row: {
-          age: number | null
           allow_widget_access: boolean | null
           auth_user_id: string | null
-          coupons_sold_count: number | null
           created_at: string
           email: string
           first_name: string
@@ -1926,22 +1843,18 @@ export type Database = {
           is_confirmed: boolean
           is_deleted: boolean | null
           last_name: string
-          newsletter_image: string | null
           newsletter_subscription: boolean
           password: string | null
           profile_description: string | null
           profile_image: string | null
           push_token: string | null
-          region: string | null
           slots: number
           slots_automatic_coupons: number
           telegram_monthly_summary: boolean
         }
         Insert: {
-          age?: number | null
           allow_widget_access?: boolean | null
           auth_user_id?: string | null
-          coupons_sold_count?: number | null
           created_at?: string
           email: string
           first_name: string
@@ -1953,22 +1866,18 @@ export type Database = {
           is_confirmed?: boolean
           is_deleted?: boolean | null
           last_name: string
-          newsletter_image?: string | null
           newsletter_subscription?: boolean
           password?: string | null
           profile_description?: string | null
           profile_image?: string | null
           push_token?: string | null
-          region?: string | null
           slots?: number
           slots_automatic_coupons?: number
           telegram_monthly_summary?: boolean
         }
         Update: {
-          age?: number | null
           allow_widget_access?: boolean | null
           auth_user_id?: string | null
-          coupons_sold_count?: number | null
           created_at?: string
           email?: string
           first_name?: string
@@ -1980,13 +1889,11 @@ export type Database = {
           is_confirmed?: boolean
           is_deleted?: boolean | null
           last_name?: string
-          newsletter_image?: string | null
           newsletter_subscription?: boolean
           password?: string | null
           profile_description?: string | null
           profile_image?: string | null
           push_token?: string | null
-          region?: string | null
           slots?: number
           slots_automatic_coupons?: number
           telegram_monthly_summary?: boolean
