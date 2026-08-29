@@ -317,7 +317,7 @@ export function SharingScreen() {
           </Text>
 
           <ScrollView style={{ maxHeight: 220, marginBottom: 14 }}>
-            {coupons.map((c) => {
+            {coupons.filter((c) => Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0).map((c) => {
               const isSelected = selectedCouponId === c.id;
               const rem = Math.max(0, (c.value || 0) - (c.used_value || 0));
               return (
