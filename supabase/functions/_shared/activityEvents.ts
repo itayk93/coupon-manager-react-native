@@ -29,6 +29,8 @@ export const ACTIVITY_ACTIONS = [
   "add_coupon_submit",
   "edit_coupon_submit",
   "delete_coupon",
+  "restore_coupon",
+  "purge_coupon",
   "bulk_import_submit",
   "scan_coupon",
 

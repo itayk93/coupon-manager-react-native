@@ -26,7 +26,7 @@ import {
 } from "lucide-react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useCoupons, useBulkDeleteCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCoupons, useBulkDeleteCoupons, useRestoreCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { Swipeable } from "react-native-gesture-handler";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -67,6 +67,7 @@ export function CouponsListScreen() {
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const bulkDelete = useBulkDeleteCoupons();
+  const restoreCoupons = useRestoreCoupons();
   const triggerAutoUpdate = useTriggerAutoUpdate();
   const offline = useOfflineWalletStatus();
 
@@ -263,17 +264,17 @@ export function CouponsListScreen() {
     setPendingDeleteIds((current) => [...new Set([...current, ...ids])]);
     setSelectedIds([]);
     setIsSelectMode(false);
-    const timer = setTimeout(
-      () => void bulkDelete.mutateAsync(ids).finally(() => setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id)))),
-      5000,
-    );
+    void bulkDelete
+      .mutateAsync(ids)
+      .finally(() => setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id))));
     notify.undo(
-      `${ids.length} קופונים הוסרו`,
-      "המחיקה תתבצע בעוד 5 שניות.",
+      `${ids.length} קופונים עברו לנמחקו לאחרונה 👋`,
+      `אפשר לשחזר אותם מ"נמחקו לאחרונה" בהגדרות, עד 30 יום.`,
       () => {
-        clearTimeout(timer);
         setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id)));
+        void restoreCoupons.mutateAsync(ids);
       },
+      7000,
     );
   };
 

@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Coupon } from "@/integrations/supabase";
 import { matchCompanyName } from "@/lib/companyMatch";
 import { useAuth } from "@/contexts/AuthContext";
@@ -228,6 +227,28 @@ export function useUpdateCoupon() {
   });
 }
 
+/**
+ * Coupons the user moved to the trash. Kept for 30 days, then the
+ * purge_soft_deleted_coupons() cron job hard-deletes them.
+ */
+export function useDeletedCoupons() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["coupons", "deleted", user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      return couponVault<DecryptedCoupon[]>({ action: "list_deleted" });
+    },
+    enabled: !!user,
+  });
+}
+
+/** How long a soft-deleted coupon survives before the nightly purge. */
+export const TRASH_RETENTION_DAYS = 30;
+
+// Soft delete: the coupon moves to "recently deleted" and drops out of every
+// list. Undo restores it; the trash screen restores it later.
 export function useDeleteCoupon() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -235,14 +256,7 @@ export function useDeleteCoupon() {
   return useMutation({
     mutationFn: async (id: number) => {
       if (!user) throw new Error("Not authenticated");
-
-      const { error } = await supabase
-        .from("coupon")
-        .delete()
-        .eq("id", id)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
+      await couponVault({ action: "soft_delete", ids: [id] });
       return true;
     },
     onSuccess: (_result, id) => {
@@ -263,15 +277,8 @@ export function useBulkDeleteCoupons() {
     mutationFn: async (ids: number[]) => {
       if (!user) throw new Error("Not authenticated");
       if (!ids.length) return 0;
-
-      const { error, count } = await supabase
-        .from("coupon")
-        .delete({ count: "exact" })
-        .in("id", ids)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      return count ?? ids.length;
+      const result = await couponVault<{ ids: number[] }>({ action: "soft_delete", ids });
+      return result.ids.length;
     },
     onSuccess: (deletedCount) => {
       logActivity("delete_coupon", { metadata: { bulk: true, count: deletedCount } });
@@ -279,6 +286,50 @@ export function useBulkDeleteCoupons() {
     },
     onError: (error: any) => {
       notify.error("שגיאה במחיקה מרובה", error.message);
+    },
+  });
+}
+
+/** Pull coupons back out of the trash. */
+export function useRestoreCoupons() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      if (!user) throw new Error("Not authenticated");
+      if (!ids.length) return 0;
+      const result = await couponVault<{ ids: number[] }>({ action: "restore", ids });
+      return result.ids.length;
+    },
+    onSuccess: (count) => {
+      logActivity("restore_coupon", { metadata: { count } });
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+    },
+    onError: (error: any) => {
+      notify.error("שגיאה בשחזור הקופון", error.message);
+    },
+  });
+}
+
+/** Permanently remove coupons that are already in the trash. */
+export function usePermanentDeleteCoupons() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      if (!user) throw new Error("Not authenticated");
+      if (!ids.length) return 0;
+      const result = await couponVault<{ ids: number[] }>({ action: "hard_delete", ids });
+      return result.ids.length;
+    },
+    onSuccess: (count) => {
+      logActivity("purge_coupon", { metadata: { count } });
+      queryClient.invalidateQueries({ queryKey: ["coupons", "deleted"] });
+    },
+    onError: (error: any) => {
+      notify.error("שגיאה במחיקה לצמיתות", error.message);
     },
   });
 }

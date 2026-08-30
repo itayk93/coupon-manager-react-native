@@ -1,6 +1,7 @@
 package com.itaykarkason.couponmaster.widget
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -63,16 +64,20 @@ class CouponWidgetModule : Module() {
       }
 
       if (uri == null) return@Function null
-      val image = readScaledImage(activity!!, uri) ?: return@Function null
+      val currentActivity = activity ?: return@Function null
+      val currentIntent = intent ?: return@Function null
+      val image = readScaledImage(currentActivity, uri) ?: return@Function null
+      val mode = shareMode(currentActivity, currentIntent)
       val bytes = Base64.decode(image, Base64.NO_WRAP)
       cachedImage.writeBytes(bytes)
       val job = JSONObject()
         .put("id", UUID.randomUUID().toString())
         .put("createdAt", Instant.now().toString())
+        .put("mode", mode)
         .put("state", "pending")
       cachedJob.writeText(job.toString())
-      intent!!.action = null
-      intent.removeExtra(Intent.EXTRA_STREAM)
+      currentIntent.action = null
+      currentIntent.removeExtra(Intent.EXTRA_STREAM)
       job.put("imageBase64", image).toString()
     }
 
@@ -120,4 +125,33 @@ private fun readScaledImage(context: android.content.Context, uri: Uri): String?
     bitmap.recycle()
     Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
   }
+}
+
+private fun shareMode(context: android.content.Context, intent: Intent): String {
+  val component = intent.component
+  val className = component?.className.orEmpty()
+  if (className.endsWith(".CouponAddShareActivity")) return "add"
+  if (className.endsWith(".CouponUsageShareActivity")) return "usage"
+
+  if (component != null) {
+    val metadata = try {
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        context.packageManager.getActivityInfo(
+          component,
+          PackageManager.ComponentInfoFlags.of(PackageManager.GET_META_DATA.toLong())
+        ).metaData
+      } else {
+        @Suppress("DEPRECATION")
+        context.packageManager.getActivityInfo(component, PackageManager.GET_META_DATA).metaData
+      }
+    } catch (_: Exception) {
+      null
+    }
+    when (metadata?.getString("com.itaykarkason.couponmaster.SHARE_MODE")) {
+      "add" -> return "add"
+      "usage" -> return "usage"
+    }
+  }
+
+  return "choose"
 }

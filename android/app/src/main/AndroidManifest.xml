@@ -37,5 +37,21 @@
         <data android:scheme="exp+coupon-master"/>
       </intent-filter>
     </activity>
+    <activity-alias android:name=".CouponAddShareActivity" android:targetActivity=".MainActivity" android:label="הוספת קופון חדש" android:icon="@drawable/ic_coupon_add_share" android:exported="true">
+      <intent-filter android:label="הוספת קופון חדש">
+        <action android:name="android.intent.action.SEND"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <data android:mimeType="image/*"/>
+      </intent-filter>
+      <meta-data android:name="com.itaykarkason.couponmaster.SHARE_MODE" android:value="add"/>
+    </activity-alias>
+    <activity-alias android:name=".CouponUsageShareActivity" android:targetActivity=".MainActivity" android:label="סימון שימוש בקופון" android:icon="@drawable/ic_coupon_usage_share" android:exported="true">
+      <intent-filter android:label="סימון שימוש בקופון">
+        <action android:name="android.intent.action.SEND"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <data android:mimeType="image/*"/>
+      </intent-filter>
+      <meta-data android:name="com.itaykarkason.couponmaster.SHARE_MODE" android:value="usage"/>
+    </activity-alias>
   </application>
 </manifest>

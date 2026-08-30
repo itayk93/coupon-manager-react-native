@@ -180,6 +180,7 @@ export type Database = {
           cost: number
           cvv: string | null
           date_added: string | null
+          deleted_at: string | null
           description: string | null
           expiration: string | null
           id: number
@@ -211,6 +212,7 @@ export type Database = {
           cost: number
           cvv?: string | null
           date_added?: string | null
+          deleted_at?: string | null
           description?: string | null
           expiration?: string | null
           id?: number
@@ -242,6 +244,7 @@ export type Database = {
           cost?: number
           cvv?: string | null
           date_added?: string | null
+          deleted_at?: string | null
           description?: string | null
           expiration?: string | null
           id?: number

@@ -25,6 +25,7 @@ import {
   LayoutGrid,
   BarChart3,
   MapPinned,
+  Trash2,
   UserPlus,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
@@ -206,6 +207,19 @@ export function SettingsScreen() {
                   איפה קניתי
                 </Text>
                 <MapPinned size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/recently-deleted")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  נמחקו לאחרונה
+                </Text>
+                <Trash2 size={20} color={theme.textMuted} />
               </View>
             </TouchableOpacity>
 

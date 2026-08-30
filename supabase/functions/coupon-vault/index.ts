@@ -46,6 +46,13 @@ function publicId(value: unknown): string | null {
   return /^cpn_[0-9a-f]{20}$/.test(id) ? id : null;
 }
 
+function assertIds(value: unknown): number[] {
+  const list = Array.isArray(value) ? value : [value];
+  const ids = list.map(assertId);
+  if (!ids.length || ids.length > 200) throw new Error('INVALID_INPUT');
+  return Array.from(new Set(ids));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeadersFor(req) });
   try {
@@ -54,7 +61,7 @@ Deno.serve(async (req) => {
     const db = admin();
 
     if (body.action === 'list') {
-      const { data: owned, error: ownedError } = await db.from('coupon').select('*').eq('user_id', user.id);
+      const { data: owned, error: ownedError } = await db.from('coupon').select('*').eq('user_id', user.id).is('deleted_at', null);
       if (ownedError) throw ownedError;
 
       const { data: sharedRows, error: sharedError } = await db
@@ -70,7 +77,8 @@ Deno.serve(async (req) => {
       for (const coupon of owned || []) byId.set(coupon.id, { ...coupon, is_shared_with_me: false });
       for (const row of sharedRows || []) {
         const coupon = row.coupon as Record<string, unknown> | null;
-        if (coupon && typeof coupon.id === 'number' && !byId.has(coupon.id)) {
+        // The owner may have moved a shared coupon to their trash.
+        if (coupon && typeof coupon.id === 'number' && !coupon.deleted_at && !byId.has(coupon.id)) {
           byId.set(coupon.id, { ...coupon, is_shared_with_me: true });
         }
       }
@@ -114,6 +122,44 @@ Deno.serve(async (req) => {
       const { data, error } = await db.from('coupon').update(input).eq('id', id).eq('user_id', user.id).select('*').single();
       if (error) throw error;
       return jsonResponseFor(req, { data: await decryptCoupon(data) });
+    }
+    // Soft delete: move coupons to the "recently deleted" holding area. The
+    // nightly purge_soft_deleted_coupons() job clears them after 30 days.
+    if (body.action === 'soft_delete') {
+      const ids = assertIds(body.ids ?? body.id);
+      const { data, error } = await db.from('coupon')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', ids).eq('user_id', user.id).is('deleted_at', null)
+        .select('id');
+      if (error) throw error;
+      return jsonResponseFor(req, { data: { ids: (data || []).map((r) => r.id) } });
+    }
+    if (body.action === 'restore') {
+      const ids = assertIds(body.ids ?? body.id);
+      const { data, error } = await db.from('coupon')
+        .update({ deleted_at: null })
+        .in('id', ids).eq('user_id', user.id).not('deleted_at', 'is', null)
+        .select('id');
+      if (error) throw error;
+      return jsonResponseFor(req, { data: { ids: (data || []).map((r) => r.id) } });
+    }
+    // Hard delete, only from the trash — a coupon still in the wallet cannot be
+    // permanently removed without first soft-deleting it.
+    if (body.action === 'hard_delete') {
+      const ids = assertIds(body.ids ?? body.id);
+      const { data, error } = await db.from('coupon')
+        .delete()
+        .in('id', ids).eq('user_id', user.id).not('deleted_at', 'is', null)
+        .select('id');
+      if (error) throw error;
+      return jsonResponseFor(req, { data: { ids: (data || []).map((r) => r.id) } });
+    }
+    if (body.action === 'list_deleted') {
+      const { data, error } = await db.from('coupon').select('*')
+        .eq('user_id', user.id).not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+      if (error) throw error;
+      return jsonResponseFor(req, { data: await Promise.all((data || []).map(decryptCoupon)) });
     }
     if (body.action === 'shared_with_me') {
       const { data, error } = await db.from('coupon_shares').select('*, coupon:coupon_id(id,public_id,company,description,value,used_value,code,expiration), shared_by:shared_by_user_id(email,first_name,last_name)').eq('shared_with_user_id', user.id).in('status', ['pending', 'accepted']).gt('share_expires_at', new Date().toISOString()).order('created_at', { ascending: false });
