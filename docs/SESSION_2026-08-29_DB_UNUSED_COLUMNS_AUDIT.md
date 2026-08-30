@@ -327,13 +327,24 @@ drop table if exists public.telegram_users;
 עמודות נוכחיות: `activity_id, user_id, action, coupon_id, timestamp, ip_address,
 device, extra_metadata, city, region, country_code`.
 
-### מיגרציות (10)
+### מיגרציות (14)
 
 `20260830051806_create_ip_geo` · `..51811_backfill_ip_geo` ·
 `..51851_user_activities_geo_cleanup` · `..52819_ip_geo_cron` ·
 `..53447_referral_fraud_asn_burst` · `..53455_admin_geo_breakdown` ·
 `..53951_referral_fraud_reasons_array_append_fix` · `..54129_lock_down_ip_geo_cron_functions` ·
-`..55518_ip_geo_cron_token_rpc`
+`..55518_ip_geo_cron_token_rpc` · `..62042_newsletters_admin_rls` ·
+`..63134_admin_geo_breakdown_text_cast`
+
+(+ `types.ts`: הוסרו בלוקים פנטומיים `telegram_users_audit_log`, `transactions` —
+טבלאות שלא קיימות ב-DB.)
+
+### טאב "ניוזלטר" לאדמין
+
+`NewslettersTab` — list/create/edit/delete של טיוטות ניוזלטר. **שליחה לא מחוברת**
+(`useSendNewsletter` קיים ב-`useEmail.ts` אבל הקומפוננט לא מייבא אותו). `newsletters`
+הייתה עם RLS דלוק ו-0 policies → נעילה מלאה; נוסף policy `is_app_admin()`
+(`send-emails` לא מושפע, service-role).
 
 ### באגים שנתפסו תוך כדי
 
@@ -348,6 +359,10 @@ device, extra_metadata, city, region, country_code`.
 4. **RPCs חשופים** — `trigger_enrich_ip_geo`/`strip_old_activity_ip`/
    `reset_failed_ip_lookups` היו callable מ-`anon`/`authenticated` דרך PostgREST.
    `REVOKE`ד (מיגרציה `..54129`).
+5. **`admin_geo_breakdown` varchar/text** — `user_activities.city/region` הן
+   `varchar`, ה-`RETURNS TABLE` מכריז `text` → `coalesce` נשאר `varchar` →
+   PostgREST דוחה `42804`. הטסט ב-SQL (שאילתה גולמית) לא תפס את זה; נתפס בהרצת
+   האפליקציה. תוקן עם `::text` (מיגרציה `..63134`).
 
 ### E2E שאומת (live, דרך MCP)
 
@@ -387,6 +402,13 @@ edge functions, וה-CLI מחזיר `403`.** נטרלתי אותו במקום:
 `403`. `ipwho.is` פותר כל IP ישראלי אמיתי נכון (ת"א, ראשל"צ, פ"ת, חיפה) עם
 ISP + ASN. הקוד כבר מעדיף `ipinfo.io` אוטומטית אם ה-secret קיים; להוסיף בעתיד
 זו הגדרת secret אחת, בלי שינוי קוד.
+
+### הרצת אפליקציה (expo web, מחובר כאדמין)
+
+- טאב **גאוגרפיה** — נרנדר, מציג פילוח אמיתי: Tel-Aviv 5 users/804 events, Yavne,
+  Kiryat Ono, Ramat Gan, "לא ידוע". בורר 30/90 יום עובד. (תיקון באג #5 בדרך.)
+- טאב **ניוזלטר** — נרנדר, מציג 3 טיוטות קיימות. מודל עריכה נפתח עם כל השדות
+  מלאים. אין כפתור שליחה. RLS policy עובד (דאטה נטענת).
 
 ### State סופי — הכל חי ואוטומטי
 
