@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Share2,
   MapPin,
+  Mail,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/Modal";
 import { ReferralsTab } from "@/screens/admin/ReferralsTab";
 import { GeoAnalyticsTab } from "@/screens/admin/GeoAnalyticsTab";
+import { NewslettersTab } from "@/screens/admin/NewslettersTab";
 import {
   useManageUsers,
   useCompanies,
@@ -46,9 +48,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
-type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals" | "geo";
+type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals" | "geo" | "newsletters";
 
-const TAB_KEYS: AdminTab[] = ["users", "companies", "tags", "messages", "referrals", "geo"];
+const TAB_KEYS: AdminTab[] = ["users", "companies", "tags", "messages", "referrals", "geo", "newsletters"];
 
 export function AdminDashboardScreen() {
   const router = useRouter();
@@ -127,6 +129,7 @@ export function AdminDashboardScreen() {
               { key: "messages", label: "הודעות", icon: <MessageSquare size={16} /> },
               { key: "referrals", label: "הפניות", icon: <Share2 size={16} /> },
               { key: "geo", label: "גאוגרפיה", icon: <MapPin size={16} /> },
+              { key: "newsletters", label: "ניוזלטר", icon: <Mail size={16} /> },
             ] as const
           ).map((tab) => {
             const isCurrent = activeTab === tab.key;
@@ -164,6 +167,10 @@ export function AdminDashboardScreen() {
         {/* Tab 6: Geo — city/region breakdown of activity. is_app_admin() gates
             the RPC in the database; hiding the tab is just convenience. */}
         {activeTab === "geo" ? <GeoAnalyticsTab /> : null}
+
+        {/* Tab 7: Newsletters — authoring only. Sending is never wired here;
+            drafts are reviewed and sent by hand. */}
+        {activeTab === "newsletters" ? <NewslettersTab /> : null}
 
         {/* Tab 1: Users */}
         {activeTab === "users" ? (

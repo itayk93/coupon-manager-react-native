@@ -1278,36 +1278,6 @@ export type Database = {
         }
         Relationships: []
       }
-      telegram_users_audit_log: {
-        Row: {
-          action: string
-          changed_at: string | null
-          changed_by: number | null
-          id: number
-          new_values: Json | null
-          old_values: Json | null
-          telegram_user_id: number
-        }
-        Insert: {
-          action: string
-          changed_at?: string | null
-          changed_by?: number | null
-          id?: number
-          new_values?: Json | null
-          old_values?: Json | null
-          telegram_user_id: number
-        }
-        Update: {
-          action?: string
-          changed_at?: string | null
-          changed_by?: number | null
-          id?: number
-          new_values?: Json | null
-          old_values?: Json | null
-          telegram_user_id?: number
-        }
-        Relationships: []
-      }
       transactions: {
         Row: {
           action: string | null
