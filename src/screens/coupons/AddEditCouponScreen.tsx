@@ -27,8 +27,11 @@ type CouponFormProps = {
   initialCompany?: string;
   initialCode?: string;
   initialValue?: string;
+  initialCost?: string;
   initialExpiration?: string;
   initialDescription?: string;
+  initialCvv?: string;
+  initialCardExp?: string;
 };
 
 /**
@@ -46,8 +49,11 @@ export function AddEditCouponScreen() {
     initialCompany?: string;
     initialCode?: string;
     initialValue?: string;
+    initialCost?: string;
     initialExpiration?: string;
     initialDescription?: string;
+    initialCvv?: string;
+    initialCardExp?: string;
   }>();
 
   const couponIdentifier = params.couponId;
@@ -83,8 +89,11 @@ export function AddEditCouponScreen() {
       initialCompany={params.initialCompany}
       initialCode={params.initialCode}
       initialValue={params.initialValue}
+      initialCost={params.initialCost}
       initialExpiration={params.initialExpiration}
       initialDescription={params.initialDescription}
+      initialCvv={params.initialCvv}
+      initialCardExp={params.initialCardExp}
     />
   );
 }
@@ -94,8 +103,11 @@ function CouponForm({
   initialCompany,
   initialCode,
   initialValue,
+  initialCost,
   initialExpiration,
   initialDescription,
+  initialCvv,
+  initialCardExp,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -142,8 +154,11 @@ function CouponForm({
     initialCompany,
     initialCode,
     initialValue,
+    initialCost,
     initialExpiration,
     initialDescription,
+    initialCvv,
+    initialCardExp,
   });
 
   return (

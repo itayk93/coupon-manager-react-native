@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -42,6 +42,7 @@ export function AdminDashboardScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
+  const tabsScrollRef = useRef<ScrollView>(null);
 
   // The bottom bar's שותפים tab points here with ?tab=referrals. Reading it in
   // an effect rather than as the initial state matters: the screen stays
@@ -109,9 +110,11 @@ export function AdminDashboardScreen() {
             row in Hebrew, so let them scroll instead of wrapping mid-word. */}
         <View style={styles.tabsRailWrap}>
           <ScrollView
+            ref={tabsScrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabsRail}
+            onContentSizeChange={() => tabsScrollRef.current?.scrollToEnd({ animated: false })}
           >
             {(
               [

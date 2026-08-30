@@ -21,13 +21,28 @@ export type ParsedUsageScreenshot = {
   usages: ParsedUsage[];
 };
 
+async function readableFunctionError(error: any): Promise<string> {
+  const fallback = "פענוח התמונה נכשל. אפשר לבחור קופון ולהזין שימוש ידנית.";
+  const response = error?.context;
+  if (response && typeof response.json === "function") {
+    try {
+      const body = await response.clone().json();
+      if (typeof body?.error === "string" && body.error.trim()) return body.error.trim();
+    } catch {
+      // Fall through to a user-facing fallback below.
+    }
+  }
+  if (typeof error?.message === "string" && !error.message.includes("non-2xx")) return error.message;
+  return fallback;
+}
+
 export function useParseUsageScreenshot() {
   return useMutation({
     mutationFn: async (imageBase64: string): Promise<ParsedUsageScreenshot> => {
       const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
         body: { imageBase64 },
       });
-      if (error) throw error;
+      if (error) throw new Error(await readableFunctionError(error));
       if (data?.error) throw new Error(data.error);
       if (!Array.isArray(data?.usages) || data.usages.length === 0) {
         throw new Error("לא זוהו שימושים בצילום המסך");

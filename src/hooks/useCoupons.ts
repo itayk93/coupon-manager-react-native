@@ -147,6 +147,11 @@ export function useAddCoupon() {
         couponId: (created as any)?.id ?? null,
         metadata: { company: String((created as any)?.company || "") },
       });
+      queryClient.setQueryData<DecryptedCoupon[]>(["coupons", user?.id], (current) => {
+        if (!current) return [created];
+        if (current.some((coupon) => coupon.id === created.id)) return current;
+        return [created, ...current];
+      });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
     onError: (error: any) => {

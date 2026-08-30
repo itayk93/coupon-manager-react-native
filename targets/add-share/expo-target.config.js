@@ -1,8 +1,8 @@
 /** @type {import('@bacons/apple-targets/app.plugin').Config} */
 module.exports = {
   type: "action",
-  name: "CouponShare",
-  displayName: "סימון שימוש בקופון",
+  name: "CouponAddShare",
+  displayName: "הוספת קופון חדש",
   icon: "./assets/action-icon.png",
   deploymentTarget: "16.0",
   entitlements: {

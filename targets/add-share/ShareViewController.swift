@@ -15,7 +15,7 @@ private let sharedImportName = "shared-usage-import.json"
 /// right away instead of on the next manual launch. The app polls the shared
 /// container on `active`, so any route that foregrounds it is enough.
 private let hostAppURL = URL(string: "couponmaster://shared-import")!
-private let importMode = "usage"
+private let importMode = "add"
 
 /// Screenshots arrive at full retina size, and the app base64-encodes the file
 /// into an edge function request. 1600px keeps prices readable while staying

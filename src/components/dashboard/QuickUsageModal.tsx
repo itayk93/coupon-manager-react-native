@@ -70,6 +70,8 @@ export function QuickUsageModal({
   const [isLocating, setIsLocating] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [error, setError] = useState("");
+  const [amountError, setAmountError] = useState("");
+  const [aiError, setAiError] = useState("");
   const [isConfirmingFullUse, setIsConfirmingFullUse] = useState(false);
   const [detectedUsages, setDetectedUsages] = useState<ParsedUsage[]>([]);
   const [savingDetected, setSavingDetected] = useState(false);
@@ -93,6 +95,8 @@ export function QuickUsageModal({
     setIsSearchingPlace(false);
     setPlaceSearchMessage("");
     setError("");
+    setAmountError("");
+    setAiError("");
     setIsPickerOpen(false);
     setIsConfirmingFullUse(false);
     setDetectedUsages([]);
@@ -195,6 +199,8 @@ export function QuickUsageModal({
     setPlaceAddress("");
     setLocation(null);
     setError("");
+    setAmountError("");
+    setAiError("");
     onClose();
   };
 
@@ -211,15 +217,18 @@ export function QuickUsageModal({
   const handleSubmit = async () => {
     if (!selectedCouponId) {
       setError("יש לבחור קופון לדיווח");
+      setAmountError("");
       return;
     }
     const numAmount = Number(amount);
     if (!amount.trim() || isNaN(numAmount) || numAmount <= 0) {
-      setError("יש להזין סכום שימוש חיובי");
+      setError("");
+      setAmountError("יש להזין סכום שימוש חיובי");
       return;
     }
     if (numAmount > remaining) {
-      setError(`הסכום שהוזן (${formatIls(numAmount)}) גבוה מהיתרה (${formatIls(remaining)})`);
+      setError("");
+      setAmountError(`הסכום שהוזן (${formatIls(numAmount)}) גבוה מהיתרה (${formatIls(remaining)})`);
       return;
     }
 
@@ -236,11 +245,12 @@ export function QuickUsageModal({
       ImagePicker = require("expo-image-picker");
     } catch {
       setError("זיהוי מתמונה אינו זמין בגרסה המותקנת");
+      setAiError("");
       return;
     }
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError("צריך לאפשר גישה לתמונות כדי להעלות צילום מסך");
+      setAiError("צריך לאפשר גישה לתמונות כדי להעלות צילום מסך");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -251,14 +261,16 @@ export function QuickUsageModal({
     if (result.canceled) return;
     const base64 = result.assets?.[0]?.base64;
     if (!base64) {
-      setError("לא ניתן לקרוא את התמונה");
+      setAiError("לא ניתן לקרוא את התמונה");
       return;
     }
     setError("");
+    setAmountError("");
+    setAiError("");
     try {
       applyParsedResult(await parseUsage.mutateAsync(base64));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
+      setAiError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
       console.error(e);
     }
   };
@@ -268,13 +280,15 @@ export function QuickUsageModal({
     if (!visible || !initialScreenshotBase64) return;
     let cancelled = false;
     setError("");
+    setAmountError("");
+    setAiError("");
     parseUsage
       .mutateAsync(initialScreenshotBase64)
       .then((parsed) => {
         if (!cancelled) applyParsedResult(parsed);
       })
       .catch((e) => {
-        setError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
+        setAiError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
         console.error(e);
       });
     return () => {
@@ -284,6 +298,9 @@ export function QuickUsageModal({
   }, [visible, initialScreenshotBase64]);
 
   const applyParsedResult = (parsed: Awaited<ReturnType<typeof parseUsage.mutateAsync>>) => {
+    setError("");
+    setAmountError("");
+    setAiError("");
     setDetectedUsages(parsed.usages);
     setDetectedCouponCode(parsed.couponCode);
     setDetectedCompany(parsed.companyName);
@@ -310,13 +327,16 @@ export function QuickUsageModal({
   const saveDetectedUsages = async () => {
     if (!selectedCouponId) return setError("יש לבחור קופון");
     const valid = detectedUsages.filter((item) => item.amount > 0);
-    const total = valid.reduce((sum, item) => sum + item.amount, 0);
     if (!valid.length) return setError("לא נשארו שימושים תקינים לאישור");
-    if (total > remaining) return setError(`סך השימושים (${formatIls(total)}) גבוה מהיתרה (${formatIls(remaining)})`);
     setSavingDetected(true);
     setError("");
+    setAmountError("");
     try {
-      await recordUsage.mutateBatchAsync({ couponId: selectedCouponId, usages: valid, importId: importId || undefined });
+      const result = await recordUsage.mutateBatchAsync({ couponId: selectedCouponId, usages: valid, importId: importId || undefined });
+      if (result.insertedCount === 0) {
+        setError("כל השימושים האלה כבר דווחו לפי מקום, סכום וזמן.");
+        return;
+      }
       setDetectedUsages([]);
       onImportCompleted?.();
       onClose();
@@ -400,24 +420,24 @@ export function QuickUsageModal({
           )}
         </TouchableOpacity>
         {error && !detectedUsages.length ? <Text style={[styles.batchError, { color: theme.danger }]}>{error}</Text> : null}
+        {aiError ? <Text style={[styles.batchError, { color: theme.danger }]}>{aiError}</Text> : null}
 
-        <TouchableOpacity
-          onPress={pickUsageScreenshot}
-          disabled={parseUsage.isPending}
-          activeOpacity={0.82}
-          accessibilityRole="button"
-          accessibilityLabel="העלאת צילום מסך לדיווח שימושים"
-          style={[styles.aiUploadButton, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}
-        >
-          {parseUsage.isPending ? <ActivityIndicator color={theme.primary} /> : <ImagePlus size={22} color={theme.primary} />}
-          <View style={styles.aiUploadText}>
-            <Text style={[styles.aiUploadTitle, { color: theme.text }]}>
-              {parseUsage.isPending ? "ה-AI קורא ומאתר מקומות..." : "דיווח מצילום מסך"}
-            </Text>
-            <Text style={[styles.aiUploadSubtitle, { color: theme.textMuted }]}>העלאה, זיהוי שימושים ומיקום אוטומטי</Text>
-          </View>
-          <Sparkles size={18} color={theme.primary} />
-        </TouchableOpacity>
+        {!parseUsage.isPending ? (
+          <TouchableOpacity
+            onPress={pickUsageScreenshot}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="העלאת צילום מסך לדיווח שימושים"
+            style={[styles.aiUploadButton, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}
+          >
+            <ImagePlus size={22} color={theme.primary} />
+            <View style={styles.aiUploadText}>
+              <Text style={[styles.aiUploadTitle, { color: theme.text }]}>דיווח מצילום מסך</Text>
+              <Text style={[styles.aiUploadSubtitle, { color: theme.textMuted }]}>העלאה, זיהוי שימושים ומיקום אוטומטי</Text>
+            </View>
+            <Sparkles size={18} color={theme.primary} />
+          </TouchableOpacity>
+        ) : null}
 
         {detectedUsages.length ? (
           <View style={styles.detectedSection}>
@@ -475,6 +495,7 @@ export function QuickUsageModal({
                       setMatchState("matched");
                       setIsConfirmingFullUse(false);
                       setError("");
+                      setAiError("");
                     }}
                     style={[
                       styles.dropdownItem,
@@ -524,9 +545,9 @@ export function QuickUsageModal({
             value={amount}
             onChangeText={(val) => {
               setAmount(val);
-              setError("");
+              setAmountError("");
             }}
-            error={error}
+            error={amountError}
           />
           {remaining > 0 ? (
             isConfirmingFullUse ? (

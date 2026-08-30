@@ -95,6 +95,7 @@ export function getSharedDirectory(): string | null {
 export type SharedUsageImport = {
   id: string;
   createdAt: string;
+  mode?: "add" | "usage";
   state: "pending";
   imageBase64: string;
 };
