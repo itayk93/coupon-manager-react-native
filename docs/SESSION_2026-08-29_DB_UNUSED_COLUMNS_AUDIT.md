@@ -498,6 +498,26 @@ ISP + ASN. הקוד כבר מעדיף `ipinfo.io` אוטומטית אם ה-secre
 
 אומת: `send-emails` mode `newsletter` עם anon → `403` (gate תקין, לא crash על עמודות).
 
+### Phase 4.1 — hosting דרך Vercel + לוגו במייל (2026-08-30)
+
+**באג בפרודקשן:** פתיחת `newsletter-page/<id>` ב-Safari הורידה `26.txt` במקום לרנדר.
+הסיבה: Supabase כופה `text/plain` על HTML **גם ב-edge functions** (`curl -I` הראה
+`text/html` אבל `GET` בפועל `text/plain` — ה-gateway דורס). זו חסימה קשה של Supabase.
+
+**הפתרון:**
+- **Vercel serverless function `api/n.js`** — proxy שמושך מ-Storage ומגיש עם
+  Content-Type נכון. Vercel לא דורס. `web_url` = `https://coupons.itaykarkason.com/api/n?id=<id>`.
+- תמונות מוגשות ישירות מ-Storage הציבורי (אלה כן `image/*` תקין); `src`/`href`
+  יחסיים משוכתבים ל-`api/n?id=<id>&f=<path>` (מכסה גם ZIP עם css/js חיצוני).
+- `newsletter-page` edge function — deprecated, לא בשימוש.
+- `vercel.json` — הוסף `api/` ל-rewrite exclusion.
+- אומת live: `curl -I https://coupons.itaykarkason.com/api/n?id=26` → `text/html; charset=utf-8`,
+  הדף נרנדר בדפדפן.
+
+**לוגו במייל (בקשת המשתמש):** `newsletterTeaserEmailHtml` + הגרסה ב-`newsletter-preview`
+מובילים עכשיו עם `public/newsletter-logo.png` (לוגו אופקי לבן/כחול) על ה-bar הכהה
+`#15202e`. הצבעים יושרו לפלטת האפליקציה (`#eeece5` shell, `#1f6fd1` primary).
+
 ---
 
 ## 10.1 שלבים הבאים (לא בוצעו)
