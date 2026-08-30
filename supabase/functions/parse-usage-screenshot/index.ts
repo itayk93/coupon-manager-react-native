@@ -51,7 +51,11 @@ Deno.serve(async (req: Request) => {
       headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
-        max_completion_tokens: 2048,
+        // gpt-5-mini spends most of this budget on hidden reasoning tokens —
+        // real runs land at 1400-1900 before any JSON is emitted, so a busy
+        // screenshot with the old 2048 cap ran dry and returned empty content
+        // ("no usages detected"). Keep generous headroom.
+        max_completion_tokens: 6000,
         response_format: { type: "json_schema", json_schema: { name: "coupon_usages", strict: true, schema } },
         messages: [
           { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. couponCode הוא הקוד בדיוק כפי שנראה, ללא ניחוש; אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים; אם השורה נראית שימוש אך הסכום חתוך או לא קריא החזר amount 0 והוסף warning, אל תשמיט את השורה. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
@@ -75,7 +79,19 @@ Deno.serve(async (req: Request) => {
         ...u,
         amount: Number.isFinite(u.amount) && u.amount > 0 ? u.amount : 0,
       }));
-    if (!usages.length) return jsonResponse({ error: "לא זוהו שימושים בצילום המסך" }, 422);
+    if (!usages.length) {
+      const finishReason = payload.choices?.[0]?.finish_reason ?? "unknown";
+      console.error("parse-usage-screenshot: no usages", JSON.stringify({
+        finishReason,
+        completionTokens: payload.usage?.completion_tokens ?? null,
+        content: (payload.choices?.[0]?.message?.content || "").slice(0, 500),
+      }));
+      return jsonResponse({
+        error: finishReason === "length"
+          ? "הצילום מורכב מדי לפענוח בבת אחת — נסו לחתוך אותו לחלק קטן יותר"
+          : "לא זוהו שימושים בצילום המסך",
+      }, 422);
+    }
     const missingAmount = usages.filter((u: any) => u.amount === 0).length;
 
     try {
