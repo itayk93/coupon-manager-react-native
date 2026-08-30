@@ -327,12 +327,13 @@ drop table if exists public.telegram_users;
 עמודות נוכחיות: `activity_id, user_id, action, coupon_id, timestamp, ip_address,
 device, extra_metadata, city, region, country_code`.
 
-### מיגרציות (9)
+### מיגרציות (10)
 
 `20260830051806_create_ip_geo` · `..51811_backfill_ip_geo` ·
 `..51851_user_activities_geo_cleanup` · `..52819_ip_geo_cron` ·
 `..53447_referral_fraud_asn_burst` · `..53455_admin_geo_breakdown` ·
-`..53951_referral_fraud_reasons_array_append_fix` · `..54129_lock_down_ip_geo_cron_functions`
+`..53951_referral_fraud_reasons_array_append_fix` · `..54129_lock_down_ip_geo_cron_functions` ·
+`..55518_ip_geo_cron_token_rpc`
 
 ### באגים שנתפסו תוך כדי
 
@@ -359,12 +360,19 @@ device, extra_metadata, city, region, country_code`.
   → `FORBIDDEN`.
 - `asn_burst`: 9 חשבונות על AS64999 → `['asn_burst']`; 9 על AS8551 (Bezeq) → `[]`.
 
-### צעד ידני שנשאר למשתמש
+### אימות טוקן בלי edge secret
 
-`enrich-ip-geo` נדרש edge secret **`IP_GEO_CRON_TOKEN`** =
-`671830440b83d59909cd60fad93a482a53acd375f96ed648` (כבר ב-Vault כ-`ip_geo_cron_token`).
-עד שיוגדר, ה-cron קורא ומקבל 403 (לא מזיק). אופציונלי: `IPINFO_TOKEN` לדיוק גבוה יותר.
-edge function `ipgeo-debug` — stub זמני (410), למחוק מה-dashboard.
+ה-CLI וה-MCP לא יכולים להגדיר edge secrets בסביבה הזו (`403`, role מוגבל).
+במקום זה `enrich-ip-geo` קורא את הטוקן הצפוי מה-Vault דרך RPC
+`ip_geo_cron_token()` (`SECURITY DEFINER`, `service_role` בלבד) ומשווה ל-header
+`x-cron-token`. הטוקן חי רק ב-Vault (`ip_geo_cron_token`), מיושם גם ב-cron.
+אומת live: token נכון → 200, שגוי → 403. **אין צעד ידני.**
+
+הטוקן תועד גם ב-`.env.supabase.local` המקומי (gitignored) בשם `IP_GEO_CRON_TOKEN`
+עבור `scripts/e2e-geo.mjs`.
+
+`ipgeo-debug` — edge function stub זמני (410), למחוק מה-dashboard.
+אופציונלי: `IPINFO_TOKEN` edge secret לדיוק גבוה יותר (fallback ל-ipwho.is פועל בלעדיו).
 
 ---
 
@@ -372,7 +380,6 @@ edge function `ipgeo-debug` — stub זמני (410), למחוק מה-dashboard.
 
 | שלב | פעולה | סיכון |
 |---|---|---|
-| edge secret | להגדיר `IP_GEO_CRON_TOKEN` (ראה למעלה). | — עד אז אין העשרה. |
 | טיר 3 | לא למחוק `users.slots/google_id` וכו' בלי לערוך קודם `guard_users_self_update`. | גבוה. |
 | ניקוי | להסיר בלוק פנטום `telegram_users_audit_log` מ-`types.ts`. | נמוך. |
 | ניוזלטר-טלגרם | אם מת: `users.telegram_monthly_summary`, `newsletters.show_telegram_button/newsletter_type`. | החלטת מוצר. |

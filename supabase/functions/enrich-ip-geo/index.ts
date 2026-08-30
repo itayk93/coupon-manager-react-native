@@ -1,15 +1,13 @@
 // Supabase Edge Function: enrich-ip-geo
 //
 // Triggered by pg_cron (trigger_enrich_ip_geo -> net.http_post) every 15 min.
-// Takes a batch of IPs that appear in user_activities but are not yet in the
-// ip_geo cache, resolves each to a location, and:
-//   1. upserts the ip_geo cache row (city/region/isp/asn)
-//   2. stamps city/region onto the matching user_activities rows, so the
-//      location survives when ip_address is nulled at 90 days.
+// Resolves IPs seen in user_activities but not yet in ip_geo, upserts the cache
+// row, and stamps city/region onto the activity rows so the location survives
+// when ip_address is nulled at 90 days.
 //
-// Env:
-//   IP_GEO_CRON_TOKEN  - shared with the pg_cron job (Vault: ip_geo_cron_token)
-//   IPINFO_TOKEN       - optional; if set, ipinfo.io is preferred over ipwho.is
+// Auth: the cron sends x-cron-token; the expected value lives only in the
+// Vault (secret `ip_geo_cron_token`) and is read here via the service-role
+// client, so no edge secret is required. Optional env: IPINFO_TOKEN.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveIp } from "../_shared/ipGeo.ts";
@@ -24,22 +22,22 @@ const admin = () =>
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
-/** pg_cron has no JWT; it carries a token authorising exactly this call. */
-function isCronCall(req: Request): boolean {
-  const expected = Deno.env.get("IP_GEO_CRON_TOKEN");
-  const presented = req.headers.get("x-cron-token");
-  if (!expected || !presented || expected.length !== presented.length) return false;
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
   let diff = 0;
-  for (let i = 0; i < expected.length; i += 1) {
-    diff |= expected.charCodeAt(i) ^ presented.charCodeAt(i);
-  }
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
 
 Deno.serve(async (req) => {
-  if (!isCronCall(req)) return new Response("forbidden", { status: 403 });
-
   const db = admin();
+
+  const presented = req.headers.get("x-cron-token") ?? "";
+  const { data: expected } = await db.rpc("ip_geo_cron_token");
+  if (!expected || !timingSafeEqual(presented, expected)) {
+    return new Response("forbidden", { status: 403 });
+  }
+
   const { data: pending, error } = await db.rpc("ip_geo_pending", { p_limit: BATCH });
   if (error) {
     console.error("[enrich-ip-geo] ip_geo_pending failed:", error.message);
@@ -77,7 +75,6 @@ Deno.serve(async (req) => {
       resolved_at: now,
     });
 
-    // Fill every activity row for this IP that has no city yet, in one statement.
     await db
       .from("user_activities")
       .update({ city: geo.city, region: geo.region })
