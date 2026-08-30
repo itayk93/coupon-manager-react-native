@@ -19,6 +19,7 @@ import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
+import { IlsAmount } from "@/components/ui/IlsAmount";
 import {
   KpiDrilldownModal,
   type KpiConfig,
@@ -149,12 +150,14 @@ export function StatisticsScreen() {
                 <Text style={[styles.kpiLabel, { color: theme.textMuted }]}>{kpi.label}</Text>
                 {kpi.icon}
               </View>
-              <Text
+              <IlsAmount
+                value={kpi.value}
                 style={[styles.kpiValue, { color: kpi.color }]}
                 maxFontSizeMultiplier={1.3}
-              >
-                {formatIls(kpi.value)}
-              </Text>
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.72}
+              />
             </TouchableOpacity>
           ))}
         </View>

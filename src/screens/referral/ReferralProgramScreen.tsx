@@ -33,9 +33,9 @@ import { useMyApplication, useSubmitApplication } from "@/hooks/useReferralAppli
 import { fonts, radii, shadows } from "@/lib/theme";
 
 const REWARDS = [
-  { target: 10, metric: "מופעלים", prize: "קופון 50₪", icon: Gift, color: "#3b82f6" },
-  { target: 25, metric: "מופעלים", prize: "קופון 50₪", icon: Star, color: "#8b5cf6" },
-  { target: 25, metric: "שנשארו", prize: "100₪ בביט", icon: TrendingUp, color: "#10b981" },
+  { target: 10, metric: "מופעלים", prize: "קופון ₪ 50", icon: Gift, color: "#3b82f6" },
+  { target: 25, metric: "מופעלים", prize: "קופון ₪ 50", icon: Star, color: "#8b5cf6" },
+  { target: 25, metric: "שנשארו", prize: "₪ 100 בביט", icon: TrendingUp, color: "#10b981" },
 ];
 
 const STEPS = [

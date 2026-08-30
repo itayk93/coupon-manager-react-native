@@ -225,7 +225,7 @@ export function OnboardingScreen() {
             <CharacterScene state={parseCoupon.isPending ? "scanning" : "talking"} reduceMotion={reduceMotion} />
             <SpeechBubble reduceMotion={reduceMotion} text="איזו חברה, מה הקוד, כמה שילמתם וכמה הוא שווה. יש כמה? כתבו את כולם." />
           </View>
-          <TextInput multiline value={text} onChangeText={setText} placeholder={'למשל: יש לי קופון ל־Wolt, קוד WOLT123, שילמתי 70 ₪ והוא שווה 100 ₪'} placeholderTextColor={theme.textSubtle} style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]} accessibilityLabel="תיאור הקופונים" />
+          <TextInput multiline value={text} onChangeText={setText} placeholder={'למשל: יש לי קופון ל־Wolt, קוד WOLT123, שילמתי ₪ 70 והוא שווה ₪ 100'} placeholderTextColor={theme.textSubtle} style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]} accessibilityLabel="תיאור הקופונים" />
           <PrimaryButton label={parseCoupon.isPending ? "רגע, מסדרים את הקופונים..." : "למצוא את הקופונים שלי"} onPress={identify} disabled={!canIdentify || parseCoupon.isPending} loading={parseCoupon.isPending} />
         </Animated.View>
 
@@ -237,7 +237,7 @@ export function OnboardingScreen() {
           <Confetti active reduceMotion={reduceMotion} />
           {savedNow > 0 ? <View style={styles.savingsBlock} accessibilityLabel={`חסכתם ${Math.round(savedNow)} שקלים`}>
             <Text style={styles.savingsLabel}>חסכתם כאן</Text>
-            <CountUp value={Math.round(savedNow)} suffix=" ₪" reduceMotion={reduceMotion} style={styles.savingsValue} />
+            <CountUp value={Math.round(savedNow)} prefix="₪\u00A0" reduceMotion={reduceMotion} style={styles.savingsValue} />
             <Text style={styles.savingsFoot}>בקצב הזה זה בערך {formatIls(annualSavings)} בשנה</Text>
           </View> : null}
           {coupons.map((coupon, index) => <CouponSummary key={`${coupon.code}-${index}`} coupon={coupon} />)}

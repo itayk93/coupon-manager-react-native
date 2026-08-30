@@ -190,12 +190,11 @@ class CouponWidgetProvider : AppWidgetProvider() {
     )
 
     /**
-     * Formats an amount the way the app does: grouped digits, a space, then ₪.
-     * The app's `formatIls` renders "4,315.21 ₪"; the widget drops the agorot
-     * because the tile is small, but keeps the same order and spacing.
+     * Formats an amount with the shekel sign visually left of the digits.
+     * The widget drops the agorot because the tile is small.
      */
     fun formatShekels(value: Double): String =
-      String.format(java.util.Locale.US, "%,d ₪", Math.round(value))
+      String.format(java.util.Locale.US, "₪ %,d", Math.round(value))
 
     /**
      * Wraps a coupon code onto at most 4 balanced lines.

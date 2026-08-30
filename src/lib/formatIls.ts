@@ -1,10 +1,12 @@
 /**
  * Currency formatting for the app's wallet figures.
  *
- * The product convention is a leading shekel sign (`₪ 1,000.00`).
+ * Product convention: shekel sign on the visual left of the number.
  */
 export function formatIls(value: number): string {
-  return `₪ ${formatIlsNumber(value)}`;
+  // LRI/PDI keep the currency run visually LTR inside surrounding Hebrew;
+  // NBSP prevents the symbol from wrapping onto a separate line.
+  return `\u2066₪\u00A0${formatIlsNumber(value)}\u2069`;
 }
 
 export function formatIlsNumber(value: number): string {

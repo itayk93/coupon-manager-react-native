@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
 import {
   WalletCards,
   CirclePlus,
@@ -28,6 +28,8 @@ export function WalletHeroCard({
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
 
   const visibleCoupons = coupons.filter(isSpendableCoupon);
   const totalValue = visibleCoupons.reduce((sum, c) => sum + (c.value || 0), 0);
@@ -56,36 +58,42 @@ export function WalletHeroCard({
           </View>
         </View>
 
-        <Text style={[styles.greetingText, { color: theme.text }]}>
-          {greeting}, {displayName} 👋
-        </Text>
-        <Text style={[styles.subGreetingText, { color: theme.textMuted }]}> 
-          {isError
-            ? "לא הצלחנו לטעון את הקופונים"
-            : visibleCoupons.length === 1 ? "קופון אחד פעיל" : `${visibleCoupons.length} קופונים פעילים`}
-        </Text>
-
-        {/* Balance Box */}
-        {/* A tinted box inside a white card inside a cream screen was three
-            layers deep. The balance sits on the card, behind a rule. */}
-        <View style={[styles.balanceBox, { borderTopColor: theme.divider }]}>
-          <Text style={[styles.balanceLabel, { color: theme.textMuted }]}>יתרה זמינה בארנק</Text>
-          {isError || isLoading ? (
-            <Text style={[styles.balanceValue, { color: theme.text }]}> 
-              {isError ? "—" : "טוען..."}
+        <View style={isTablet ? styles.tabletSummaryRow : undefined}>
+          <View style={isTablet ? styles.tabletGreetingGroup : undefined}>
+            <Text style={[styles.greetingText, { color: theme.text }]}>
+              {greeting}, {displayName} 👋
             </Text>
-          ) : (
-            <IlsAmount
-              value={remainingValue}
-              style={[styles.balanceValue, { color: theme.text }]}
-              currencyStyle={styles.balanceCurrency}
-            />
-          )}
-          <Text style={[styles.balanceSub, { color: theme.textSubtle }]}>
-            {isError
-              ? "היתרה תוצג לאחר טעינה מחדש"
-              : `מתוך ${formatIls(totalValue)} בארנק`}
-          </Text>
+            <Text style={[styles.subGreetingText, { color: theme.textMuted }, isTablet && styles.tabletSubGreeting]}>
+              {isError
+                ? "לא הצלחנו לטעון את הקופונים"
+                : visibleCoupons.length === 1 ? "קופון אחד פעיל" : `${visibleCoupons.length} קופונים פעילים`}
+            </Text>
+          </View>
+
+          {/* Balance Box */}
+          <View style={[
+            styles.balanceBox,
+            { borderTopColor: theme.divider },
+            isTablet && [styles.tabletBalanceBox, { borderRightColor: theme.divider }],
+          ]}>
+            <Text style={[styles.balanceLabel, { color: theme.textMuted }]}>יתרה זמינה בארנק</Text>
+            {isError || isLoading ? (
+              <Text style={[styles.balanceValue, { color: theme.text }]}>
+                {isError ? "—" : "טוען..."}
+              </Text>
+            ) : (
+              <IlsAmount
+                value={remainingValue}
+                style={[styles.balanceValue, { color: theme.text }]}
+                currencyStyle={styles.balanceCurrency}
+              />
+            )}
+            <Text style={[styles.balanceSub, { color: theme.textSubtle }]}>
+              {isError
+                ? "היתרה תוצג לאחר טעינה מחדש"
+                : `מתוך ${formatIls(totalValue)} בארנק`}
+            </Text>
+          </View>
         </View>
 
       </View>
@@ -157,6 +165,29 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 14,
+  },
+  tabletSummaryRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 28,
+    paddingTop: 8,
+  },
+  tabletGreetingGroup: {
+    flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  tabletSubGreeting: {
+    marginBottom: 0,
+  },
+  tabletBalanceBox: {
+    flex: 1,
+    alignItems: "flex-end",
+    borderTopWidth: 0,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    paddingTop: 0,
+    paddingRight: 28,
   },
   balanceLabel: {
     fontSize: 12,

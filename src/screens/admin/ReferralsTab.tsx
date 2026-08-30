@@ -602,7 +602,7 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
                 >
                   <Text style={[styles.rewardTitle, { color: theme.text }]}>{reward.label}</Text>
                   <Text style={[styles.rewardMeta, { color: theme.textMuted }]}>
-                    {reward.reward_type === "cash" ? "מזומן" : "Dream Card"} · {reward.reward_value} ₪
+                    {reward.reward_type === "cash" ? "מזומן" : "Dream Card"} · ₪ {reward.reward_value}
                   </Text>
 
                   <View style={[styles.progressTrack, { backgroundColor: theme.surfaceAlt }]}>

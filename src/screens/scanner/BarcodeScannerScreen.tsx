@@ -585,10 +585,12 @@ const styles = StyleSheet.create({
   aiHeader: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: 8,
     marginBottom: 4,
   },
   aiTitle: {
+    flexShrink: 1,
     fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "800",

@@ -53,7 +53,7 @@ function alertDate(expiration: string, daysBefore: number): number | null {
 }
 
 function body(company: string, daysLeft: number, remaining: number): string {
-  const value = remaining > 0 ? ` (נותרו ₪${remaining.toLocaleString("he-IL")})` : "";
+  const value = remaining > 0 ? ` (נותרו \u2066₪\u00A0${remaining.toLocaleString("he-IL")}\u2069)` : "";
   if (daysLeft <= 0) return `הקופון של ${company} פג היום${value}.`;
   if (daysLeft === 1) return `הקופון של ${company} פג מחר${value}.`;
   return `הקופון של ${company} פג בעוד ${daysLeft} ימים${value}.`;

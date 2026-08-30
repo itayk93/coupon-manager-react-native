@@ -28,11 +28,11 @@ import { formatIls } from "@/lib/formatIls";
    the ask was for the two screens to look identical. */
 
 const BUCKETS = [
-  { min: 0, color: "#a8c7f0", label: "פחות מ־90 ₪" },
-  { min: 90, color: "#7aa9e8", label: "90 ₪ ומעלה" },
-  { min: 270, color: "#4285f4", label: "270 ₪ ומעלה" },
-  { min: 650, color: "#1a56c4", label: "650 ₪ ומעלה" },
-  { min: 1100, color: "#0b3d91", label: "1,100 ₪ ומעלה" },
+  { min: 0, color: "#a8c7f0", label: "פחות מ־₪ 90" },
+  { min: 90, color: "#7aa9e8", label: "₪ 90 ומעלה" },
+  { min: 270, color: "#4285f4", label: "₪ 270 ומעלה" },
+  { min: 650, color: "#1a56c4", label: "₪ 650 ומעלה" },
+  { min: 1100, color: "#0b3d91", label: "₪ 1,100 ומעלה" },
 ];
 
 const HOME: Region = { latitude: 32.07, longitude: 34.78, latitudeDelta: 1.6, longitudeDelta: 1.6 };
@@ -696,7 +696,7 @@ export function WhereBoughtScreen() {
                 <Text style={[S.filterChipText, returningOnly && S.filterChipTextOn]}>חזרתי שוב</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setHighSpendOnly((value) => !value)} style={[S.filterChip, highSpendOnly && S.filterChipOn]}>
-                <Text style={[S.filterChipText, highSpendOnly && S.filterChipTextOn]}>מעל 500 ₪</Text>
+                <Text style={[S.filterChipText, highSpendOnly && S.filterChipTextOn]}>מעל ₪ 500</Text>
               </TouchableOpacity>
               {cityFilter ? (
                 <TouchableOpacity onPress={clearCityFocus} style={[S.filterChip, S.filterChipOn]}>

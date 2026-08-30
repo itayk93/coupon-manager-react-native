@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -28,6 +28,9 @@ export function CompanyCardsSlider({
 }: CompanyCardsSliderProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const collapsedCount = isTablet ? 10 : 6;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isFemale = ["female", "f", "נקבה", "אישה"].includes(
@@ -41,7 +44,7 @@ export function CompanyCardsSlider({
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
-        {companyCards.length > 6 ? (
+        {companyCards.length > collapsedCount ? (
           <TouchableOpacity
             onPress={() => setIsExpanded((current) => !current)}
             accessibilityRole="button"
@@ -58,7 +61,7 @@ export function CompanyCardsSlider({
       </View>
 
       <View style={styles.grid}>
-        {(isExpanded ? companyCards : companyCards.slice(0, 6)).map((item) => {
+        {(isExpanded ? companyCards : companyCards.slice(0, collapsedCount)).map((item) => {
           const isSelected = selectedCompany === item.company;
           const logoUri = getCompanyLogoSource(item.company);
 
@@ -69,6 +72,7 @@ export function CompanyCardsSlider({
               onPress={() => onSelectCompany(item.company)}
               style={[
                 styles.card,
+                isTablet && styles.tabletCard,
                 shadows.card,
                 {
                   backgroundColor: theme.card,
@@ -133,6 +137,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: "center",
     gap: 5,
+  },
+  tabletCard: {
+    width: "19%",
   },
   logoWrapper: {
     width: 44,

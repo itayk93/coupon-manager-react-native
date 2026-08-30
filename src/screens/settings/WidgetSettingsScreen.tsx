@@ -158,7 +158,7 @@ export function WidgetSettingsScreen() {
           {coupon.company}
         </Text>
         <Text style={[styles.rowSubtitle, { color: theme.textMuted }]}>
-          נותרו {Math.round(couponRemainingValue(coupon))} ₪
+          נותרו ₪ {Math.round(couponRemainingValue(coupon))}
         </Text>
       </View>
 

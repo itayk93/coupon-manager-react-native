@@ -50,15 +50,15 @@ PROFILES=(
 )
 
 SCREENS=(
-  "dashboard|/"
-  "coupons|/coupons"
-  "statistics|/statistics"
-  "sharing|/sharing"
-  "settings|/settings"
-  "notifications|/notifications"
-  "profile|/profile"
-  "add-coupon|/coupons/add"
-  "scanner|/scanner"
+  "dashboard|/|5"
+  "coupons|/coupons|5"
+  "statistics|/statistics|10"
+  "sharing|/sharing|5"
+  "settings|/settings|5"
+  "notifications|/notifications|5"
+  "profile|/profile|5"
+  "add-coupon|/coupons/add|5"
+  "scanner|/scanner|5"
 )
 
 capture() {
@@ -84,7 +84,7 @@ for profile in "${PROFILES[@]}"; do
   sleep 6
 
   for screen_spec in "${SCREENS[@]}"; do
-    IFS='|' read -r screen route <<< "$screen_spec"
+    IFS='|' read -r screen route wait_seconds <<< "$screen_spec"
     echo "  מצלם $screen"
     "$ADB" -s "$SERIAL" shell am start \
       -a android.intent.action.VIEW \
@@ -93,7 +93,7 @@ for profile in "${PROFILES[@]}"; do
     # Expo Router may need a few seconds to resolve the deep link and hydrate
     # async screen data on a cold/reshaped emulator. Capturing earlier records
     # the previous route or a blank transition frame.
-    sleep 5
+    sleep "$wait_seconds"
     capture "$device" "$screen" "$size" "$density" "$font_scale" "$logical_dp"
   done
 done

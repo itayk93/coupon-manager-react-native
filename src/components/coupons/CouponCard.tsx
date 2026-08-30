@@ -35,9 +35,7 @@ type CouponCardProps = {
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-function formatIls(value: number) {
-  return `${value.toFixed(2)} ₪`;
-}
+import { formatIls } from "@/lib/formatIls";
 
 function formatDateShort(dateStr: string | null) {
   if (!dateStr) return null;

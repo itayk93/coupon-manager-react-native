@@ -7,11 +7,11 @@ type IlsAmountProps = TextProps & {
   currencyStyle?: TextStyle;
 };
 
-/** Amount display with a leading, visually quieter shekel sign. */
+/** Unbreakable LTR amount with the shekel sign on the visual left. */
 export function IlsAmount({ value, style, currencyStyle, ...props }: IlsAmountProps) {
   return (
     <Text {...props} maxFontSizeMultiplier={1.5} style={[{ writingDirection: "ltr" }, style]}>
-      <Text style={currencyStyle}>₪</Text>{" "}{formatIlsNumber(value)}
+      <Text style={currencyStyle}>₪</Text>{"\u00A0"}{formatIlsNumber(value)}
     </Text>
   );
 }
