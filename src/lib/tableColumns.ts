@@ -5,10 +5,6 @@ export const COUPON_COLUMNS = 'id,user_id,company,code,description,value,cost,us
 
 export const COMPANIES_COLUMNS = 'id,name,image_path,company_count' as const;
 
-export const SCHEDULED_TASKS_COLUMNS = 'id,created_at,created_by_user_id,description,execution_time,is_active,last_run,next_run,schedule_type,schedule_value,task_name,task_type,timezone,updated_at' as const;
-
-export const TASK_EXECUTION_LOGS_COLUMNS = 'id,task_id,status,executed_at,execution_time_seconds,result_message,error_message,additional_data' as const;
-
 export const NEWSLETTERS_COLUMNS = 'id,created_at,created_by,title,content,main_title,custom_html,image_path,newsletter_type,is_published,is_sent,sent_count,show_telegram_button' as const;
 
 export const ADMIN_MESSAGES_COLUMNS = 'id,created_at,message_text,link_url,link_text' as const;

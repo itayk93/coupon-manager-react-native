@@ -5,16 +5,12 @@ import {
   AUTO_UPDATE_RUNS_COLUMNS,
   COMPANIES_COLUMNS,
   NEWSLETTERS_COLUMNS,
-  SCHEDULED_TASKS_COLUMNS,
-  TASK_EXECUTION_LOGS_COLUMNS,
 } from "@/lib/tableColumns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Company,
   Newsletter,
-  ScheduledTask,
-  TaskExecutionLog,
   AdminMessage,
   AutoUpdateRun,
   UserUpdate,
@@ -103,55 +99,6 @@ export function useDeleteCompany() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-    },
-    onError: (e: any) => notify.error("שגיאה", e.message),
-  });
-}
-
-// ---------- Scheduled tasks ----------
-export function useScheduledTasks() {
-  const isAdmin = useAdminGuard();
-  return useQuery({
-    queryKey: ["scheduled_tasks"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("scheduled_tasks").select(SCHEDULED_TASKS_COLUMNS).order("id", { ascending: false });
-      if (error) throw error;
-      return data as ScheduledTask[];
-    },
-    enabled: isAdmin,
-  });
-}
-
-export function useTaskLogs(taskId: number | undefined) {
-  return useQuery({
-    queryKey: ["task_logs", taskId],
-    queryFn: async () => {
-      if (!taskId) return [];
-      const { data, error } = await supabase
-        .from("task_execution_logs")
-        .select(TASK_EXECUTION_LOGS_COLUMNS)
-        .eq("task_id", taskId)
-        .order("executed_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data as TaskExecutionLog[];
-    },
-    enabled: !!taskId,
-  });
-}
-
-export function useToggleTask() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const { error } = await supabase
-        .from("scheduled_tasks")
-        .update({ is_active: isActive, updated_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["scheduled_tasks"] });
     },
     onError: (e: any) => notify.error("שגיאה", e.message),
   });
