@@ -647,49 +647,52 @@ export type Database = {
       }
       newsletters: {
         Row: {
-          content: string | null
+          bundle_path: string | null
           created_at: string | null
           created_by: number
-          custom_html: string | null
+          email_subject: string | null
+          hero_image_url: string | null
           id: number
-          image_path: string | null
           is_published: boolean | null
           is_sent: boolean | null
-          main_title: string | null
           newsletter_type: string | null
+          preview_text: string | null
           sent_count: number | null
           show_telegram_button: boolean | null
           title: string
+          web_url: string | null
         }
         Insert: {
-          content?: string | null
+          bundle_path?: string | null
           created_at?: string | null
           created_by: number
-          custom_html?: string | null
+          email_subject?: string | null
+          hero_image_url?: string | null
           id?: number
-          image_path?: string | null
           is_published?: boolean | null
           is_sent?: boolean | null
-          main_title?: string | null
           newsletter_type?: string | null
+          preview_text?: string | null
           sent_count?: number | null
           show_telegram_button?: boolean | null
           title: string
+          web_url?: string | null
         }
         Update: {
-          content?: string | null
+          bundle_path?: string | null
           created_at?: string | null
           created_by?: number
-          custom_html?: string | null
+          email_subject?: string | null
+          hero_image_url?: string | null
           id?: number
-          image_path?: string | null
           is_published?: boolean | null
           is_sent?: boolean | null
-          main_title?: string | null
           newsletter_type?: string | null
+          preview_text?: string | null
           sent_count?: number | null
           show_telegram_button?: boolean | null
           title?: string
+          web_url?: string | null
         }
         Relationships: [
           {
