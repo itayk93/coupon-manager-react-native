@@ -78,6 +78,7 @@ export function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    if (loading) return;
     if (!validate()) return;
     setLoading(true);
 
@@ -152,6 +153,9 @@ export function LoginScreen() {
                 isPassword
                 value={password}
                 onChangeText={setPassword}
+                returnKeyType="done"
+                enablesReturnKeyAutomatically
+                onSubmitEditing={() => void handleLogin()}
                 error={errors.password}
                 icon={<Lock size={18} color={theme.textSubtle} />}
               />

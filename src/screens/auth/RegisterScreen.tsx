@@ -57,6 +57,7 @@ export function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    if (loading) return;
     if (!validate()) return;
     setLoading(true);
 
@@ -190,6 +191,9 @@ export function RegisterScreen() {
               isPassword
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              returnKeyType="done"
+              enablesReturnKeyAutomatically
+              onSubmitEditing={() => void handleRegister()}
               error={errors.confirmPassword}
               icon={<Lock size={18} color={theme.textSubtle} />}
             />

@@ -36,6 +36,7 @@ export function BarcodeScannerScreen() {
   const { width, fontScale } = useWindowDimensions();
   const compactLayout = width < 380 || fontScale > 1.2;
   const aiTitleFontSize = width < 350 || fontScale >= 1.3 ? 13 : compactLayout ? 14 : 16;
+  const compactImageButtons = width < 360 || fontScale >= 1.3;
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   // `onBarcodeScanned` fires several times per second, and a state update does
@@ -366,8 +367,11 @@ export function BarcodeScannerScreen() {
               <View style={styles.imageBtnRow}>
                 <View style={{ flex: 1 }}>
                   <Button
-                    title="בחר מהגלריה"
+                    title={fontScale > 1.2 ? "מהגלריה" : "בחר מהגלריה"}
                     variant="outline"
+                    size={compactImageButtons ? "sm" : "md"}
+                    style={compactImageButtons ? styles.imageBtnCompact : undefined}
+                    textStyle={compactImageButtons ? styles.imageBtnTextCompact : undefined}
                     onPress={() => handlePickImage("library")}
                     disabled={parseCoupon.isPending}
                     icon={<ImagePlus size={18} color={theme.primary} />}
@@ -375,8 +379,11 @@ export function BarcodeScannerScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Button
-                    title="צלם שובר"
+                    title={fontScale > 1.2 ? "צילום שובר" : "צלם שובר"}
                     variant="outline"
+                    size={compactImageButtons ? "sm" : "md"}
+                    style={compactImageButtons ? styles.imageBtnCompact : undefined}
+                    textStyle={compactImageButtons ? styles.imageBtnTextCompact : undefined}
                     onPress={() => handlePickImage("camera")}
                     disabled={parseCoupon.isPending}
                     icon={<Camera size={18} color={theme.primary} />}
@@ -426,6 +433,12 @@ const styles = StyleSheet.create({
   imageBtnRow: {
     flexDirection: "row-reverse",
     gap: 10,
+  },
+  imageBtnCompact: {
+    paddingHorizontal: 6,
+  },
+  imageBtnTextCompact: {
+    fontSize: 10.5,
   },
   characterLoading: {
     alignItems: "center",
