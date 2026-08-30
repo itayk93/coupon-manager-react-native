@@ -307,7 +307,24 @@ drop table if exists public.telegram_users;
 
 ---
 
-## 11. שאילתות עזר לשימוש חוזר
+## 11. אימות אחרי Phase 1 + 2 (2026-08-30)
+
+| בדיקה | תוצאה |
+|---|---|
+| `npx tsc -p tsconfig.json --noEmit` | נקי, rc=0 |
+| `npx vitest run` | 25 קבצים, 167/167 עוברים |
+| `npm run size` — JS bundle | 7.8MB (תקציב ≤10MB; היה 8.1MB) |
+| `npm run size` — assets | 4.2MB (תקציב ≤6MB) |
+| Supabase security advisors | **0 התראות חדשות.** כל ה-WARN קיימים מראש (referral RPCs `SECURITY DEFINER`, `function_search_path_mutable`, leaked-password protection, גרסת PG). `rls_enabled_no_policy` על `coupon_usage_imports` — INFO, טיר 3, נשמרה בכוונה. |
+| refs תלושים ל-טבלאות/עמודות שנמחקו ב-`src` + `supabase/functions` | אין |
+| קבצי migration מקומיים מול remote | תואמים — `20260829202018`, `20260830043150` |
+| עץ עבודה | נקי |
+
+מסקנה: שתי המיגרציות בריאות. אין רגרסיה. שום view/function/trigger/cron לא נשבר.
+
+---
+
+## 12. שאילתות עזר לשימוש חוזר
 
 ```sql
 -- כל העמודות לפי טבלה
