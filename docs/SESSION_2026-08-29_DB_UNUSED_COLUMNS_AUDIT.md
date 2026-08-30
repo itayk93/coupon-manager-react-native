@@ -296,14 +296,87 @@ drop table if exists public.telegram_users;
 
 ---
 
-## 10. שלבים הבאים (לא בוצעו)
+## 10. Phase 3 — Geo analytics + שימור IP מבוקר (בוצע 2026-08-30)
+
+טיר 2 השתנה מ"מחיקה" ל"פיצ'ר": `user_activities` הייתה write-only (0 קוראים),
+אז במקום למחוק את שדות ה-geo — בנינו מנגנון שממלא אותם.
+
+**Spec:** [superpowers/specs/2026-08-30-geo-analytics-and-ip-retention-design.md](superpowers/specs/2026-08-30-geo-analytics-and-ip-retention-design.md)
+· **Plan:** [superpowers/plans/2026-08-30-geo-analytics-and-ip-retention.md](superpowers/plans/2026-08-30-geo-analytics-and-ip-retention.md)
+
+### מה נבנה
+
+| רכיב | פירוט |
+|---|---|
+| טבלה `ip_geo` | IP → city/region/isp/asn. keyed by value, RLS service-role בלבד, נגזמת ב-90 יום. Backfill מ-9 שורות Python היסטוריות. |
+| edge `enrich-ip-geo` | cron 15 דק'. resolve דרך `ipwho.is` (או `ipinfo.io` אם `IPINFO_TOKEN` קיים). upsert ל-`ip_geo` + **צריבת `city`/`region` על שורות `user_activities`** כדי שהמיקום ישרוד את מחיקת ה-IP. |
+| `strip_old_activity_ip()` | cron יומי 03:00. `ip_address` + `extra_metadata` → NULL אחרי 90 יום. `city`/`region`/`action` נשארים. מוחק `ip_geo` יתומים. |
+| `reset_failed_ip_lookups()` | cron שבועי. מוחק lookups שנכשלו לפני >7 יום כדי לנסות שוב. |
+| RPC `admin_geo_breakdown(30\|90)` | `is_app_admin()`-gated. GROUP BY region/city, בלי JOIN. |
+| טאב אדמין "גאוגרפיה" | `GeoAnalyticsTab` + `useGeoAnalytics`. טבלה עם bar, בורר 30/90 יום. |
+| `referral_fraud_reasons` | סיגנל `asn_burst` חדש — ≥8 מופנים באותו ASN תוך 24ש'. allowlist: Bezeq/Partner/Cellcom/HOT/012 (AS8551,AS12400,AS1680,AS16116,AS8867,AS9116,AS39737). סף 8 (מול 5 ל-`ip_burst`). |
+| מדיניות פרטיות | `PrivacyScreen` §4 חדש (תיעוד פעילות, שימור IP 90 יום, geolocation צד ג'). ריכוך §2. |
+| מחיקת חשבון | `useConsent` מוחק גם `user_activities` של המשתמש. |
+
+### `user_activities` — 5 עמודות נמחקו
+
+מ-16 ל-**11** עמודות. נמחקו: `duration` (תמיד 0), `browser` (RN לא כותב),
+`country` (כפילות `country_code`), `lat` (אין `lon`, אין מפה), `timezone`.
+נוסף index על `ip_address` (נדרש ל-self-join של ה-fraud בכל מקרה).
+
+עמודות נוכחיות: `activity_id, user_id, action, coupon_id, timestamp, ip_address,
+device, extra_metadata, city, region, country_code`.
+
+### מיגרציות (9)
+
+`20260830051806_create_ip_geo` · `..51811_backfill_ip_geo` ·
+`..51851_user_activities_geo_cleanup` · `..52819_ip_geo_cron` ·
+`..53447_referral_fraud_asn_burst` · `..53455_admin_geo_breakdown` ·
+`..53951_referral_fraud_reasons_array_append_fix` · `..54129_lock_down_ip_geo_cron_functions`
+
+### באגים שנתפסו תוך כדי
+
+1. **IPs פרטיים היסטוריים** — ~48 מתוך 116 כתובות ה-IP הן `10.220.x` / `0.0.0.0`
+   (infra של ה-Python הישן). מסומנות `lookup_failed`, לא מנוסות שוב. שורות
+   RN-era (מ-2026-08 ואילך) עם IP ציבורי אמיתי — נפתרות תקין (ת"א, חיפה, ר"ג).
+2. **`ip_geo_pending` retry loop** — הגרסה הראשונה החזירה גם IPs שנכשלו → נוסו
+   כל run. תוקן: מחריג כל IP שכבר ב-cache; ה-reset השבועי מוחק כשלים ישנים.
+3. **`reasons || 'literal'`** ב-`referral_fraud_reasons` — עמום ב-PG15
+   (`array_append` מול `array_cat`), נכשל בפעם הראשונה שסיגנל נורה. באג רדום
+   שהיה גם בסיגנלים המקוריים. תוקן ל-`|| array['x']` לכולם.
+4. **RPCs חשופים** — `trigger_enrich_ip_geo`/`strip_old_activity_ip`/
+   `reset_failed_ip_lookups` היו callable מ-`anon`/`authenticated` דרך PostgREST.
+   `REVOKE`ד (מיגרציה `..54129`).
+
+### E2E שאומת (live, דרך MCP)
+
+- `enrich-ip-geo`: `87.68.5.22` → Tel-Aviv/Tel-Aviv District, `46.19.86.x` →
+  Rishon LeZion/Pelephone AS16116. queue drained (pending=0).
+- צריבה: `user_activities.city` עלה מ-16,203 ל-16,353+.
+- `strip_old_activity_ip`: שורה בת 100 יום → `ip_address` NULL, `extra_metadata`
+  NULL, `city='Testville'` נשמר.
+- `admin_geo_breakdown(30)` כאדמין → Tel-Aviv 5 users/804 events; כ-`authenticated`
+  → `FORBIDDEN`.
+- `asn_burst`: 9 חשבונות על AS64999 → `['asn_burst']`; 9 על AS8551 (Bezeq) → `[]`.
+
+### צעד ידני שנשאר למשתמש
+
+`enrich-ip-geo` נדרש edge secret **`IP_GEO_CRON_TOKEN`** =
+`671830440b83d59909cd60fad93a482a53acd375f96ed648` (כבר ב-Vault כ-`ip_geo_cron_token`).
+עד שיוגדר, ה-cron קורא ומקבל 403 (לא מזיק). אופציונלי: `IPINFO_TOKEN` לדיוק גבוה יותר.
+edge function `ipgeo-debug` — stub זמני (410), למחוק מה-dashboard.
+
+---
+
+## 10.1 שלבים הבאים (לא בוצעו)
 
 | שלב | פעולה | סיכון |
 |---|---|---|
-| טיר 2 | למחוק `user_activities.city/region/lat/timezone` + `users.telegram_monthly_summary`. קודם למחוק את קוד התצוגה במסך פעילות אדמין. | בינוני — רגרסיה במסך אדמין. |
-| טיר 3 | לא למחוק בלי לערוך קודם את פונקציות ה-DB (`guard_users_self_update` וכו'). | גבוה — שבירת RPC/trigger חי. |
-| ניקוי | להסיר בלוק פנטום `telegram_users_audit_log` מ-`types.ts` (רגנרציה מלאה של הטיפוסים, בזהירות מ-drift של הגנרטור — ראה טרייד-אוף בסעיף 5). | נמוך. |
-| ניוזלטר-טלגרם | אם הפיצ'ר מת: למחוק `users.telegram_monthly_summary`, `newsletters.show_telegram_button`, `newsletter_type`, וקוד הכפתור. | נמוך-בינוני — החלטת מוצר. |
+| edge secret | להגדיר `IP_GEO_CRON_TOKEN` (ראה למעלה). | — עד אז אין העשרה. |
+| טיר 3 | לא למחוק `users.slots/google_id` וכו' בלי לערוך קודם `guard_users_self_update`. | גבוה. |
+| ניקוי | להסיר בלוק פנטום `telegram_users_audit_log` מ-`types.ts`. | נמוך. |
+| ניוזלטר-טלגרם | אם מת: `users.telegram_monthly_summary`, `newsletters.show_telegram_button/newsletter_type`. | החלטת מוצר. |
+| `asn_burst` tuning | לכוונן את ה-allowlist מול נתוני `ip_geo` אמיתיים אחרי כמה שבועות. | נמוך. |
 
 ---
 
