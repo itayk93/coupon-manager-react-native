@@ -318,7 +318,7 @@ export function CouponCard({
             {coupon.cvv ? (
               <View style={styles.cardDetailItem}>
                 <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
-                  CVV:
+                  {"‪CVV:‬"}
                 </Text>
                 <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
                   {coupon.cvv}

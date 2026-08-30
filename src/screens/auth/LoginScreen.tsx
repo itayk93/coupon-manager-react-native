@@ -212,7 +212,7 @@ export function LoginScreen() {
               <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
                 <Text style={[styles.link, { color: theme.primary }]}>הרשמה</Text>
               </TouchableOpacity>
-              <Text style={[styles.footerText, { color: theme.textMuted }]}>אין לכם חשבון? </Text>
+              <Text style={[styles.footerText, { color: theme.textMuted }]}>אין לכם חשבון?</Text>
             </View>
           </View>
 
@@ -364,6 +364,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 22,
+    gap: 4,
   },
   footerText: {
     fontFamily: fonts.body,

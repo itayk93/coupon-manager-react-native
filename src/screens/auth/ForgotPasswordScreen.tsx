@@ -152,7 +152,7 @@ export function ForgotPasswordScreen() {
               <TouchableOpacity onPress={() => router.back()}>
                 <Text style={[styles.link, { color: theme.primary }]}>חזרה</Text>
               </TouchableOpacity>
-              <Text style={[styles.footerText, { color: theme.textMuted }]}>נזכרתם בסיסמה? </Text>
+              <Text style={[styles.footerText, { color: theme.textMuted }]}>נזכרתם בסיסמה?</Text>
             </View>
           </View>
         </ScrollView>
@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 22,
+    gap: 4,
   },
   footerText: { fontFamily: fonts.body, fontSize: 13 },
 });

@@ -195,7 +195,7 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
               {coupon.cvv ? (
                 <View style={styles.modalCardDetailItem}>
                   <Text style={[styles.modalCardDetailLabel, { color: theme.textMuted }]}>
-                    CVV:
+                    {"‪CVV:‬"}
                   </Text>
                   <Text
                     style={[styles.modalCardDetailVal, { color: theme.text }]}

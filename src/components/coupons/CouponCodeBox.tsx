@@ -72,7 +72,7 @@ export function CouponCodeBox({
 
             {cvv ? (
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: theme.textMuted }]}>CVV:</Text>
+                <Text style={[styles.detailLabel, { color: theme.textMuted }]}>{"‪CVV:‬"}</Text>
                 <Text
                   style={[styles.detailValue, { color: theme.text }]}
                   maxFontSizeMultiplier={1.3}

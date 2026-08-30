@@ -432,7 +432,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                       {c.cvv ? (
                         <View style={styles.cardDetailItem}>
                           <Text style={[styles.cardDetailLabel, { color: theme.textMuted }]}>
-                            CVV:
+                            {"‪CVV:‬"}
                           </Text>
                           <Text style={[styles.cardDetailVal, { color: theme.text }]} selectable>
                             {c.cvv}
