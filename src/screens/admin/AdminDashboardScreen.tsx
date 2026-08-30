@@ -11,21 +11,7 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  Users,
-  Building2,
-  Tag,
-  Clock,
-  Search,
-  Plus,
-  Trash2,
-  Shield,
-  Send,
-  MessageSquare,
-  Share2,
-  MapPin,
-  Mail,
-} from "lucide-react-native";
+import { Search, Plus, Trash2, Send } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -119,44 +105,53 @@ export function AdminDashboardScreen() {
       <Header title="פאנל ניהול" showBack onBack={() => router.back()} />
 
       <View style={styles.container}>
-        {/* Navigation Tabs */}
-        <View style={styles.tabsRow}>
-          {(
-            [
-              { key: "users", label: "משתמשים", icon: <Users size={16} /> },
-              { key: "companies", label: "חברות", icon: <Building2 size={16} /> },
-              { key: "tags", label: "תגיות", icon: <Tag size={16} /> },
-              { key: "messages", label: "הודעות", icon: <MessageSquare size={16} /> },
-              { key: "referrals", label: "הפניות", icon: <Share2 size={16} /> },
-              { key: "geo", label: "גאוגרפיה", icon: <MapPin size={16} /> },
-              { key: "newsletters", label: "ניוזלטר", icon: <Mail size={16} /> },
-            ] as const
-          ).map((tab) => {
-            const isCurrent = activeTab === tab.key;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => setActiveTab(tab.key)}
-                style={[
-                  styles.tabBtn,
-                  {
-                    backgroundColor: isCurrent
-                      ? theme.primary
-                      : theme.surfaceAlt,
-                  },
-                ]}
-              >
-                <Text
+        {/* Navigation Tabs — a horizontal pill rail. Seven tabs never fit one
+            row in Hebrew, so let them scroll instead of wrapping mid-word. */}
+        <View style={styles.tabsRailWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabsRail}
+          >
+            {(
+              [
+                { key: "users", label: "משתמשים" },
+                { key: "companies", label: "חברות" },
+                { key: "tags", label: "תגיות" },
+                { key: "messages", label: "הודעות" },
+                { key: "referrals", label: "הפניות" },
+                { key: "geo", label: "גאוגרפיה" },
+                { key: "newsletters", label: "ניוזלטר" },
+              ] as const
+            ).map((tab) => {
+              const isCurrent = activeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
+                  activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isCurrent }}
                   style={[
-                    styles.tabBtnText,
-                    { color: isCurrent ? "#ffffff" : theme.textMuted },
+                    styles.tabPill,
+                    {
+                      backgroundColor: isCurrent ? theme.primary : theme.surfaceAlt,
+                      borderColor: isCurrent ? theme.primary : theme.border,
+                    },
                   ]}
                 >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.tabPillText,
+                      { color: isCurrent ? "#ffffff" : theme.textMuted },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Tab 5: Referrals — the pilot dashboard. Everything it reads is
@@ -401,21 +396,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
-  tabsRow: {
-    flexDirection: "row-reverse",
-    gap: 6,
+  tabsRailWrap: {
+    marginHorizontal: -16,
     marginBottom: 12,
   },
-  tabBtn: {
-    flex: 1,
-    height: 36,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
+  tabsRail: {
+    flexDirection: "row-reverse",
+    gap: 8,
+    paddingHorizontal: 16,
   },
-  tabBtnText: {
+  tabPill: {
+    minHeight: 36,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  tabPillText: {
     fontSize: 13,
     fontWeight: "700",
+    writingDirection: "rtl",
   },
   tabContent: {
     flex: 1,
@@ -432,8 +432,10 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    height: "100%",
     fontSize: 14,
     textAlign: "right",
+    writingDirection: "rtl",
   },
   userCard: {
     flexDirection: "row",
