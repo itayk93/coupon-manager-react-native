@@ -196,12 +196,7 @@ export function QuickUsageModal({
     const map: Record<string, (typeof rows)[number]> = {};
     for (const usage of detectedUsages) {
       const hit = findExistingUsageMatch(
-        {
-          amount: usage.amount,
-          placeName: usage.placeName,
-          placeAddress: usage.placeAddress,
-          usedAt: usage.usedAt,
-        },
+        { amount: usage.amount, usedAt: usage.usedAt },
         rows
       );
       if (hit) map[usage.id] = hit;
@@ -387,7 +382,7 @@ export function QuickUsageModal({
     if (!valid.length) {
       return setError(
         duplicateCount
-          ? "כל השימושים שזוהו כבר קיימים בקופון לפי מקום, סכום וזמן."
+          ? "כל השימושים שזוהו כבר קיימים בקופון לפי סכום ומועד."
           : "לא נשארו שימושים תקינים לאישור"
       );
     }
@@ -397,7 +392,7 @@ export function QuickUsageModal({
     try {
       const result = await recordUsage.mutateBatchAsync({ couponId: selectedCouponId, usages: valid, importId: importId || undefined });
       if (result.insertedCount === 0) {
-        setError("כל השימושים האלה כבר דווחו לפי מקום, סכום וזמן.");
+        setError("כל השימושים האלה כבר דווחו לפי סכום ומועד.");
         return;
       }
       setDetectedUsages([]);
@@ -539,7 +534,7 @@ export function QuickUsageModal({
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.duplicateBadgeTitle, { color: theme.warning }]}>שימוש זה כבר קיים בקופון</Text>
                         <Text style={[styles.duplicateBadgeReason, { color: theme.textMuted }]}>
-                          אותו סכום ({formatIls(Math.abs(duplicateOf.transaction_amount))}), אותו מקום ואותו זמן (עד הדקה).
+                          אותו סכום ({formatIls(Math.abs(duplicateOf.transaction_amount))}) ואותו מועד (עד הדקה).
                         </Text>
                       </View>
                       <AlertTriangle size={16} color={theme.warning} />
