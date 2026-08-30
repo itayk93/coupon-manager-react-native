@@ -36,6 +36,8 @@ export default async function handler(req, res) {
   }
   const buf = Buffer.from(await r.arrayBuffer());
   res.setHeader("Content-Type", TYPES[ext] || "application/octet-stream");
-  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
+  // Short edge cache: a newsletter can be re-uploaded and should refresh fast.
+  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=120");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.status(200).send(buf);
 }
