@@ -93,9 +93,13 @@ Deno.serve(async (req) => {
   );
   const dir = String(newsletter_id);
   const base = `${dir}/`;
-  // Assets and the page are served through newsletter-page, which sets real
-  // Content-Types (Storage forces text/plain on public html/css/js).
-  const serveBase = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newsletter-page/${base}`;
+  // The page is served through the Vercel proxy /api/n (Supabase forces
+  // text/plain on HTML everywhere - Storage public URLs and edge functions).
+  // Images serve fine straight from Storage, so relative <img>/<link>/<script>
+  // are rewritten to the proxy too (handles Claude Design bundles with
+  // external css/js), and the hero image points at raw Storage for speed.
+  const APP = "https://coupons.itaykarkason.com";
+  const storageBase = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/newsletters/${base}`;
 
   // Replace any previous bundle.
   const { data: existing } = await admin.storage.from("newsletters").list(dir);
@@ -120,10 +124,11 @@ Deno.serve(async (req) => {
 
   html = html.replace(
     /(src|href)=("|')(?!https?:|data:|mailto:|tel:|#)([^"']+)\2/gi,
-    (_m, attr, q, path) => `${attr}=${q}${serveBase}${String(path).replace(/^\.?\//, "")}${q}`,
+    (_m, attr, q, path) =>
+      `${attr}=${q}${APP}/api/n?id=${dir}&f=${encodeURIComponent(String(path).replace(/^\.?\//, ""))}${q}`,
   );
   const heroImageUrl = firstImg && !/^(https?:|data:)/i.test(firstImg)
-    ? serveBase + firstImg.replace(/^\.?\//, "")
+    ? storageBase + firstImg.replace(/^\.?\//, "")
     : firstImg;
 
   await admin.storage.from("newsletters").upload(base + "index.html", new TextEncoder().encode(html), {
@@ -139,7 +144,7 @@ Deno.serve(async (req) => {
 
   const patch = {
     bundle_path: base + "index.html",
-    web_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/newsletter-page/${dir}`,
+    web_url: `${APP}/api/n?id=${dir}`,
     email_subject: current?.email_subject || subject,
     hero_image_url: current?.hero_image_url || heroImageUrl,
     preview_text: current?.preview_text || firstP,

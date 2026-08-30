@@ -23,21 +23,25 @@ const json = (body: unknown, status = 200) =>
 function teaserHtml(o: { subject: string; heroImageUrl: string | null; previewText: string; webUrl: string }): string {
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
   const url = esc(o.webUrl);
-  return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;padding:24px 0">
+  const LOGO = "https://coupons.itaykarkason.com/newsletter-logo.png";
+  return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;background:#eeece5;padding:24px 0">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden">
-      <tr><td align="center" style="padding:10px 20px;font-size:12px;color:#6b7280">
-        <a href="${url}" style="color:#6b7280">לא רואים את המייל כמו שצריך? צפייה בדפדפן</a>
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
+      <tr><td align="center" style="padding:10px 20px;font-size:12px;color:#98a2b3">
+        <a href="${url}" style="color:#98a2b3">לא רואים את המייל כמו שצריך? צפייה בדפדפן</a>
       </td></tr>
-      <tr><td align="center" style="padding:6px 20px 2px;font-size:16px;font-weight:bold;color:#2563eb">קופון מאסטר</td></tr>
+      <tr><td align="right" style="background:#15202e;padding:16px 24px">
+        <img src="${LOGO}" alt="קופון מאסטר" width="150" style="display:block;width:150px;max-width:60%;height:auto">
+      </td></tr>
       ${o.heroImageUrl ? `<tr><td><img src="${esc(o.heroImageUrl)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto"></td></tr>` : ""}
-      <tr><td style="padding:24px 28px 8px"><h1 style="margin:0;font-size:22px;color:#111827">${esc(o.subject)}</h1></td></tr>
-      <tr><td style="padding:0 28px 20px;font-size:15px;line-height:1.7;color:#374151">${esc(o.previewText)}</td></tr>
-      <tr><td align="center" style="padding:8px 28px 32px">
-        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#2563eb;border-radius:10px">
-          <a href="${url}" style="display:inline-block;padding:13px 32px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold">לצפייה המלאה</a>
+      <tr><td style="padding:24px 28px 8px"><h1 style="margin:0;font-size:23px;color:#101828;line-height:1.35">${esc(o.subject)}</h1></td></tr>
+      <tr><td style="padding:0 28px 20px;font-size:15px;line-height:1.7;color:#475467">${esc(o.previewText)}</td></tr>
+      <tr><td align="center" style="padding:8px 28px 34px">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#1f6fd1;border-radius:12px">
+          <a href="${url}" style="display:inline-block;padding:14px 36px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold">לצפייה המלאה</a>
         </td></tr></table>
       </td></tr>
+      <tr><td align="center" style="padding:0 28px 26px;font-size:12px;color:#98a2b3">קופון מאסטר · הארנק החכם לקופונים ושוברים</td></tr>
     </table>
   </td></tr></table>
 </div>`;

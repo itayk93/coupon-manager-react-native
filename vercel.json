@@ -5,7 +5,7 @@
   "installCommand": "npm ci",
   "rewrites": [
     {
-      "source": "/((?!_expo/|assets/|\\.well-known/|.*\\.[a-zA-Z0-9]+$).*)",
+      "source": "/((?!_expo/|assets/|api/|\\.well-known/|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ],
