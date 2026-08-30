@@ -22,7 +22,7 @@ import { notify } from "@/lib/notify";
 import { linkSocialProvider, SocialProvider } from "@/lib/socialAuth";
 import { Modal } from "@/components/ui/Modal";
 import { PROFILE_AVATARS, ProfileAvatar } from "@/components/profile/ProfileAvatar";
-import { uploadProfileImage } from "@/lib/profileImage";
+import { deleteProfileImage, uploadProfileImage } from "@/lib/profileImage";
 
 export function ProfileScreen() {
   const router = useRouter();
@@ -46,13 +46,21 @@ export function ProfileScreen() {
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
-  const saveAvatar = async (profileImage: string) => {
+  const saveAvatar = async (profileImage: string): Promise<boolean> => {
     try {
+      const previousImage = profile?.profile_image;
       await updateProfile.mutateAsync({ profile_image: profileImage });
+      if (previousImage && previousImage !== profileImage) {
+        await deleteProfileImage(previousImage).catch((error) => {
+          console.warn("Failed to remove previous profile image:", error);
+        });
+      }
       setAvatarPickerOpen(false);
       notify.success("תמונת הפרופיל עודכנה");
+      return true;
     } catch {
       // useUpdateProfile presents the database error to the user.
+      return false;
     }
   };
 
@@ -73,7 +81,8 @@ export function ProfileScreen() {
     setAvatarLoading(true);
     try {
       const publicUrl = await uploadProfileImage(result.assets[0]);
-      await saveAvatar(publicUrl);
+      const saved = await saveAvatar(publicUrl);
+      if (!saved) await deleteProfileImage(publicUrl).catch(() => {});
     } catch (error: any) {
       notify.error("העלאת התמונה נכשלה", error.message || "נסו שוב.");
     } finally {
@@ -349,7 +358,7 @@ export function ProfileScreen() {
             return (
               <TouchableOpacity
                 key={avatar}
-                onPress={() => saveAvatar(avatar)}
+                onPress={() => void saveAvatar(avatar)}
                 disabled={updateProfile.isPending || avatarLoading}
                 accessibilityRole="button"
                 accessibilityLabel={`בחירת דמות ${avatar.split(":")[1]}`}

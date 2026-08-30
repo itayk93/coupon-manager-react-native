@@ -44,7 +44,7 @@ export function AboutScreen() {
           <View style={styles.featuresList}>
             <View style={styles.featureItem}>
               <Text style={[styles.featureText, { color: theme.text }]}>
-                הצפנת Fernet ברמה צבאית להגנה על כל הקודים והנתונים שלך
+                הצפנת Fernet בצד השרת להגנה על קודים ושדות רגישים
               </Text>
               <ShieldCheck size={20} color={theme.primary} />
             </View>

@@ -221,7 +221,7 @@ export function LoginScreen() {
           </View>
 
           <Text style={[styles.legal, { color: theme.textSubtle }]}>
-            בכניסה אתם מאשרים את{" "}
+            מידע על השימוש בפרטים שלך מופיע ב
             <Text style={{ color: theme.primary }} onPress={() => router.push("/privacy")}>
               מדיניות הפרטיות
             </Text>

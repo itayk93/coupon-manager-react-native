@@ -8,7 +8,9 @@ export async function requireUser(req: Request) {
   if (error || !user?.email) throw new Error('UNAUTHENTICATED');
   const result = await client.from('users').select('id,public_id,email,is_admin,is_deleted').eq('email', user.email.toLowerCase()).maybeSingle();
   if (result.error || !result.data || result.data.is_deleted) throw new Error('FORBIDDEN');
-  return result.data;
+  // The verified token is authoritative even for an old application row that
+  // predates the auth_user_id backfill.
+  return { ...result.data, auth_user_id: user.id };
 }
 
 export function requireSameUser(

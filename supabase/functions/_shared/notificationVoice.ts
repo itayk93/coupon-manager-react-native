@@ -125,7 +125,6 @@ export async function phrase(
           prompt_tokens: usage.prompt_tokens ?? null,
           completion_tokens: usage.completion_tokens ?? null,
           total_tokens: usage.total_tokens ?? null,
-          response_text: `[notification:${type}] ${text}`,
         });
       } catch {
         // Never let accounting cost a notification.

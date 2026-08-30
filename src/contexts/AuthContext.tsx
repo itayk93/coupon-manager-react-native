@@ -6,17 +6,18 @@ import {
   storeLegacyUser,
 } from "@/lib/legacyAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { couponVault } from "@/lib/couponVault";
-import { CONSENT_VERSION } from "@/lib/consent";
 import { flushActivityLog, logActivity } from "@/lib/activityLog";
 import { claimPendingReferral, resetReferralClaim } from "@/lib/referralClaim";
+import { clearLocalPrivateData } from "@/lib/localPrivateData";
+import { clearLocalExpiryAlerts } from "@/lib/localExpiryAlerts";
+import { stopNearbyGeofences } from "@/lib/nearbyAlerts";
 import { clearOfflineCoupons } from "@/lib/offlineCoupons";
 
 type AuthContextType = {
   session: LegacyUser | null;
   user: LegacyUser | null;
   isLoading: boolean;
-  signOut: () => Promise<void>;
+  signOut: (options?: { forgetDeviceData?: boolean }) => Promise<void>;
   isAdmin: boolean;
   setLegacySession: (user: LegacyUser) => void;
   refreshUser: () => Promise<void>;
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (supabaseSession.user?.email) {
         const { data: legacyUser } = await supabase
           .from("users")
-          .select("id,public_id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted,privacy_consent_version")
+          .select("id,public_id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
           .eq("email", supabaseSession.user.email.toLowerCase())
           .maybeSingle();
 
@@ -76,12 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(normalizedUser);
           setUser(normalizedUser);
           setIsAdmin(normalizedUser.is_admin);
-
-          // Consent trail: record once per policy version. The vault stamps the
-          // user row so this stops firing until the next CONSENT_VERSION bump.
-          if ((legacyUser as { privacy_consent_version?: string }).privacy_consent_version !== CONSENT_VERSION) {
-            void couponVault({ action: "record_consent", version: CONSENT_VERSION }).catch(() => {});
-          }
 
           // The first moment there is both a session and a row in `users` to
           // attach a referral to. Registration itself is too early: with email
@@ -121,25 +116,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     storeLegacyUser(legacyUser).catch(() => {});
   };
 
-  const signOut = async () => {
+  const signOut = async (options: { forgetDeviceData?: boolean } = {}) => {
+    const identity = user?.email || session?.email;
     try {
       // Logged and flushed before the session is torn down: the log endpoint
       // authenticates with the JWT, so anything still queued afterwards has
       // nowhere to go.
       logActivity("logout_success");
       await flushActivityLog();
-      await supabase.auth.signOut();
-      await clearLegacyUser();
-      // Whoever signs in next on this phone gets their own chance to claim.
-      await resetReferralClaim();
-      // The offline mirror holds coupon codes and CVVs; it must not outlive the
-      // session that fetched them.
-      await clearOfflineCoupons();
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.error("SignOut error:", error);
+    } finally {
+      // Remote logout can fail after account deletion or while offline. Local
+      // coupon codes, drafts, location targets and profile identifiers must
+      // still be removed.
+      await Promise.allSettled([
+        clearLocalExpiryAlerts(),
+        stopNearbyGeofences(),
+      ]);
+      await Promise.allSettled([
+        clearLegacyUser(),
+        resetReferralClaim(),
+        clearLocalPrivateData(identity, { forgetInstall: options.forgetDeviceData }),
+        clearOfflineCoupons(),
+      ]);
       setSession(null);
       setUser(null);
       setIsAdmin(false);
-    } catch (error) {
-      console.error("SignOut error:", error);
     }
   };
 

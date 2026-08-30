@@ -188,7 +188,7 @@ export async function stopNearbyGeofences(): Promise<void> {
   } catch {
     // Already stopped.
   }
-  await AsyncStorage.removeItem(TARGETS_KEY).catch(() => {});
+  await AsyncStorage.multiRemove([TARGETS_KEY, LAST_ALERT_KEY]).catch(() => {});
 }
 
 /**

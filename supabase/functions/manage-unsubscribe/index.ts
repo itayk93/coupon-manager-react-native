@@ -133,7 +133,7 @@ Deno.serve(async (req: Request) => {
     const supabase = supa();
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, public_id, email')
+      .select('id, public_id, email, newsletter_subscription')
       .eq(tokenPayload.user_public_id ? 'public_id' : 'id', tokenPayload.user_public_id || tokenPayload.user_id)
       .eq('email', tokenPayload.email)
       .maybeSingle();
@@ -148,9 +148,10 @@ Deno.serve(async (req: Request) => {
       ]);
       return {
         email: user.email,
-        // Both default to on: a user with no row has never opted out.
+        // Operational expiry email defaults to on. Marketing requires both an
+        // explicit subscription flag and no later opt-out.
         expiry_email: prefs?.email ?? true,
-        marketing_email: !(optOut?.opted_out ?? false),
+        marketing_email: Boolean(user.newsletter_subscription) && !(optOut?.opted_out ?? false),
       };
     };
 
@@ -159,6 +160,17 @@ Deno.serve(async (req: Request) => {
     const stamp = new Date().toISOString();
 
     if (scope === 'marketing' || scope === 'all') {
+      const { error: subscriptionError } = await supabase.from('users')
+        .update({
+          newsletter_subscription: !optedOut,
+          ...(!optedOut ? {
+            marketing_consent_at: stamp,
+            marketing_consent_source: 'email-preference-center',
+            marketing_consent_version: 'marketing-v1',
+          } : {}),
+        })
+        .eq('id', user.id);
+      if (subscriptionError) throw subscriptionError;
       const { error } = await supabase.from('opt_outs').upsert(
         { user_id: user.id, opted_out: optedOut, timestamp: stamp },
         { onConflict: 'user_id' },

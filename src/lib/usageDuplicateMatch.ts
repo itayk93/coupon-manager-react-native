@@ -1,6 +1,6 @@
 /**
  * Client-side mirror of the duplicate rule enforced server-side in
- * `record_coupon_usage_batch` (migration 20260830210000). Within one coupon, a
+ * `record_coupon_usage_batch` (migration 20260830210140). Within one coupon, a
  * detected usage duplicates an existing ledger row when both match:
  *   - amount, rounded to agorot
  *   - timestamp, truncated to the minute

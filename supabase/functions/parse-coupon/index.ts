@@ -102,6 +102,7 @@ async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: 
   const body = useStrictSchema
     ? {
         model: MODEL,
+        reasoning_effort: 'minimal',
         max_completion_tokens: 2048,
         messages,
         response_format: {
@@ -111,6 +112,7 @@ async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: 
       }
     : {
         model: MODEL,
+        reasoning_effort: 'minimal',
         max_completion_tokens: 2048,
         messages: [
           { role: 'system', content: FALLBACK_JSON_PROMPT },
@@ -250,14 +252,12 @@ Deno.serve(async (req: Request) => {
     ];
 
     let { response: openaiResp, rawText } = await callOpenAI(apiKey, messages, true);
-    let usedFallback = false;
 
     if (!openaiResp.ok) {
       console.error('OpenAI API strict-schema error', openaiResp.status, rawText);
       const fallbackResult = await callOpenAI(apiKey, messages, false);
       openaiResp = fallbackResult.response;
       rawText = fallbackResult.rawText;
-      usedFallback = true;
     }
 
     if (!openaiResp.ok) {
@@ -334,7 +334,6 @@ Deno.serve(async (req: Request) => {
         prompt_tokens: usage.prompt_tokens ?? null,
         completion_tokens: usage.completion_tokens ?? null,
         total_tokens: usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
-        response_text: usedFallback ? `[fallback-json-object]\n${outputText}` : outputText,
       });
     } catch (_) {
       // ignore logging failures

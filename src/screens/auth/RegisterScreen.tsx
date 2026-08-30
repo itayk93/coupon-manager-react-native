@@ -31,6 +31,7 @@ export function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -50,7 +51,7 @@ export function RegisterScreen() {
       errs.confirmPassword = "הסיסמאות אינן תואמות";
     }
     if (!agreeTerms) {
-      errs.terms = "יש לאשר את תנאי השימוש ומדיניות הפרטיות";
+      errs.terms = "יש לאשר את תנאי השימוש";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -77,6 +78,7 @@ export function RegisterScreen() {
             password,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
+            newsletterSubscription: newsletterOptIn,
           },
         }
       );
@@ -210,6 +212,18 @@ export function RegisterScreen() {
               </Text>
             </View>
 
+            <View style={styles.termsRow}>
+              <Switch
+                value={newsletterOptIn}
+                onValueChange={setNewsletterOptIn}
+                trackColor={{ false: theme.inputBorder, true: theme.primary }}
+                thumbColor="#ffffff"
+              />
+              <Text style={[styles.termsText, { color: theme.textMuted }]}>
+                אני רוצה לקבל עדכונים והטבות באימייל (לא חובה)
+              </Text>
+            </View>
+
             <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading}>
               <LinearGradient
                 colors={[palette.primary, palette.primaryDeep]}
@@ -230,7 +244,7 @@ export function RegisterScreen() {
           </View>
 
           <Text style={[styles.legal, { color: theme.textSubtle }]}>
-            בכניסה אתם מאשרים את{" "}
+            מידע על השימוש בפרטים שלך מופיע ב
             <Text style={{ color: theme.primary }} onPress={() => router.push("/privacy")}>
               מדיניות הפרטיות
             </Text>

@@ -51,10 +51,10 @@ Deno.serve(async (req: Request) => {
       headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
-        // gpt-5-mini spends most of this budget on hidden reasoning tokens —
-        // real runs land at 1400-1900 before any JSON is emitted, so a busy
-        // screenshot with the old 2048 cap ran dry and returned empty content
-        // ("no usages detected"). Keep generous headroom.
+        reasoning_effort: "minimal",
+        // Keep generous output headroom. `minimal` normally spends few or no
+        // reasoning tokens, while the higher cap still prevents truncation if
+        // the model needs more room for a busy screenshot's structured JSON.
         max_completion_tokens: 6000,
         response_format: { type: "json_schema", json_schema: { name: "coupon_usages", strict: true, schema } },
         messages: [
@@ -98,7 +98,7 @@ Deno.serve(async (req: Request) => {
       await createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!)
         .from("gpt_usage").insert({ user_id: caller.id, created: new Date().toISOString(), model: MODEL,
           prompt_tokens: payload.usage?.prompt_tokens ?? null, completion_tokens: payload.usage?.completion_tokens ?? null,
-          total_tokens: payload.usage?.total_tokens ?? null, response_text: payload.choices?.[0]?.message?.content ?? null });
+          total_tokens: payload.usage?.total_tokens ?? null });
     } catch { /* logging must not break parsing */ }
     return jsonResponse({
       couponCode: typeof output.couponCode === "string" ? output.couponCode.trim() : null,

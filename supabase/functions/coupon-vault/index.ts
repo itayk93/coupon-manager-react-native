@@ -14,13 +14,43 @@ const admin = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SU
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+async function deleteStorageFolder(
+  db: ReturnType<typeof admin>,
+  bucket: string,
+  prefix: string,
+): Promise<void> {
+  for (;;) {
+    const { data, error } = await db.storage.from(bucket).list(prefix, { limit: 100, offset: 0 });
+    if (error) throw error;
+    const paths = (data || [])
+      .filter((item) => item.id)
+      .map((item) => `${prefix}/${item.name}`);
+    if (!paths.length) return;
+    const { error: removeError } = await db.storage.from(bucket).remove(paths);
+    if (removeError) throw removeError;
+  }
+}
+
+function profileImagePath(value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  if (value.startsWith('profile-image:')) return value.slice('profile-image:'.length) || null;
+  try {
+    const marker = '/storage/v1/object/public/profile-images/';
+    const pathname = new URL(value).pathname;
+    const index = pathname.indexOf(marker);
+    return index < 0 ? null : decodeURIComponent(pathname.slice(index + marker.length)) || null;
+  } catch {
+    return null;
+  }
+}
+
 async function decryptCoupon<T extends Record<string, unknown>>(coupon: T): Promise<T> {
-  const result = { ...coupon };
+  const result: Record<string, unknown> = { ...coupon };
   await Promise.all(SENSITIVE.map(async (field) => {
     const value = result[field];
-    if (typeof value === 'string' && value) result[field] = await decryptCouponValue(value) as T[typeof field];
+    if (typeof value === 'string' && value) result[field] = await decryptCouponValue(value);
   }));
-  return result;
+  return result as T;
 }
 
 async function encryptedInput(input: unknown): Promise<Record<string, unknown>> {
@@ -76,7 +106,8 @@ Deno.serve(async (req) => {
       const byId = new Map<number, Record<string, unknown>>();
       for (const coupon of owned || []) byId.set(coupon.id, { ...coupon, is_shared_with_me: false });
       for (const row of sharedRows || []) {
-        const coupon = row.coupon as Record<string, unknown> | null;
+        const relatedCoupon = Array.isArray(row.coupon) ? row.coupon[0] : row.coupon;
+        const coupon = relatedCoupon as unknown as Record<string, unknown> | null;
         // The owner may have moved a shared coupon to their trash.
         if (coupon && typeof coupon.id === 'number' && !coupon.deleted_at && !byId.has(coupon.id)) {
           byId.set(coupon.id, { ...coupon, is_shared_with_me: true });
@@ -180,15 +211,18 @@ Deno.serve(async (req) => {
       return jsonResponseFor(req, { data: { version } });
     }
 
-    // GDPR art. 15 + 20 / Israeli PPL s. 13 — everything the account holds, in
-    // one JSON document. Coupon secrets are decrypted so the export is usable.
+    // GDPR art. 15 + 20 / Israeli PPL s. 13 — account data in one JSON
+    // document. Coupon secrets are decrypted so the export is usable.
     if (body.action === 'export_account') {
       const ids = (await db.from('coupon').select('id').eq('user_id', user.id)).data?.map((r) => r.id) ?? [];
-      const grab = async (table: string, column: string, value: unknown) =>
-        (await db.from(table).select('*').eq(column, value)).data ?? [];
+      const grab = async (table: string, column: string, value: unknown) => {
+        const { data, error } = await db.from(table).select('*').eq(column, value);
+        if (error) throw error;
+        return data ?? [];
+      };
 
-      const [profile, coupons, usage, transactions, tags, activities, consents, optOuts, notifications, notifPrefs, gptUsage, referralCodes] = await Promise.all([
-        db.from('users').select('id,public_id,email,first_name,last_name,gender,created_at,profile_description,newsletter_subscription,privacy_consent_version,privacy_consent_at').eq('id', user.id).maybeSingle(),
+      const [profile, coupons, usage, transactions, tags, activities, consents, optOuts, notifications, notifPrefs, gptUsage, referralCodes, pushSubscriptions, tourProgress, notificationEvents, couponAlerts, newsletterSendings, autoUpdateRuns, referralApplications, ownReferral, usageImports] = await Promise.all([
+        db.from('users').select('id,public_id,auth_user_id,email,first_name,last_name,gender,created_at,profile_description,profile_image,google_id,newsletter_subscription,marketing_consent_at,marketing_consent_source,marketing_consent_version,telegram_monthly_summary,allow_widget_access,push_token,privacy_consent_version,privacy_consent_at').eq('id', user.id).maybeSingle(),
         db.from('coupon').select('*').eq('user_id', user.id),
         ids.length ? db.from('coupon_usage').select('*').in('coupon_id', ids) : Promise.resolve({ data: [] }),
         ids.length ? db.from('coupon_transaction').select('*').in('coupon_id', ids) : Promise.resolve({ data: [] }),
@@ -200,14 +234,37 @@ Deno.serve(async (req) => {
         grab('notification_preferences', 'user_id', user.id),
         grab('gpt_usage', 'user_id', user.id),
         grab('referral_codes', 'user_id', user.id),
+        grab('push_subscriptions', 'user_id', user.id),
+        grab('user_tour_progress', 'user_id', user.id),
+        grab('notification_events', 'user_id', user.id),
+        grab('coupon_alerts', 'user_id', user.id),
+        grab('newsletter_sendings', 'user_id', user.id),
+        grab('auto_update_runs', 'user_id', user.id),
+        grab('referral_applications', 'user_id', user.id),
+        grab('referrals', 'referred_user_id', user.id),
+        grab('coupon_usage_imports', 'user_id', user.id),
       ]);
 
       const shares = await db.from('coupon_shares').select('*').or(`shared_by_user_id.eq.${user.id},shared_with_user_id.eq.${user.id}`);
+      let exportedProfile: Record<string, unknown> | null = profile.data
+        ? { ...profile.data }
+        : null;
+      const imagePath = profileImagePath(exportedProfile?.profile_image);
+      if (exportedProfile && imagePath) {
+        const { data: signedImage, error: signedImageError } = await db.storage
+          .from('profile-images').createSignedUrl(imagePath, 60 * 60);
+        if (signedImageError) throw signedImageError;
+        exportedProfile = {
+          ...exportedProfile,
+          profile_image_download_url: signedImage.signedUrl,
+          profile_image_download_url_expires_in_seconds: 60 * 60,
+        };
+      }
 
       return jsonResponseFor(req, {
         data: {
           exported_at: new Date().toISOString(),
-          profile: profile.data ?? null,
+          profile: exportedProfile,
           coupons: await Promise.all((coupons.data || []).map(decryptCoupon)),
           coupon_usage: usage.data ?? [],
           coupon_transactions: transactions.data ?? [],
@@ -220,12 +277,34 @@ Deno.serve(async (req) => {
           notification_preferences: notifPrefs,
           ai_usage: gptUsage,
           referral_codes: referralCodes,
+          push_subscriptions: pushSubscriptions,
+          tour_progress: tourProgress,
+          notification_events: notificationEvents,
+          coupon_alerts: couponAlerts,
+          newsletter_sendings: newsletterSendings,
+          automatic_update_runs: autoUpdateRuns,
+          referral_applications: referralApplications,
+          referral_attribution: ownReferral,
+          coupon_usage_imports: usageImports,
         },
       });
     }
 
     // GDPR art. 17 / Israeli PPL s. 14 — immediate, complete erasure.
     if (body.action === 'delete_account') {
+      const { data: account, error: accountError } = await db.from('users')
+        .select('auth_user_id').eq('id', user.id).single();
+      if (accountError) throw accountError;
+      const authUserId = user.auth_user_id || account.auth_user_id;
+      if (!authUserId) throw new Error('AUTH_ID_NOT_FOUND');
+      if (!account.auth_user_id) {
+        const { error: authLinkError } = await db.from('users')
+          .update({ auth_user_id: authUserId }).eq('id', user.id);
+        if (authLinkError) throw authLinkError;
+      }
+      // Storage objects are not database rows and do not follow SQL cascades.
+      // Delete them first; a failure must not be reported as full erasure.
+      await deleteStorageFolder(db, 'profile-images', authUserId);
       const { error } = await db.rpc('delete_account_data', { p_user_id: user.id });
       if (error) throw error;
       return jsonResponseFor(req, { data: { deleted: true } });

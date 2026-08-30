@@ -652,7 +652,7 @@ export type Database = {
         Row: {
           bundle_path: string | null
           created_at: string | null
-          created_by: number
+          created_by: number | null
           email_subject: string | null
           hero_image_url: string | null
           id: number
@@ -667,7 +667,7 @@ export type Database = {
         Insert: {
           bundle_path?: string | null
           created_at?: string | null
-          created_by: number
+          created_by?: number | null
           email_subject?: string | null
           hero_image_url?: string | null
           id?: number
@@ -682,7 +682,7 @@ export type Database = {
         Update: {
           bundle_path?: string | null
           created_at?: string | null
-          created_by?: number
+          created_by?: number | null
           email_subject?: string | null
           hero_image_url?: string | null
           id?: number
@@ -1566,6 +1566,9 @@ export type Database = {
           is_confirmed: boolean
           is_deleted: boolean | null
           last_name: string
+          marketing_consent_at: string | null
+          marketing_consent_source: string | null
+          marketing_consent_version: string | null
           newsletter_subscription: boolean
           password: string | null
           privacy_consent_at: string | null
@@ -1591,6 +1594,9 @@ export type Database = {
           is_confirmed?: boolean
           is_deleted?: boolean | null
           last_name: string
+          marketing_consent_at?: string | null
+          marketing_consent_source?: string | null
+          marketing_consent_version?: string | null
           newsletter_subscription?: boolean
           password?: string | null
           privacy_consent_at?: string | null
@@ -1616,6 +1622,9 @@ export type Database = {
           is_confirmed?: boolean
           is_deleted?: boolean | null
           last_name?: string
+          marketing_consent_at?: string | null
+          marketing_consent_source?: string | null
+          marketing_consent_version?: string | null
           newsletter_subscription?: boolean
           password?: string | null
           privacy_consent_at?: string | null

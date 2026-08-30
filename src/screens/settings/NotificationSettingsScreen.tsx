@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
-import { Bell, Mail, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
+import { Bell, Mail, Megaphone, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
 import {
   NOTIFICATION_TYPES,
   isTypeChannelOn,
@@ -34,6 +34,7 @@ import {
   DAILY_REMINDER_DAYS,
 } from "@/lib/notificationWindows";
 import { logActivity } from "@/lib/activityLog";
+import { useOptOut, useSetOptOut } from "@/hooks/useConsent";
 
 function ToggleRow({
   label,
@@ -192,10 +193,12 @@ export function NotificationSettingsScreen() {
   // React saw the hook count grow the moment the query resolved and threw
   // instead of drawing the screen — a spinner that never became anything.
   const nearby = useNearbyAlerts();
+  const marketing = useOptOut();
+  const setMarketingOptOut = useSetOptOut();
 
   const [windowError, setWindowError] = useState<string | null>(null);
 
-  if (prefsLoading || !prefs) {
+  if (prefsLoading || !prefs || marketing.isLoading) {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ההתראות שלי" />
@@ -311,6 +314,20 @@ export function NotificationSettingsScreen() {
             onValueChange={(next) => updatePrefs.mutate({ in_app: next })}
             theme={theme}
           />
+        </View>
+
+        <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.groupTitle, { color: theme.textMuted }]}>דיוור שיווקי</Text>
+          <ToggleRow
+            label="ניוזלטר, עדכוני מוצר והטבות"
+            icon={<Megaphone size={20} color={theme.textMuted} />}
+            value={Boolean(marketing.data?.marketing_enabled)}
+            onValueChange={(next) => setMarketingOptOut.mutate(!next)}
+            theme={theme}
+          />
+          <Text style={[styles.hint, { color: theme.textSubtle }]}>
+            לא חובה. אפשר להצטרף או לבטל בכל רגע.
+          </Text>
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

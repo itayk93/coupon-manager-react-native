@@ -17,12 +17,16 @@ export function useOptOut() {
     queryKey: ['opt_out', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
-        .from('opt_outs')
-        .select(OPT_OUTS_COLUMNS)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      return data;
+      const [{ data: optOut, error: optOutError }, { data: profile, error: profileError }] = await Promise.all([
+        supabase.from('opt_outs').select(OPT_OUTS_COLUMNS).eq('user_id', user.id).maybeSingle(),
+        supabase.from('users').select('newsletter_subscription').eq('id', user.id).single(),
+      ]);
+      if (optOutError) throw optOutError;
+      if (profileError) throw profileError;
+      return {
+        ...optOut,
+        marketing_enabled: Boolean(profile.newsletter_subscription) && !(optOut?.opted_out ?? false),
+      };
     },
     enabled: !!user,
   });
@@ -34,11 +38,36 @@ export function useSetOptOut() {
   return useMutation({
     mutationFn: async (optedOut: boolean) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase.from('opt_outs').upsert(
-        { user_id: user.id, opted_out: optedOut, timestamp: new Date().toISOString() },
-        { onConflict: 'user_id' }
-      );
-      if (error) throw error;
+      const updateOptOut = async () => {
+        const { error } = await supabase.from('opt_outs').upsert(
+          { user_id: user.id, opted_out: optedOut, timestamp: new Date().toISOString() },
+          { onConflict: 'user_id' },
+        );
+        if (error) throw error;
+      };
+      const updateSubscription = async () => {
+        const consentFields = optedOut
+          ? {}
+          : {
+              marketing_consent_at: new Date().toISOString(),
+              marketing_consent_source: 'notification-settings',
+              marketing_consent_version: 'marketing-v1',
+            };
+        const { error } = await supabase.from('users')
+          .update({ newsletter_subscription: !optedOut, ...consentFields })
+          .eq('id', user.id);
+        if (error) throw error;
+      };
+
+      // Fail closed: on opt-out, disable sending first. On opt-in, clear the
+      // suppression first and enable sending only after that succeeds.
+      if (optedOut) {
+        await updateSubscription();
+        await updateOptOut();
+      } else {
+        await updateOptOut();
+        await updateSubscription();
+      }
     },
     onSuccess: (_d, optedOut) => {
       notify.success(optedOut ? 'ביטלת קבלת דיוור' : 'הצטרפת חזרה לדיוור');
@@ -57,8 +86,8 @@ export function useRecordConsent() {
   });
 }
 
-// GDPR art. 15 + 20 / חוק הגנת הפרטיות ס' 13 — hand the user everything the
-// account holds as one JSON file, through the OS share sheet.
+// GDPR art. 15 + 20 / חוק הגנת הפרטיות ס' 13 — provide an account-data copy
+// through the OS share sheet. The cache file is destroyed when sharing ends.
 export function useExportAccount() {
   return useMutation({
     mutationFn: async () => {
@@ -68,14 +97,18 @@ export function useExportAccount() {
       if (file.exists) file.delete();
       file.create();
       file.write(json);
-      if (await Sharing.isAvailableAsync()) {
+      try {
+        if (!(await Sharing.isAvailableAsync())) {
+          throw new Error('שיתוף קבצים אינו זמין במכשיר הזה');
+        }
         await Sharing.shareAsync(file.uri, {
           mimeType: 'application/json',
           dialogTitle: 'המידע שלי',
           UTI: 'public.json',
         });
+      } finally {
+        if (file.exists) file.delete();
       }
-      return file.uri;
     },
     onError: (e: any) => notify.error('שגיאה בהורדת המידע', e.message),
   });
@@ -91,7 +124,7 @@ export function useDeleteAccount() {
     },
     onSuccess: async () => {
       notify.success('החשבון וכל הנתונים נמחקו');
-      await signOut();
+      await signOut({ forgetDeviceData: true });
     },
     onError: (e: any) => notify.error('שגיאה במחיקת החשבון', e.message),
   });

@@ -96,6 +96,8 @@ Deno.serve(async (req: Request) => {
     );
 
     const firstName = name(body?.firstName);
+    const newsletterSubscription = body?.newsletterSubscription === true;
+    const marketingConsentAt = newsletterSubscription ? new Date().toISOString() : null;
     let otp: string | undefined;
 
     if (mode === 'signup') {
@@ -109,7 +111,14 @@ Deno.serve(async (req: Request) => {
         type: 'signup',
         email,
         password,
-        options: { data: { first_name: firstName, last_name: name(body?.lastName) } },
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: name(body?.lastName),
+            newsletter_subscription: newsletterSubscription,
+            marketing_consent_at: marketingConsentAt,
+          },
+        },
       });
 
       if (error) {

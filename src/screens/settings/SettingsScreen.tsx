@@ -355,7 +355,7 @@ export function SettingsScreen() {
               <ChevronLeft size={18} color={theme.textMuted} />
               <View style={styles.menuItemLabelGroup}>
                 <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  מדיניות פרטיות ותנאים
+                  מדיניות הפרטיות
                 </Text>
                 <Lock size={20} color={theme.textMuted} />
               </View>

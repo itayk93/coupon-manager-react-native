@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import Svg, { Circle, Ellipse, Path, Rect } from "react-native-svg";
+import { signedProfileImageUrl } from "@/lib/profileImage";
 
 export const PROFILE_AVATARS = Array.from({ length: 20 }, (_, index) => `avatar:${index + 1}`);
 
@@ -10,8 +11,25 @@ type Props = {
 };
 
 export function ProfileAvatar({ value, size = 64 }: Props) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!value || value.startsWith("avatar:")) {
+      setImageUrl(null);
+      return () => { active = false; };
+    }
+    setImageUrl(null);
+    signedProfileImageUrl(value)
+      .then((url) => { if (active) setImageUrl(url); })
+      .catch(() => { if (active) setImageUrl(null); });
+    return () => { active = false; };
+  }, [value]);
+
   if (value && !value.startsWith("avatar:")) {
-    return <Image source={{ uri: value }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+    return imageUrl
+      ? <Image source={{ uri: imageUrl }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+      : <View style={[styles.frame, { width: size, height: size, borderRadius: size / 2 }]} />;
   }
 
   const parsed = Number(value?.split(":")[1] || 1);
