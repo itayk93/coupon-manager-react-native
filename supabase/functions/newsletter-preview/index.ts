@@ -1,13 +1,14 @@
 // Supabase Edge Function: newsletter-preview
 //
-// Sends ONE newsletter's rendered HTML to ONE explicit address, for review
-// before a real send. It does not touch newsletter_sendings, does not flip
-// is_sent, and never fans out to the subscriber list - that is send-emails
-// (mode: "newsletter"). Admin only.
+// Sends ONE newsletter's teaser email to ONE explicit address, for review
+// before a real send. Does not touch newsletter_sendings, does not flip
+// is_sent, never fans out to the subscriber list. Admin only.
+//
+// The teaser template is duplicated here (small) rather than imported from
+// _shared/emailTemplate.ts, to keep this function a single deployable file.
+// Keep it in sync with newsletterTeaserEmailHtml() there.
 //
 // Body: { newsletter_id: number, to: string }
-// Env: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (auto),
-//      BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -16,18 +17,39 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+
+function teaserHtml(o: { subject: string; heroImageUrl: string | null; previewText: string; webUrl: string }): string {
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
+  const url = esc(o.webUrl);
+  return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;padding:24px 0">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden">
+      <tr><td align="center" style="padding:10px 20px;font-size:12px;color:#6b7280">
+        <a href="${url}" style="color:#6b7280">לא רואים את המייל כמו שצריך? צפייה בדפדפן</a>
+      </td></tr>
+      <tr><td align="center" style="padding:6px 20px 2px;font-size:16px;font-weight:bold;color:#2563eb">קופון מאסטר</td></tr>
+      ${o.heroImageUrl ? `<tr><td><img src="${esc(o.heroImageUrl)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto"></td></tr>` : ""}
+      <tr><td style="padding:24px 28px 8px"><h1 style="margin:0;font-size:22px;color:#111827">${esc(o.subject)}</h1></td></tr>
+      <tr><td style="padding:0 28px 20px;font-size:15px;line-height:1.7;color:#374151">${esc(o.previewText)}</td></tr>
+      <tr><td align="center" style="padding:8px 28px 32px">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#2563eb;border-radius:10px">
+          <a href="${url}" style="display:inline-block;padding:13px 32px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold">לצפייה המלאה</a>
+        </td></tr></table>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</div>`;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
-  const authHeader = req.headers.get("Authorization") ?? "";
   const asCaller = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } },
+    { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } }, auth: { persistSession: false } },
   );
   const { data: isAdmin } = await asCaller.rpc("is_app_admin");
   if (!isAdmin) return json({ error: "אין הרשאה" }, 403);
@@ -43,13 +65,19 @@ Deno.serve(async (req) => {
   );
   const { data: nl } = await admin
     .from("newsletters")
-    .select("title, content, main_title, custom_html")
+    .select("title, email_subject, hero_image_url, preview_text, web_url")
     .eq("id", newsletter_id)
     .single();
   if (!nl) return json({ error: "ניוזלטר לא נמצא" }, 404);
+  if (!nl.web_url) return json({ error: "לניוזלטר אין קובץ עיצוב" }, 400);
 
-  const html = nl.custom_html
-    || `<div dir="rtl"><h1>${nl.main_title || nl.title}</h1>${nl.content ?? ""}</div>`;
+  const subject = nl.email_subject || nl.title;
+  const html = teaserHtml({
+    subject,
+    heroImageUrl: nl.hero_image_url,
+    previewText: nl.preview_text || "",
+    webUrl: nl.web_url,
+  });
 
   const apiKey = Deno.env.get("BREVO_API_KEY");
   if (!apiKey) return json({ error: "BREVO_API_KEY missing" }, 500);
@@ -63,7 +91,7 @@ Deno.serve(async (req) => {
         name: Deno.env.get("BREVO_SENDER_NAME") || "קופון מאסטר",
       },
       to: [{ email: recipient }],
-      subject: `[תצוגה מקדימה] ${nl.title}`,
+      subject: `[תצוגה מקדימה] ${subject}`,
       htmlContent: html,
     }),
   });

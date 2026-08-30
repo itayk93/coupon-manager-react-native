@@ -20,7 +20,7 @@ import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall, isAdminIpAllowed } from '../_shared/auth.ts';
 import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubscribe.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
-import { multipassSummaryEmailHtml, type MultipassSummaryItem } from '../_shared/emailTemplate.ts';
+import { multipassSummaryEmailHtml, newsletterTeaserEmailHtml, type MultipassSummaryItem } from '../_shared/emailTemplate.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
@@ -109,10 +109,12 @@ async function handleNewsletter(newsletterId: number) {
   const supabase = supa();
   const { data: nl } = await supabase
     .from('newsletters')
-    .select('id,title,content,main_title,custom_html,is_sent,sent_count,is_published')
+    .select('id,title,email_subject,hero_image_url,preview_text,web_url')
     .eq('id', newsletterId)
     .single();
   if (!nl) return jsonResponse({ error: 'ניוזלטר לא נמצא' }, 404);
+  if (!nl.web_url) return jsonResponse({ error: 'לניוזלטר אין קובץ עיצוב - יש להעלות קובץ בטאב הניוזלטר' }, 400);
+  const subject = nl.email_subject || nl.title;
 
   // Subscribers who have not opted out
   const { data: users } = await supabase
@@ -129,11 +131,16 @@ async function handleNewsletter(newsletterId: number) {
   for (const u of (users || []) as any[]) {
     if (optedOut.has(u.id)) continue;
     const html = await wrapMarketingEmail(
-      nl.custom_html || `<div dir="rtl"><h1>${nl.main_title || nl.title}</h1>${nl.content || ''}</div>`,
+      newsletterTeaserEmailHtml({
+        subject,
+        heroImageUrl: nl.hero_image_url,
+        previewText: nl.preview_text || '',
+        webUrl: nl.web_url,
+      }),
       u.public_id,
       u.email,
     );
-    const ok = await sendEmail(u.email, nl.title, html, await buildUnsubscribeHeaders(u.public_id, u.email));
+    const ok = await sendEmail(u.email, subject, html, await buildUnsubscribeHeaders(u.public_id, u.email));
     await supabase.from('newsletter_sendings').insert({
       newsletter_id: newsletterId,
       user_id: u.id,
