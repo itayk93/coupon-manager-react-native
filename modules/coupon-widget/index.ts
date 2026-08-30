@@ -99,10 +99,26 @@ export type SharedUsageImport = {
   imageBase64: string;
 };
 
+// A shared screenshot is only interesting right after it was shared. If one is
+// still sitting in the App Group container minutes later, the hand-off failed
+// (or it was left over from a build/test run) and must not pop the usage sheet
+// on every subsequent cold launch — expire and clear it instead.
+const SHARED_IMPORT_TTL_MS = 10 * 60 * 1000;
+
 export function peekSharedImport(): SharedUsageImport | null {
   const json = native?.peekSharedImport?.();
   if (!json) return null;
-  try { return JSON.parse(json) as SharedUsageImport; } catch { return null; }
+  try {
+    const parsed = JSON.parse(json) as SharedUsageImport;
+    const createdAt = Date.parse(parsed.createdAt);
+    if (Number.isFinite(createdAt) && Date.now() - createdAt > SHARED_IMPORT_TTL_MS) {
+      completeSharedImport();
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 export function completeSharedImport(): void {
