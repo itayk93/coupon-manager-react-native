@@ -1,10 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { couponVault } from '@/lib/couponVault';
+import { notify } from '@/lib/notify';
 import { OPT_OUTS_COLUMNS } from '@/lib/tableColumns';
+import { CONSENT_VERSION } from '@/lib/consent';
 
-export const CONSENT_VERSION = '1.0';
+export { CONSENT_VERSION };
 
 // Whether the current user has an active opt-out (marketing)
 export function useOptOut() {
@@ -37,56 +41,58 @@ export function useSetOptOut() {
       if (error) throw error;
     },
     onSuccess: (_d, optedOut) => {
-      toast.success(optedOut ? 'ביטלת קבלת דיוור' : 'הצטרפת חזרה לדיוור');
+      notify.success(optedOut ? 'ביטלת קבלת דיוור' : 'הצטרפת חזרה לדיוור');
       queryClient.invalidateQueries({ queryKey: ['opt_out'] });
     },
-    onError: (e: any) => toast.error(`שגיאה: ${e.message}`),
+    onError: (e: any) => notify.error('שגיאה', e.message),
   });
 }
 
-// Record a GDPR consent event
+// Record a privacy-policy consent event (audit row + version stamp on the user).
 export function useRecordConsent() {
-  const { user } = useAuth();
   return useMutation({
-    mutationFn: async (consentStatus: boolean) => {
-      const { error } = await supabase.from('user_consents').insert({
-        user_id: user?.id ?? null,
-        consent_status: consentStatus,
-        version: CONSENT_VERSION,
-        timestamp: new Date().toISOString(),
-      });
-      if (error) throw error;
+    mutationFn: async (version: string = CONSENT_VERSION) => {
+      await couponVault({ action: 'record_consent', version });
     },
   });
 }
 
-// GDPR "right to be forgotten": soft-delete the account and wipe personal data.
-export function useDeleteAccount() {
-  const { user, signOut } = useAuth();
+// GDPR art. 15 + 20 / חוק הגנת הפרטיות ס' 13 — hand the user everything the
+// account holds as one JSON file, through the OS share sheet.
+export function useExportAccount() {
   return useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error('Not authenticated');
+      const data = await couponVault<Record<string, unknown>>({ action: 'export_account' });
+      const json = JSON.stringify(data, null, 2);
+      const file = new File(Paths.cache, `coupon-master-data-${Date.now()}.json`);
+      if (file.exists) file.delete();
+      file.create();
+      file.write(json);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'application/json',
+          dialogTitle: 'המידע שלי',
+          UTI: 'public.json',
+        });
+      }
+      return file.uri;
+    },
+    onError: (e: any) => notify.error('שגיאה בהורדת המידע', e.message),
+  });
+}
 
-      // Delete the user's coupons and related rows, then soft-delete the user record.
-      await supabase.from('coupon').delete().eq('user_id', user.id);
-      await supabase.from('notifications').delete().eq('user_id', user.id);
-      await supabase.from('user_activities').delete().eq('user_id', user.id);
-      await supabase
-        .from('users')
-        .update({
-          is_deleted: true,
-          email: `deleted_${user.id}@deleted.local`,
-          first_name: 'משתמש',
-          last_name: 'מחוק',
-          profile_description: null,
-          profile_image: null,
-        })
-        .eq('id', user.id);
+// GDPR "right to be forgotten" / חוק הגנת הפרטיות ס' 14 — immediate, complete
+// erasure across every table plus the auth identity (delete_account_data).
+export function useDeleteAccount() {
+  const { signOut } = useAuth();
+  return useMutation({
+    mutationFn: async () => {
+      await couponVault({ action: 'delete_account' });
     },
     onSuccess: async () => {
-      toast.success('החשבון והנתונים נמחקו');
+      notify.success('החשבון וכל הנתונים נמחקו');
       await signOut();
     },
-    onError: (e: any) => toast.error(`שגיאה במחיקת החשבון: ${e.message}`),
+    onError: (e: any) => notify.error('שגיאה במחיקת החשבון', e.message),
   });
 }

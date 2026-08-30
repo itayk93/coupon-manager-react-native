@@ -6,6 +6,8 @@ import {
   storeLegacyUser,
 } from "@/lib/legacyAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { couponVault } from "@/lib/couponVault";
+import { CONSENT_VERSION } from "@/lib/consent";
 import { flushActivityLog, logActivity } from "@/lib/activityLog";
 import { claimPendingReferral, resetReferralClaim } from "@/lib/referralClaim";
 import { clearOfflineCoupons } from "@/lib/offlineCoupons";
@@ -55,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (supabaseSession.user?.email) {
         const { data: legacyUser } = await supabase
           .from("users")
-          .select("id,public_id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted")
+          .select("id,public_id,email,first_name,last_name,gender,is_admin,is_confirmed,is_deleted,privacy_consent_version")
           .eq("email", supabaseSession.user.email.toLowerCase())
           .maybeSingle();
 
@@ -74,6 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(normalizedUser);
           setUser(normalizedUser);
           setIsAdmin(normalizedUser.is_admin);
+
+          // Consent trail: record once per policy version. The vault stamps the
+          // user row so this stops firing until the next CONSENT_VERSION bump.
+          if ((legacyUser as { privacy_consent_version?: string }).privacy_consent_version !== CONSENT_VERSION) {
+            void couponVault({ action: "record_consent", version: CONSENT_VERSION }).catch(() => {});
+          }
 
           // The first moment there is both a session and a row in `users` to
           // attach a referral to. Registration itself is too early: with email

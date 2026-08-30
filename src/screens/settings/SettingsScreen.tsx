@@ -27,10 +27,12 @@ import {
   MapPinned,
   Trash2,
   UserPlus,
+  Download,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { useExportAccount, useDeleteAccount } from "@/hooks/useConsent";
 import { useMyReferralStatus } from "@/hooks/useReferral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -47,6 +49,23 @@ export function SettingsScreen() {
   // Absent for anyone outside a referral chain, which is how the pilot stays
   // closed without a feature flag to remember to turn off later.
   const { data: referral } = useMyReferralStatus();
+  const exportAccount = useExportAccount();
+  const deleteAccount = useDeleteAccount();
+
+  const handleExportData = () => {
+    if (exportAccount.isPending) return;
+    notify.success("מכינים את הקובץ", "עוד רגע ייפתח חלון שיתוף עם כל המידע שלך.");
+    exportAccount.mutate();
+  };
+
+  const handleDeleteAccount = () => {
+    notify.confirm(
+      "מחיקת החשבון",
+      "כל הקופונים, ההיסטוריה, ההגדרות והפרטים שלך יימחקו לצמיתות ומיד. אי אפשר לבטל.",
+      () => deleteAccount.mutate(),
+      "מחק את החשבון",
+    );
+  };
 
   const handleToggleBiometric = async (next: boolean) => {
     if (!next) {
@@ -352,6 +371,47 @@ export function SettingsScreen() {
                   דיווח על תקלה / פנייה
                 </Text>
                 <AlertCircle size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Account & data — GDPR / חוק הגנת הפרטיות */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
+            החשבון והמידע שלי
+          </Text>
+          <View
+            style={[
+              styles.menuGroup,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={handleExportData}
+              disabled={exportAccount.isPending}
+              style={styles.menuItem}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  {exportAccount.isPending ? "מכין קובץ..." : "הורדת המידע שלי"}
+                </Text>
+                <Download size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleDeleteAccount}
+              disabled={deleteAccount.isPending}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.danger} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.danger }]}>
+                  מחיקת החשבון
+                </Text>
+                <Trash2 size={20} color={theme.danger} />
               </View>
             </TouchableOpacity>
           </View>

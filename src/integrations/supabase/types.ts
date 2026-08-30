@@ -1568,6 +1568,8 @@ export type Database = {
           last_name: string
           newsletter_subscription: boolean
           password: string | null
+          privacy_consent_at: string | null
+          privacy_consent_version: string | null
           profile_description: string | null
           profile_image: string | null
           push_token: string | null
@@ -1591,6 +1593,8 @@ export type Database = {
           last_name: string
           newsletter_subscription?: boolean
           password?: string | null
+          privacy_consent_at?: string | null
+          privacy_consent_version?: string | null
           profile_description?: string | null
           profile_image?: string | null
           push_token?: string | null
@@ -1614,6 +1618,8 @@ export type Database = {
           last_name?: string
           newsletter_subscription?: boolean
           password?: string | null
+          privacy_consent_at?: string | null
+          privacy_consent_version?: string | null
           profile_description?: string | null
           profile_image?: string | null
           push_token?: string | null

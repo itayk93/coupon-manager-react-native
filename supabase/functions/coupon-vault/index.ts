@@ -161,6 +161,76 @@ Deno.serve(async (req) => {
       if (error) throw error;
       return jsonResponseFor(req, { data: await Promise.all((data || []).map(decryptCoupon)) });
     }
+    // GDPR art. 7 / Israeli PPL — a demonstrable consent trail. Idempotent per
+    // version: re-calling with the same version just refreshes the timestamp.
+    if (body.action === 'record_consent') {
+      const version = typeof body.version === 'string' && body.version.trim() ? body.version.trim().slice(0, 20) : '1.0';
+      const ip = (req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip') || '').trim() || null;
+      await db.from('user_consents').insert({
+        user_id: user.id,
+        consent_status: true,
+        version,
+        timestamp: new Date().toISOString(),
+        ip_address: ip,
+      });
+      await db.from('users').update({
+        privacy_consent_version: version,
+        privacy_consent_at: new Date().toISOString(),
+      }).eq('id', user.id);
+      return jsonResponseFor(req, { data: { version } });
+    }
+
+    // GDPR art. 15 + 20 / Israeli PPL s. 13 — everything the account holds, in
+    // one JSON document. Coupon secrets are decrypted so the export is usable.
+    if (body.action === 'export_account') {
+      const ids = (await db.from('coupon').select('id').eq('user_id', user.id)).data?.map((r) => r.id) ?? [];
+      const grab = async (table: string, column: string, value: unknown) =>
+        (await db.from(table).select('*').eq(column, value)).data ?? [];
+
+      const [profile, coupons, usage, transactions, tags, activities, consents, optOuts, notifications, notifPrefs, gptUsage, referralCodes] = await Promise.all([
+        db.from('users').select('id,public_id,email,first_name,last_name,gender,created_at,profile_description,newsletter_subscription,privacy_consent_version,privacy_consent_at').eq('id', user.id).maybeSingle(),
+        db.from('coupon').select('*').eq('user_id', user.id),
+        ids.length ? db.from('coupon_usage').select('*').in('coupon_id', ids) : Promise.resolve({ data: [] }),
+        ids.length ? db.from('coupon_transaction').select('*').in('coupon_id', ids) : Promise.resolve({ data: [] }),
+        ids.length ? db.from('coupon_tags').select('coupon_id, tag:tag_id(name)').in('coupon_id', ids) : Promise.resolve({ data: [] }),
+        grab('user_activities', 'user_id', user.id),
+        grab('user_consents', 'user_id', user.id),
+        grab('opt_outs', 'user_id', user.id),
+        grab('notifications', 'user_id', user.id),
+        grab('notification_preferences', 'user_id', user.id),
+        grab('gpt_usage', 'user_id', user.id),
+        grab('referral_codes', 'user_id', user.id),
+      ]);
+
+      const shares = await db.from('coupon_shares').select('*').or(`shared_by_user_id.eq.${user.id},shared_with_user_id.eq.${user.id}`);
+
+      return jsonResponseFor(req, {
+        data: {
+          exported_at: new Date().toISOString(),
+          profile: profile.data ?? null,
+          coupons: await Promise.all((coupons.data || []).map(decryptCoupon)),
+          coupon_usage: usage.data ?? [],
+          coupon_transactions: transactions.data ?? [],
+          coupon_tags: tags.data ?? [],
+          coupon_shares: shares.data ?? [],
+          activity_log: activities,
+          consents,
+          marketing_opt_outs: optOuts,
+          notifications,
+          notification_preferences: notifPrefs,
+          ai_usage: gptUsage,
+          referral_codes: referralCodes,
+        },
+      });
+    }
+
+    // GDPR art. 17 / Israeli PPL s. 14 — immediate, complete erasure.
+    if (body.action === 'delete_account') {
+      const { error } = await db.rpc('delete_account_data', { p_user_id: user.id });
+      if (error) throw error;
+      return jsonResponseFor(req, { data: { deleted: true } });
+    }
+
     if (body.action === 'shared_with_me') {
       const { data, error } = await db.from('coupon_shares').select('*, coupon:coupon_id(id,public_id,company,description,value,used_value,code,expiration), shared_by:shared_by_user_id(email,first_name,last_name)').eq('shared_with_user_id', user.id).in('status', ['pending', 'accepted']).gt('share_expires_at', new Date().toISOString()).order('created_at', { ascending: false });
       if (error) throw error;
