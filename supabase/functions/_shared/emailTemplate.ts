@@ -461,3 +461,42 @@ export function messageEmailHtml(options: {
 </body>
 </html>`;
 }
+
+/**
+ * The newsletter teaser email.
+ *
+ * A newsletter's real design lives at `webUrl` as a full web page (JS, modern
+ * CSS, whatever). Email clients render almost none of that, so the email is a
+ * deliberately small, table-based, inline-styled card: brand, hero image,
+ * subject, one paragraph, and a button to the full page - plus the standard
+ * "view in browser" link at the top. No <style>, no <script>.
+ */
+export function newsletterTeaserEmailHtml(opts: {
+  subject: string;
+  heroImageUrl: string | null;
+  previewText: string;
+  webUrl: string;
+}): string {
+  const esc = (s: string) =>
+    s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] || c));
+  const { subject, heroImageUrl, previewText, webUrl } = opts;
+  const url = esc(webUrl);
+  return `<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;padding:24px 0">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden">
+      <tr><td align="center" style="padding:10px 20px;font-size:12px;color:#6b7280">
+        <a href="${url}" style="color:#6b7280">לא רואים את המייל כמו שצריך? צפייה בדפדפן</a>
+      </td></tr>
+      <tr><td align="center" style="padding:6px 20px 2px;font-size:16px;font-weight:bold;color:#2563eb">קופון מאסטר</td></tr>
+      ${heroImageUrl ? `<tr><td><img src="${esc(heroImageUrl)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto"></td></tr>` : ''}
+      <tr><td style="padding:24px 28px 8px"><h1 style="margin:0;font-size:22px;color:#111827">${esc(subject)}</h1></td></tr>
+      <tr><td style="padding:0 28px 20px;font-size:15px;line-height:1.7;color:#374151">${esc(previewText)}</td></tr>
+      <tr><td align="center" style="padding:8px 28px 32px">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#2563eb;border-radius:10px">
+          <a href="${url}" style="display:inline-block;padding:13px 32px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold">לצפייה המלאה</a>
+        </td></tr></table>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</div>`;
+}
