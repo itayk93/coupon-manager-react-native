@@ -488,9 +488,15 @@ ISP + ASN. הקוד כבר מעדיף `ipinfo.io` אוטומטית אם ה-secre
 - `tsc` נקי · `vitest` 167/167.
 - תיקון צד: הוסר `...` מ-placeholder של חיפוש משתמשים באדמין (נראה שבור ב-RTL).
 
-### צעד ידני שנשאר
+### Deploy מלא (2026-08-30, אחרי `supabase login`)
 
-- לפרוס `send-emails` מחדש (ראה באג #3) לפני שליחת ניוזלטר לכל הרשימה.
+המשתמש התחבר ל-CLI. נפרסו מהמקור:
+- `send-emails` v50 (באג #3 נסגר — teaser + 8 קבצי `_shared`)
+- `enrich-ip-geo` v5 · `newsletter-page` v3 · `newsletter-upload` v3 · `newsletter-preview` v4
+- `ipgeo-debug` **נמחק** (`supabase functions delete`)
+- `supabase db push --dry-run` → **"Remote database is up to date"** — כל ~60 המיגרציות מסונכרנות (הוחלו דרך MCP, הקבצים המקומיים תואמים)
+
+אומת: `send-emails` mode `newsletter` עם anon → `403` (gate תקין, לא crash על עמודות).
 
 ---
 
@@ -498,11 +504,9 @@ ISP + ASN. הקוד כבר מעדיף `ipinfo.io` אוטומטית אם ה-secre
 
 | שלב | פעולה | סיכון |
 |---|---|---|
-| deploy | לפרוס `send-emails` מחדש דרך CLI/dashboard תקין. | בינוני — bulk newsletter שבור עד אז. |
 | טיר 3 | לא למחוק `users.slots/google_id` וכו' בלי לערוך קודם `guard_users_self_update`. | גבוה. |
 | ניוזלטר-טלגרם | אם מת: `users.telegram_monthly_summary`, `newsletters.show_telegram_button/newsletter_type`. | החלטת מוצר. |
 | `asn_burst` tuning | לכוונן את ה-allowlist מול נתוני `ip_geo` אמיתיים אחרי כמה שבועות. | נמוך. |
-| ipgeo-debug | למחוק מה-dashboard (מנוטרל). | — |
 
 ---
 
