@@ -1408,59 +1408,80 @@ export type Database = {
           },
         ]
       }
+      ip_geo: {
+        Row: {
+          asn: string | null
+          city: string | null
+          country_code: string | null
+          ip_address: string
+          isp: string | null
+          lookup_failed: boolean
+          region: string | null
+          resolved_at: string
+          source: string
+        }
+        Insert: {
+          asn?: string | null
+          city?: string | null
+          country_code?: string | null
+          ip_address: string
+          isp?: string | null
+          lookup_failed?: boolean
+          region?: string | null
+          resolved_at?: string
+          source: string
+        }
+        Update: {
+          asn?: string | null
+          city?: string | null
+          country_code?: string | null
+          ip_address?: string
+          isp?: string | null
+          lookup_failed?: boolean
+          region?: string | null
+          resolved_at?: string
+          source?: string
+        }
+        Relationships: []
+      }
       user_activities: {
         Row: {
           action: string
           activity_id: number
-          browser: string | null
           city: string | null
-          country: string | null
           country_code: string | null
           coupon_id: number | null
           device: string | null
-          duration: number | null
           extra_metadata: Json | null
           ip_address: string | null
-          lat: number | null
           region: string | null
           timestamp: string | null
-          timezone: string | null
           user_id: number | null
         }
         Insert: {
           action: string
           activity_id?: number
-          browser?: string | null
           city?: string | null
-          country?: string | null
           country_code?: string | null
           coupon_id?: number | null
           device?: string | null
-          duration?: number | null
           extra_metadata?: Json | null
           ip_address?: string | null
-          lat?: number | null
           region?: string | null
           timestamp?: string | null
-          timezone?: string | null
           user_id?: number | null
         }
         Update: {
           action?: string
           activity_id?: number
-          browser?: string | null
           city?: string | null
-          country?: string | null
           country_code?: string | null
           coupon_id?: number | null
           device?: string | null
-          duration?: number | null
           extra_metadata?: Json | null
           ip_address?: string | null
-          lat?: number | null
           region?: string | null
           timestamp?: string | null
-          timezone?: string | null
           user_id?: number | null
         }
         Relationships: [
