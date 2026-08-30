@@ -240,18 +240,74 @@ commit;
 
 ---
 
-## 9. שלבים הבאים (לא בוצעו)
+## 9. Phase 2 — מחיקת טבלאות מתות (בוצע 2026-08-30)
+
+### הבהרה שסגרה את ה-scope
+
+פרויקט `coupon_manager_project` (Python/Flask, נתיב מקומי
+`/Users/itaykarkason/Python Projects/coupon_manager_project`) **ירד מהאוויר**.
+אין ריפו שני. הריפו הזה (RN) הוא הצרכן היחיד של ה-DB — הוא זה שמשרת web + iOS +
+android. אז "לסרוק את ריפו הווב" = לא רלוונטי, הביקורת שלמה.
+
+### מי חי לפי תאריך כתיבה אחרון
+
+| טבלה | כתיבה אחרונה | מסקנה |
+|---|---|---|
+| `user_activities` | 2026-08-30 | חי (edge `log-activity`) |
+| `auto_update_runs` | 2026-08-29 (cron) | חי (`trigger_hourly_multipass_update`) |
+| `gpt_usage` | 2026-08-27 | חי (edge parsing) |
+| `telegram_users` | **2026-05-07**, 8 שורות | מת |
+| `scheduled_tasks` | 0 שורות | מת |
+| `task_execution_logs` | 0 שורות | מת |
+
+תיקון להנחה מסעיף 4 (טיר 4): `auto_update_runs` + `gpt_usage` **אינן** "טבלאות
+ווב ישן" — הן מונעות ע"י cron + edge של הריפו הזה. נשארות.
+
+### מה נמחק
+
+מיגרציה `20260830043150_drop_dead_python_tables`:
+
+```sql
+drop table if exists public.task_execution_logs;  -- FK -> scheduled_tasks, drop first
+drop table if exists public.scheduled_tasks;
+drop table if exists public.telegram_users;
+```
+
+תלות יחידה שנמצאה: FK `task_execution_logs_task_id_fkey`. אין function/cron/FK אחר.
+
+קוד שנמחק (קומיט `16761728`):
+- hooks מתים ב-`useAdminManagement.ts`: `useScheduledTasks`, `useTaskLogs`,
+  `useToggleTask` — הוגדרו אך אף מסך לא ייבא אותם.
+- קונסטנטים: `SCHEDULED_TASKS_COLUMNS`, `TASK_EXECUTION_LOGS_COLUMNS`.
+- type exports: `ScheduledTask`, `TaskExecutionLog`, `TelegramUser`.
+- 3 בלוקים ב-`types.ts` (171 שורות).
+
+אימות: `tsc` נקי · `vitest` 167/167.
+
+הערה: ב-`types.ts` נשאר בלוק פנטום `telegram_users_audit_log` — טבלה שלא קיימת
+ב-DB, היה שם עוד לפני הסשן. לא נגעתי. שווה ניקוי בעתיד.
+
+### תקלה תפעולית
+
+`git add -A` בקומיט הראשון של Phase 2 סחף 18 קבצים לא קשורים ששונו במקביל
+בעץ העבודה (עבודת פורמט מטבע — `formatIls`, `WalletHeroCard` וכו', לא של הסשן
+הזה). בוטל עם `git reset --soft HEAD~1` לפני push. הקומיט הסופי מכיל רק 4 קבצים.
+**לקח:** `git add <קבצים מפורשים>`, לא `-A`, כשעץ העבודה לא נקי.
+
+---
+
+## 10. שלבים הבאים (לא בוצעו)
 
 | שלב | פעולה | סיכון |
 |---|---|---|
 | טיר 2 | למחוק `user_activities.city/region/lat/timezone` + `users.telegram_monthly_summary`. קודם למחוק את קוד התצוגה במסך פעילות אדמין. | בינוני — רגרסיה במסך אדמין. |
 | טיר 3 | לא למחוק בלי לערוך קודם את פונקציות ה-DB (`guard_users_self_update` וכו'). | גבוה — שבירת RPC/trigger חי. |
-| טיר 4 | להחליט אם מסכי האדמין ב-RN ל-`scheduled_tasks`/`auto_update_runs`/`task_execution_logs` עדיין רלוונטיים. אם לא — למחוק מסך + קונסטנט + טבלה יחד. | גבוה — הווב הישן עדיין כותב לטבלאות האלה. |
-| כללי | להריץ את אותה סריקה (סעיף 3) על ריפו הווב/Flask לפני כל מחיקה נוספת. | — |
+| ניקוי | להסיר בלוק פנטום `telegram_users_audit_log` מ-`types.ts` (רגנרציה מלאה של הטיפוסים, בזהירות מ-drift של הגנרטור — ראה טרייד-אוף בסעיף 5). | נמוך. |
+| ניוזלטר-טלגרם | אם הפיצ'ר מת: למחוק `users.telegram_monthly_summary`, `newsletters.show_telegram_button`, `newsletter_type`, וקוד הכפתור. | נמוך-בינוני — החלטת מוצר. |
 
 ---
 
-## 10. שאילתות עזר לשימוש חוזר
+## 11. שאילתות עזר לשימוש חוזר
 
 ```sql
 -- כל העמודות לפי טבלה
