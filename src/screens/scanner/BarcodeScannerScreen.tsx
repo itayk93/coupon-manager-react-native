@@ -35,6 +35,7 @@ export function BarcodeScannerScreen() {
   const { theme } = useAppTheme();
   const { width, fontScale } = useWindowDimensions();
   const compactLayout = width < 380 || fontScale > 1.2;
+  const aiTitleFontSize = width < 350 || fontScale >= 1.3 ? 13 : compactLayout ? 14 : 16;
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   // `onBarcodeScanned` fires several times per second, and a state update does
@@ -332,10 +333,10 @@ export function BarcodeScannerScreen() {
                 </View>
               ) : null}
               <View style={styles.aiHeader}>
-                <Text style={[styles.aiTitle, { color: theme.text }]}>
+                <Sparkles size={20} color={theme.primary} style={styles.aiHeaderIcon} />
+                <Text style={[styles.aiTitle, { color: theme.text, fontSize: aiTitleFontSize }]}>
                   הדבק הודעת SMS או טקסט שקיבלת
                 </Text>
-                <Sparkles size={20} color={theme.primary} />
               </View>
               <Text style={[styles.aiSubtitle, { color: theme.textMuted }]}>
                 מערכת ה-AI תחלץ אוטומטית את שם החברה, קוד הקופון, השווי והתוקף!
@@ -362,7 +363,7 @@ export function BarcodeScannerScreen() {
                 אפשר גם לצרף תמונה של השובר
               </Text>
 
-              <View style={[styles.imageBtnRow, compactLayout && styles.imageBtnRowCompact]}>
+              <View style={styles.imageBtnRow}>
                 <View style={{ flex: 1 }}>
                   <Button
                     title="בחר מהגלריה"
@@ -425,9 +426,6 @@ const styles = StyleSheet.create({
   imageBtnRow: {
     flexDirection: "row-reverse",
     gap: 10,
-  },
-  imageBtnRowCompact: {
-    flexDirection: "column",
   },
   characterLoading: {
     alignItems: "center",
@@ -592,8 +590,12 @@ const styles = StyleSheet.create({
   aiTitle: {
     flexShrink: 1,
     fontFamily: fonts.display,
-    fontSize: 16,
     fontWeight: "800",
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  aiHeaderIcon: {
+    flexShrink: 0,
   },
   aiSubtitle: {
     fontFamily: fonts.bodyBold,
