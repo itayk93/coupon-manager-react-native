@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { useAddCoupon, useUpdateCoupon, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useAddCoupon, useUpdateCoupon, useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponTags, useSetCouponTags } from "@/hooks/useTags";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { clearCouponDraft, loadCouponDraft, saveCouponDraft } from "@/lib/couponDraft";
 import {
   buildCouponPayload,
+  findDuplicateCoupons,
   getDefaultAutoProvider,
   normalizeAutoProvider,
   validateCouponForm,
@@ -20,8 +21,11 @@ export type UseCouponFormArgs = {
   initialCompany?: string;
   initialCode?: string;
   initialValue?: string;
+  initialCost?: string;
   initialExpiration?: string;
   initialDescription?: string;
+  initialCvv?: string;
+  initialCardExp?: string;
 };
 
 /**
@@ -37,14 +41,18 @@ export function useCouponForm({
   initialCompany,
   initialCode,
   initialValue,
+  initialCost,
   initialExpiration,
   initialDescription,
+  initialCvv,
+  initialCardExp,
 }: UseCouponFormArgs) {
   const router = useRouter();
   const isEditing = existingCoupon !== undefined;
 
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
+  const { data: allCoupons = [] } = useCoupons();
   const setCouponTags = useSetCouponTags();
   const { data: existingTags = [] } = useCouponTags(existingCoupon?.id);
   const { user } = useAuth();
@@ -58,7 +66,7 @@ export function useCouponForm({
     existingCoupon?.value ? String(existingCoupon.value) : initialValue || ""
   );
   const [cost, setCost] = useState(
-    existingCoupon?.cost !== undefined ? String(existingCoupon.cost) : "0"
+    existingCoupon?.cost !== undefined ? String(existingCoupon.cost) : initialCost || "0"
   );
   // Sliced to `YYYY-MM-DD`: the date field (and the column) only carry the day,
   // but older rows can come back with a time component attached.
@@ -69,10 +77,10 @@ export function useCouponForm({
     existingCoupon?.description || initialDescription || ""
   );
   const [includeCardInfo, setIncludeCardInfo] = useState(
-    Boolean(existingCoupon?.cvv || existingCoupon?.card_exp)
+    Boolean(existingCoupon?.cvv || existingCoupon?.card_exp || initialCvv || initialCardExp)
   );
-  const [cvv, setCvv] = useState(existingCoupon?.cvv || "");
-  const [cardExp, setCardExp] = useState(existingCoupon?.card_exp || "");
+  const [cvv, setCvv] = useState(existingCoupon?.cvv || initialCvv || "");
+  const [cardExp, setCardExp] = useState(existingCoupon?.card_exp || initialCardExp || "");
   // The automatic balance updater only runs for the maintainer's own account,
   // so everyone else stores `auto_download_details: null` and never sees it.
   const [autoProvider, setAutoProvider] = useState<AutoProvider | null>(() =>
@@ -215,6 +223,23 @@ export function useCouponForm({
       return;
     }
 
+    // A code the user already holds is almost always a re-scan, not a second
+    // coupon. Match ignores dashes and spaces, so "9376-1104" and "93761104"
+    // count as the same code.
+    const duplicates = findDuplicateCoupons(payload.code, allCoupons);
+    if (duplicates.length > 0) {
+      const finishedBefore = duplicates.some((c) => c.status === "נוצל");
+      const message = finishedBefore
+        ? "כבר השתמשת בקופון עם הקוד הזה וסיימת אותו. להוסיף אותו שוב?"
+        : "כבר יש לך קופון עם הקוד הזה. להוסיף אותו שוב?";
+      notify.confirm("קופון כפול", message, () => void finishAdd(payload), "הוסף בכל זאת");
+      return;
+    }
+
+    await finishAdd(payload);
+  };
+
+  const finishAdd = async (payload: ReturnType<typeof buildCouponPayload>) => {
     let created: unknown;
     try {
       created = await addCoupon.mutateAsync({

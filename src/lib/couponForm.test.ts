@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCouponPayload,
+  findDuplicateCoupons,
   getDefaultAutoProvider,
   normalizeAutoProvider,
+  normalizeCouponCode,
   validateCouponForm,
   type CouponFormFields,
 } from "./couponForm";
@@ -87,6 +89,38 @@ describe("normalizeAutoProvider", () => {
 
   it("drops everything when the updater is not available to this account", () => {
     expect(normalizeAutoProvider("BuyMe", false)).toBeNull();
+  });
+});
+
+describe("normalizeCouponCode", () => {
+  it("strips dashes and spaces from a numeric code", () => {
+    expect(normalizeCouponCode("9376-1104-0711-1925")).toBe("9376110407111925");
+    expect(normalizeCouponCode("  1234 5678 ")).toBe("12345678");
+  });
+
+  it("leaves a code with letters as typed, only trimmed", () => {
+    expect(normalizeCouponCode("  SUMMER-20  ")).toBe("SUMMER-20");
+    expect(normalizeCouponCode("ABC 123")).toBe("ABC 123");
+  });
+});
+
+describe("findDuplicateCoupons", () => {
+  const wallet = [
+    { code: "9376110407111925", company: "BuyMe", status: "נוצל" },
+    { code: "ABC-123", company: "Max", status: "פעיל" },
+  ];
+
+  it("matches a dashed code against a stored bare code", () => {
+    expect(findDuplicateCoupons("9376-1104-0711-1925", wallet)).toHaveLength(1);
+  });
+
+  it("matches ignoring case and separators", () => {
+    expect(findDuplicateCoupons("abc123", wallet)[0].company).toBe("Max");
+  });
+
+  it("returns nothing for a new code or an empty code", () => {
+    expect(findDuplicateCoupons("0000", wallet)).toEqual([]);
+    expect(findDuplicateCoupons("  ", wallet)).toEqual([]);
   });
 });
 

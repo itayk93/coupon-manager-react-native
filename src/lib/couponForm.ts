@@ -52,6 +52,46 @@ export type CouponFormFields = {
 
 export type CouponFormErrors = Record<string, string>;
 
+/**
+ * How a coupon code is stored. BuyMe / Multipass / Max print their codes in
+ * dash-separated groups ("9376-1104-0711-1925") but the code that actually
+ * redeems is the digits alone, so a purely numeric code is stored without its
+ * dashes or spaces. A code with letters ("SUMMER-20") is left as typed —
+ * there the dash may be part of the code.
+ */
+export function normalizeCouponCode(code: string): string {
+  const trimmed = code.trim();
+  if (/^[0-9\s-]+$/.test(trimmed)) return trimmed.replace(/[\s-]/g, "");
+  return trimmed;
+}
+
+/**
+ * Loose key for comparing two codes: every code matches its dashed and spaced
+ * forms, case-insensitively. Used only to spot duplicates, never to store.
+ */
+export function couponCodeKey(code: string | null | undefined): string {
+  return String(code ?? "").replace(/[\s-]/g, "").toLowerCase();
+}
+
+export type DuplicateCandidate = {
+  code: string;
+  company?: string | null;
+  status?: string | null;
+};
+
+/**
+ * Coupons the user already has whose code matches `code` once dashes and
+ * spaces are ignored. An empty code never matches.
+ */
+export function findDuplicateCoupons<T extends DuplicateCandidate>(
+  code: string,
+  coupons: readonly T[]
+): T[] {
+  const key = couponCodeKey(code);
+  if (!key) return [];
+  return coupons.filter((coupon) => couponCodeKey(coupon.code) === key);
+}
+
 export function validateCouponForm(fields: CouponFormFields): CouponFormErrors {
   const errors: CouponFormErrors = {};
   if (!fields.company.trim()) errors.company = "יש לבחור או להזין חברה";
@@ -81,7 +121,7 @@ export function buildCouponPayload(
 ) {
   return {
     company: fields.company.trim(),
-    code: fields.code.trim(),
+    code: normalizeCouponCode(fields.code),
     value: Number(fields.value) || 0,
     cost: Number(fields.cost) || 0,
     expiration: fields.expiration.trim() || null,
