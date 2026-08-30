@@ -49,7 +49,7 @@ export function PrivacyScreen() {
             2. שימוש במידע
           </Text>
           <Text style={[styles.bodyText, { color: theme.textMuted }]}>
-            המידע שלך משמש אך ורק למטרת ניהול הארנק הדיגיטלי האישי שלך. איננו מוכרים או משתפים את המידע שלך עם גורמים מסחריים צד שלישי.
+            המידע שלך משמש אך ורק לניהול הארנק הדיגיטלי האישי שלך. איננו מוכרים את המידע. איננו משתפים אותו עם צד שלישי, למעט שירותי תשתית חיוניים (אירוח, שליחת דוא"ל, וגזירת עיר ואזור מכתובת IP) הפועלים לפי הוראותינו בלבד.
           </Text>
 
           <Text style={[styles.sectionHeading, { color: theme.text }]}>
@@ -57,6 +57,13 @@ export function PrivacyScreen() {
           </Text>
           <Text style={[styles.bodyText, { color: theme.textMuted }]}>
             אנו משתמשים בתשתיות אימות מאובטחות מבוססות תקני האבטחה הגבוהים ביותר. תוכל לבקש מחיקה מלאה של חשבונך בכל עת.
+          </Text>
+
+          <Text style={[styles.sectionHeading, { color: theme.text }]}>
+            4. תיעוד פעילות ומיקום
+          </Text>
+          <Text style={[styles.bodyText, { color: theme.textMuted }]}>
+            לשיפור המוצר ולמניעת ניצול לרעה של תוכנית ההפניות אנו רושמים פעולות בסיסיות באפליקציה: מסכים שנצפו, פעולות על קופונים, סוג המכשיר, וכתובת ה-IP שממנה בוצעה הפעולה. כתובת ה-IP נשמרת עד 90 יום ואז נמחקת. מתוכה נגזרים עיר ואזור כלליים (למשל "תל אביב") שאינם מזהים אותך אישית ונשמרים לניתוח סטטיסטי. לצורך גזירת המיקום כתובת ה-IP נשלחת לשירות geolocation חיצוני; לא נשלח אליו מידע מזהה אחר. פעילות זו נמחקת יחד עם החשבון.
           </Text>
         </View>
         <Text style={[contentStyles.footer, { color: theme.textSubtle, borderTopColor: theme.cardBorder }]}>

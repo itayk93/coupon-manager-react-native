@@ -1806,6 +1806,15 @@ export type Database = {
       }
     }
     Functions: {
+      admin_geo_breakdown: {
+        Args: { p_days: number }
+        Returns: {
+          region: string
+          city: string
+          users: number
+          events: number
+        }[]
+      }
       app_user_id: { Args: never; Returns: number }
       get_consolidated_transactions: {
         Args: { coupon_id_param: number }

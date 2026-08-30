@@ -23,12 +23,14 @@ import {
   Send,
   MessageSquare,
   Share2,
+  MapPin,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/Modal";
 import { ReferralsTab } from "@/screens/admin/ReferralsTab";
+import { GeoAnalyticsTab } from "@/screens/admin/GeoAnalyticsTab";
 import {
   useManageUsers,
   useCompanies,
@@ -44,9 +46,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
-type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals";
+type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals" | "geo";
 
-const TAB_KEYS: AdminTab[] = ["users", "companies", "tags", "messages", "referrals"];
+const TAB_KEYS: AdminTab[] = ["users", "companies", "tags", "messages", "referrals", "geo"];
 
 export function AdminDashboardScreen() {
   const router = useRouter();
@@ -124,6 +126,7 @@ export function AdminDashboardScreen() {
               { key: "tags", label: "תגיות", icon: <Tag size={16} /> },
               { key: "messages", label: "הודעות", icon: <MessageSquare size={16} /> },
               { key: "referrals", label: "הפניות", icon: <Share2 size={16} /> },
+              { key: "geo", label: "גאוגרפיה", icon: <MapPin size={16} /> },
             ] as const
           ).map((tab) => {
             const isCurrent = activeTab === tab.key;
@@ -157,6 +160,10 @@ export function AdminDashboardScreen() {
             gated by is_app_admin() inside the database, so this tab being
             hidden is a convenience and not the permission. */}
         {activeTab === "referrals" ? <ReferralsTab /> : null}
+
+        {/* Tab 6: Geo — city/region breakdown of activity. is_app_admin() gates
+            the RPC in the database; hiding the tab is just convenience. */}
+        {activeTab === "geo" ? <GeoAnalyticsTab /> : null}
 
         {/* Tab 1: Users */}
         {activeTab === "users" ? (

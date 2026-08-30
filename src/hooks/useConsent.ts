@@ -70,6 +70,7 @@ export function useDeleteAccount() {
       // Delete the user's coupons and related rows, then soft-delete the user record.
       await supabase.from('coupon').delete().eq('user_id', user.id);
       await supabase.from('notifications').delete().eq('user_id', user.id);
+      await supabase.from('user_activities').delete().eq('user_id', user.id);
       await supabase
         .from('users')
         .update({
