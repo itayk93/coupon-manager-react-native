@@ -129,7 +129,6 @@ export function useUpsertNewsletter() {
       } else {
         const { error } = await supabase.from("newsletters").insert({
           title: nl.title,
-          content: nl.content ?? null,
           newsletter_type: nl.newsletter_type ?? "general",
           created_by: user!.id,
           is_published: false,
@@ -153,6 +152,15 @@ export function useDeleteNewsletter() {
     mutationFn: async (id: number) => {
       const { error } = await supabase.from("newsletters").delete().eq("id", id);
       if (error) throw error;
+      // Best-effort: clear the hosted design bundle from Storage.
+      try {
+        const { data } = await supabase.storage.from("newsletters").list(String(id));
+        if (data?.length) {
+          await supabase.storage.from("newsletters").remove(data.map((o) => `${id}/${o.name}`));
+        }
+      } catch {
+        /* the row is gone; a leftover bundle is harmless */
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
