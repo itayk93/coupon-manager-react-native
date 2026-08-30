@@ -183,7 +183,7 @@ export function AdminDashboardScreen() {
             >
               <Search size={16} color={theme.textMuted} />
               <TextInput
-                placeholder="חיפוש משתמש לפי אימייל או שם..."
+                placeholder="חיפוש לפי אימייל או שם"
                 placeholderTextColor={theme.textMuted}
                 value={userSearch}
                 onChangeText={setUserSearch}
