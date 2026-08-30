@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
         max_completion_tokens: 2048,
         response_format: { type: "json_schema", json_schema: { name: "coupon_usages", strict: true, schema } },
         messages: [
-          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. couponCode הוא הקוד בדיוק כפי שנראה, ללא ניחוש; אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
+          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. couponCode הוא הקוד בדיוק כפי שנראה, ללא ניחוש; אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים; אם השורה נראית שימוש אך הסכום חתוך או לא קריא החזר amount 0 והוסף warning, אל תשמיט את השורה. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
           { role: "user", content: [
             { type: "text", text: "קרא את כל השימושים בצילום. אל תדלג על שורות." },
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
@@ -66,10 +66,17 @@ Deno.serve(async (req: Request) => {
     if (!response.ok) return jsonResponse({ error: "פענוח התמונה נכשל" }, 502);
     const payload = JSON.parse(raw);
     const output = JSON.parse(payload.choices?.[0]?.message?.content || "{}");
-    const usages = Array.isArray(output.usages)
-      ? output.usages.filter((u: any) => Number.isFinite(u.amount) && u.amount > 0)
-      : [];
+    // A row the model read but could not price (amount cut off, glare) must not
+    // sink the whole parse: keep it with amount 0 so the review screen shows it
+    // for the user to fill in. Only a screenshot with no rows at all is a 422.
+    const usages = (Array.isArray(output.usages) ? output.usages : [])
+      .filter((u: any) => String(u.placeName || "").trim())
+      .map((u: any) => ({
+        ...u,
+        amount: Number.isFinite(u.amount) && u.amount > 0 ? u.amount : 0,
+      }));
     if (!usages.length) return jsonResponse({ error: "לא זוהו שימושים בצילום המסך" }, 422);
+    const missingAmount = usages.filter((u: any) => u.amount === 0).length;
 
     try {
       await createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!)
@@ -81,7 +88,10 @@ Deno.serve(async (req: Request) => {
       couponCode: typeof output.couponCode === "string" ? output.couponCode.trim() : null,
       couponCodeConfidence: Math.max(0, Math.min(1, Number(output.couponCodeConfidence) || 0)),
       companyName: typeof output.companyName === "string" ? output.companyName.trim() : null,
-      warnings: Array.isArray(output.warnings) ? output.warnings.map(String).slice(0, 5) : [],
+      warnings: [
+        ...(missingAmount > 0 ? [`ל-${missingAmount} שורות לא זוהה סכום — יש להשלים ידנית`] : []),
+        ...(Array.isArray(output.warnings) ? output.warnings.map(String) : []),
+      ].slice(0, 6),
       usages,
     });
   } catch (error) {
