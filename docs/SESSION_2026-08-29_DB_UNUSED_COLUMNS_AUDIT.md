@@ -431,14 +431,78 @@ ISP + ASN. הקוד כבר מעדיף `ipinfo.io` אוטומטית אם ה-secre
 
 ---
 
+## 10.2 Phase 4 — ניוזלטר מהעלאת קובץ (בוצע 2026-08-30)
+
+**Spec:** [superpowers/specs/2026-08-30-file-upload-newsletters-design.md](superpowers/specs/2026-08-30-file-upload-newsletters-design.md)
+· **Plan:** [superpowers/plans/2026-08-30-file-upload-newsletters.md](superpowers/plans/2026-08-30-file-upload-newsletters.md)
+
+במקום להדביק HTML לשדה `content`/`custom_html` — מעלים קובץ (ZIP מ-Claude Design
+או `.html` בודד). מודל Substack: הקובץ מתארח כדף web מלא, המייל הוא teaser קבוע
+שמקשר אליו.
+
+### מה נבנה
+
+| רכיב | פירוט |
+|---|---|
+| `newsletters` סכימה | −4 עמודות (`content`, `custom_html`, `main_title`, `image_path`), +5 (`bundle_path`, `web_url`, `email_subject`, `hero_image_url`, `preview_text`). 14 עמודות. |
+| Storage bucket `newsletters` | public read, `service_role` write. |
+| edge `newsletter-upload` | admin-gated. unzip (`jsr:@zip-js/zip-js`) → Storage → `node-html-parser` שולף `<title>`/`<img>`/`<p>` → שכתוב `src`/`href` יחסי → כותב את ה-pointers לשורה בלי לדרוס שדות שנערכו ידנית. |
+| edge `newsletter-page` | **public.** מגיש כל קובץ בחבילה מה-Storage עם Content-Type אמיתי (Storage הציבורי כופה `text/plain` על html/css/js). זה ה-`web_url`. |
+| `newsletterTeaserEmailHtml()` | ב-`_shared/emailTemplate.ts`. table-based, inline, RTL. שורת "צפייה בדפדפן" + hero + כותרת + פסקה + כפתור לדף. אין `<script>`. |
+| `send-emails` / `newsletter-preview` | מרנדרים את ה-teaser (לא את הקובץ). דורשים `web_url`. |
+| `NewslettersTab` | file picker (`expo-document-picker`) במקום שדות טקסט. אחרי העלאה — `email_subject`/`hero`/`preview_text` editable, לינק "צפייה בדף המלא". אין כפתור שליחה. |
+| `newsletters_admin_rls` | הטבלה הייתה RLS-on / 0-policies (נעילה מלאה). policy `is_app_admin()`. |
+| מחיקת ניוזלטר | `useDeleteNewsletter` מנקה גם את ה-Storage. |
+
+### מיגרציות
+
+`20260830072753_newsletters_file_upload_columns` · `..72758_newsletters_storage_bucket`
+(+ `20260830062042_newsletters_admin_rls` מ-Phase 3.5).
+
+### תלות חדשה
+
+`expo-document-picker` `~57.0.1` — +10 שורות ב-lock, bundle נשאר 7.8MB. `jsr:@zip-js/zip-js`
++ `npm:node-html-parser` — edge בלבד, לא בבאנדל.
+
+### באגים שנתפסו בהרצה
+
+1. **Content-Type** — Storage הציבורי מגיש `.html` כ-`text/plain` (anti-phishing) →
+   הדף הראה קוד מקור. נפתר עם `newsletter-page` שמגיש `text/html; charset=utf-8`.
+2. **path parsing** ב-`newsletter-page` — pathname של edge fn כולל את שם הפונקציה;
+   התיקון מדלג על segments עד ה-id המספרי.
+3. **`send-emails` לא נפרס מחדש** — ה-CLI וה-MCP שניהם חסומים (הרשאות / גודל 8 קבצים).
+   ה-index.ts המקומי עודכן; `mode: 'newsletter'` הישן לא מחובר ל-UI/cron אז ה-deploy
+   הישן לא נגיש. **פתוח:** לפרוס `send-emails` דרך CLI/dashboard תקין.
+
+### E2E שאומת (live)
+
+- העלאת `.html` → `web_url` = `.../functions/v1/newsletter-page/<id>`, `email_subject`
+  ו-`preview_text` נשלפו נכון.
+- `curl web_url` → `HTTP 200`, `content-type: text/html; charset=utf-8`, `file` מזהה
+  `HTML document, UTF-8` — עברית תקינה.
+- `newsletter-preview` → teaser ל-`itayk93@gmail.com` **בלבד** (Brevo messageId אחד),
+  לא נגע ב-`newsletter_sendings`, לא הפך `is_sent`.
+- טאב אדמין: הניוזלטר עם קובץ מסומן "מוכן לשליחה", 3 הישנים "חסר קובץ עיצוב". מודל
+  עריכה מציג file picker + שדות editable + "צפייה בדף המלא".
+- advisors: 0 חדשים (ה-policy החדש דווקא הסיר את ה-`rls_enabled_no_policy` על `newsletters`).
+- `tsc` נקי · `vitest` 167/167.
+- תיקון צד: הוסר `...` מ-placeholder של חיפוש משתמשים באדמין (נראה שבור ב-RTL).
+
+### צעד ידני שנשאר
+
+- לפרוס `send-emails` מחדש (ראה באג #3) לפני שליחת ניוזלטר לכל הרשימה.
+
+---
+
 ## 10.1 שלבים הבאים (לא בוצעו)
 
 | שלב | פעולה | סיכון |
 |---|---|---|
+| deploy | לפרוס `send-emails` מחדש דרך CLI/dashboard תקין. | בינוני — bulk newsletter שבור עד אז. |
 | טיר 3 | לא למחוק `users.slots/google_id` וכו' בלי לערוך קודם `guard_users_self_update`. | גבוה. |
-| ניקוי | להסיר בלוק פנטום `telegram_users_audit_log` מ-`types.ts`. | נמוך. |
 | ניוזלטר-טלגרם | אם מת: `users.telegram_monthly_summary`, `newsletters.show_telegram_button/newsletter_type`. | החלטת מוצר. |
 | `asn_burst` tuning | לכוונן את ה-allowlist מול נתוני `ip_geo` אמיתיים אחרי כמה שבועות. | נמוך. |
+| ipgeo-debug | למחוק מה-dashboard (מנוטרל). | — |
 
 ---
 
