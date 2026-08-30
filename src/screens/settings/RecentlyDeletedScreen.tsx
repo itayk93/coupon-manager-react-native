@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { RotateCcw, Trash2, Sparkles } from "lucide-react-native";
+import { RotateCcw, Trash2, Sparkles, FileText } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
@@ -32,7 +33,15 @@ function daysLeftInTrash(deletedAt: string | null | undefined): number {
   return Math.max(0, Math.ceil(TRASH_RETENTION_DAYS - elapsed));
 }
 
+/** Same masking the coupon picker uses: enough to tell two coupons apart. */
+function maskedCode(code: string | null | undefined): string | null {
+  const trimmed = (code || "").trim();
+  if (!trimmed) return null;
+  return trimmed.length <= 4 ? trimmed : `•••${trimmed.slice(-4)}`;
+}
+
 export function RecentlyDeletedScreen() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading } = useDeletedCoupons();
   const restore = useRestoreCoupons();
@@ -92,6 +101,12 @@ export function RecentlyDeletedScreen() {
                   </Text>
                 </View>
 
+                {maskedCode(coupon.code) ? (
+                  <Text style={[styles.code, { color: theme.textMuted }]} numberOfLines={1}>
+                    קוד קופון: {maskedCode(coupon.code)}
+                  </Text>
+                ) : null}
+
                 <Text style={[styles.timeLeft, { color: left <= 3 ? theme.danger : theme.textMuted }]}>
                   {left === 0 ? "נמחק בקרוב" : `עוד ${left} ימים עד מחיקה סופית`}
                 </Text>
@@ -114,6 +129,18 @@ export function RecentlyDeletedScreen() {
                     <Trash2 size={16} color={theme.danger} />
                     <Text style={[styles.btnText, { color: theme.danger }]}>מחיקה לצמיתות</Text>
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({ pathname: "/coupons/[id]", params: { id: String(coupon.id) } })
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel={`פרטי הקופון של ${coupon.company}`}
+                    style={[styles.btn, { backgroundColor: theme.surfaceAlt }]}
+                  >
+                    <FileText size={16} color={theme.primary} />
+                    <Text style={[styles.btnText, { color: theme.primary }]}>פרטים</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             );
@@ -133,8 +160,9 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   company: { fontFamily: fonts.display, fontSize: 15, fontWeight: "700", flex: 1, textAlign: "right" },
   value: { fontSize: 14, fontWeight: "600", marginRight: 8 },
+  code: { fontSize: 12.5, textAlign: "right", fontVariant: ["tabular-nums"] },
   timeLeft: { fontSize: 12, textAlign: "right" },
-  actions: { flexDirection: "row-reverse", gap: 10, marginTop: 4 },
+  actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginTop: 4 },
   btn: {
     flexDirection: "row-reverse",
     alignItems: "center",

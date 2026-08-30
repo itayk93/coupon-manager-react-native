@@ -1,6 +1,6 @@
 import { useNativeDriver } from "@/lib/animation";
 import React from "react";
-import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -36,6 +36,19 @@ export function pushToast(
 function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () => void }) {
   const { theme } = useAppTheme();
   const anim = React.useRef(new Animated.Value(0)).current;
+  // Drag offset, kept apart from the entrance animation so a swipe can move the
+  // card without fighting the fade-in.
+  const dragY = React.useRef(new Animated.Value(0)).current;
+  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const hide = React.useCallback(() => {
+    Animated.timing(anim, {
+      toValue: 0,
+      duration: 180,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver,
+    }).start(({ finished }) => finished && onDismiss());
+  }, [anim, onDismiss]);
 
   React.useEffect(() => {
     Animated.timing(anim, {
@@ -45,17 +58,39 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
       useNativeDriver,
     }).start();
 
-    const timer = setTimeout(() => {
-      Animated.timing(anim, {
-        toValue: 0,
-        duration: 180,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver,
-      }).start(({ finished }) => finished && onDismiss());
-    }, toast.duration ?? (toast.kind === "error" ? 4200 : 2800));
+    timer.current = setTimeout(hide, toast.duration ?? (toast.kind === "error" ? 4200 : 2800));
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [anim, hide, toast.duration, toast.kind]);
 
-    return () => clearTimeout(timer);
-  }, [anim, onDismiss, toast.duration, toast.kind]);
+  // Flick the toast up to get rid of it. Upward only: a downward drag is the
+  // usual way to scroll the screen behind, and stealing it would be worse than
+  // having no gesture at all.
+  const pan = React.useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) => g.dy < -4 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderGrant: () => {
+          if (timer.current) clearTimeout(timer.current);
+        },
+        onPanResponderMove: (_e, g) => dragY.setValue(Math.min(0, g.dy)),
+        onPanResponderRelease: (_e, g) => {
+          if (g.dy < -40 || g.vy < -0.6) {
+            Animated.timing(dragY, {
+              toValue: -160,
+              duration: 150,
+              easing: Easing.in(Easing.cubic),
+              useNativeDriver,
+            }).start(({ finished }) => finished && onDismiss());
+            return;
+          }
+          Animated.spring(dragY, { toValue: 0, useNativeDriver, bounciness: 6 }).start();
+          timer.current = setTimeout(hide, 2500);
+        },
+      }),
+    [dragY, hide, onDismiss],
+  );
 
   const accent =
     toast.kind === "success"
@@ -69,6 +104,8 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
 
   return (
     <Animated.View
+      {...pan.panHandlers}
+      accessibilityHint="אפשר להחליק מעלה כדי לסגור"
       style={[
         styles.toast,
         shadows.lifted,
@@ -78,10 +115,12 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
           opacity: anim,
           transform: [
             { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) },
+            { translateY: dragY },
           ],
         },
       ]}
     >
+      <View style={[styles.grabber, { backgroundColor: theme.border }]} />
       <View style={[styles.accent, { backgroundColor: accent }]} />
 
       <View style={styles.textCol}>
@@ -167,6 +206,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     overflow: "hidden",
+  },
+  grabber: {
+    position: "absolute",
+    top: 4,
+    left: "50%",
+    marginLeft: -16,
+    width: 32,
+    height: 3,
+    borderRadius: 2,
+    opacity: 0.7,
   },
   accent: {
     position: "absolute",
