@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ParsedUsage, useParseUsageScreenshot } from "@/hooks/useUsageAI";
 import { formatIls } from "@/lib/formatIls";
 import { matchCouponCode } from "@/lib/couponCodeMatch";
+import { cacheParsedUsage, getCachedParsedUsage } from "@/lib/usageParseCache";
 import { useRouter } from "expo-router";
 
 type QuickUsageModalProps = {
@@ -309,9 +310,19 @@ export function QuickUsageModal({
     setError("");
     setAmountError("");
     setAiError("");
+    // The same shared screenshot can pass through here twice: once on arrival,
+    // and again after the user detoured to add the missing coupon. Reuse the
+    // first parse — a re-run costs another AI call and can return a different
+    // (worse) coupon code for the same image.
+    const cached = importId ? getCachedParsedUsage(importId) : null;
+    if (cached) {
+      applyParsedResult(cached);
+      return;
+    }
     parseUsage
       .mutateAsync(initialScreenshotBase64)
       .then((parsed) => {
+        if (importId) cacheParsedUsage(importId, parsed);
         if (!cancelled) applyParsedResult(parsed);
       })
       .catch((e) => {
@@ -346,6 +357,23 @@ export function QuickUsageModal({
       setMatchState("not-found");
     }
   };
+
+  // The coupon list refreshes after the user comes back from adding the
+  // missing coupon. Re-run the match then, so the "coupon not found" card
+  // resolves itself instead of asking again for a coupon that now exists.
+  useEffect(() => {
+    if (!visible || selectedCouponId || !detectedCouponCode) return;
+    if (matchState !== "not-found" && matchState !== "ambiguous") return;
+    // Exact only: the add screen was pre-filled with the detected code, so the
+    // new coupon matches exactly; partial matches keep needing the picker.
+    const match = matchCouponCode(detectedCouponCode, coupons);
+    if (match.kind === "exact") {
+      setSelectedCouponId(match.coupon.id);
+      setMatchState("matched");
+      setIsPickerOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coupons, visible, selectedCouponId, detectedCouponCode, matchState]);
 
   const updateDetectedUsage = (id: string, field: keyof ParsedUsage, value: string | number) => {
     setDetectedUsages((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
