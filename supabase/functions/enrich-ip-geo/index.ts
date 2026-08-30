@@ -7,8 +7,9 @@
 //   2. stamps city/region onto the matching user_activities rows, so the
 //      location survives when ip_address is nulled at 90 days.
 //
-// Gated by X-Cron-Token so only the cron job (which holds the vault secret)
-// can invoke it.
+// Env:
+//   IP_GEO_CRON_TOKEN  - shared with the pg_cron job (Vault: ip_geo_cron_token)
+//   IPINFO_TOKEN       - optional; if set, ipinfo.io is preferred over ipwho.is
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveIp } from "../_shared/ipGeo.ts";
@@ -23,10 +24,20 @@ const admin = () =>
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
-Deno.serve(async (req) => {
-  if (req.headers.get("X-Cron-Token") !== Deno.env.get("IP_GEO_CRON_TOKEN")) {
-    return new Response("forbidden", { status: 403 });
+/** pg_cron has no JWT; it carries a token authorising exactly this call. */
+function isCronCall(req: Request): boolean {
+  const expected = Deno.env.get("IP_GEO_CRON_TOKEN");
+  const presented = req.headers.get("x-cron-token");
+  if (!expected || !presented || expected.length !== presented.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i += 1) {
+    diff |= expected.charCodeAt(i) ^ presented.charCodeAt(i);
   }
+  return diff === 0;
+}
+
+Deno.serve(async (req) => {
+  if (!isCronCall(req)) return new Response("forbidden", { status: 403 });
 
   const db = admin();
   const { data: pending, error } = await db.rpc("ip_geo_pending", { p_limit: BATCH });
