@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Sparkles, ChevronLeft } from "lucide-react-native";
+import { Sparkles, ChevronLeft, X } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
@@ -34,7 +34,7 @@ import { couponRouteId } from "@/lib/couponId";
 
 export function DashboardScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ saved?: string }>();
+  const params = useLocalSearchParams<{ saved?: string; savedCouponId?: string }>();
   const { theme } = useAppTheme();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
@@ -47,10 +47,11 @@ export function DashboardScreen() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const [showSavedCelebration, setShowSavedCelebration] = useState(params.saved === "1");
+  const [savedCouponId] = useState(params.savedCouponId);
 
   React.useEffect(() => {
     if (params.saved !== "1") return;
-    router.setParams({ saved: undefined });
+    router.setParams({ saved: undefined, savedCouponId: undefined });
   }, [params.saved, router]);
 
   const visibleCoupons = useMemo(() => {
@@ -155,18 +156,34 @@ export function DashboardScreen() {
         {showSavedCelebration ? (
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={() => setShowSavedCelebration(false)}
+            onPress={() => {
+              if (!savedCouponId) return;
+              setShowSavedCelebration(false);
+              router.push(`/coupons/${savedCouponId}`);
+            }}
             style={[styles.successCard, { backgroundColor: theme.successBg }]}
             accessibilityRole="button"
-            accessibilityLabel="הקופון נשמר בארנק. סגירת ההודעה"
+            accessibilityLabel="הקופון נשמר בארנק. מעבר לקופון"
           >
             <View style={styles.successVisual}>
               <CharacterSpotlight character="helper" state="cheering" size="small" tone="success" />
             </View>
             <View style={styles.successCopy}>
               <Text style={[styles.successTitle, { color: theme.successText }]}>הקופון נשמר בארנק</Text>
-              <Text style={[styles.successText, { color: theme.successText }]}>הוא מוכן למימוש. לחיצה סוגרת את ההודעה.</Text>
+              <Text style={[styles.successText, { color: theme.successText }]}>הוא מוכן למימוש. לחיצה תפתח את הקופון.</Text>
             </View>
+            <TouchableOpacity
+              onPress={(event) => {
+                event.stopPropagation();
+                setShowSavedCelebration(false);
+              }}
+              hitSlop={8}
+              style={styles.successClose}
+              accessibilityRole="button"
+              accessibilityLabel="סגירת ההודעה"
+            >
+              <X size={18} color={theme.successText} />
+            </TouchableOpacity>
           </TouchableOpacity>
         ) : null}
         {onboardingPending ? null : (
@@ -380,6 +397,14 @@ const styles = StyleSheet.create({
   successCopy: {
     flex: 1,
     alignItems: "flex-end",
+  },
+  successClose: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+    margin: -8,
   },
   successTitle: {
     fontFamily: fonts.bodyBold,

@@ -269,7 +269,13 @@ export function useCouponForm({
     // A new coupon usually arrives via the scanner, and going `back` would
     // drop the user onto the scanner they are done with. Send them to the
     // dashboard, where the coupon they just saved is now counted.
-    router.replace({ pathname: "/(tabs)", params: { saved: "1" } });
+    router.replace({
+      pathname: "/(tabs)",
+      params: {
+        saved: "1",
+        ...(newCouponId ? { savedCouponId: String(newCouponId) } : {}),
+      },
+    });
   };
 
   return {
