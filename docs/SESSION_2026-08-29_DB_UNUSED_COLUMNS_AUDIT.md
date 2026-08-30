@@ -371,8 +371,41 @@ device, extra_metadata, city, region, country_code`.
 הטוקן תועד גם ב-`.env.supabase.local` המקומי (gitignored) בשם `IP_GEO_CRON_TOKEN`
 עבור `scripts/e2e-geo.mjs`.
 
-`ipgeo-debug` — edge function stub זמני (410), למחוק מה-dashboard.
-אופציונלי: `IPINFO_TOKEN` edge secret לדיוק גבוה יותר (fallback ל-ipwho.is פועל בלעדיו).
+### `ipgeo-debug` — מנוטרל, לא נמחק
+
+edge function שנוצר לדיבוג ה-provider תוך כדי המימוש. **אין tool ב-MCP למחיקת
+edge functions, וה-CLI מחזיר `403`.** נטרלתי אותו במקום:
+- `verify_jwt = true` → `401` בלי JWT תקין
+- הגוף מחזיר `410 gone` בכל מקרה
+- אומת: קריאה ללא auth → `401 UNAUTHORIZED_NO_AUTH_HEADER`
+
+למחיקה פיזית: Dashboard → Edge Functions → `ipgeo-debug` → Delete.
+
+### `IPINFO_TOKEN` — לא בוצע, לא נחוץ
+
+דורש (א) פתיחת חשבון ב-ipinfo.io — פעולה אסורה לסוכן, (ב) הגדרת edge secret —
+`403`. `ipwho.is` פותר כל IP ישראלי אמיתי נכון (ת"א, ראשל"צ, פ"ת, חיפה) עם
+ISP + ASN. הקוד כבר מעדיף `ipinfo.io` אוטומטית אם ה-secret קיים; להוסיף בעתיד
+זו הגדרת secret אחת, בלי שינוי קוד.
+
+### State סופי — הכל חי ואוטומטי
+
+- **cron:** `ip-geo-enrich` (`*/15`), `ip-geo-strip` (`0 3`), `ip-geo-reset-failed` (`0 4 * * 0`) — רשומים.
+- **מסלול מלא אומת:** `select trigger_enrich_ip_geo()` → edge → vault token check → `200`.
+- **`ip_geo`:** 68 IPs נפתרו (59 ipwho + 9 legacy), 48 פרטיים סומנו `lookup_failed`, pending=0.
+- **`user_activities`:** 11 עמודות, `city` מלא ב-16,353+ שורות.
+- `tsc` נקי · `vitest` 167/167 · `npm run size` 7.8MB / 4.2MB.
+
+### Commits (Phase 3)
+
+`85918d9` ip_geo table + backfill · `d3223da` drop 5 columns + index ·
+`9c6d70a` enrich-ip-geo worker + shared resolver · `0ed72a1` cron + retention ·
+`eef3522` admin tab + asn_burst + privacy · `e3b1656` e2e-geo + array_append fix ·
+`1fd3aaa` revoke cron RPCs · `1a085b6` Phase 3 docs · `5f5c421` vault-token auth.
+
+### תלות חדשה
+
+`ipwho.is` — HTTPS, בלי key, fair-use. נקרא רק מ-edge (לא בבאנדל). fallback ל-`ipinfo.io`.
 
 ---
 
