@@ -5,7 +5,6 @@ import {
   Image,
   Linking,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -77,7 +76,7 @@ export function NewslettersTab() {
     <View style={styles.wrap}>
       <Button
         title="ניוזלטר חדש"
-        onPress={() => setEditing({ title: "", show_telegram_button: false })}
+        onPress={() => setEditing({ title: "" })}
         icon={<Plus size={16} color="#fff" />}
         style={styles.addBtn}
       />
@@ -106,7 +105,6 @@ export function NewslettersTab() {
                       ? `נשלח (${item.sent_count ?? 0})`
                       : "מוכן לשליחה"
                     : "חסר קובץ עיצוב"}
-                  {item.show_telegram_button ? " · טלגרם" : ""}
                 </Text>
               </View>
               <View style={styles.cardActions}>
@@ -199,13 +197,6 @@ export function NewslettersTab() {
               </>
             )}
 
-            <View style={styles.switchRow}>
-              <Text style={[styles.switchLabel, { color: theme.text }]}>כפתור טלגרם</Text>
-              <Switch
-                value={!!editing.show_telegram_button}
-                onValueChange={(v) => setEditing({ ...editing, show_telegram_button: v })}
-              />
-            </View>
             <Text style={[styles.note, { color: theme.textMuted }]}>
               שליחה לא מתבצעת מכאן — הטיוטה נשמרת בלבד.
             </Text>
@@ -256,13 +247,6 @@ const styles = StyleSheet.create({
   hero: { width: "100%", height: 130, borderRadius: radii.sm },
   linkRow: { flexDirection: "row-reverse", alignItems: "center", gap: 6, paddingVertical: 2 },
   linkText: { fontSize: 13, fontWeight: "700" },
-  switchRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  switchLabel: { fontSize: 14, fontWeight: "600" },
   fieldLabel: { fontSize: 12, fontWeight: "700", textAlign: "right" },
   note: { fontSize: 12, textAlign: "right", lineHeight: 18 },
 });

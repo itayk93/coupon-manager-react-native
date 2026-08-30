@@ -134,7 +134,6 @@ export function useUpsertNewsletter() {
           is_published: false,
           is_sent: false,
           sent_count: 0,
-          show_telegram_button: nl.show_telegram_button ?? false,
         } as any);
         if (error) throw error;
       }

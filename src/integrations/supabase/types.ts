@@ -658,7 +658,6 @@ export type Database = {
           newsletter_type: string | null
           preview_text: string | null
           sent_count: number | null
-          show_telegram_button: boolean | null
           title: string
           web_url: string | null
         }
@@ -674,7 +673,6 @@ export type Database = {
           newsletter_type?: string | null
           preview_text?: string | null
           sent_count?: number | null
-          show_telegram_button?: boolean | null
           title: string
           web_url?: string | null
         }
@@ -690,7 +688,6 @@ export type Database = {
           newsletter_type?: string | null
           preview_text?: string | null
           sent_count?: number | null
-          show_telegram_button?: boolean | null
           title?: string
           web_url?: string | null
         }

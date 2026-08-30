@@ -5,7 +5,7 @@ export const COUPON_COLUMNS = 'id,user_id,company,code,description,value,cost,us
 
 export const COMPANIES_COLUMNS = 'id,name,image_path,company_count' as const;
 
-export const NEWSLETTERS_COLUMNS = 'id,created_at,created_by,title,newsletter_type,show_telegram_button,is_published,is_sent,sent_count,bundle_path,web_url,email_subject,hero_image_url,preview_text' as const;
+export const NEWSLETTERS_COLUMNS = 'id,created_at,created_by,title,newsletter_type,is_published,is_sent,sent_count,bundle_path,web_url,email_subject,hero_image_url,preview_text' as const;
 
 export const ADMIN_MESSAGES_COLUMNS = 'id,created_at,message_text,link_url,link_text' as const;
 
