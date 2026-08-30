@@ -55,6 +55,8 @@ supabase/.temp/
 /build/
 /build-widget-*/
 docs/
+# Authenticated QA screenshots may contain coupon codes. Keep them local only.
+/docs/android-qa/
 .commandcode/
 *.auth/
 

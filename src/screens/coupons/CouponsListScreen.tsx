@@ -11,6 +11,7 @@ import {
   ScrollView,
   I18nManager,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -60,6 +61,8 @@ export function CouponsListScreen() {
     ids?: string;
   }>();
   const { theme } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
@@ -220,6 +223,19 @@ export function CouponsListScreen() {
 
     return list;
   }, [matchedCoupons, statusFilter, usageStats]);
+
+  const renderedSections = useMemo(
+    () => sections.map((section) => ({
+      ...section,
+      count: section.data.length,
+      data: isTablet
+        ? Array.from({ length: Math.ceil(section.data.length / 2) }, (_, index) =>
+            section.data.slice(index * 2, index * 2 + 2)
+          )
+        : section.data.map((coupon) => [coupon]),
+    })),
+    [isTablet, sections]
+  );
 
 
   const toggleSelect = (id: number) => {
@@ -542,8 +558,8 @@ export function CouponsListScreen() {
 
         {/* Coupons List */}
         <SectionList
-          sections={sections}
-          keyExtractor={(item: DecryptedCoupon) => String(item.id)}
+          sections={renderedSections}
+          keyExtractor={(item: DecryptedCoupon[]) => item.map((coupon) => coupon.id).join("-")}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           stickySectionHeadersEnabled={false}
@@ -555,7 +571,7 @@ export function CouponsListScreen() {
               colors={[theme.primary]}
             />
           }
-          renderSectionHeader={({ section: { title, data } }) => (
+          renderSectionHeader={({ section: { title, count } }) => (
             <View style={styles.sectionHeader}>
               <View style={styles.sectionHeaderTitleRow}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -563,44 +579,51 @@ export function CouponsListScreen() {
                 </Text>
                 <View style={[styles.sectionBadge, { backgroundColor: theme.surfaceAlt }]}>
                   <Text style={[styles.sectionBadgeText, { color: theme.textSubtle }]}>
-                    {data.length}
+                    {count}
                   </Text>
                 </View>
               </View>
             </View>
           )}
-          renderItem={({ item }: { item: DecryptedCoupon }) => (
-            <Swipeable
-              overshootLeft={false}
-              overshootRight={false}
-              friction={2}
-              renderRightActions={() => (
-                <TouchableOpacity
-                  onPress={() => setUsageCoupon(item)}
-                  accessibilityLabel={`דיווח שימוש בקופון של ${item.company}`}
-                  style={[styles.swipeAction, { backgroundColor: theme.success }]}
-                >
-                  <ReceiptText size={20} color="#ffffff" />
-                  <Text style={styles.swipeActionText}>דיווח שימוש</Text>
-                </TouchableOpacity>
-              )}
-            >
-              <CouponCard
-              coupon={item}
-              tags={tagsMap[item.id] || []}
-              selected={selectedIds.includes(item.id)}
-              showSelect={isSelectMode}
-              onSelect={() => toggleSelect(item.id)}
-              onPress={() => {
-                if (isSelectMode) {
-                  toggleSelect(item.id);
-                } else {
-                  router.push(`/coupons/${couponRouteId(item)}`);
-                }
-              }}
-              onReportUsage={() => setUsageCoupon(item)}
-              />
-            </Swipeable>
+          renderItem={({ item }: { item: DecryptedCoupon[] }) => (
+            <View style={[styles.couponRow, isTablet && styles.tabletCouponRow]}>
+              {item.map((coupon) => (
+                <View key={coupon.id} style={styles.couponColumn}>
+                  <Swipeable
+                    overshootLeft={false}
+                    overshootRight={false}
+                    friction={2}
+                    renderRightActions={() => (
+                      <TouchableOpacity
+                        onPress={() => setUsageCoupon(coupon)}
+                        accessibilityLabel={`דיווח שימוש בקופון של ${coupon.company}`}
+                        style={[styles.swipeAction, { backgroundColor: theme.success }]}
+                      >
+                        <ReceiptText size={20} color="#ffffff" />
+                        <Text style={styles.swipeActionText}>דיווח שימוש</Text>
+                      </TouchableOpacity>
+                    )}
+                  >
+                    <CouponCard
+                      coupon={coupon}
+                      tags={tagsMap[coupon.id] || []}
+                      selected={selectedIds.includes(coupon.id)}
+                      showSelect={isSelectMode}
+                      onSelect={() => toggleSelect(coupon.id)}
+                      onPress={() => {
+                        if (isSelectMode) {
+                          toggleSelect(coupon.id);
+                        } else {
+                          router.push(`/coupons/${couponRouteId(coupon)}`);
+                        }
+                      }}
+                      onReportUsage={() => setUsageCoupon(coupon)}
+                    />
+                  </Swipeable>
+                </View>
+              ))}
+              {isTablet && item.length === 1 ? <View style={styles.couponColumn} /> : null}
+            </View>
           )}
           ListEmptyComponent={
             isLoading ? (
@@ -865,6 +888,17 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 32,
+  },
+  couponRow: {
+    width: "100%",
+  },
+  tabletCouponRow: {
+    flexDirection: "row-reverse",
+    gap: 12,
+  },
+  couponColumn: {
+    flex: 1,
+    minWidth: 0,
   },
   sectionHeader: {
     paddingVertical: 10,

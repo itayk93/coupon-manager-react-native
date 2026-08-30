@@ -7,6 +7,7 @@ import {
   RefreshControl,
   SafeAreaView,
   TouchableOpacity,
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Sparkles, ChevronLeft } from "lucide-react-native";
@@ -35,6 +36,8 @@ export function DashboardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ saved?: string }>();
   const { theme } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
@@ -194,18 +197,21 @@ export function DashboardScreen() {
             <View style={styles.sectionHeaderOnly}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>קופונים מועדפים</Text>
             </View>
-            {favoriteCoupons.map((coupon) => (
-              <CouponCard
-                key={`favorite-${coupon.id}`}
-                coupon={coupon}
-                tags={tagsMap[coupon.id] || []}
-                onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
-                onReportUsage={() => {
-                  setUsageCoupon(coupon);
-                  setIsUsageOpen(true);
-                }}
-              />
-            ))}
+            <View style={isTablet ? styles.tabletCouponGrid : undefined}>
+              {favoriteCoupons.map((coupon) => (
+                <View key={`favorite-${coupon.id}`} style={isTablet ? styles.tabletCouponColumn : undefined}>
+                  <CouponCard
+                    coupon={coupon}
+                    tags={tagsMap[coupon.id] || []}
+                    onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
+                    onReportUsage={() => {
+                      setUsageCoupon(coupon);
+                      setIsUsageOpen(true);
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
           </>
         ) : null}
 
@@ -316,6 +322,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "800",
+  },
+  tabletCouponGrid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  tabletCouponColumn: {
+    width: "49%",
+    minWidth: 0,
   },
   seeAllBtn: {
     flexDirection: "row",
