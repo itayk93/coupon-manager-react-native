@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,15 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2 } from "lucide-react-native";
+import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2, AlertTriangle, ChevronLeft } from "lucide-react-native";
 import * as Location from "expo-location";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { useRecordUsage } from "@/hooks/useCouponUsage";
+import { useRecordUsage, useCouponUsageHistory } from "@/hooks/useCouponUsage";
+import { findExistingUsageMatch } from "@/lib/usageDuplicateMatch";
+import { formatDateHebrew } from "@/lib/formatDate";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
@@ -183,6 +185,31 @@ export function QuickUsageModal({
     ? Math.max(0, (selectedCoupon.value || 0) - (selectedCoupon.used_value || 0))
     : 0;
 
+  // Existing ledger for the chosen coupon, so a detected usage that the server
+  // would silently skip is flagged here instead — before the user hits confirm.
+  const { data: usageHistory = [] } = useCouponUsageHistory(
+    detectedUsages.length ? selectedCoupon ?? null : null
+  );
+  const duplicateMatches = useMemo(() => {
+    const rows = usageHistory.filter((row) => row.source_table !== "sum_row");
+    const map: Record<string, (typeof rows)[number]> = {};
+    for (const usage of detectedUsages) {
+      const hit = findExistingUsageMatch(
+        {
+          amount: usage.amount,
+          placeName: usage.placeName,
+          placeAddress: usage.placeAddress,
+          usedAt: usage.usedAt,
+        },
+        rows
+      );
+      if (hit) map[usage.id] = hit;
+    }
+    return map;
+  }, [detectedUsages, usageHistory]);
+  const duplicateCount = Object.keys(duplicateMatches).length;
+  const [expandedDuplicateId, setExpandedDuplicateId] = useState<string | null>(null);
+
   const submitUsage = async (numAmount: number, usageDetails: string) => {
     await recordUsage.mutateAsync({
       couponId: selectedCouponId as number,
@@ -326,8 +353,16 @@ export function QuickUsageModal({
 
   const saveDetectedUsages = async () => {
     if (!selectedCouponId) return setError("יש לבחור קופון");
-    const valid = detectedUsages.filter((item) => item.amount > 0);
-    if (!valid.length) return setError("לא נשארו שימושים תקינים לאישור");
+    const valid = detectedUsages.filter(
+      (item) => item.amount > 0 && !duplicateMatches[item.id]
+    );
+    if (!valid.length) {
+      return setError(
+        duplicateCount
+          ? "כל השימושים שזוהו כבר קיימים בקופון לפי מקום, סכום וזמן."
+          : "לא נשארו שימושים תקינים לאישור"
+      );
+    }
     setSavingDetected(true);
     setError("");
     setAmountError("");
@@ -445,8 +480,16 @@ export function QuickUsageModal({
               <Text style={[styles.detectedCount, { color: theme.primary }]}>{detectedUsages.length} שימושים זוהו</Text>
               <Text style={[styles.detectedTitle, { color: theme.text }]}>בדיקה לפני אישור</Text>
             </View>
-            {detectedUsages.map((item, index) => (
-              <View key={item.id} style={[styles.usageCard, { borderColor: theme.border, backgroundColor: theme.surfaceAlt }]}>
+            {duplicateCount ? (
+              <Text style={[styles.duplicateSummary, { color: theme.warning }]}>
+                {duplicateCount} מתוכם כבר קיימים בקופון ולא יתווספו. לחיצה על שורה מסומנת פותחת את השימוש הקיים.
+              </Text>
+            ) : null}
+            {detectedUsages.map((item, index) => {
+              const duplicateOf = duplicateMatches[item.id];
+              const isExpanded = expandedDuplicateId === item.id;
+              return (
+              <View key={item.id} style={[styles.usageCard, { borderColor: duplicateOf ? theme.warning : theme.border, backgroundColor: theme.surfaceAlt }]}>
                 <View style={styles.usageCardHeader}>
                   <TouchableOpacity
                     accessibilityLabel={`מחיקת שימוש ${index + 1}`}
@@ -455,6 +498,54 @@ export function QuickUsageModal({
                   ><Trash2 size={18} color={theme.danger} /></TouchableOpacity>
                   <Text style={[styles.usageIndex, { color: theme.text }]}>שימוש {index + 1}</Text>
                 </View>
+                {duplicateOf ? (
+                  <>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`שימוש ${index + 1} כבר קיים בקופון — הצגת הפרטים`}
+                      onPress={() => setExpandedDuplicateId(isExpanded ? null : item.id)}
+                      style={[styles.duplicateBadge, { borderColor: theme.warning, backgroundColor: theme.surface }]}
+                    >
+                      <ChevronDown size={16} color={theme.warning} style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.duplicateBadgeTitle, { color: theme.warning }]}>שימוש זה כבר קיים בקופון</Text>
+                        <Text style={[styles.duplicateBadgeReason, { color: theme.textMuted }]}>
+                          אותו סכום ({formatIls(Math.abs(duplicateOf.transaction_amount))}), אותו מקום ואותו זמן (עד הדקה).
+                        </Text>
+                      </View>
+                      <AlertTriangle size={16} color={theme.warning} />
+                    </TouchableOpacity>
+                    {isExpanded ? (
+                      <View style={[styles.duplicateDetails, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+                        <Text style={[styles.duplicateDetailLine, { color: theme.text }]}>
+                          {duplicateOf.place_name || duplicateOf.place_address || duplicateOf.details}
+                        </Text>
+                        <Text style={[styles.duplicateDetailLine, { color: theme.textMuted }]}>
+                          {formatIls(Math.abs(duplicateOf.transaction_amount))}
+                          {duplicateOf.timestamp ? ` · ${formatDateHebrew(duplicateOf.timestamp)}` : ""}
+                        </Text>
+                        {selectedCoupon ? (
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            onPress={() => {
+                              onImportPaused?.();
+                              onClose();
+                              router.push({
+                                pathname: "/coupons/[id]",
+                                params: { id: String(selectedCoupon.id), highlightUsage: String(duplicateOf.id) },
+                              });
+                            }}
+                            style={styles.duplicateOpenLink}
+                          >
+                            <ChevronLeft size={16} color={theme.primary} />
+                            <Text style={[styles.duplicateOpenLinkText, { color: theme.primary }]}>פתח את השימוש בקופון</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </>
+                ) : null}
                 <Input label="סכום (₪)" keyboardType="decimal-pad" value={String(item.amount)} onChangeText={(value) => updateDetectedUsage(item.id, "amount", Number(value) || 0)} />
                 <Input label="מקום" value={item.placeName} onChangeText={(value) => updateDetectedUsage(item.id, "placeName", value)} />
                 <Input label="כתובת" value={item.placeAddress} placeholder="לא נמצאה כתובת — אפשר לערוך" onChangeText={(value) => updateDetectedUsage(item.id, "placeAddress", value)} />
@@ -463,9 +554,19 @@ export function QuickUsageModal({
                   <Text style={[styles.detectedCoordinates, { color: theme.textMuted }]}><MapPin size={13} color={theme.primary} /> {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</Text>
                 ) : null}
               </View>
-            ))}
+              );
+            })}
             {error ? <Text style={[styles.batchError, { color: theme.danger }]}>{error}</Text> : null}
-            <Button title={`אישור והוספת ${detectedUsages.length} שימושים`} onPress={saveDetectedUsages} loading={savingDetected} disabled={savingDetected} />
+            <Button
+              title={
+                duplicateCount
+                  ? `הוספת ${detectedUsages.length - duplicateCount} שימושים (${duplicateCount} כבר קיימים)`
+                  : `אישור והוספת ${detectedUsages.length} שימושים`
+              }
+              onPress={saveDetectedUsages}
+              loading={savingDetected}
+              disabled={savingDetected || detectedUsages.length === duplicateCount}
+            />
           </View>
         ) : null}
 
@@ -811,6 +912,22 @@ const styles = StyleSheet.create({
   usageCard: { borderWidth: 1, borderRadius: 16, padding: 12 },
   usageCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   usageIndex: { fontSize: 14, fontWeight: "800" },
+  duplicateSummary: { fontSize: 13, fontWeight: "600", textAlign: "right", lineHeight: 19 },
+  duplicateBadge: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 6,
+  },
+  duplicateBadgeTitle: { fontSize: 13, fontWeight: "800", textAlign: "right" },
+  duplicateBadgeReason: { fontSize: 12, textAlign: "right", marginTop: 2, lineHeight: 17 },
+  duplicateDetails: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 8, gap: 4 },
+  duplicateDetailLine: { fontSize: 13, textAlign: "right" },
+  duplicateOpenLink: { flexDirection: "row-reverse", alignItems: "center", gap: 4, marginTop: 4 },
+  duplicateOpenLinkText: { fontSize: 13, fontWeight: "700" },
   deleteUsage: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   detectedCoordinates: { fontSize: 12, textAlign: "right", marginTop: -4, marginBottom: 4 },
   batchError: { fontSize: 13, fontWeight: "600", textAlign: "right" },

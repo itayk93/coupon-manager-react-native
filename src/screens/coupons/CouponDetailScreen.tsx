@@ -43,6 +43,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   useCoupon,
   useDeleteCoupon,
+  useRestoreCoupons,
   useUpdateCoupon,
   DecryptedCoupon,
 } from "@/hooks/useCoupons";
@@ -134,7 +135,7 @@ function DeleteConfirm({
 
 export function CouponDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, highlightUsage } = useLocalSearchParams<{ id: string; highlightUsage?: string }>();
   const couponIdentifier = typeof id === "string" ? id : undefined;
   const { theme } = useAppTheme();
   const queryClient = useQueryClient();
@@ -144,6 +145,7 @@ export function CouponDetailScreen() {
   const { data: tags = [] } = useCouponTags(couponId);
   const { data: history = [] } = useCouponUsageHistory(coupon || null);
   const deleteCoupon = useDeleteCoupon();
+  const restoreCoupons = useRestoreCoupons();
   const updateCoupon = useUpdateCoupon();
   const deleteTx = useDeleteTransactionRecord();
   const recordUsage = useRecordUsage();
@@ -165,6 +167,30 @@ export function CouponDetailScreen() {
     void markDetailViewed(couponId);
     logActivity("view_coupon", { couponId });
   }, [couponId, markDetailViewed]);
+
+  // Arriving from the "this usage already exists" link in the quick-usage modal:
+  // scroll the matching history row into view and flash it once.
+  const scrollRef = React.useRef<ScrollView>(null);
+  const sectionCardYRef = React.useRef(0);
+  const rowYRef = React.useRef<Record<string, number>>({});
+  const [flashRowId, setFlashRowId] = React.useState<string | null>(null);
+  const didHighlightRef = React.useRef(false);
+  React.useEffect(() => {
+    if (didHighlightRef.current || !highlightUsage || history.length === 0) return;
+    didHighlightRef.current = true;
+    const timer = setTimeout(() => {
+      const rowY = rowYRef.current[highlightUsage];
+      if (typeof rowY === "number") {
+        scrollRef.current?.scrollTo({
+          y: Math.max(0, sectionCardYRef.current + rowY - 90),
+          animated: true,
+        });
+      }
+      setFlashRowId(highlightUsage);
+      setTimeout(() => setFlashRowId(null), 2400);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [highlightUsage, history.length]);
 
   if (isLoading || !coupon) {
     return (
@@ -196,14 +222,16 @@ export function CouponDetailScreen() {
       if (list) queryClient.setQueryData(key, list.filter((item) => item.id !== coupon.id));
     });
     router.back();
-    const timer = setTimeout(() => void deleteCoupon.mutateAsync(coupon.id), 5000);
+    const id = coupon.id;
+    void deleteCoupon.mutateAsync(id);
     notify.undo(
-      "הקופון הוסר",
-      `הקופון של ${coupon.company} יימחק בעוד 5 שניות.`,
+      "הקופון עבר לנמחקו לאחרונה 👋",
+      `אפשר לשחזר אותו מ"נמחקו לאחרונה" בהגדרות, עד 30 יום.`,
       () => {
-        clearTimeout(timer);
         snapshots.forEach(([key, list]) => queryClient.setQueryData(key, list));
+        void restoreCoupons.mutateAsync([id]);
       },
+      7000,
     );
   };
 
@@ -293,6 +321,7 @@ export function CouponDetailScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -584,6 +613,9 @@ export function CouponDetailScreen() {
         ) : null}
 
         <View
+          onLayout={(e) => {
+            sectionCardYRef.current = e.nativeEvent.layout.y;
+          }}
           style={[
             styles.sectionCard,
             {
@@ -630,12 +662,18 @@ export function CouponDetailScreen() {
               const canDelete = h.source_table !== "sum_row" && typeof h.id === "number";
               const isPendingDelete = pendingDeleteId === String(h.id);
               return (
-                <View key={String(h.id)}>
+                <View
+                  key={String(h.id)}
+                  onLayout={(e) => {
+                    rowYRef.current[String(h.id)] = e.nativeEvent.layout.y;
+                  }}
+                >
                   <View
                     style={[
                       styles.historyRow,
                       { borderBottomColor: theme.border },
                       isPendingDelete && { borderBottomWidth: 0 },
+                      flashRowId === String(h.id) && { backgroundColor: theme.primaryTint },
                     ]}
                   >
                     {/* RTL: the row reads from the right, so its action sits at
