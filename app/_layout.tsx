@@ -164,14 +164,23 @@ function RootLayoutNav() {
     Outfit_800ExtraBold,
   });
 
-  // A font failure must not wedge the app behind the splash screen.
-  const isReady = authReady && (fontsLoaded || Boolean(fontError));
+  // A font failure — or a native font module that never settles its promise at
+  // all — must not wedge the app behind the splash screen. After a short grace
+  // period we proceed with system fonts regardless.
+  const [fontWaitElapsed, setFontWaitElapsed] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setFontWaitElapsed(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+  const fontsSettled = fontsLoaded || Boolean(fontError) || fontWaitElapsed;
+
+  const isReady = authReady && fontsSettled;
 
   useEffect(() => {
-    if (Platform.OS === "web" && (fontsLoaded || fontError)) {
+    if (fontsSettled) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontError, fontsLoaded]);
+  }, [fontsSettled]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 
@@ -221,7 +230,7 @@ function RootLayoutNav() {
           {launchVisible ? (
             <BrandLaunchVideo
               appReady={isReady}
-              canReveal={fontsLoaded || Boolean(fontError)}
+              canReveal={fontsSettled}
               onFinish={() => setLaunchVisible(false)}
             />
           ) : null}
