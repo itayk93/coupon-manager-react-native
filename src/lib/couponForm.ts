@@ -42,6 +42,8 @@ export type CouponFormFields = {
   value: string;
   cost: string;
   expiration: string;
+  isOneTime: boolean;
+  purpose: string;
   description: string;
   includeCardInfo: boolean;
   cvv: string;
@@ -125,6 +127,8 @@ export function buildCouponPayload(
     value: Number(fields.value) || 0,
     cost: Number(fields.cost) || 0,
     expiration: fields.expiration.trim() || null,
+    is_one_time: fields.isOneTime,
+    purpose: fields.purpose.trim() || null,
     description: fields.description.trim() || null,
     cvv: fields.includeCardInfo ? fields.cvv.trim() || null : null,
     card_exp: fields.includeCardInfo ? fields.cardExp.trim() || null : null,

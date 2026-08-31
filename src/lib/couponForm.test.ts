@@ -21,6 +21,8 @@ const fields = (overrides: Partial<CouponFormFields> = {}): CouponFormFields => 
   value: "100",
   cost: "80",
   expiration: "2026-12-31",
+  isOneTime: false,
+  purpose: "",
   description: "",
   includeCardInfo: false,
   cvv: "",
@@ -150,6 +152,20 @@ describe("buildCouponPayload", () => {
     const payload = buildCouponPayload(fields({ value: "12.5", cost: "" }), false);
     expect(payload.value).toBe(12.5);
     expect(payload.cost).toBe(0);
+  });
+
+  it("stores one-time status and a trimmed optional purpose", () => {
+    expect(
+      buildCouponPayload(fields({ isOneTime: true, purpose: "  מתנה ליום הולדת  " }), false)
+    ).toMatchObject({
+      is_one_time: true,
+      purpose: "מתנה ליום הולדת",
+    });
+
+    expect(buildCouponPayload(fields({ purpose: "  " }), false)).toMatchObject({
+      is_one_time: false,
+      purpose: null,
+    });
   });
 
   it("only stores card details while the card switch is on", () => {

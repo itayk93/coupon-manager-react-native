@@ -127,6 +127,10 @@ function CouponForm({
     setCost,
     expiration,
     setExpiration,
+    isOneTime,
+    setIsOneTime,
+    purpose,
+    setPurpose,
     description,
     setDescription,
     includeCardInfo,
@@ -265,6 +269,34 @@ function CouponForm({
             onChange={setExpiration}
             placeholder="בחירת תאריך"
             helperText="בחירה מלוח השנה (פורמט: שנה-חודש-יום)"
+          />
+
+          <View
+            style={[
+              styles.switchRow,
+              {
+                backgroundColor: theme.surfaceAlt,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Switch
+              value={isOneTime}
+              onValueChange={setIsOneTime}
+              trackColor={{ false: theme.inputBorder, true: theme.primary }}
+              thumbColor="#ffffff"
+            />
+            <View style={styles.switchLabelContainer}>
+              <Text style={[styles.switchLabel, { color: theme.text }]}>קופון חד־פעמי</Text>
+              <Text style={[styles.switchSub, { color: theme.textMuted }]}>הקופון מיועד למימוש אחד בלבד</Text>
+            </View>
+          </View>
+
+          <Input
+            label="מטרת הקופון"
+            placeholder="למשל: ארוחת ערב, מתנה..."
+            value={purpose}
+            onChangeText={setPurpose}
           />
 
           <TouchableOpacity

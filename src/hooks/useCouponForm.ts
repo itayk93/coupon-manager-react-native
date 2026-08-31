@@ -73,6 +73,8 @@ export function useCouponForm({
   const [expiration, setExpiration] = useState(
     (existingCoupon?.expiration || initialExpiration || "").slice(0, 10)
   );
+  const [isOneTime, setIsOneTime] = useState(Boolean(existingCoupon?.is_one_time));
+  const [purpose, setPurpose] = useState(existingCoupon?.purpose || "");
   const [description, setDescription] = useState(
     existingCoupon?.description || initialDescription || ""
   );
@@ -112,6 +114,8 @@ export function useCouponForm({
       setValue(draft.value);
       setCost(draft.cost);
       setExpiration(draft.expiration);
+      setIsOneTime(Boolean(draft.isOneTime));
+      setPurpose(draft.purpose || "");
       setDescription(draft.description);
       setIncludeCardInfo(draft.includeCardInfo);
       setCvv(draft.cvv);
@@ -153,6 +157,8 @@ export function useCouponForm({
     value,
     cost,
     expiration,
+    isOneTime,
+    purpose,
     description,
     includeCardInfo,
     cvv,
@@ -168,6 +174,8 @@ export function useCouponForm({
       value,
       cost,
       expiration,
+      isOneTime,
+      purpose,
       description,
       cvv,
       cardExp,
@@ -179,7 +187,7 @@ export function useCouponForm({
     if (isEditing) return;
     const timer = setTimeout(() => void persistDraft(), 600);
     return () => clearTimeout(timer);
-  }, [cardExp, code, company, cost, cvv, description, expiration, includeCardInfo, isEditing, redemptionUrl, value]);
+  }, [cardExp, code, company, cost, cvv, description, expiration, includeCardInfo, isEditing, isOneTime, purpose, redemptionUrl, value]);
 
   /**
    * Tags are a second write, and the coupon is already saved by the time it
@@ -294,6 +302,10 @@ export function useCouponForm({
     setCost,
     expiration,
     setExpiration,
+    isOneTime,
+    setIsOneTime,
+    purpose,
+    setPurpose,
     description,
     setDescription,
     includeCardInfo,

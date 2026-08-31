@@ -9,6 +9,8 @@ export type CouponDraft = {
   value: string;
   cost: string;
   expiration: string;
+  isOneTime?: boolean;
+  purpose?: string;
   description: string;
   cvv: string;
   cardExp: string;
