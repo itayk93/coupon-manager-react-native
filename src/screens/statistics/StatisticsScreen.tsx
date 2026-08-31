@@ -30,11 +30,13 @@ import { StatusDrilldownModal } from "@/components/dashboard/StatusDrilldownModa
 import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownModal";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRouteId } from "@/lib/couponId";
+import { useCouponSales } from "@/hooks/useCouponSales";
 
 export function StatisticsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [] } = useCoupons();
+  const { data: sales = [] } = useCouponSales();
   const [activeKpi, setActiveKpi] = useState<KpiConfig | null>(null);
   const [activeMonth, setActiveMonth] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<CouponStatusFilter | null>(null);
@@ -62,6 +64,15 @@ export function StatisticsScreen() {
     [coupons]
   );
   const remainingValue = Math.max(0, totalValue - usedValue);
+  const saleStats = useMemo(() => {
+    const completed = sales.filter((sale) => sale.status === "completed");
+    return {
+      count: completed.length,
+      revenue: completed.reduce((sum, sale) => sum + sale.sale_price, 0),
+      profit: completed.reduce((sum, sale) => sum + sale.sale_price - sale.coupon_cost_snapshot, 0),
+      faceValue: completed.reduce((sum, sale) => sum + sale.coupon_value_snapshot, 0),
+    };
+  }, [sales]);
 
   const statusStats = useMemo(() => {
     let active = 0;
@@ -291,6 +302,26 @@ export function StatisticsScreen() {
             </PressableScale>
           </View>
         </View>
+
+        {/* Top Companies Breakdown */}
+        <PressableScale
+          haptic
+          accessibilityRole="button"
+          accessibilityLabel="פתיחת קופונים שמכרתי"
+          onPress={() => router.push("/sold-coupons")}
+          style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>מכירת קופונים</Text>
+            <TrendingUp size={18} color={theme.success} />
+          </View>
+          <View style={styles.statusDistributionRow}>
+            <View style={styles.statusCol}><Text style={[styles.statusNum, { color: theme.primary }]}>{saleStats.count}</Text><Text style={[styles.statusLabel, { color: theme.textMuted }]}>נמכרו</Text></View>
+            <View style={styles.statusCol}><IlsAmount value={saleStats.revenue} style={[styles.statusNum, { color: theme.text }]} /><Text style={[styles.statusLabel, { color: theme.textMuted }]}>הכנסות</Text></View>
+            <View style={styles.statusCol}><IlsAmount value={saleStats.profit} style={[styles.statusNum, { color: saleStats.profit >= 0 ? theme.success : theme.danger }]} /><Text style={[styles.statusLabel, { color: theme.textMuted }]}>רווח</Text></View>
+            <View style={styles.statusCol}><IlsAmount value={saleStats.faceValue} style={[styles.statusNum, { color: theme.text }]} /><Text style={[styles.statusLabel, { color: theme.textMuted }]}>שווי</Text></View>
+          </View>
+        </PressableScale>
 
         {/* Top Companies Breakdown */}
         <View

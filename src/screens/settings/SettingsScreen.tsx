@@ -28,6 +28,7 @@ import {
   Trash2,
   UserPlus,
   Download,
+  BadgeDollarSign,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -213,6 +214,17 @@ export function SettingsScreen() {
                   סטטיסטיקה
                 </Text>
                 <BarChart3 size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/sold-coupons")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>קופונים שמכרתי</Text>
+                <BadgeDollarSign size={20} color={theme.textMuted} />
               </View>
             </TouchableOpacity>
 

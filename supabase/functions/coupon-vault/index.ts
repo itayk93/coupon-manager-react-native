@@ -16,13 +16,13 @@ const SHARE_LINK_TTL_MS = 24 * 60 * 60 * 1000;
 
 type OpenShare = {
   id: number; coupon_id: number; shared_by_user_id: number;
-  share_type: string; share_expires_at: string;
+  share_type: string; share_expires_at: string; sale_id: number | null;
 };
 
 async function openShareByToken(db: ReturnType<typeof admin>, token: unknown): Promise<OpenShare> {
   if (typeof token !== 'string' || !/^[0-9a-f-]{36}$/i.test(token)) throw new Error('INVALID_INPUT');
   const { data, error } = await db.from('coupon_shares')
-    .select('id,coupon_id,shared_by_user_id,share_type,share_expires_at,status,shared_with_user_id')
+    .select('id,coupon_id,shared_by_user_id,share_type,share_expires_at,status,shared_with_user_id,sale_id')
     .eq('share_token', token).maybeSingle();
   if (error) throw error;
   // One error for "wrong token", "already taken" and "too late". Distinguishing
@@ -105,6 +105,37 @@ function assertIds(value: unknown): number[] {
   return Array.from(new Set(ids));
 }
 
+function saleInput(value: unknown): { salePrice: number; buyerFirstName: string; buyerLastName: string; buyerPhone: string; buyerEmail: string | null } | null {
+  if (value == null) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_SALE_INPUT');
+  const row = value as Record<string, unknown>;
+  const salePrice = Number(row.salePrice);
+  const buyerFirstName = String(row.buyerFirstName || '').trim();
+  const buyerLastName = String(row.buyerLastName || '').trim();
+  const buyerPhone = String(row.buyerPhone || '').trim();
+  const buyerEmail = String(row.buyerEmail || '').trim().toLowerCase() || null;
+  if (!Number.isFinite(salePrice) || salePrice < 0 || !buyerFirstName || !buyerLastName || !buyerPhone
+    || (buyerEmail && !/^\S+@\S+\.\S+$/.test(buyerEmail))) throw new Error('INVALID_SALE_INPUT');
+  return { salePrice, buyerFirstName, buyerLastName, buyerPhone, buyerEmail };
+}
+
+async function createPendingSale(db: ReturnType<typeof admin>, userId: number, couponId: number, sale: ReturnType<typeof saleInput>): Promise<number | null> {
+  if (!sale) return null;
+  const { data: coupon, error: couponError } = await db.from('coupon')
+    .select('id,company,description,value,cost,used_value,expiration').eq('id', couponId).eq('user_id', userId).single();
+  if (couponError) throw couponError;
+  const { data, error } = await db.from('coupon_sales').insert({
+    coupon_id: coupon.id, seller_user_id: userId, sale_type: 'transfer', status: 'pending',
+    buyer_first_name: sale.buyerFirstName, buyer_last_name: sale.buyerLastName,
+    buyer_phone: sale.buyerPhone, buyer_email: sale.buyerEmail, sale_price: sale.salePrice,
+    coupon_value_snapshot: coupon.value, coupon_cost_snapshot: coupon.cost,
+    coupon_used_value_snapshot: coupon.used_value, company_snapshot: coupon.company,
+    description_snapshot: coupon.description, expiration_snapshot: coupon.expiration,
+  }).select('id').single();
+  if (error) throw error;
+  return data.id;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeadersFor(req) });
   try {
@@ -113,7 +144,7 @@ Deno.serve(async (req) => {
     const db = admin();
 
     if (body.action === 'list') {
-      const { data: owned, error: ownedError } = await db.from('coupon').select('*').eq('user_id', user.id).is('deleted_at', null);
+      const { data: owned, error: ownedError } = await db.from('coupon').select('*').eq('user_id', user.id).is('deleted_at', null).neq('status', 'נמכר');
       if (ownedError) throw ownedError;
 
       const { data: sharedRows, error: sharedError } = await db
@@ -214,6 +245,29 @@ Deno.serve(async (req) => {
       if (error) throw error;
       return jsonResponseFor(req, { data: await Promise.all((data || []).map(decryptCoupon)) });
     }
+    if (body.action === 'record_manual_sale') {
+      const couponId = assertId(body.couponId);
+      const sale = saleInput(body.sale);
+      if (!sale) throw new Error('INVALID_SALE_INPUT');
+      const callerDb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: req.headers.get('Authorization') || '' } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data, error } = await callerDb.rpc('record_manual_coupon_sale', {
+        p_coupon_id: couponId, p_sale_price: sale.salePrice,
+        p_buyer_first_name: sale.buyerFirstName, p_buyer_last_name: sale.buyerLastName,
+        p_buyer_phone: sale.buyerPhone, p_buyer_email: sale.buyerEmail,
+      });
+      if (error) throw error;
+      return jsonResponseFor(req, { data: { id: data } }, 201);
+    }
+    if (body.action === 'list_sales') {
+      const { data, error } = await db.from('coupon_sales').select('*')
+        .eq('seller_user_id', user.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      const safe = (data || []).map(({ description_snapshot: _description, ...sale }) => sale);
+      return jsonResponseFor(req, { data: safe });
+    }
     // GDPR art. 7 / Israeli PPL — a demonstrable consent trail. Idempotent per
     // version: re-calling with the same version just refreshes the timestamp.
     if (body.action === 'record_consent') {
@@ -243,7 +297,7 @@ Deno.serve(async (req) => {
         return data ?? [];
       };
 
-      const [profile, coupons, usage, transactions, tags, activities, consents, optOuts, notifications, notifPrefs, gptUsage, referralCodes, pushSubscriptions, tourProgress, notificationEvents, couponAlerts, newsletterSendings, autoUpdateRuns, referralApplications, ownReferral, usageImports] = await Promise.all([
+      const [profile, coupons, usage, transactions, tags, activities, consents, optOuts, notifications, notifPrefs, gptUsage, referralCodes, pushSubscriptions, tourProgress, notificationEvents, couponAlerts, newsletterSendings, autoUpdateRuns, referralApplications, ownReferral, usageImports, couponSales] = await Promise.all([
         db.from('users').select('id,public_id,auth_user_id,email,first_name,last_name,gender,created_at,profile_description,profile_image,google_id,newsletter_subscription,marketing_consent_at,marketing_consent_source,marketing_consent_version,telegram_monthly_summary,allow_widget_access,push_token,privacy_consent_version,privacy_consent_at').eq('id', user.id).maybeSingle(),
         db.from('coupon').select('*').eq('user_id', user.id),
         ids.length ? db.from('coupon_usage').select('*').in('coupon_id', ids) : Promise.resolve({ data: [] }),
@@ -265,6 +319,7 @@ Deno.serve(async (req) => {
         grab('referral_applications', 'user_id', user.id),
         grab('referrals', 'referred_user_id', user.id),
         grab('coupon_usage_imports', 'user_id', user.id),
+        grab('coupon_sales', 'seller_user_id', user.id),
       ]);
 
       const shares = await db.from('coupon_shares').select('*').or(`shared_by_user_id.eq.${user.id},shared_with_user_id.eq.${user.id}`);
@@ -308,6 +363,7 @@ Deno.serve(async (req) => {
           referral_applications: referralApplications,
           referral_attribution: ownReferral,
           coupon_usage_imports: usageImports,
+          coupon_sales: couponSales,
         },
       });
     }
@@ -354,6 +410,8 @@ Deno.serve(async (req) => {
       const couponId = assertId(body.couponId);
       const email = String(body.recipientEmail || '').trim().toLowerCase();
       const shareType = body.shareType === 'transfer' ? 'transfer' : body.shareType === 'shared' ? 'shared' : null;
+      const sale = saleInput(body.sale);
+      if (sale && shareType !== 'transfer') throw new Error('INVALID_SALE_INPUT');
       if (!/^\S+@\S+\.\S+$/.test(email) || !shareType) throw new Error('INVALID_INPUT');
       const { data: coupon } = await db.from('coupon').select('id').eq('id', couponId).eq('user_id', user.id).maybeSingle();
       if (!coupon) throw new Error('NOT_FOUND');
@@ -364,8 +422,16 @@ Deno.serve(async (req) => {
         .in('status', ['pending', 'accepted']).maybeSingle();
       if (existing) throw new Error('SHARE_ALREADY_EXISTS');
       const expires = new Date(); expires.setDate(expires.getDate() + 30);
-      const { data, error } = await db.from('coupon_shares').insert({ coupon_id: couponId, shared_by_user_id: user.id, shared_with_user_id: target.id, recipient_email: email, share_type: shareType, share_token: crypto.randomUUID(), share_expires_at: expires.toISOString(), status: 'pending', created_at: new Date().toISOString() }).select('id').single();
-      if (error) throw error;
+      const saleId = await createPendingSale(db, user.id, couponId, sale);
+      const { data, error } = await db.from('coupon_shares').insert({ coupon_id: couponId, shared_by_user_id: user.id, shared_with_user_id: target.id, recipient_email: email, share_type: shareType, share_token: crypto.randomUUID(), share_expires_at: expires.toISOString(), status: 'pending', created_at: new Date().toISOString(), sale_id: saleId }).select('id').single();
+      if (error) {
+        if (saleId) await db.from('coupon_sales').delete().eq('id', saleId).eq('seller_user_id', user.id).eq('status', 'pending');
+        throw error;
+      }
+      if (saleId) {
+        await db.from('coupon_sales').update({ share_id: data.id }).eq('id', saleId);
+        await db.from('coupon').update({ sale_id: saleId }).eq('id', couponId).eq('user_id', user.id);
+      }
       // Invitation and mail are one server-side workflow. Waiting here avoids
       // losing the mail when the app closes immediately after the mutation.
       let emailSent = false;
@@ -391,22 +457,34 @@ Deno.serve(async (req) => {
     if (body.action === 'create_share_link') {
       const couponId = assertId(body.couponId);
       const shareType = body.shareType === 'transfer' ? 'transfer' : body.shareType === 'shared' ? 'shared' : null;
+      const sale = saleInput(body.sale);
+      if (sale && shareType !== 'transfer') throw new Error('INVALID_SALE_INPUT');
       if (!shareType) throw new Error('INVALID_INPUT');
       const { data: coupon } = await db.from('coupon').select('id').eq('id', couponId).eq('user_id', user.id).maybeSingle();
       if (!coupon) throw new Error('NOT_FOUND');
       // Replacing beats erroring: the previous link was never handed to anyone
       // in particular, and leaving it live would defeat revocation.
-      await db.from('coupon_shares').update({ status: 'revoked', revoked_at: new Date().toISOString() })
+      const { data: replacedLinks } = await db.from('coupon_shares').update({ status: 'revoked', revoked_at: new Date().toISOString() })
         .eq('coupon_id', couponId).eq('shared_by_user_id', user.id)
-        .eq('status', 'pending').is('shared_with_user_id', null);
+        .eq('status', 'pending').is('shared_with_user_id', null).select('sale_id');
+      const replacedSaleIds = (replacedLinks || []).map((row) => row.sale_id).filter(Boolean);
+      if (replacedSaleIds.length) await db.from('coupon_sales').update({ status: 'cancelled', updated_at: new Date().toISOString() }).in('id', replacedSaleIds);
       const token = crypto.randomUUID();
       const expires = new Date(Date.now() + SHARE_LINK_TTL_MS);
+      const saleId = await createPendingSale(db, user.id, couponId, sale);
       const { data, error } = await db.from('coupon_shares').insert({
         coupon_id: couponId, shared_by_user_id: user.id, shared_with_user_id: null,
         recipient_email: null, share_type: shareType, share_token: token,
-        share_expires_at: expires.toISOString(), status: 'pending', created_at: new Date().toISOString(),
+        share_expires_at: expires.toISOString(), status: 'pending', created_at: new Date().toISOString(), sale_id: saleId,
       }).select('id').single();
-      if (error) throw error;
+      if (error) {
+        if (saleId) await db.from('coupon_sales').delete().eq('id', saleId).eq('seller_user_id', user.id).eq('status', 'pending');
+        throw error;
+      }
+      if (saleId) {
+        await db.from('coupon_sales').update({ share_id: data.id }).eq('id', saleId);
+        await db.from('coupon').update({ sale_id: saleId }).eq('id', couponId).eq('user_id', user.id);
+      }
       return jsonResponseFor(req, { data: { id: data.id, token, shareType, expiresAt: expires.toISOString() } }, 201);
     }
 
@@ -446,6 +524,7 @@ Deno.serve(async (req) => {
         const { error } = await db.from('coupon_shares').update({ status: 'declined' })
           .eq('id', share.id).eq('status', 'pending').is('shared_with_user_id', null);
         if (error) throw error;
+        if (share.sale_id) await db.from('coupon_sales').update({ status: 'declined', updated_at: new Date().toISOString() }).eq('id', share.sale_id);
         return jsonResponseFor(req, { data: { status: 'declined', couponId: share.coupon_id } });
       }
       // Claiming the row and answering it are two steps, so the update is
@@ -486,6 +565,11 @@ Deno.serve(async (req) => {
       const { data, error } = await db.from('coupon_shares').update({ status: 'revoked', revoked_at: new Date().toISOString() }).eq('id', id).eq('shared_by_user_id', user.id).select('id').maybeSingle();
       if (error) throw error;
       if (!data) throw new Error('NOT_FOUND');
+      const { data: revokedShare } = await db.from('coupon_shares').select('sale_id,coupon_id').eq('id', id).maybeSingle();
+      if (revokedShare?.sale_id) {
+        await db.from('coupon_sales').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', revokedShare.sale_id).eq('seller_user_id', user.id);
+        await db.from('coupon').update({ sale_id: null }).eq('id', revokedShare.coupon_id).eq('user_id', user.id);
+      }
       return jsonResponseFor(req, { data });
     }
     throw new Error('INVALID_ACTION');

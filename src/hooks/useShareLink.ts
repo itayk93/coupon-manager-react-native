@@ -4,6 +4,7 @@ import { couponVault } from "@/lib/couponVault";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 import type { ShareType } from "@/hooks/useSharing";
+import type { SaleInput } from "@/hooks/useCouponSales";
 
 export type ShareLink = {
   id: number;
@@ -41,9 +42,9 @@ export function useCreateShareLink() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ couponId, shareType }: { couponId: number; shareType: ShareType }) => {
+    mutationFn: async ({ couponId, shareType, sale }: { couponId: number; shareType: ShareType; sale?: SaleInput }) => {
       if (!user) throw new Error("Not authenticated");
-      return couponVault<ShareLink>({ action: "create_share_link", couponId, shareType });
+      return couponVault<ShareLink>({ action: "create_share_link", couponId, shareType, sale });
     },
     onSuccess: (_link, { couponId }) => {
       // Who ends up holding the link is unknowable by design, so only the fact

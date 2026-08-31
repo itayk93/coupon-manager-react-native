@@ -10,6 +10,8 @@ import { formatIls } from "@/lib/formatIls";
 import { shareLinkUrl } from "@/lib/shareLinks";
 import { useCreateShareLink } from "@/hooks/useShareLink";
 import type { ShareType } from "@/hooks/useSharing";
+import type { SaleInput } from "@/hooks/useCouponSales";
+import { SaleForm } from "@/components/coupons/SaleForm";
 
 type Props = {
   visible: boolean;
@@ -35,6 +37,8 @@ export function QuickShareSheet({ visible, onClose, couponId, company, remaining
   const { theme } = useAppTheme();
   const [shareType, setShareType] = useState<ShareType>("shared");
   const [token, setToken] = useState<string | null>(null);
+  const [isSale, setIsSale] = useState(false);
+  const [sale, setSale] = useState<SaleInput | undefined>();
   const createLink = useCreateShareLink();
 
   const url = token ? shareLinkUrl(token) : null;
@@ -44,11 +48,13 @@ export function QuickShareSheet({ visible, onClose, couponId, company, remaining
     // who needs it back can revoke or re-issue from the sharing screen.
     setToken(null);
     setShareType("shared");
+    setIsSale(false);
+    setSale(undefined);
     onClose();
   };
 
   const handleCreate = async () => {
-    const link = await createLink.mutateAsync({ couponId, shareType });
+    const link = await createLink.mutateAsync({ couponId, shareType, sale });
     setToken(link.token);
   };
 
@@ -111,7 +117,7 @@ export function QuickShareSheet({ visible, onClose, couponId, company, remaining
               <TouchableOpacity
                 key={option.type}
                 activeOpacity={0.85}
-                onPress={() => setShareType(option.type)}
+                onPress={() => { setShareType(option.type); setIsSale(false); setSale(undefined); }}
                 style={[
                   styles.option,
                   {
@@ -126,6 +132,18 @@ export function QuickShareSheet({ visible, onClose, couponId, company, remaining
             );
           })}
 
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => { setShareType("transfer"); setIsSale(true); }}
+            style={[styles.option, {
+              backgroundColor: isSale ? theme.primaryTint : theme.surfaceAlt,
+              borderColor: isSale ? theme.primary : theme.border,
+            }]}
+          >
+            <Text style={[styles.optionTitle, { color: theme.text }]}>מכירה והעברה</Text>
+            <Text style={[styles.optionBody, { color: theme.textMuted }]}>הקופון יעבור אליו אחרי האישור והמכירה תישמר אצלך.</Text>
+          </TouchableOpacity>
+
           {shareType === "transfer" ? (
             <View style={styles.warning}>
               <TriangleAlert size={16} color={theme.dangerText} />
@@ -135,13 +153,17 @@ export function QuickShareSheet({ visible, onClose, couponId, company, remaining
             </View>
           ) : null}
 
-          <Button
-            title="צור קישור"
-            onPress={handleCreate}
-            disabled={createLink.isPending}
-            loading={createLink.isPending}
-            icon={<QrCode size={18} color="#ffffff" />}
-          />
+          {isSale && !sale ? (
+            <SaleForm busy={false} submitTitle="המשך ליצירת קישור" onSubmit={setSale} />
+          ) : (
+            <Button
+              title="צור קישור"
+              onPress={handleCreate}
+              disabled={createLink.isPending}
+              loading={createLink.isPending}
+              icon={<QrCode size={18} color="#ffffff" />}
+            />
+          )}
         </View>
       )}
     </Modal>

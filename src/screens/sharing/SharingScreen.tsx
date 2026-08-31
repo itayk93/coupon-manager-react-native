@@ -31,6 +31,8 @@ import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { formatIls } from "@/lib/formatIls";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { SaleForm } from "@/components/coupons/SaleForm";
+import type { SaleInput } from "@/hooks/useCouponSales";
 
 export function SharingScreen() {
   const router = useRouter();
@@ -49,6 +51,8 @@ export function SharingScreen() {
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [shareType, setShareType] = useState<ShareType>("shared");
+  const [isSale, setIsSale] = useState(false);
+  const [sale, setSale] = useState<SaleInput | undefined>();
   const [emailError, setEmailError] = useState("");
   const shareableCoupons = coupons.filter(
     (c) => !c.is_shared_with_me && Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0
@@ -69,11 +73,14 @@ export function SharingScreen() {
         couponId: selectedCouponId,
         recipientEmail: recipientEmail.trim(),
         shareType,
+        sale,
       });
       setIsShareModalOpen(false);
       setRecipientEmail("");
       setSelectedCouponId(null);
       setShareType("shared");
+      setIsSale(false);
+      setSale(undefined);
     } catch (e) {
       console.error(e);
     }
@@ -374,20 +381,28 @@ export function SharingScreen() {
           </Text>
           <View style={styles.shareTypeRow}>
             <TouchableOpacity
-              onPress={() => setShareType("shared")}
+              onPress={() => { setShareType("shared"); setIsSale(false); setSale(undefined); }}
               style={[styles.shareTypeOption, { borderColor: shareType === "shared" ? theme.primary : theme.border, backgroundColor: shareType === "shared" ? theme.primaryMuted : theme.inputBg }]}
             >
               <Text style={[styles.shareTypeTitle, { color: theme.text }]}>שימוש משותף</Text>
               <Text style={[styles.shareTypeDescription, { color: theme.textMuted }]}>שניכם משתמשים באותה יתרה</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setShareType("transfer")}
+              onPress={() => { setShareType("transfer"); setIsSale(false); setSale(undefined); }}
               style={[styles.shareTypeOption, { borderColor: shareType === "transfer" ? theme.primary : theme.border, backgroundColor: shareType === "transfer" ? theme.primaryMuted : theme.inputBg }]}
             >
               <Text style={[styles.shareTypeTitle, { color: theme.text }]}>העברת בעלות</Text>
               <Text style={[styles.shareTypeDescription, { color: theme.textMuted }]}>הקופון עובר אליו אחרי אישור</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            onPress={() => { setShareType("transfer"); setIsSale(true); setSale(undefined); }}
+            style={[styles.saleTypeOption, { borderColor: isSale ? theme.primary : theme.border, backgroundColor: isSale ? theme.primaryMuted : theme.inputBg }]}
+          >
+            <Text style={[styles.shareTypeTitle, { color: theme.text }]}>מכירה והעברת בעלות</Text>
+            <Text style={[styles.shareTypeDescription, { color: theme.textMuted }]}>המכירה תושלם רק אחרי שהמקבל יאשר</Text>
+          </TouchableOpacity>
 
           <Text style={[styles.fieldLabel, { color: theme.text }]}>
             בחר קופון לשיתוף *
@@ -432,11 +447,15 @@ export function SharingScreen() {
             })}
           </ScrollView>
 
-          <Button
-            title="שלח שיתוף"
-            onPress={handleCreateShare}
-            loading={createShare.isPending}
-          />
+          {isSale && !sale ? (
+            <SaleForm busy={false} submitTitle="שמירת פרטי המכירה" initialEmail={recipientEmail} onSubmit={setSale} />
+          ) : (
+            <Button
+              title={isSale ? "שלח בקשת מכירה" : "שלח שיתוף"}
+              onPress={handleCreateShare}
+              loading={createShare.isPending}
+            />
+          )}
         </View>
       </Modal>
     </SafeAreaView>
@@ -665,4 +684,5 @@ const styles = StyleSheet.create({
   shareTypeOption: { flex: 1, minHeight: 74, borderWidth: 1, borderRadius: 12, padding: 10, alignItems: "flex-end" },
   shareTypeTitle: { fontSize: 13, fontWeight: "800", textAlign: "right" },
   shareTypeDescription: { fontSize: 11, marginTop: 3, textAlign: "right" },
+  saleTypeOption: { minHeight: 64, borderWidth: 1, borderRadius: 12, padding: 10, alignItems: "flex-end", marginBottom: 14 },
 });

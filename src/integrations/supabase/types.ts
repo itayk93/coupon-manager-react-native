@@ -185,6 +185,7 @@ export type Database = {
           expiration: string | null
           id: number
           public_id: string
+          sale_id: number | null
           is_one_time: boolean | null
           last_code_view: string | null
           last_company_view: string | null
@@ -217,6 +218,7 @@ export type Database = {
           expiration?: string | null
           id?: number
           public_id?: string
+          sale_id?: number | null
           is_one_time?: boolean | null
           last_code_view?: string | null
           last_company_view?: string | null
@@ -249,6 +251,7 @@ export type Database = {
           expiration?: string | null
           id?: number
           public_id?: string
+          sale_id?: number | null
           is_one_time?: boolean | null
           last_code_view?: string | null
           last_company_view?: string | null
@@ -368,6 +371,7 @@ export type Database = {
           id: number
           revoked_at: string | null
           recipient_email: string | null
+          sale_id: number | null
           share_expires_at: string
           share_type: string
           share_token: string
@@ -382,6 +386,7 @@ export type Database = {
           id?: number
           revoked_at?: string | null
           recipient_email?: string | null
+          sale_id?: number | null
           share_expires_at: string
           share_type?: string
           share_token: string
@@ -396,6 +401,7 @@ export type Database = {
           id?: number
           revoked_at?: string | null
           recipient_email?: string | null
+          sale_id?: number | null
           share_expires_at?: string
           share_type?: string
           share_token?: string

@@ -4,6 +4,7 @@ import { CouponShare } from "@/integrations/supabase";
 import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
 import { logActivity } from "@/lib/activityLog";
+import type { SaleInput } from "@/hooks/useCouponSales";
 
 export type PopulatedShare = CouponShare & {
   coupon: { id: number; public_id?: string | null; company: string; description: string | null; value: number; used_value: number; code: string | null; expiration: string | null };
@@ -32,9 +33,9 @@ export function useCreateShare() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ couponId, recipientEmail, shareType }: { couponId: number; recipientEmail: string; shareType: ShareType }) => {
+    mutationFn: async ({ couponId, recipientEmail, shareType, sale }: { couponId: number; recipientEmail: string; shareType: ShareType; sale?: SaleInput }) => {
       if (!user) throw new Error("Not authenticated");
-      return couponVault<{ id: number; emailSent: boolean }>({ action: "create_share", couponId, recipientEmail, shareType });
+      return couponVault<{ id: number; emailSent: boolean }>({ action: "create_share", couponId, recipientEmail, shareType, sale });
     },
     onSuccess: (result, { couponId }) => {
       // The recipient's address is deliberately not recorded.

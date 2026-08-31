@@ -31,6 +31,7 @@ import {
   LayoutGrid,
   MapPin,
   Navigation,
+  BadgeDollarSign,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -65,6 +66,8 @@ import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
 import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
+import { SaleForm } from "@/components/coupons/SaleForm";
+import { useRecordManualSale } from "@/hooks/useCouponSales";
 
 /**
  * Confirmation for deleting a history record. It unfolds under the row it
@@ -150,9 +153,11 @@ export function CouponDetailScreen() {
   const deleteTx = useDeleteTransactionRecord();
   const recordUsage = useRecordUsage();
   const widget = useWidgetToggle(coupon);
+  const recordSale = useRecordManualSale();
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [isQuickShareOpen, setIsQuickShareOpen] = useState(false);
+  const [isSaleOpen, setIsSaleOpen] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedMapLocation, setSelectedMapLocation] = useState<{
@@ -476,6 +481,17 @@ export function CouponDetailScreen() {
             >
               <Share2 size={18} color={theme.text} />
               <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {!isSharedWithMe ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setIsSaleOpen(true)}
+              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+            >
+              <BadgeDollarSign size={18} color={theme.text} />
+              <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנמכר</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -815,6 +831,23 @@ export function CouponDetailScreen() {
         company={coupon.company}
         remaining={remaining}
       />
+
+      <Modal
+        visible={isSaleOpen}
+        onClose={() => setIsSaleOpen(false)}
+        title="סימון הקופון כנמכר"
+        subtitle={`${coupon.company} · שווי ${formatIls(coupon.value || 0)} · עלות ${formatIls(coupon.cost || 0)}`}
+      >
+        <SaleForm
+          busy={recordSale.isPending}
+          submitTitle="אישור מכירה"
+          onSubmit={async (sale) => {
+            await recordSale.mutateAsync({ couponId: coupon.id, sale });
+            setIsSaleOpen(false);
+            router.replace("/coupons");
+          }}
+        />
+      </Modal>
 
       <Modal
         visible={selectedMapLocation !== null}
