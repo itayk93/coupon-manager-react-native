@@ -22,7 +22,7 @@ import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/push.ts';
 import { deliver, type DeliveryPrefs } from '../_shared/deliver.ts';
 import { money } from '../_shared/notificationTypes.ts';
-import { requireSameUser, requireUser } from '../_shared/auth.ts';
+import { requireAdmin, requireSameUser } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
 type Coupon = {
@@ -107,8 +107,9 @@ Deno.serve(async (req: Request) => {
   try {
     const { user_id, coupon_id } = await req.json();
     if (!user_id) return jsonResponse({ error: 'user_id חסר' }, 400);
-    const authenticatedUser = await requireUser(req);
+    const authenticatedUser = await requireAdmin(req);
     requireSameUser(user_id, authenticatedUser);
+    if (authenticatedUser.id !== 1) throw new Error('FORBIDDEN');
     const userId = authenticatedUser.id;
 
     const supabase = createClient(

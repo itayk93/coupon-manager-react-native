@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
-import { requireSameUser, requireUser } from '../_shared/auth.ts';
+import { isServiceRoleCall, requireAdmin, requireSameUser } from '../_shared/auth.ts';
 import { decryptCouponCodes } from '../_shared/encryption.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 
@@ -189,12 +189,17 @@ Deno.serve(async (req: Request) => {
     const couponId = body.coupon_id ? Number(body.coupon_id) : null;
     const action = String(body.action || 'dispatch');
     const cronRequest = isCronRequest(req);
+    const serviceRequest = isServiceRoleCall(req);
 
     if (!Number.isFinite(userId) || userId <= 0) {
       return jsonResponse({ error: 'user_id חסר או לא תקין' }, 400);
     }
-    if (!cronRequest) {
-      const authenticatedUser = await requireUser(req);
+    // This is a private maintainer experiment. Cron and internal service calls
+    // are pinned to the maintainer row; interactive calls require that same
+    // account and an admin claim. No other account may dispatch coupon codes.
+    if (userId !== 1) throw new Error('FORBIDDEN');
+    if (!cronRequest && !serviceRequest) {
+      const authenticatedUser = await requireAdmin(req);
       requireSameUser(userId, authenticatedUser);
     }
     if (action === 'github_failure') {

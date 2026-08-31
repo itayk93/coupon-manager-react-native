@@ -43,6 +43,7 @@ import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
 import { WifiOff } from "lucide-react-native";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
@@ -70,6 +71,8 @@ export function CouponsListScreen() {
   const restoreCoupons = useRestoreCoupons();
   const triggerAutoUpdate = useTriggerAutoUpdate();
   const offline = useOfflineWalletStatus();
+  const { user } = useAuth();
+  const showMaintainerAutoUpdate = user?.id === 1;
 
   // A notification links here with the exact coupons it was written about, so
   // the list opens on those and not on the whole wallet. Cleared from the
@@ -284,18 +287,20 @@ export function CouponsListScreen() {
         <Text style={[styles.pageTitle, { color: theme.text }]}>הקופונים שלי</Text>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={() => triggerAutoUpdate.mutate(undefined)}
-            disabled={triggerAutoUpdate.isPending}
-            style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
-            accessibilityLabel="עדכון יתרות"
-          >
-            <RefreshCw
-              size={18}
-              color={theme.text}
-              style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
-            />
-          </TouchableOpacity>
+          {showMaintainerAutoUpdate ? (
+            <TouchableOpacity
+              onPress={() => triggerAutoUpdate.mutate(undefined)}
+              disabled={triggerAutoUpdate.isPending}
+              style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
+              accessibilityLabel="עדכון יתרות"
+            >
+              <RefreshCw
+                size={18}
+                color={theme.text}
+                style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
+              />
+            </TouchableOpacity>
+          ) : null}
 
           <TouchableOpacity
             onPress={() => setShowStatusRow((v) => !v)}
