@@ -542,6 +542,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
         <QuickUsageModal
           visible={Boolean(usageCoupon)}
           onClose={() => setUsageCoupon(null)}
+          onUsageSaved={onClose}
           coupons={coupons}
           preselectedCoupon={usageCoupon}
         />

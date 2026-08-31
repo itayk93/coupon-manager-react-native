@@ -43,6 +43,7 @@ type QuickUsageModalProps = {
   importId?: string | null;
   onImportCompleted?: () => void;
   onImportPaused?: () => void;
+  onUsageSaved?: () => void;
 };
 
 export function QuickUsageModal({
@@ -54,6 +55,7 @@ export function QuickUsageModal({
   importId,
   onImportCompleted,
   onImportPaused,
+  onUsageSaved,
 }: QuickUsageModalProps) {
   const router = useRouter();
   const { theme } = useAppTheme();
@@ -232,6 +234,7 @@ export function QuickUsageModal({
     setError("");
     setAmountError("");
     setAiError("");
+    onUsageSaved?.();
     onClose();
   };
 
