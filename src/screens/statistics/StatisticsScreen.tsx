@@ -17,7 +17,7 @@ import {
 import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
-import { formatIls } from "@/lib/formatIls";
+import { formatIls, formatIlsCompact } from "@/lib/formatIls";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { IlsAmount } from "@/components/ui/IlsAmount";
 import {
@@ -315,11 +315,38 @@ export function StatisticsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>מכירת קופונים</Text>
             <TrendingUp size={18} color={theme.success} />
           </View>
-          <View style={styles.statusDistributionRow}>
-            <View style={styles.statusCol}><Text style={[styles.statusNum, { color: theme.primary }]}>{saleStats.count}</Text><Text style={[styles.statusLabel, { color: theme.textMuted }]}>נמכרו</Text></View>
-            <View style={styles.statusCol}><IlsAmount value={saleStats.revenue} style={[styles.statusNum, { color: theme.text }]} /><Text style={[styles.statusLabel, { color: theme.textMuted }]}>הכנסות</Text></View>
-            <View style={styles.statusCol}><IlsAmount value={saleStats.profit} style={[styles.statusNum, { color: saleStats.profit >= 0 ? theme.success : theme.danger }]} /><Text style={[styles.statusLabel, { color: theme.textMuted }]}>רווח</Text></View>
-            <View style={styles.statusCol}><IlsAmount value={saleStats.faceValue} style={[styles.statusNum, { color: theme.text }]} /><Text style={[styles.statusLabel, { color: theme.textMuted }]}>שווי</Text></View>
+          <View style={styles.saleHero}>
+            <Text style={[styles.saleHeroLabel, { color: theme.textMuted }]}>
+              רווח מ־{saleStats.count} {saleStats.count === 1 ? "מכירה" : "מכירות"}
+            </Text>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              maxFontSizeMultiplier={1.3}
+              style={[styles.saleHeroValue, { color: saleStats.profit >= 0 ? theme.success : theme.danger }]}
+            >
+              {formatIlsCompact(saleStats.profit)}
+            </Text>
+          </View>
+          <View style={[styles.saleSubRow, { borderTopColor: theme.divider }]}>
+            {[
+              { label: "הכנסות", value: formatIlsCompact(saleStats.revenue) },
+              { label: "שווי מקורי", value: formatIlsCompact(saleStats.faceValue) },
+            ].map((cell) => (
+              <View key={cell.label} style={styles.saleSubCol}>
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.6}
+                  maxFontSizeMultiplier={1.3}
+                  style={[styles.saleSubValue, { color: theme.text }]}
+                >
+                  {cell.value}
+                </Text>
+                <Text style={[styles.statusLabel, { color: theme.textMuted }]}>{cell.label}</Text>
+              </View>
+            ))}
           </View>
         </PressableScale>
 
@@ -479,6 +506,36 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     justifyContent: "space-around",
     paddingVertical: 8,
+  },
+  saleHero: {
+    alignItems: "flex-end",
+    paddingBottom: 14,
+  },
+  saleHeroLabel: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  saleHeroValue: {
+    fontFamily: fonts.display,
+    fontSize: 30,
+    fontWeight: "900",
+  },
+  saleSubRow: {
+    flexDirection: "row-reverse",
+    borderTopWidth: 1,
+    paddingTop: 14,
+  },
+  saleSubCol: {
+    flex: 1,
+    alignItems: "center",
+    gap: 3,
+  },
+  saleSubValue: {
+    fontFamily: fonts.display,
+    fontSize: 18,
+    fontWeight: "800",
   },
   statusCol: {
     alignItems: "center",
