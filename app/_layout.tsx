@@ -38,6 +38,8 @@ import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { applyWebDocumentHead } from "@/lib/webDocumentHead";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
@@ -210,7 +212,9 @@ function RootLayoutNav() {
           ]}
         >
           <SafeAreaView
-            edges={Platform.OS === "android" ? ["top"] : []}
+            // Web joins Android here: once the viewport covers the notch, the
+            // top inset is ours to pay too. Native iOS keeps its own.
+            edges={Platform.OS === "ios" ? [] : ["top"]}
             style={[styles.appViewport, { backgroundColor: theme.background }]}
           >
             <Stack
@@ -226,6 +230,7 @@ function RootLayoutNav() {
           <SharedScreenshotUsage />
           <ConfirmHost />
           <ToastHost />
+          <InstallPrompt />
 
           {launchVisible ? (
             <BrandLaunchVideo
@@ -251,6 +256,12 @@ function RootLayoutNav() {
       </View>
     </ThemeProvider>
   );
+}
+
+// Runs once, before the first screen, and only where there is a document.
+// See `webDocumentHead.ts` for why this is not in an HTML file.
+if (Platform.OS === "web" && typeof document !== "undefined") {
+  applyWebDocumentHead();
 }
 
 export default function RootLayout() {

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "r
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { isFemaleUser } from "@/lib/gender";
 import { useAuth } from "@/contexts/AuthContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 
@@ -33,9 +34,7 @@ export function CompanyCardsSlider({
   const collapsedCount = isTablet ? 10 : 6;
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const isFemale = ["female", "f", "נקבה", "אישה"].includes(
-    user?.gender?.trim().toLowerCase() || ""
-  );
+  const isFemale = isFemaleUser(user?.gender);
   const showAllLabel = isFemale ? "הציגי הכול" : "הצג הכול";
   const showLessLabel = isFemale ? "הציגי פחות" : "הצג פחות";
 
