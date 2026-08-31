@@ -6,7 +6,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { CONSENT_VERSION } from "@/lib/consent";
 import { fonts } from "@/lib/theme";
 
-const UPDATED_AT = "30 באוגוסט 2026";
+const UPDATED_AT = "31 באוגוסט 2026";
 
 const SECTIONS = [
   {

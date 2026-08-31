@@ -105,9 +105,9 @@ end;
 $$;
 revoke execute on function public.handle_auth_user_created() from public, anon, authenticated;
 
--- Profile images contain personal data. Serve them only through short-lived
--- signed URLs to the owner, not through a permanent public bucket URL.
-update storage.buckets set public = false where id = 'profile-images';
+-- Prepare owner-only signed URLs before the client cutover. The bucket remains
+-- public in this stage so installed clients that still use legacy public URLs
+-- keep working. A later migration makes it private after the OTA is published.
 
 drop policy if exists "Users read profile images from their own folder" on storage.objects;
 create policy "Users read profile images from their own folder"
