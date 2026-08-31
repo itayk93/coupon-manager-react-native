@@ -61,10 +61,16 @@ describe("validateCouponForm", () => {
 
 describe("getDefaultAutoProvider", () => {
   it("maps a company name to its scraper, in either language", () => {
-    expect(getDefaultAutoProvider("BuyMe Card")).toBe("BuyMe");
-    expect(getDefaultAutoProvider("ביימי")).toBe("BuyMe");
     expect(getDefaultAutoProvider("  MULTIPASS ")).toBe("Multipass");
-    expect(getDefaultAutoProvider("מקס")).toBe("Max");
+  });
+
+  it("does not offer automatic updates for BuyMe or Max", () => {
+    expect(getDefaultAutoProvider("BuyMe Card")).toBeNull();
+    expect(getDefaultAutoProvider("ביימי")).toBeNull();
+    expect(getDefaultAutoProvider("Max")).toBeNull();
+    expect(getDefaultAutoProvider("מקס")).toBeNull();
+    expect(normalizeAutoProvider("BuyMe", true)).toBeNull();
+    expect(normalizeAutoProvider("Max", true)).toBeNull();
   });
 
   it("routes Xtra through the Multipass scraper", () => {
@@ -183,13 +189,13 @@ describe("buildCouponPayload", () => {
   });
 
   it("never stores an auto provider for an account without the updater", () => {
-    const payload = buildCouponPayload(fields({ autoProvider: "BuyMe" }), false);
+    const payload = buildCouponPayload(fields({ autoProvider: "Multipass" }), false);
     expect(payload).toMatchObject({ auto_download_details: null, auto_update: false });
   });
 
   it("enables auto_update exactly when a provider is chosen", () => {
-    expect(buildCouponPayload(fields({ autoProvider: "Max" }), true)).toMatchObject({
-      auto_download_details: "Max",
+    expect(buildCouponPayload(fields({ autoProvider: "Multipass" }), true)).toMatchObject({
+      auto_download_details: "Multipass",
       auto_update: true,
     });
     expect(buildCouponPayload(fields({ autoProvider: null }), true)).toMatchObject({

@@ -11,7 +11,7 @@
  * Providers the balance scraper knows how to log into. Kept in sync with the
  * web form (`src/components/coupons/CouponForm.tsx`).
  */
-export const AUTO_PROVIDERS = ["BuyMe", "Multipass", "Max"] as const;
+export const AUTO_PROVIDERS = ["Multipass"] as const;
 export type AutoProvider = (typeof AUTO_PROVIDERS)[number];
 
 export function normalizeAutoProvider(
@@ -28,9 +28,7 @@ export function getDefaultAutoProvider(
   company: string | null | undefined
 ): AutoProvider | null {
   const name = company?.trim().toLowerCase() || "";
-  if (name.includes("buyme") || name.includes("ביימי")) return "BuyMe";
   if (name.includes("multipass") || name.includes("מולטיפאס")) return "Multipass";
-  if (name.includes("max") || name.includes("מקס")) return "Max";
   if (name.includes("xtra") || name.includes("אקסטרה")) return "Multipass";
   return null;
 }
