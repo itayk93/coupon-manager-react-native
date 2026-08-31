@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expiryEmphasis, showsMascot } from "./expiryUrgency";
+import { expiryEmphasis } from "./expiryUrgency";
 
 describe("expiryEmphasis", () => {
   it("stays completely still for anything more than three days out", () => {
@@ -26,16 +26,5 @@ describe("expiryEmphasis", () => {
     expect(expiryEmphasis(null)).toBe("static");
     expect(expiryEmphasis(undefined)).toBe("static");
     expect(expiryEmphasis(Number.NaN)).toBe("static");
-  });
-});
-
-describe("showsMascot", () => {
-  it("keeps the mascot out of the quiet banner", () => {
-    expect(showsMascot("static")).toBe(false);
-  });
-
-  it("brings it in once there is something to point at", () => {
-    expect(showsMascot("peek")).toBe(true);
-    expect(showsMascot("breathing")).toBe(true);
   });
 });

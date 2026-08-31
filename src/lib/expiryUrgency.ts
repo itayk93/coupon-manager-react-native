@@ -31,8 +31,3 @@ export function expiryEmphasis(days: number | null | undefined): ExpiryEmphasis 
   if (days <= PEEK_MAX_DAYS) return "peek";
   return "static";
 }
-
-/** Whether the mascot appears at all. It stays out of the quiet state. */
-export function showsMascot(emphasis: ExpiryEmphasis): boolean {
-  return emphasis !== "static";
-}

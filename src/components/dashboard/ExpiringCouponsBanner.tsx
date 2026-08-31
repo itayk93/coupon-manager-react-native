@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AlertTriangle, ChevronLeft, X } from "lucide-react-native";
+import { ChevronLeft, X } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
-import { expiryEmphasis, showsMascot } from "@/lib/expiryUrgency";
+import { expiryEmphasis } from "@/lib/expiryUrgency";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
@@ -157,15 +157,14 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           }
           style={styles.headPressable}
         >
-          {showsMascot(emphasis) ? (
-            // The rig's smallest bubble is 88pt, which would own the strip, so
-            // it is scaled down rather than given a size the rig does not have.
-            <View style={styles.mascot} pointerEvents="none">
-              <CharacterSpotlight character="helper" state="talking" size="small" tone="none" />
-            </View>
-          ) : (
-            <AlertTriangle size={19} color={tone.icon} />
-          )}
+          {/* The mascot is here at every step, not only the urgent ones: the
+              banner already means a coupon is expiring, so the quiet step is
+              quiet in motion rather than stripped of the character. The rig's
+              smallest bubble is 88pt, which would own the strip, so it is
+              scaled down rather than given a size the rig does not have. */}
+          <View style={styles.mascot} pointerEvents="none">
+            <CharacterSpotlight character="helper" state="talking" size="small" tone="none" />
+          </View>
           <Text style={[styles.headline, { color: tone.text }]} numberOfLines={2}>
             {headline}
           </Text>
