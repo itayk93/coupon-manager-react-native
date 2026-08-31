@@ -92,13 +92,10 @@ export function CouponCard({
   const headerText = getContrastText(headerColor);
   const headerPill = headerText === "#ffffff" ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.12)";
 
-  const statusLabel = isExpired
-    ? "פג תוקף"
-    : isFullyUsed
-      ? "נוצל"
-      : isExpiringSoon
-        ? "עומד לפוג"
-        : "פעיל";
+  // The pill is left for the one state nothing else on the card announces.
+  // "פעיל" was the default every card wore, and "נוצל"/"פג תוקף" already have
+  // the stamp across the card plus the red line under the amount.
+  const statusLabel = isExpired || isFullyUsed ? null : isExpiringSoon ? "עומד לפוג" : null;
 
   const formattedExpiry = formatDateShort(coupon.expiration);
   const daysLabel = isExpired
@@ -262,9 +259,11 @@ export function CouponCard({
           </Text>
         </View>
 
-        <View style={[styles.statusPill, { backgroundColor: headerPill }]}>
-          <Text style={[styles.statusPillText, { color: headerText }]}>{statusLabel}</Text>
-        </View>
+        {statusLabel ? (
+          <View style={[styles.statusPill, { backgroundColor: headerPill }]}>
+            <Text style={[styles.statusPillText, { color: headerText }]}>{statusLabel}</Text>
+          </View>
+        ) : null}
       </View>
 
       {/* Hold progress: fills across the card on the way to "report usage" */}
