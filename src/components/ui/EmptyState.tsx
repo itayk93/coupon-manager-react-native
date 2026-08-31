@@ -3,15 +3,17 @@ import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { Button } from "./button";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 type EmptyStateProps = {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   title: string;
   subtitle: string;
   actionTitle?: string;
   onAction?: () => void;
   style?: ViewStyle;
   largeVisual?: boolean;
+  mascot?: "helper" | "investigator";
 };
 
 export function EmptyState({
@@ -22,6 +24,7 @@ export function EmptyState({
   onAction,
   style,
   largeVisual = false,
+  mascot = "helper",
 }: EmptyStateProps) {
   const { theme } = useAppTheme();
 
@@ -36,14 +39,14 @@ export function EmptyState({
         style,
       ]}
     >
-      <View
-        style={[
-        largeVisual ? styles.visualStage : styles.iconCircle,
-          { backgroundColor: largeVisual ? "transparent" : theme.surfaceAlt },
-        ]}
-      >
-        {icon}
-      </View>
+      <CharacterSpotlight
+        character={mascot}
+        state="thinking"
+        size={largeVisual ? "large" : "medium"}
+        tone="coral"
+      />
+
+      {icon ? <View style={[styles.iconBadge, { backgroundColor: theme.coralBg, borderColor: theme.coralBorder }]}>{icon}</View> : null}
 
       <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: theme.textMuted }]}>
@@ -72,13 +75,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginVertical: 16,
   },
-  iconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+  iconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginTop: -16,
+    marginBottom: 8,
   },
   visualStage: {
     width: 112,

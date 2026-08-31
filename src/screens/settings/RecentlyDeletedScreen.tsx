@@ -72,7 +72,7 @@ export function RecentlyDeletedScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <EmptyState
             icon={<Sparkles size={28} color={theme.primary} />}
-            title="הפח ריק ✨"
+            title="הפח ריק"
             subtitle={`קופונים שתמחקו יופיעו כאן ${TRASH_RETENTION_DAYS} ימים, ואפשר יהיה לשחזר אותם עד שהם נמחקים סופית.`}
           />
         </ScrollView>

@@ -4,6 +4,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { GeoRange, GeoRow, useGeoAnalytics } from "@/hooks/useGeoAnalytics";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 /**
  * Where the users are, by city and region. The location is derived from the
@@ -44,7 +45,7 @@ export function GeoAnalyticsTab() {
       ) : isError ? (
         <Text style={[styles.empty, { color: theme.textMuted }]}>שגיאה בטעינת הנתונים</Text>
       ) : data.length === 0 ? (
-        <Text style={[styles.empty, { color: theme.textMuted }]}>אין נתונים בטווח</Text>
+        <EmptyState title="אין נתונים בטווח" subtitle="כשיצטברו אירועים באזור ובתקופה שבחרת, הם יופיעו כאן." />
       ) : (
         <FlatList
           data={data}

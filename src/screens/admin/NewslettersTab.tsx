@@ -20,6 +20,7 @@ import { Newsletter } from "@/integrations/supabase";
 import { useNewsletters, useUpsertNewsletter, useDeleteNewsletter } from "@/hooks/useAdminManagement";
 import { useNewsletterUpload } from "@/hooks/useNewsletterUpload";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 /**
  * Newsletter authoring for admins.
@@ -85,7 +86,7 @@ export function NewslettersTab() {
       {isLoading ? (
         <MascotLoadingState compact title="טוען ניוזלטרים" />
       ) : data.length === 0 ? (
-        <Text style={[styles.empty, { color: theme.textMuted }]}>אין ניוזלטרים</Text>
+        <EmptyState title="עוד אין ניוזלטרים" subtitle="יוצרים את הניוזלטר הראשון ומתחילים לשלוח עדכונים." actionTitle="ניוזלטר חדש" onAction={() => setEditing({ title: "" })} />
       ) : (
         <FlatList
           data={data}

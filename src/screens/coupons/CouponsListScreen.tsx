@@ -39,7 +39,6 @@ import { couponRouteId } from "@/lib/couponId";
 import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
 import { WifiOff } from "lucide-react-native";
@@ -635,7 +634,7 @@ export function CouponsListScreen() {
             isLoading ? (
               <View>{[1, 2, 3].map((item) => <CouponCardSkeleton key={item} />)}</View>
             ) : <EmptyState
-              icon={<CharacterSpotlight character="investigator" state={search || selectedTag ? "thinking" : "talking"} />}
+              mascot="investigator"
               largeVisual
               title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
               subtitle={

@@ -8,6 +8,7 @@ import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
 import { fonts, radii } from "@/lib/theme";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const statusLabel = { pending: "ממתינה", completed: "נמכר", declined: "נדחתה", cancelled: "בוטלה" } as const;
 
@@ -18,7 +19,12 @@ export function SoldCouponsScreen() {
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
     {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="המאסקוט מרכז את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
-      {!isLoading && sales.length === 0 ? <Text style={{ color: theme.textMuted, textAlign: "center" }}>עוד לא מכרת קופונים</Text> : null}
+      {sales.length === 0 ? (
+        <EmptyState
+          title="עוד לא מכרת קופונים"
+          subtitle="אחרי המכירה הראשונה יופיעו כאן המחיר, פרטי הקונה והרווח שלך."
+        />
+      ) : null}
       {sales.map((sale) => {
         const profit = sale.sale_price - sale.coupon_cost_snapshot;
         return <View key={sale.id} style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

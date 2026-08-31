@@ -19,6 +19,9 @@ export const palette = {
   secondary: "#5b9bd8",
   accent: "#7c3aed",
   info: "#154a8f",
+  coral: "#e76f51",
+  coralBg: "#fff0eb",
+  coralBorder: "#f7c2b3",
 
   // Status
   success: "#16a34a",
@@ -118,6 +121,9 @@ export function getTheme(_mode: ThemeMode) {
     secondary: palette.secondary,
     accent: palette.accent,
     info: palette.info,
+    coral: palette.coral,
+    coralBg: palette.coralBg,
+    coralBorder: palette.coralBorder,
 
     // Status
     success: palette.success,

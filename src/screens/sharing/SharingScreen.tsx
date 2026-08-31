@@ -30,7 +30,6 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { formatIls } from "@/lib/formatIls";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import type { SaleInput } from "@/hooks/useCouponSales";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
@@ -280,7 +279,7 @@ export function SharingScreen() {
               })
             ) : (
               <EmptyState
-                icon={<CharacterSpotlight character="helper" state="talking" />}
+                mascot="helper"
                 largeVisual
                 title="עדיין לא שיתפו איתך קופונים"
                 subtitle="כשמישהו ישתף קופון, הוא יופיע כאן. אפשר להתחיל ולשתף קופון משלך."
@@ -347,7 +346,7 @@ export function SharingScreen() {
             })
           ) : (
             <EmptyState
-              icon={<CharacterSpotlight character="helper" state="thinking" />}
+              mascot="helper"
               largeVisual
               title="עוד לא שיתפת קופונים"
               subtitle="יש קופון שווה? שולחים לחברים ולמשפחה בקליק."

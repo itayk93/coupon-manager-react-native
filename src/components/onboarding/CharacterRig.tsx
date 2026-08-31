@@ -36,6 +36,7 @@ const BUBBLE = {
   mint: "rgba(88, 223, 198, 0.16)",
   blue: "rgba(40, 100, 240, 0.12)",
   success: "rgba(22, 163, 74, 0.12)",
+  coral: "rgba(231, 111, 81, 0.14)",
   none: "transparent",
 } as const;
 
@@ -256,7 +257,7 @@ export function CharacterSpotlight({
   reduceMotion?: boolean;
   size?: "small" | "medium" | "large";
   /** Tint of the bubble behind the character, so it sits on its host card. */
-  tone?: "mint" | "blue" | "success" | "none";
+  tone?: "mint" | "blue" | "success" | "coral" | "none";
 }) {
   const systemReducedMotion = useReducedMotion();
   const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
@@ -273,6 +274,8 @@ export function CharacterSpotlight({
   const bare = tone === "none";
   const ring = bare
     ? "transparent"
+    : tone === "coral"
+      ? "rgba(231, 111, 81, 0.32)"
     : character === "investigator"
       ? "rgba(40, 100, 240, 0.18)"
       : "rgba(88, 223, 198, 0.28)";

@@ -15,6 +15,7 @@ import * as Clipboard from "expo-clipboard";
 import { ChevronRight, Copy, Plus, RefreshCw, Search, Share2 } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useManageUsers } from "@/hooks/useAdminManagement";
@@ -184,9 +185,7 @@ function ApplicationsList() {
       keyExtractor={(a) => String(a.id)}
       contentContainerStyle={{ padding: 16, gap: 12 }}
       ListEmptyComponent={
-        <Text style={[styles.muted, { color: theme.textMuted, marginTop: 24 }]}>
-          אין בקשות
-        </Text>
+        <EmptyState title="אין בקשות חדשות" subtitle="בקשות הצטרפות לתוכנית השותפים יופיעו כאן." />
       }
       renderItem={({ item }) => (
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -311,9 +310,7 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
           </View>
         }
         ListEmptyComponent={
-          <Text style={[styles.muted, { color: theme.textMuted, marginTop: 24 }]}>
-            עדיין אין שותפים. "שותף חדש" מנפיק קישור.
-          </Text>
+          <EmptyState title="עדיין אין שותפים" subtitle="יצירת שותף חדש תנפיק עבורו קישור אישי." actionTitle="שותף חדש" onAction={() => setIsCreating(true)} />
         }
         renderItem={({ item }) => <PartnerCard partner={item} onOpen={() => onOpen(item.id)} />}
       />

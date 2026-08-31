@@ -21,6 +21,7 @@ import { ArrowRight, Crosshair, MapPin, Search } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
 import { formatIls } from "@/lib/formatIls";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 /* A straight port of the "איפה אכלתי" page from budget-lens-new: one blue spend
    ramp on the map, a draggable panel on top of it, and the same sections in the
@@ -722,10 +723,10 @@ export function WhereBoughtScreen() {
           ) : null}
 
           {!isLoading && !isError && places.length === 0 ? (
-            <View style={S.empty}>
-              <Text style={S.emptyTitle}>עוד אין מקומות להציג</Text>
-              <Text style={S.emptyBody}>המפה נבנית מהשימושים שלך בקופונים. אחרי השימוש הבא עם מיקום, המקום יופיע כאן.</Text>
-            </View>
+            <EmptyState
+              title="עוד אין מקומות להציג"
+              subtitle="המפה נבנית מהשימושים שלך בקופונים. אחרי השימוש הבא עם מיקום, המקום יופיע כאן."
+            />
           ) : null}
 
           {insights && !viewportKeys ? (
