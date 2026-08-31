@@ -18,6 +18,7 @@ import { Confetti, CountUp } from "@/components/onboarding/Celebration";
 import { CharacterScene, type CharacterState } from "@/components/onboarding/CharacterRig";
 import { formatIls } from "@/lib/formatIls";
 import { logActivity } from "@/lib/activityLog";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 type Mode = "profile" | "goal" | "volume" | "describe" | "preview";
 
@@ -177,7 +178,7 @@ export function OnboardingScreen() {
 
   if (user && (walletLoading || hasWallet)) {
     return <SafeAreaView style={[styles.safe, styles.centered, { backgroundColor: theme.background }]}>
-      <ActivityIndicator color={theme.primary} />
+      <MascotLoadingState title="מכינים את הארנק שלך" subtitle="בודקים את הקופונים שכבר שמרת" />
     </SafeAreaView>;
   }
 

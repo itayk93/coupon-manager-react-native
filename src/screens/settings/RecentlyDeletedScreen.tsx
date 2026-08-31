@@ -6,7 +6,6 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
 import { RotateCcw, Trash2, Sparkles, FileText } from "lucide-react-native";
 import { useRouter } from "expo-router";
@@ -24,6 +23,7 @@ import { notify } from "@/lib/notify";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { couponRemainingValue } from "@/lib/couponTotals";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -67,9 +67,7 @@ export function RecentlyDeletedScreen() {
       <Header title="נמחקו לאחרונה" />
 
       {isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={theme.primary} />
-        </View>
+        <MascotLoadingState title="טוען קופונים שנמחקו" subtitle="בודקים מה עדיין אפשר לשחזר" />
       ) : coupons.length === 0 ? (
         <ScrollView contentContainerStyle={styles.content}>
           <EmptyState

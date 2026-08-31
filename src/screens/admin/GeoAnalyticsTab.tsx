@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View }
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { GeoRange, GeoRow, useGeoAnalytics } from "@/hooks/useGeoAnalytics";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 /**
  * Where the users are, by city and region. The location is derived from the
@@ -39,7 +40,7 @@ export function GeoAnalyticsTab() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 32 }} color={theme.primary} />
+        <MascotLoadingState compact title="טוען נתוני מיקום" />
       ) : isError ? (
         <Text style={[styles.empty, { color: theme.textMuted }]}>שגיאה בטעינת הנתונים</Text>
       ) : data.length === 0 ? (

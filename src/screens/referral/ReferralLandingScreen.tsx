@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { referralCodeFromPath } from "@/lib/referral";
 import { claimPendingReferral, savePendingReferral } from "@/lib/referralClaim";
 import { fonts } from "@/lib/theme";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 /**
  * Where an invite link lands.
@@ -55,12 +56,7 @@ export function ReferralLandingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.text, { color: theme.text }]}>
-          {message ?? "רק רגע, פותחים לך את קופון מאסטר…"}
-        </Text>
-      </View>
+      <MascotLoadingState title={message ?? "רק רגע, פותחים לך את קופון מאסטר"} subtitle="מכינים את ההזמנה שלך" />
     </SafeAreaView>
   );
 }

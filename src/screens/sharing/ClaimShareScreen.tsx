@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   SafeAreaView,
   ScrollView,
@@ -25,6 +24,7 @@ import {
   useClaimShareLink,
   useShareLinkPreview,
 } from "@/hooks/useShareLink";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 /**
  * Where a share link lands.
@@ -64,7 +64,7 @@ export function ClaimShareScreen() {
       return <Message theme={theme} text="הקישור אינו תקין" />;
     }
     if (authLoading || !session) {
-      return <Loading theme={theme} />;
+      return <Loading />;
     }
     if (done) {
       return (
@@ -78,7 +78,7 @@ export function ClaimShareScreen() {
       );
     }
     if (preview.isLoading) {
-      return <Loading theme={theme} />;
+      return <Loading />;
     }
     if (preview.isError || !preview.data) {
       return (
@@ -177,12 +177,8 @@ export function ClaimShareScreen() {
   );
 }
 
-function Loading({ theme }: { theme: { primary: string } }) {
-  return (
-    <View style={styles.center}>
-      <ActivityIndicator size="large" color={theme.primary} />
-    </View>
-  );
+function Loading() {
+  return <MascotLoadingState title="מכינים את הקופון" subtitle="בודקים את הקישור ואת פרטי ההעברה" />;
 }
 
 function Message({

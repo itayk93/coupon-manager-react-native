@@ -7,6 +7,7 @@ import { useCouponSales } from "@/hooks/useCouponSales";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
 import { fonts, radii } from "@/lib/theme";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 const statusLabel = { pending: "ממתינה", completed: "נמכר", declined: "נדחתה", cancelled: "בוטלה" } as const;
 
@@ -16,8 +17,7 @@ export function SoldCouponsScreen() {
   const { data: sales = [], isLoading } = useCouponSales();
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
-    <ScrollView contentContainerStyle={styles.content}>
-      {isLoading ? <Text style={{ color: theme.textMuted, textAlign: "center" }}>טוען מכירות...</Text> : null}
+    {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="המאסקוט מרכז את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
       {!isLoading && sales.length === 0 ? <Text style={{ color: theme.textMuted, textAlign: "center" }}>עוד לא מכרת קופונים</Text> : null}
       {sales.map((sale) => {
         const profit = sale.sale_price - sale.coupon_cost_snapshot;
@@ -31,7 +31,7 @@ export function SoldCouponsScreen() {
           <Text style={[styles.meta, { color: theme.textMuted }]}>{formatDateHebrew(sale.sold_at || sale.created_at)} · {sale.sale_type === "transfer" ? "העברה באפליקציה" : "סימון ידני"}</Text>
         </View>;
       })}
-    </ScrollView>
+    </ScrollView>}
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe:{flex:1},content:{padding:16,paddingBottom:40,gap:10},card:{borderWidth:1,borderRadius:radii.xl,padding:16,gap:6},top:{flexDirection:"row",justifyContent:"space-between",alignItems:"center"},company:{fontFamily:fonts.display,fontSize:18,fontWeight:"800"},status:{fontFamily:fonts.bodyBold,fontSize:12},line:{fontFamily:fonts.bodyBold,fontSize:15,textAlign:"right"},meta:{fontFamily:fonts.body,fontSize:13,textAlign:"right"} });

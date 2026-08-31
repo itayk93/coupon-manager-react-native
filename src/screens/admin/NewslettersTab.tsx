@@ -19,6 +19,7 @@ import { notify } from "@/lib/notify";
 import { Newsletter } from "@/integrations/supabase";
 import { useNewsletters, useUpsertNewsletter, useDeleteNewsletter } from "@/hooks/useAdminManagement";
 import { useNewsletterUpload } from "@/hooks/useNewsletterUpload";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 /**
  * Newsletter authoring for admins.
@@ -82,7 +83,7 @@ export function NewslettersTab() {
       />
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 32 }} color={theme.primary} />
+        <MascotLoadingState compact title="טוען ניוזלטרים" />
       ) : data.length === 0 ? (
         <Text style={[styles.empty, { color: theme.textMuted }]}>אין ניוזלטרים</Text>
       ) : (

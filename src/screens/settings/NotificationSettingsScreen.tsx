@@ -8,7 +8,6 @@ import {
   Switch,
   TouchableOpacity,
   SafeAreaView,
-  ActivityIndicator,
 } from "react-native";
 import { Bell, Mail, Megaphone, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
 import {
@@ -28,6 +27,7 @@ import {
 } from "@/hooks/useNotificationPreferences";
 import { usePwaNotifications } from "@/hooks/usePwaNotifications";
 import { useNearbyAlerts } from "@/hooks/useNearbyAlerts";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 import { useNativeNotifications } from "@/hooks/useNativeNotifications";
 import {
   NOTIFICATION_WINDOWS as WINDOW_OPTIONS,
@@ -202,7 +202,7 @@ export function NotificationSettingsScreen() {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ההתראות שלי" />
-        <ActivityIndicator style={styles.loader} size="large" color={theme.primary} />
+        <MascotLoadingState title="טוען את ההתראות שלך" subtitle="מתאימים את ההעדפות לחשבון" />
       </SafeAreaView>
     );
   }

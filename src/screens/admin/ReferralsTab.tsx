@@ -14,6 +14,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { ChevronRight, Copy, Plus, RefreshCw, Search, Share2 } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 import { Modal } from "@/components/ui/Modal";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useManageUsers } from "@/hooks/useAdminManagement";
@@ -162,9 +163,7 @@ function ApplicationsList() {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.primary} />
-      </View>
+      <MascotLoadingState compact title="טוען נתוני הפניות" />
     );
   }
 
@@ -279,9 +278,7 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.primary} />
-      </View>
+      <MascotLoadingState compact title="טוען שותפים" />
     );
   }
 

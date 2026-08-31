@@ -23,6 +23,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react-native";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 import { useRouter } from "expo-router";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { Header } from "@/components/ui/Header";
@@ -126,7 +127,7 @@ export function ReferralProgramScreen() {
 
         {/* ── Status / Form ── */}
         {(loadingStatus || loadingApp) ? (
-          <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 24 }} />
+          <MascotLoadingState compact title="בודקים את סטטוס התוכנית" subtitle="זה ייקח רגע" />
         ) : isPartner ? (
           <StatusBanner
             bg="#dcfce7" border="#86efac" color="#16a34a"

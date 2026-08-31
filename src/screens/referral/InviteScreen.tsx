@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   Share,
@@ -18,6 +17,7 @@ import { useMyReferralStatus } from "@/hooks/useReferral";
 import { referralShareMessage, referralUrl } from "@/lib/referral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 const APP_BASE_URL = "https://coupons.itaykarkason.com";
 
@@ -37,9 +37,7 @@ export function InviteScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="הזמנת חברים" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
+        <MascotLoadingState title="טוען את תוכנית ההזמנות" subtitle="בודקים את הקישור וההתקדמות שלך" />
       </SafeAreaView>
     );
   }

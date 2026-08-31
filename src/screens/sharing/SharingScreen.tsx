@@ -33,6 +33,7 @@ import { formatIls } from "@/lib/formatIls";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import type { SaleInput } from "@/hooks/useCouponSales";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 export function SharingScreen() {
   const router = useRouter();
@@ -191,7 +192,9 @@ export function SharingScreen() {
             />
           }
         >
-          {activeTab === "shared_with_me" ? (
+          {(activeTab === "shared_with_me" ? loadingWithMe : loadingMy) ? (
+            <MascotLoadingState title="טוען שיתופים" subtitle="אוספים את הקופונים וההזמנות שלך" />
+          ) : activeTab === "shared_with_me" ? (
             sharedWithMe.length > 0 ? (
               sharedWithMe.map((item) => {
                 const rem = Math.max(

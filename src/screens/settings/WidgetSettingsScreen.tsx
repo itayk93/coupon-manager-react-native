@@ -1,14 +1,11 @@
-import { useNativeDriver } from "@/lib/animation";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
-  Animated,
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  ActivityIndicator,
 } from "react-native";
 import { ChevronDown, ChevronUp, LayoutGrid, Minus, Plus } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -26,73 +23,10 @@ import {
   nextWidgetOrder,
   widgetSelection,
 } from "@/lib/widgetSelection";
+import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 
 function WidgetLoadingState() {
-  const { theme } = useAppTheme();
-  const pulse = useRef(new Animated.Value(0)).current;
-  const dots = useRef([
-    new Animated.Value(0.25),
-    new Animated.Value(0.25),
-    new Animated.Value(0.25),
-  ]).current;
-
-  useEffect(() => {
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 750, useNativeDriver }),
-        Animated.timing(pulse, { toValue: 0, duration: 750, useNativeDriver }),
-      ])
-    );
-    const dotsAnimation = Animated.loop(
-      Animated.stagger(
-        180,
-        dots.map((dot) =>
-          Animated.sequence([
-            Animated.timing(dot, { toValue: 1, duration: 360, useNativeDriver }),
-            Animated.timing(dot, { toValue: 0.25, duration: 360, useNativeDriver }),
-          ])
-        )
-      )
-    );
-
-    pulseAnimation.start();
-    dotsAnimation.start();
-
-    return () => {
-      pulseAnimation.stop();
-      dotsAnimation.stop();
-    };
-  }, [dots, pulse]);
-
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.06] });
-
-  return (
-    <View
-      accessibilityLabel="טוען ומכין את הקופונים לווידג'ט"
-      accessibilityRole="progressbar"
-      style={styles.loadingContainer}
-    >
-      <Animated.View
-        style={[
-          styles.loadingIcon,
-          { backgroundColor: theme.primaryTint, opacity: pulse, transform: [{ scale }] },
-        ]}
-      >
-        <LayoutGrid size={34} color={theme.primary} />
-      </Animated.View>
-      <ActivityIndicator size="large" color={theme.primary} />
-      <Text style={[styles.loadingTitle, { color: theme.text }]}>טוען ומכין את הקופונים</Text>
-      <View style={styles.loadingDots} accessible={false}>
-        {dots.map((opacity, index) => (
-          <Animated.View
-            key={index}
-            style={[styles.loadingDot, { backgroundColor: theme.primary, opacity }]}
-          />
-        ))}
-      </View>
-      <Text style={[styles.loadingSubtitle, { color: theme.textMuted }]}>זה עשוי לקחת כמה רגעים</Text>
-    </View>
-  );
+  return <MascotLoadingState title="מכינים את הקופונים לווידג׳ט" subtitle="זה עשוי לקחת כמה רגעים" />;
 }
 
 export function WidgetSettingsScreen() {
