@@ -7,8 +7,9 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  Linking,
 } from "react-native";
-import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2, AlertTriangle, ChevronLeft } from "lucide-react-native";
+import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2, AlertTriangle, ChevronLeft, Map } from "lucide-react-native";
 import * as Location from "expo-location";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useRecordUsage, useCouponUsageHistory } from "@/hooks/useCouponUsage";
 import { findExistingUsageMatch } from "@/lib/usageDuplicateMatch";
-import { formatDateHebrew } from "@/lib/formatDate";
+import { formatDateHebrew, formatIsraelDateTime, parseIsraelDateTime } from "@/lib/formatDate";
+import { mapsSearchUrl } from "@/lib/mapsUrl";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
@@ -77,6 +79,11 @@ export function QuickUsageModal({
   const [aiError, setAiError] = useState("");
   const [isConfirmingFullUse, setIsConfirmingFullUse] = useState(false);
   const [detectedUsages, setDetectedUsages] = useState<ParsedUsage[]>([]);
+  // What the person is typing into a usage's time field, while it is still
+  // half-written. `usedAt` keeps the ISO instant and is only updated once the
+  // draft is a complete, real date — otherwise deleting a digit would rewrite
+  // the record to something the person did not mean.
+  const [usedAtDrafts, setUsedAtDrafts] = useState<Record<string, string>>({});
   const [savingDetected, setSavingDetected] = useState(false);
   const [detectedCouponCode, setDetectedCouponCode] = useState<string | null>(null);
   const [detectedCompany, setDetectedCompany] = useState<string | null>(null);
@@ -103,6 +110,7 @@ export function QuickUsageModal({
     setIsPickerOpen(false);
     setIsConfirmingFullUse(false);
     setDetectedUsages([]);
+    setUsedAtDrafts({});
     setDetectedCouponCode(null);
     setDetectedCompany(null);
     setDetectionWarnings([]);
@@ -338,6 +346,7 @@ export function QuickUsageModal({
     setAmountError("");
     setAiError("");
     setDetectedUsages(parsed.usages);
+    setUsedAtDrafts({});
     setDetectedCouponCode(parsed.couponCode);
     setDetectedCompany(parsed.companyName);
     setDetectionWarnings(parsed.warnings);
@@ -407,6 +416,7 @@ export function QuickUsageModal({
         return;
       }
       setDetectedUsages([]);
+      setUsedAtDrafts({});
       onImportCompleted?.();
       onClose();
     } catch (e) {
@@ -583,9 +593,36 @@ export function QuickUsageModal({
                 <Input label="סכום (₪)" keyboardType="decimal-pad" value={String(item.amount)} onChangeText={(value) => updateDetectedUsage(item.id, "amount", Number(value) || 0)} />
                 <Input label="מקום" value={item.placeName} onChangeText={(value) => updateDetectedUsage(item.id, "placeName", value)} />
                 <Input label="כתובת" value={item.placeAddress} placeholder="לא נמצאה כתובת — אפשר לערוך" onChangeText={(value) => updateDetectedUsage(item.id, "placeAddress", value)} />
-                <Input label="מועד השימוש" value={item.usedAt || ""} placeholder="YYYY-MM-DDTHH:mm:ss" onChangeText={(value) => updateDetectedUsage(item.id, "usedAt", value)} />
-                {item.latitude !== null && item.longitude !== null ? (
-                  <Text style={[styles.detectedCoordinates, { color: theme.textMuted }]}><MapPin size={13} color={theme.primary} /> {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</Text>
+                <Input
+                  label="מועד השימוש (שעון ישראל)"
+                  value={usedAtDrafts[item.id] ?? formatIsraelDateTime(item.usedAt) ?? ""}
+                  placeholder="dd/mm/yyyy hh:mm"
+                  keyboardType="numbers-and-punctuation"
+                  onChangeText={(value) => {
+                    setUsedAtDrafts((current) => ({ ...current, [item.id]: value }));
+                    const iso = parseIsraelDateTime(value);
+                    if (iso) updateDetectedUsage(item.id, "usedAt", iso);
+                  }}
+                  error={
+                    usedAtDrafts[item.id] && !parseIsraelDateTime(usedAtDrafts[item.id])
+                      ? "תאריך לא תקין. הפורמט הוא dd/mm/yyyy hh:mm"
+                      : undefined
+                  }
+                />
+                {item.latitude !== null && item.longitude !== null && mapsSearchUrl(item.latitude, item.longitude) ? (
+                  <TouchableOpacity
+                    accessibilityRole="link"
+                    accessibilityLabel={`פתיחת ${item.placeName || "המיקום"} במפה`}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      const url = mapsSearchUrl(item.latitude as number, item.longitude as number);
+                      if (url) void Linking.openURL(url);
+                    }}
+                    style={[styles.detectedMapButton, { borderColor: theme.border, backgroundColor: theme.surfaceAlt }]}
+                  >
+                    <Map size={15} color={theme.primary} />
+                    <Text style={[styles.detectedMapButtonText, { color: theme.primary }]}>הצג את המיקום במפה</Text>
+                  </TouchableOpacity>
                 ) : null}
               </View>
               );
@@ -963,6 +1000,17 @@ const styles = StyleSheet.create({
   duplicateOpenLink: { flexDirection: "row-reverse", alignItems: "center", gap: 4, marginTop: 4 },
   duplicateOpenLinkText: { fontSize: 13, fontWeight: "700" },
   deleteUsage: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  detectedCoordinates: { fontSize: 12, textAlign: "right", marginTop: -4, marginBottom: 4 },
+  detectedMapButton: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 9,
+    marginTop: -2,
+    marginBottom: 4,
+  },
+  detectedMapButtonText: { fontSize: 13, fontWeight: "600" },
   batchError: { fontSize: 13, fontWeight: "600", textAlign: "right" },
 });
