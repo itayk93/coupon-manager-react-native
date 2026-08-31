@@ -2,18 +2,12 @@ import { useNativeDriver } from "@/lib/animation";
 import React, { useEffect, useRef } from "react";
 import { Linking, Platform, StyleSheet, Text } from "react-native";
 import { Animated, Easing } from "react-native";
-import MapView, { MapPressEvent, Marker, Region } from "react-native-maps";
+import MapView, { MapPressEvent, Marker } from "react-native-maps";
+import { groupByPoint, ISRAEL_REGION, regionForPoints } from "@/lib/mapMarkers";
 
 export type CouponLocation = {
   latitude: number;
   longitude: number;
-};
-
-const ISRAEL_REGION: Region = {
-  latitude: 31.8,
-  longitude: 34.9,
-  latitudeDelta: 2.8,
-  longitudeDelta: 2.8,
 };
 
 type CouponLocationMapProps = {
@@ -36,6 +30,10 @@ export function CouponLocationMap({
   const mapRef = useRef<MapView>(null);
   const reveal = useRef(new Animated.Value(1)).current;
   const locationKey = location ? `${location.latitude},${location.longitude}` : "empty";
+  const mapLocations = locations?.length ? locations : location ? [{ ...location }] : [];
+  const markers = groupByPoint(mapLocations);
+  const initialRegion = regionForPoints(markers);
+  const markersKey = markers.map((item) => `${item.latitude},${item.longitude}`).join("|");
 
   useEffect(() => {
     if (!location) return;
@@ -59,9 +57,17 @@ export function CouponLocationMap({
     }
   }, [locationKey, reveal, location]);
 
+  // A usage reported while the screen is open adds a pin. Without this the map
+  // keeps the frame it opened with and the new one can land off-screen.
+  useEffect(() => {
+    if (Platform.OS === "web" || location || !markersKey) return;
+    mapRef.current?.animateToRegion(regionForPoints(markers), 500);
+    // `markers` is rebuilt every render; its identity is not the signal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markersKey, location]);
+
   if (Platform.OS === "web") {
-    const webLocations = locations?.length ? locations : location ? [{ ...location }] : [];
-    const firstWebLocation = webLocations[0];
+    const firstWebLocation = markers[0];
     const latitude = firstWebLocation?.latitude ?? ISRAEL_REGION.latitude;
     const longitude = firstWebLocation?.longitude ?? ISRAEL_REGION.longitude;
     const zoom = firstWebLocation ? 16 : 8;
@@ -96,16 +102,6 @@ export function CouponLocationMap({
     );
   }
 
-  const mapLocations = locations?.length ? locations : location ? [{ ...location }] : [];
-  const firstLocation = mapLocations[0];
-  const initialRegion = firstLocation
-    ? {
-        latitude: firstLocation.latitude,
-        longitude: firstLocation.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }
-    : ISRAEL_REGION;
 
   const handlePress = (event: MapPressEvent) => {
     if (!editable || !onLocationChange) return;
@@ -123,17 +119,21 @@ export function CouponLocationMap({
         showsUserLocation={false}
         showsCompass
       >
-        {mapLocations.map((item, index) => (
+        {markers.map((item, index) => (
           <Marker
             key={item.id || `${item.latitude}-${item.longitude}-${index}`}
-            coordinate={item}
+            coordinate={{ latitude: item.latitude, longitude: item.longitude }}
             draggable={editable && index === 0}
             onDragEnd={(event) => {
               if (!editable || !onLocationChange || index !== 0) return;
               onLocationChange(event.nativeEvent.coordinate);
             }}
             title={item.title || "מיקום השימוש"}
-            description={item.description}
+            description={
+              item.visits > 1
+                ? `${item.visits} שימושים${item.description ? ` · ${item.description}` : ""}`
+                : item.description
+            }
             onPress={() => onLocationPress?.(item)}
           />
         ))}
