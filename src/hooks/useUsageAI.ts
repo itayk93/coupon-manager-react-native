@@ -21,6 +21,14 @@ export type ParsedUsageScreenshot = {
   usages: ParsedUsage[];
 };
 
+export async function verifyCouponCodeInScreenshot(imageBase64: string, candidateCouponCode: string): Promise<boolean> {
+  const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
+    body: { imageBase64, candidateCouponCode, mode: "verify-code" },
+  });
+  if (error || data?.error) return false;
+  return data?.matches === true && Number(data?.confidence) >= 0.85;
+}
+
 async function readableFunctionError(error: any): Promise<string> {
   const fallback = "פענוח התמונה נכשל. אפשר לבחור קופון ולהזין שימוש ידנית.";
   const response = error?.context;

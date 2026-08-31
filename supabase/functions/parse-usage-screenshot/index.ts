@@ -33,18 +33,56 @@ const schema = {
   required: ["couponCode", "couponCodeConfidence", "companyName", "warnings", "usages"],
 };
 
+const verificationSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    matches: { type: "boolean" },
+    confidence: { type: "number", minimum: 0, maximum: 1 },
+  },
+  required: ["matches", "confidence"],
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeadersFor(req) });
   try {
     let caller;
     try { caller = await requireUser(req); } catch { return jsonResponse({ error: "נדרשת התחברות" }, 401); }
-    const { imageBase64 } = await req.json();
+    const { imageBase64, candidateCouponCode, mode } = await req.json();
     if (typeof imageBase64 !== "string" || !imageBase64) return jsonResponse({ error: "חסרה תמונה" }, 400);
     if (imageBase64.length > MAX_IMAGE_CHARS) return jsonResponse({ error: "התמונה גדולה מדי" }, 413);
     if (!/^[A-Za-z0-9+/=\s]+$/.test(imageBase64)) return jsonResponse({ error: "פורמט תמונה לא תקין" }, 400);
 
     const apiKey = Deno.env.get("OPENAI_API_KEY_V2") || Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) return jsonResponse({ error: "שירות AI אינו מוגדר" }, 503);
+
+    if (mode === "verify-code") {
+      if (typeof candidateCouponCode !== "string" || candidateCouponCode.length < 4 || candidateCouponCode.length > 128) {
+        return jsonResponse({ error: "קוד מועמד לא תקין" }, 400);
+      }
+      const verificationResponse = await safeFetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          reasoning_effort: "minimal",
+          max_completion_tokens: 300,
+          response_format: { type: "json_schema", json_schema: { name: "coupon_code_verification", strict: true, schema: verificationSchema } },
+          messages: [{ role: "user", content: [
+            { type: "text", text: `בדוק חזותית האם קוד הקופון שמופיע בתמונה זהה לקוד המועמד הבא, תוך התעלמות ממקפים ורווחים בלבד: ${candidateCouponCode}. אל תאשר לפי דמיון בלבד. matches=true רק אם כל התווים הנראים תואמים, או אם תו יחיד אינו קריא אך שאר הקוד תואם בבירור.` },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+          ] }],
+        }),
+      });
+      const verificationRaw = await verificationResponse.text();
+      if (!verificationResponse.ok) return jsonResponse({ error: "אימות הקוד נכשל" }, 502);
+      const verificationPayload = JSON.parse(verificationRaw);
+      const verification = JSON.parse(verificationPayload.choices?.[0]?.message?.content || "{}");
+      return jsonResponse({
+        matches: verification.matches === true,
+        confidence: Math.max(0, Math.min(1, Number(verification.confidence) || 0)),
+      });
+    }
 
     const response = await safeFetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -58,7 +96,7 @@ Deno.serve(async (req: Request) => {
         max_completion_tokens: 6000,
         response_format: { type: "json_schema", json_schema: { name: "coupon_usages", strict: true, schema } },
         messages: [
-          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. couponCode הוא הקוד בדיוק כפי שנראה, ללא ניחוש; אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים; אם השורה נראית שימוש אך הסכום חתוך או לא קריא החזר amount 0 והוסף warning, אל תשמיט את השורה. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
+          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. חפש את קוד הקופון בכל התמונה, כולל בכרטיס פרטי קופון בתחתית המסך. couponCode הוא הקוד בדיוק כפי שנראה, כולל מקפים אם קיימים, ללא ניחוש; בדוק כל ספרה פעמיים. אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים; אם השורה נראית שימוש אך הסכום חתוך או לא קריא החזר amount 0 והוסף warning, אל תשמיט את השורה. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
           { role: "user", content: [
             { type: "text", text: "קרא את כל השימושים בצילום. אל תדלג על שורות." },
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },

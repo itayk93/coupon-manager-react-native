@@ -21,7 +21,7 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { supabase } from "@/integrations/supabase/client";
-import { ParsedUsage, useParseUsageScreenshot } from "@/hooks/useUsageAI";
+import { ParsedUsage, useParseUsageScreenshot, verifyCouponCodeInScreenshot } from "@/hooks/useUsageAI";
 import { formatIls } from "@/lib/formatIls";
 import { matchCouponCode } from "@/lib/couponCodeMatch";
 import { cacheParsedUsage, getCachedParsedUsage } from "@/lib/usageParseCache";
@@ -291,7 +291,7 @@ export function QuickUsageModal({
     setAmountError("");
     setAiError("");
     try {
-      applyParsedResult(await parseUsage.mutateAsync(base64));
+      await applyParsedResult(await parseUsage.mutateAsync(base64), base64);
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
       console.error(e);
@@ -311,14 +311,14 @@ export function QuickUsageModal({
     // (worse) coupon code for the same image.
     const cached = importId ? getCachedParsedUsage(importId) : null;
     if (cached) {
-      applyParsedResult(cached);
+      void applyParsedResult(cached, initialScreenshotBase64);
       return;
     }
     parseUsage
       .mutateAsync(initialScreenshotBase64)
       .then((parsed) => {
         if (importId) cacheParsedUsage(importId, parsed);
-        if (!cancelled) applyParsedResult(parsed);
+        if (!cancelled) void applyParsedResult(parsed, initialScreenshotBase64);
       })
       .catch((e) => {
         setAiError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
@@ -330,7 +330,10 @@ export function QuickUsageModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, initialScreenshotBase64]);
 
-  const applyParsedResult = (parsed: Awaited<ReturnType<typeof parseUsage.mutateAsync>>) => {
+  const applyParsedResult = async (
+    parsed: Awaited<ReturnType<typeof parseUsage.mutateAsync>>,
+    sourceImageBase64?: string | null
+  ) => {
     setError("");
     setAmountError("");
     setAiError("");
@@ -339,10 +342,18 @@ export function QuickUsageModal({
     setDetectedCompany(parsed.companyName);
     setDetectionWarnings(parsed.warnings);
     const match = matchCouponCode(parsed.couponCode, coupons);
-    if (match.kind === "exact" || (match.kind === "partial" && parsed.couponCodeConfidence >= 0.75)) {
+    if (match.kind === "exact") {
       setSelectedCouponId(match.coupon.id);
       setMatchState("matched");
       return;
+    }
+    if (match.kind === "partial" && sourceImageBase64 && parsed.couponCodeConfidence >= 0.75) {
+      const verified = await verifyCouponCodeInScreenshot(sourceImageBase64, match.coupon.code);
+      if (verified) {
+        setSelectedCouponId(match.coupon.id);
+        setMatchState("matched");
+        return;
+      }
     }
     setSelectedCouponId(null);
     if (match.kind === "ambiguous" || match.kind === "partial") {
