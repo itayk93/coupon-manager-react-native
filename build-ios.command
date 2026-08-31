@@ -3,9 +3,13 @@
 # Build Coupon Master in Release, install it on the connected iPhone and launch
 # it. The app then runs standalone — no Metro, no cable.
 #
-# Usage:  ./build-ios.command [--pods] [--clean]
-#           --pods   force a CocoaPods reinstall even if nothing looks stale
-#           --clean  wipe derived data first
+# Usage:  ./build-ios.command [--pods] [--clean] [--all|--device <id|name>] [--list]
+#           --pods    force a CocoaPods reinstall even if nothing looks stale
+#           --clean   wipe derived data first
+#           --device  target this iPhone (identifier or part of its name) and
+#                     remember it in .ios-device for the next runs
+#           --all     target every available iPhone (the default)
+#           --list    print the connected iPhones and exit
 #
 set -euo pipefail
 
@@ -24,13 +28,36 @@ LOG="$DIR/build/last-build.log"
 
 FORCE_PODS=0
 CLEAN=0
-for arg in "$@"; do
-  case "$arg" in
+DEVICE_PICK="${DEVICE_ID:-}"
+DEVICE_FILE="$DIR/.ios-device"
+LIST_ONLY=0
+TARGET_ALL=1
+[ -n "$DEVICE_PICK" ] && TARGET_ALL=0
+while [ $# -gt 0 ]; do
+  case "$1" in
     --pods) FORCE_PODS=1 ;;
     --clean) CLEAN=1 ;;
-    *) echo "⚠️  דגל לא מוכר: $arg" ;;
+    --list) LIST_ONLY=1 ;;
+    --all) TARGET_ALL=1; DEVICE_PICK="" ;;
+    --device) shift; DEVICE_PICK="${1:-}"; TARGET_ALL=0 ;;
+    --device=*) DEVICE_PICK="${1#--device=}"; TARGET_ALL=0 ;;
+    *) echo "⚠️  דגל לא מוכר: $1" ;;
   esac
+  shift
 done
+
+# Every connected iPhone, one "name<TAB>identifier" line each. Read the state
+# column rather than grepping the whole line: "unavailable" contains "available".
+list_devices() {
+  xcrun devicectl list devices 2>/dev/null | awk -F"  +" '
+    NF >= 4 && $4 !~ /unavailable/ && $4 ~ /available|connected/ { print $1 "\t" $3 }'
+}
+
+if [ "$LIST_ONLY" -eq 1 ]; then
+  echo "📱 מכשירים מחוברים:"
+  list_devices | sed 's/^/   /'
+  exit 0
+fi
 
 # Any failure past this point prints where to look instead of scrolling away.
 trap 'status=$?; if [ $status -ne 0 ]; then
@@ -74,22 +101,44 @@ else
 fi
 
 # 2. Find the connected iPhone ------------------------------------------------
-# Read the state column rather than grepping the whole line: "unavailable"
-# contains "available", and a stale hard-coded UDID fails later and less clearly.
+# With two iPhones plugged in, picking the first one silently deploys to the
+# wrong phone, so an ambiguous match stops and asks instead of guessing.
 echo "🔍 מחפש אייפון מחובר וזמין..."
-DEVICE_LINE=$(xcrun devicectl list devices 2>/dev/null | awk '$0 ~ /available \(paired\)|^.*[[:space:]]available[[:space:]]/ && $0 !~ /unavailable/' | head -n 1 || true)
-DEVICE_ID=$(printf '%s' "$DEVICE_LINE" | grep -oE "[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}" | head -n 1 || true)
+DEVICES=$(list_devices)
+if [ "$TARGET_ALL" -eq 1 ]; then
+  MATCHES="$DEVICES"
+elif [ -n "$DEVICE_PICK" ]; then
+  MATCHES=$(printf '%s\n' "$DEVICES" | grep -iF "$DEVICE_PICK" || true)
+  if [ -z "$MATCHES" ]; then
+    echo "⚠️  \"$DEVICE_PICK\" לא מחובר כרגע — בוחר מבין הזמינים."
+    MATCHES="$DEVICES"
+  fi
+else
+  MATCHES="$DEVICES"
+fi
 
-if [ -z "$DEVICE_ID" ]; then
+COUNT=$(printf '%s' "$MATCHES" | grep -c . || true)
+if [ "$COUNT" -eq 0 ]; then
   echo "❌ לא נמצא אייפון זמין."
   echo "   בדוק: הכבל מחובר, המכשיר פתוח, ואישרת \"Trust This Computer\"."
   echo "   רשימת המכשירים כרגע:"
   xcrun devicectl list devices 2>&1 | sed 's/^/     /'
   exit 1
 fi
+if [ "$TARGET_ALL" -eq 0 ] && [ "$COUNT" -gt 1 ]; then
+  echo "❌ יותר ממכשיר אחד מחובר. בחר אחד:"
+  printf '%s\n' "$MATCHES" | sed 's/^/     /'
+  echo "   לדוגמה:  ./build-ios.command --device \"$(printf '%s' "$MATCHES" | head -n 1 | cut -f1)\""
+  exit 1
+fi
 
-DEVICE_NAME=$(printf '%s' "$DEVICE_LINE" | awk -F'  +' '{print $1}')
-echo "📱 מכשיר יעד: ${DEVICE_NAME:-unknown} ($DEVICE_ID)"
+if [ "$TARGET_ALL" -eq 0 ]; then
+  DEVICE_ID=$(printf '%s' "$MATCHES" | cut -f2)
+  printf '%s\n' "$DEVICE_ID" > "$DEVICE_FILE"
+fi
+
+echo "📱 מכשירי יעד:"
+printf '%s\n' "$MATCHES" | sed 's/^/   /'
 
 # 3. Build --------------------------------------------------------------------
 if [ "$CLEAN" -eq 1 ]; then
@@ -130,11 +179,70 @@ fi
 echo "✅ נבנה: $(du -sh "$APP_PATH" | cut -f1)"
 
 # 4. Install and launch -------------------------------------------------------
-echo "📲 מתקין על האייפון..."
-xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
+# Each device gets its own process so two phones install and launch in parallel.
+deploy_device() {
+  local device_name="$1"
+  local device_id="$2"
+  local install_out launch_out status
 
-echo "🚀 מפעיל..."
-xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID"
+  echo "📲 [$device_name] מתקין..."
+  set +e
+  install_out=$(xcrun devicectl device install app --device "$device_id" "$APP_PATH" 2>&1)
+  status=$?
+  set -e
+  printf '%s\n' "$install_out"
+  if [ $status -ne 0 ]; then
+    case "$install_out" in
+      *"must be paired"*) echo "👉 [$device_name] אשר Pairing ו-Trust." ;;
+      *"Developer Mode"*|*0xe800801c*) echo "👉 [$device_name] הפעל Developer Mode." ;;
+      *0xe8008012*|*"provisioning profile cannot be installed"*) echo "👉 [$device_name] הפרופיל לא כולל את המכשיר." ;;
+    esac
+    return $status
+  fi
+
+  echo "🚀 [$device_name] מפעיל..."
+  set +e
+  launch_out=$(xcrun devicectl device process launch --device "$device_id" "$BUNDLE_ID" 2>&1)
+  status=$?
+  set -e
+  printf '%s\n' "$launch_out"
+  if [ $status -ne 0 ]; then
+    case "$launch_out" in
+      *"could not be, unlocked"*) echo "👉 [$device_name] שחרר נעילת מסך." ;;
+      *"not been explicitly trusted"*|*"invalid code signature"*) echo "👉 [$device_name] אשר את המפתח תחת VPN & Device Management." ;;
+    esac
+    return $status
+  fi
+}
+
+echo "📲 מתקין ומפעיל במקביל..."
+PIDS=()
+LOGS=()
+NAMES=()
+INDEX=0
+while IFS=$'\t' read -r DEVICE_NAME DEVICE_ID; do
+  [ -z "$DEVICE_ID" ] && continue
+  DEVICE_LOG="$DERIVED/deploy-$DEVICE_ID.log"
+  deploy_device "$DEVICE_NAME" "$DEVICE_ID" > "$DEVICE_LOG" 2>&1 &
+  PIDS[$INDEX]=$!
+  LOGS[$INDEX]="$DEVICE_LOG"
+  NAMES[$INDEX]="$DEVICE_NAME"
+  INDEX=$((INDEX + 1))
+done <<< "$MATCHES"
+
+DEPLOY_STATUS=0
+set +e
+for ((INDEX=0; INDEX<${#PIDS[@]}; INDEX++)); do
+  wait "${PIDS[$INDEX]}"
+  STATUS=$?
+  cat "${LOGS[$INDEX]}"
+  if [ $STATUS -ne 0 ]; then
+    echo "❌ ${NAMES[$INDEX]} נכשל (קוד $STATUS)."
+    DEPLOY_STATUS=$STATUS
+  fi
+done
+set -e
+[ $DEPLOY_STATUS -ne 0 ] && exit $DEPLOY_STATUS
 
 trap - EXIT
 echo ""
