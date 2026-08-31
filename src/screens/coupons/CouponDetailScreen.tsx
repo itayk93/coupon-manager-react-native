@@ -67,6 +67,7 @@ import { formatDateHebrew } from "@/lib/formatDate";
 import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { SaleForm } from "@/components/coupons/SaleForm";
+import { SaleCelebration } from "@/components/coupons/SaleCelebration";
 import { useRecordManualSale } from "@/hooks/useCouponSales";
 
 /**
@@ -158,6 +159,7 @@ export function CouponDetailScreen() {
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [isQuickShareOpen, setIsQuickShareOpen] = useState(false);
   const [isSaleOpen, setIsSaleOpen] = useState(false);
+  const [isCelebrating, setIsCelebrating] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedMapLocation, setSelectedMapLocation] = useState<{
@@ -844,10 +846,12 @@ export function CouponDetailScreen() {
           onSubmit={async (sale) => {
             await recordSale.mutateAsync({ couponId: coupon.id, sale });
             setIsSaleOpen(false);
-            router.replace("/coupons");
+            setIsCelebrating(true);
           }}
         />
       </Modal>
+
+      {isCelebrating ? <SaleCelebration onDone={() => router.replace("/coupons")} /> : null}
 
       <Modal
         visible={selectedMapLocation !== null}
