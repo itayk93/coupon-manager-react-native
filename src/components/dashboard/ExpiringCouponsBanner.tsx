@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, type LayoutChangeEvent } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ChevronLeft, X } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { fonts, radii, shadows } from "@/lib/theme";
+import { fonts, radii } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
 import { expiryEmphasis } from "@/lib/expiryUrgency";
+import { fitFontSize } from "@/lib/fitText";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
@@ -23,6 +24,12 @@ import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
  * reappears, because that risk outranks the daily cap.
  */
 const EXPIRY_WINDOW_DAYS = 14;
+/** Shared by the stylesheet and by the headline's width arithmetic. */
+const BANNER_PADDING = 12;
+const MASCOT_SLOT = 73;
+const CLOSE_SLOT = 44;
+/** The gaps `headRow` puts between the slots and the headline. */
+const ROW_GAP = 10;
 const URGENT_DAYS = 2;
 const DISMISS_KEY = "expiring_banner_dismissal";
 /** Rows listed when the banner is expanded; the rest stay behind the count. */
@@ -82,6 +89,11 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
   const [dismissal, setDismissal] = useState<Dismissal | null>(null);
   const [dismissalLoaded, setDismissalLoaded] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  // Room the headline has, measured on its flex container. The container is
+  // `flex: 1` between two fixed slots, so its width does not depend on the
+  // text inside it — measuring the Text itself instead feeds the shrink back
+  // into the measurement and walks every headline down to the floor size.
+  const [headlineWidth, setHeadlineWidth] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -141,13 +153,31 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
   // How loud the banner is allowed to be. See `expiryUrgency.ts`: still above
   // three days, one pass at two or three, a slow breath inside 48 hours.
   const emphasis = expiryEmphasis(soonest.days);
+  const headlineFontSize = fitFontSize(headline.length, headlineWidth);
 
   return (
     <View
       style={[styles.banner, { backgroundColor: tone.bg, borderColor: tone.border }]}
     >
-      <ExpiryGlow emphasis={emphasis} color={tone.icon} radius={radii.card} />
+      <ExpiryGlow emphasis={emphasis} color={tone.icon} radius={radii.lg} />
+
+      {/* The mascot leans in over the bottom edge rather than sitting inside
+          the row. Inside, it set the banner's height — 46pt of character plus
+          padding for one line of text — and it floated, because the rig anchors
+          a character to the bottom of a slot that is invisible here. Clipped by
+          the banner's own overflow it has a ground to stand on, and it costs
+          the strip no height at all. */}
+      <View style={styles.mascot} pointerEvents="none">
+        <CharacterSpotlight character="helper" state="talking" size="small" tone="none" />
+      </View>
+      {/* Equal slots at both ends, and the line centred between them.
+          The mascot is absolutely positioned and overhangs the strip, so it
+          carries far more visual weight than a thin X on the other side. An
+          empty slot the mascot's width on the right, and the X centred in a
+          slot the same width on the left, give the line a middle to sit in —
+          the layout's middle rather than the container's. */}
       <View style={styles.headRow}>
+        <View style={styles.mascotSlot} pointerEvents="none" />
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() =>
@@ -156,16 +186,26 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
               : router.push(`/coupons/${couponRouteId(soonest.coupon)}`)
           }
           style={styles.headPressable}
+          onLayout={(event: LayoutChangeEvent) =>
+            setHeadlineWidth(event.nativeEvent.layout.width)
+          }
         >
-          {/* The mascot is here at every step, not only the urgent ones: the
-              banner already means a coupon is expiring, so the quiet step is
-              quiet in motion rather than stripped of the character. The rig's
-              smallest bubble is 88pt, which would own the strip, so it is
-              scaled down rather than given a size the rig does not have. */}
-          <View style={styles.mascot} pointerEvents="none">
-            <CharacterSpotlight character="helper" state="talking" size="small" tone="none" />
-          </View>
-          <Text style={[styles.headline, { color: tone.text }]} numberOfLines={2}>
+          {/* One line, always. The strip is a glance, not a paragraph: a
+              second line doubles its height and pushes the wallet card down
+              the screen.
+
+              The size is computed rather than left to `adjustsFontSizeToFit`,
+              which react-native-web does not implement and Android honours
+              unevenly — on those devices a long headline came out cut off with
+              an ellipsis, losing the coupon's own name. */}
+          <Text
+            style={[
+              styles.headline,
+              { color: tone.text, fontSize: headlineFontSize, lineHeight: headlineFontSize + 5 },
+            ]}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}
+          >
             {headline}
           </Text>
         </TouchableOpacity>
@@ -173,6 +213,7 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           onPress={handleDismiss}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityLabel="סגירת ההתראה"
+          style={styles.closeSlot}
         >
           <X size={18} color={tone.text} />
         </TouchableOpacity>
@@ -206,29 +247,33 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
 
 const styles = StyleSheet.create({
   banner: {
-    borderRadius: radii.card,
+    // Compact on purpose. Carbon and PatternFly both treat an inline alert as
+    // one line of text with an icon; at 72pt this strip was taking 8% of the
+    // screen to say nine words, and the shadow made it read as a card rather
+    // than a notice.
+    borderRadius: radii.lg,
     overflow: "hidden",
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 14,
-    ...shadows.card,
+    paddingHorizontal: BANNER_PADDING,
+    paddingVertical: 9,
+    marginBottom: 12,
   },
   mascot: {
-    width: 46,
-    height: 46,
+    position: "absolute",
+    right: 4,
+    // Pushed past the bottom edge so the banner crops it: only the head and
+    // shoulders clear the rim, and the strip keeps the height of its text.
+    bottom: -28,
+    width: 64,
+    height: 64,
     alignItems: "center",
-    justifyContent: "center",
-    // The rig anchors the character to the bottom of its 88pt slot, so after
-    // scaling the art sits low in the box and its optical centre lands below
-    // the headline's. The nudge puts the character's face on the same line as
-    // the text rather than the box's geometric centre.
-    transform: [{ scale: 46 / 88 }, { translateY: -6 }],
+    justifyContent: "flex-end",
+    transform: [{ scale: 64 / 88 }],
   },
   headRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 10,
+    gap: ROW_GAP,
   },
   headPressable: {
     flex: 1,
@@ -236,13 +281,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  /**
+   * The two ends reserve different widths on purpose.
+   *
+   * Equal slots do not produce equal gaps here, because the mascot is
+   * absolutely positioned and overhangs its own box: its footprint is 68pt
+   * (64 wide at `right: 4`) against the X's 18pt of ink. With both ends at 52
+   * the centred line sat 26pt from the mascot and 38pt from the X — visibly
+   * pushed toward the heavy side.
+   *
+   * The right slot is widened by that difference instead, which moves the
+   * line's centre halfway back and leaves an even gap on each side. Change
+   * the mascot's width or offset and these two numbers have to be re-measured
+   * together.
+   */
+  mascotSlot: {
+    width: MASCOT_SLOT,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeSlot: {
+    width: CLOSE_SLOT,
+    // Flush to the outer edge, where a dismiss control belongs and where this
+    // one has always been. The slot still reserves its width for the layout;
+    // only the glyph sits at the end of it.
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
   headline: {
     flex: 1,
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    textAlign: "right",
-    lineHeight: 20,
+    textAlign: "center",
+    lineHeight: 18,
+    // Optical centring, not geometric: the line box is already dead centre in
+    // the strip, but Hebrew has no descenders, so the ink sits in the upper
+    // part of a box that reserves room for a `g` that never comes. The eye
+    // reads the ink. One point down puts the letters where the middle looks.
+    marginTop: 1,
   },
   itemRow: {
     flexDirection: "row-reverse",
