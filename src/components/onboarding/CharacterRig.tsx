@@ -267,7 +267,15 @@ export function CharacterSpotlight({
   // spilling out of the top of it (which is what made the small size look
   // like a cropped sticker).
   const scale = (box * 0.92) / SLOT_H;
-  const ring = character === "investigator" ? "rgba(40, 100, 240, 0.18)" : "rgba(88, 223, 198, 0.28)";
+  // `tone: "none"` means the character is sitting directly on a host surface,
+  // so the ring and the gloss go too. Keeping them draws a pale disc on the
+  // banner's own colour and the mascot reads as a sticker.
+  const bare = tone === "none";
+  const ring = bare
+    ? "transparent"
+    : character === "investigator"
+      ? "rgba(40, 100, 240, 0.18)"
+      : "rgba(88, 223, 198, 0.28)";
   return (
     <View
       style={[
@@ -283,7 +291,7 @@ export function CharacterSpotlight({
       ]}
       accessibilityElementsHidden
     >
-      <View style={[styles.spotlightGloss, { borderRadius: box / 2 }]} />
+      {bare ? null : <View style={[styles.spotlightGloss, { borderRadius: box / 2 }]} />}
       <NativeAnimated.View style={[styles.spotlightBody, safeMotionStyle, { transform: [...safeMotionStyle.transform, { scale }] }]}>
         {character === "investigator" ? (
           <SafeInvestigator animate={shouldAnimate} />

@@ -8,6 +8,9 @@ import { fonts, radii, shadows } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
+import { expiryEmphasis, showsMascot } from "@/lib/expiryUrgency";
+import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 /**
  * A dismissible strip above the wallet card for coupons that expire within
@@ -135,8 +138,15 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
       ? `${soonest.coupon.company} ${daysPhrase(soonest.days)}, ועוד ${others} קופונים פגים בקרוב`
       : `הקופון שלך ב${soonest.coupon.company} ${daysPhrase(soonest.days)}`;
 
+  // How loud the banner is allowed to be. See `expiryUrgency.ts`: still above
+  // three days, one pass at two or three, a slow breath inside 48 hours.
+  const emphasis = expiryEmphasis(soonest.days);
+
   return (
-    <View style={[styles.banner, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+    <View
+      style={[styles.banner, { backgroundColor: tone.bg, borderColor: tone.border }]}
+    >
+      <ExpiryGlow emphasis={emphasis} color={tone.icon} radius={radii.card} />
       <View style={styles.headRow}>
         <TouchableOpacity
           activeOpacity={0.8}
@@ -147,7 +157,15 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           }
           style={styles.headPressable}
         >
-          <AlertTriangle size={19} color={tone.icon} />
+          {showsMascot(emphasis) ? (
+            // The rig's smallest bubble is 88pt, which would own the strip, so
+            // it is scaled down rather than given a size the rig does not have.
+            <View style={styles.mascot} pointerEvents="none">
+              <CharacterSpotlight character="helper" state="talking" size="small" tone="none" />
+            </View>
+          ) : (
+            <AlertTriangle size={19} color={tone.icon} />
+          )}
           <Text style={[styles.headline, { color: tone.text }]} numberOfLines={2}>
             {headline}
           </Text>
@@ -190,11 +208,23 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
 const styles = StyleSheet.create({
   banner: {
     borderRadius: radii.card,
+    overflow: "hidden",
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 14,
     ...shadows.card,
+  },
+  mascot: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    // The rig anchors the character to the bottom of its 88pt slot, so after
+    // scaling the art sits low in the box and its optical centre lands below
+    // the headline's. The nudge puts the character's face on the same line as
+    // the text rather than the box's geometric centre.
+    transform: [{ scale: 46 / 88 }, { translateY: -6 }],
   },
   headRow: {
     flexDirection: "row-reverse",
