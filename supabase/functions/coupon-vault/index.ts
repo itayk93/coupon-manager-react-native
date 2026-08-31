@@ -109,11 +109,11 @@ function saleInput(value: unknown): { salePrice: number; buyerName: string | nul
   if (value == null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_SALE_INPUT');
   const row = value as Record<string, unknown>;
-  const salePrice = row.salePrice == null || row.salePrice === '' ? 0 : Number(row.salePrice);
+  const salePrice = Number(row.salePrice);
   const buyerName = String(row.buyerName || '').trim() || null;
   const buyerPhone = String(row.buyerPhone || '').trim() || null;
   const buyerEmail = String(row.buyerEmail || '').trim().toLowerCase() || null;
-  if (!Number.isFinite(salePrice) || salePrice < 0
+  if (row.salePrice == null || row.salePrice === '' || !Number.isFinite(salePrice) || salePrice < 0
     || (buyerEmail && !/^\S+@\S+\.\S+$/.test(buyerEmail))) throw new Error('INVALID_SALE_INPUT');
   return { salePrice, buyerName, buyerPhone, buyerEmail };
 }

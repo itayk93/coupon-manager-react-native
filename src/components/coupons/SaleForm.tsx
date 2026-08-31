@@ -56,7 +56,11 @@ export function SaleForm({ busy, submitTitle, initialEmail = "", onSubmit }: {
   };
 
   const submit = () => {
-    const salePrice = price.trim() ? Number(price.replace(",", ".")) : 0;
+    if (!price.trim()) {
+      setError("יש למלא את סכום המכירה");
+      return;
+    }
+    const salePrice = Number(price.replace(",", "."));
     if (!Number.isFinite(salePrice) || salePrice < 0) {
       setError("סכום המכירה אינו תקין");
       return;
@@ -75,7 +79,7 @@ export function SaleForm({ busy, submitTitle, initialEmail = "", onSubmit }: {
   };
 
   return <View style={styles.form}>
-    <Input label="בכמה מכרתי (רשות)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" error={error} />
+    <Input label="בכמה מכרתי" value={price} onChangeText={setPrice} keyboardType="decimal-pad" error={error} />
     <View>
       <Input
         label="שם מלא (רשות)"
