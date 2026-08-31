@@ -1,6 +1,7 @@
 import { corsHeadersFor, jsonResponseFor } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { isCountryLevelResult } from '../_shared/geocodeQuality.ts';
 
 const GOOGLE_FIND_PLACE_URL = 'https://maps.googleapis.com/maps/api/place/findplacefromtext/json';
 const GOOGLE_GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
@@ -24,11 +25,20 @@ async function geocodeAddress(address: string, apiKey: string, diagnostics: stri
   const result = data?.results?.[0];
   const location = result?.geometry?.location;
   if (data?.status !== 'OK' || !result || !location) return null;
-  return {
+  const candidate = {
     address: String(result.formatted_address || address).trim(),
     latitude: Number(location.lat),
     longitude: Number(location.lng),
+    types: Array.isArray(result.types) ? result.types : null,
   };
+  // Every query here is a shop name with ', ישראל' glued on. An unrecognised
+  // name geocodes to the country itself, and that answer is worse than none:
+  // it puts a pin in the Negev and stretches the usage map to reach it.
+  if (isCountryLevelResult(candidate)) {
+    diagnostics.push('geocoding:country_level_rejected');
+    return null;
+  }
+  return { address: candidate.address, latitude: candidate.latitude, longitude: candidate.longitude };
 }
 
 async function searchPlace(query: string, apiKey: string, diagnostics: string[]) {
@@ -56,6 +66,14 @@ async function searchPlace(query: string, apiKey: string, diagnostics: string[])
   const place = data?.places?.[0];
   const location = place?.location;
   if (!place || !location) return null;
+  if (isCountryLevelResult({
+    latitude: Number(location.latitude),
+    longitude: Number(location.longitude),
+    address: place.formattedAddress,
+  })) {
+    diagnostics.push('places_new:country_level_rejected');
+    return null;
+  }
   return {
     placeName: String(place.displayName?.text || query).trim(),
     address: String(place.formattedAddress || '').trim(),
@@ -190,7 +208,15 @@ Deno.serve(async (req: Request) => {
     const location = candidate?.geometry?.location;
 
     diagnostics.push(`places_legacy:${googleData?.status || 'UNKNOWN'}`);
-    if (googleData?.status !== 'OK' || !candidate || !location) {
+    const countryLevel = candidate && location
+      ? isCountryLevelResult({
+          latitude: Number(location.lat),
+          longitude: Number(location.lng),
+          address: candidate.formatted_address,
+        })
+      : false;
+    if (countryLevel) diagnostics.push('places_legacy:country_level_rejected');
+    if (googleData?.status !== 'OK' || !candidate || !location || countryLevel) {
       if (localPlace?.place_address) {
         return jsonResponseFor(req, { result: {
           placeName: localPlace.place_name || query,
