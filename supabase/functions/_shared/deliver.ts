@@ -23,6 +23,7 @@ import { phrase } from './notificationVoice.ts';
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 const DEFAULT_SEND_HOUR = 9;
+const RTL_MARK = '\u200F';
 
 export type DeliveryUser = {
   id: number;
@@ -178,7 +179,15 @@ export async function deliver(
   // Written fresh for this message rather than pulled from a fixed string —
   // and falling back to the fixed string the moment anything is off. See
   // notificationVoice.ts.
-  const copy = await phrase(type, payload, { supabase, userId: user.id });
+  const phrasedCopy = await phrase(type, payload, { supabase, userId: user.id });
+  // Push banners do not expose layout control on every OS. A leading RTL mark
+  // makes Hebrew win the Unicode bidi decision even when a brand or amount is
+  // Latin. Web Push also carries `dir: rtl` in push.ts and the service worker.
+  const copy = {
+    ...phrasedCopy,
+    title: `${RTL_MARK}${phrasedCopy.title}`,
+    body: `${RTL_MARK}${phrasedCopy.body}`,
+  };
   const appBase = Deno.env.get('APP_BASE_URL') || '';
 
   if (wantsInApp) {

@@ -196,8 +196,9 @@ export async function sendTestPushToUser(userEmail: string) {
     action: 'test-user',
     user_email: userEmail,
     payload: {
-      title: 'קופון מאסטר',
-      body: 'זוהי התראת בדיקה. מערכת ה-Push פעילה.',
+      title: '\u200Fהקופון נוצל עד הסוף 💪',
+      body: '\u200Fקופון מאסטר מ־Wolt נסגר עם חיסכון של 10.00 ש״ח.',
+      dir: 'rtl',
       url: '/notifications',
       tag: 'coupon-master-test',
       requireInteraction: false,

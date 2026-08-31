@@ -35,6 +35,7 @@ self.addEventListener("push", (event) => {
   const title = data.title || "קופון מאסטר";
   const options = {
     body: data.body || "יש עדכון חדש בקופונים שלך.",
+    dir: data.dir || "rtl",
     icon: data.icon || "/pwa-192x192.png",
     badge: data.badge || "/pwa-192x192.png",
     tag: data.tag || "coupon-master-update",

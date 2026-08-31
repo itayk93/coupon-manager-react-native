@@ -6,6 +6,7 @@ const DEFAULT_SUBJECT = 'mailto:push@couponmaster.app';
 const DEFAULT_PAYLOAD = {
   title: 'קופון מאסטר',
   body: 'יש עדכון חדש במערכת.',
+  dir: 'rtl',
   url: '/notifications',
   icon: '/pwa-192x192.png',
   badge: '/pwa-192x192.png',

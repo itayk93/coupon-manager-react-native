@@ -34,6 +34,13 @@ describe("isUsable", () => {
     }, facts)).toBe(false);
   });
 
+  it("rejects English connector words that flip Hebrew notifications to LTR", () => {
+    expect(isUsable({
+      title: "הקופון נוצל עד הסוף",
+      body: "קופון מאסטר from Wolt נסגר עם חיסכון של 10.00 ש״ח.",
+    }, facts)).toBe(false);
+  });
+
   it("rejects a body that drifted out of Hebrew", () => {
     expect(isUsable({
       title: "Nice month",

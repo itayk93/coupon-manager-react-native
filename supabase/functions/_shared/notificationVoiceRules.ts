@@ -50,10 +50,14 @@ export function isUsable(
   // The shekel sign is what we asked it not to write.
   if (body.includes('₪') || title.includes('₪')) return false;
 
+  // Latin brand names are allowed, English glue words are not. A model once
+  // wrote "קופון מאסטר from Wolt", which made the entire iOS banner resolve
+  // left-to-right despite the Hebrew around it.
+  if (/\b(?:from|with|by|at|for|of)\b/i.test(`${title} ${body}`)) return false;
+
   const permitted = new Set(allowedNumbers(payload));
   for (const run of `${title} ${body}`.match(/\d+/g) || []) {
     if (!permitted.has(run)) return false;
   }
   return true;
 }
-
