@@ -4,6 +4,7 @@ import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { isFemaleUser } from "@/lib/gender";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { useAuth } from "@/contexts/AuthContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 
@@ -65,9 +66,11 @@ export function CompanyCardsSlider({
           const logoUri = getCompanyLogoSource(item.company);
 
           return (
-            <TouchableOpacity
+            <PressableScale
               key={item.company}
-              activeOpacity={0.8}
+              haptic
+              accessibilityRole="button"
+              accessibilityLabel={item.company}
               onPress={() => onSelectCompany(item.company)}
               style={[
                 styles.card,
@@ -94,7 +97,7 @@ export function CompanyCardsSlider({
               <Text style={[styles.couponCount, { color: theme.textSubtle }]}> 
                 {item.count === 1 ? "קופון אחד" : `${item.count} קופונים`}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           );
         })}
       </View>

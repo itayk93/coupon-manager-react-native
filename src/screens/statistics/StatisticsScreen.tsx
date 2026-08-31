@@ -19,6 +19,7 @@ import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { IlsAmount } from "@/components/ui/IlsAmount";
 import {
   KpiDrilldownModal,
@@ -132,9 +133,9 @@ export function StatisticsScreen() {
             { config: kpiConfigs[2], label: "סך הכל נוצל", value: usedValue, color: theme.text, icon: <CheckCircle2 size={16} color={theme.primary} /> },
             { config: kpiConfigs[3], label: "סך שווי קופונים", value: totalValue, color: theme.text, icon: <TrendingUp size={16} color={theme.warning} /> },
           ].map((kpi) => (
-            <TouchableOpacity
+            <PressableScale
               key={kpi.config.key}
-              activeOpacity={0.7}
+              haptic
               accessibilityRole="button"
               accessibilityLabel={kpi.label}
               onPress={() => setActiveKpi(kpi.config)}
@@ -158,7 +159,7 @@ export function StatisticsScreen() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.72}
               />
-            </TouchableOpacity>
+            </PressableScale>
           ))}
         </View>
 
@@ -172,9 +173,12 @@ export function StatisticsScreen() {
             {monthlyTrend.map((m) => {
               const isActive = activeMonth === m.key;
               return (
-                <TouchableOpacity
+                <PressableScale
                   key={m.key}
-                  activeOpacity={0.7}
+                  haptic
+                  // A column is narrow, so it takes a deeper dip than a card
+                  // before the movement is legible at all.
+                  scaleTo={0.92}
                   accessibilityRole="button"
                   accessibilityLabel={`${m.fullLabel}: ${formatIls(m.value)}`}
                   onPress={() => setActiveMonth(isActive ? null : m.key)}
@@ -193,7 +197,7 @@ export function StatisticsScreen() {
                     />
                   </View>
                   <Text style={[styles.barLabel, { color: theme.textSubtle }]}>{m.shortLabel}</Text>
-                </TouchableOpacity>
+                </PressableScale>
               );
             })}
           </View>
@@ -236,8 +240,9 @@ export function StatisticsScreen() {
           </View>
 
           <View style={styles.statusDistributionRow}>
-            <TouchableOpacity
-              activeOpacity={0.7}
+            <PressableScale
+              haptic
+              scaleTo={0.93}
               accessibilityRole="button"
               accessibilityLabel="פעילים"
               onPress={() => setStatusFilter("active")}
@@ -250,10 +255,11 @@ export function StatisticsScreen() {
                 {statusStats.active}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>פעילים</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
-            <TouchableOpacity
-              activeOpacity={0.7}
+            <PressableScale
+              haptic
+              scaleTo={0.93}
               accessibilityRole="button"
               accessibilityLabel="נוצלו במלואם"
               onPress={() => setStatusFilter("used")}
@@ -266,10 +272,11 @@ export function StatisticsScreen() {
                 {statusStats.fullyUsed}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>נוצלו במלואם</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
-            <TouchableOpacity
-              activeOpacity={0.7}
+            <PressableScale
+              haptic
+              scaleTo={0.93}
               accessibilityRole="button"
               accessibilityLabel="פגי תוקף"
               onPress={() => setStatusFilter("expired")}
@@ -282,7 +289,7 @@ export function StatisticsScreen() {
                 {statusStats.expired}
               </Text>
               <Text style={[styles.statusLabel, { color: theme.textMuted }]}>פגי תוקף</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </View>
 
