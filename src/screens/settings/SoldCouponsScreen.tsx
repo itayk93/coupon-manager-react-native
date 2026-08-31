@@ -18,7 +18,7 @@ export function SoldCouponsScreen() {
   const { data: sales = [], isLoading } = useCouponSales();
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
-    {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="המאסקוט מרכז את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
+    {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="מרכזים את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
       {sales.length === 0 ? (
         <EmptyState
           title="עוד לא מכרת קופונים"
