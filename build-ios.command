@@ -32,6 +32,7 @@ DEVICE_PICK="${DEVICE_ID:-}"
 DEVICE_FILE="$DIR/.ios-device"
 LIST_ONLY=0
 TARGET_ALL=1
+CURRENT_PHASE="build"
 [ -n "$DEVICE_PICK" ] && TARGET_ALL=0
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -62,7 +63,11 @@ fi
 # Any failure past this point prints where to look instead of scrolling away.
 trap 'status=$?; if [ $status -ne 0 ]; then
   echo ""
-  echo "❌ הבנייה נכשלה (קוד $status)."
+  if [ "$CURRENT_PHASE" = "deploy" ]; then
+    echo "❌ ההתקנה או ההפעלה נכשלה (קוד $status)."
+  else
+    echo "❌ הבנייה נכשלה (קוד $status)."
+  fi
   if [ -f "$LOG" ]; then
     echo "   שגיאות אחרונות:"
     grep -E "^(error|.*error:)" "$LOG" | tail -n 10 || true
@@ -177,6 +182,7 @@ if [ ! -d "$APP_PATH" ]; then
 fi
 
 echo "✅ נבנה: $(du -sh "$APP_PATH" | cut -f1)"
+CURRENT_PHASE="deploy"
 
 # 4. Install and launch -------------------------------------------------------
 # Each device gets its own process so two phones install and launch in parallel.
@@ -200,19 +206,36 @@ deploy_device() {
     return $status
   fi
 
+  local launch_attempt=1
+  local max_launch_attempts=12
   echo "🚀 [$device_name] מפעיל..."
-  set +e
-  launch_out=$(xcrun devicectl device process launch --device "$device_id" "$BUNDLE_ID" 2>&1)
-  status=$?
-  set -e
-  printf '%s\n' "$launch_out"
-  if [ $status -ne 0 ]; then
+  while [ $launch_attempt -le $max_launch_attempts ]; do
+    set +e
+    launch_out=$(xcrun devicectl device process launch --device "$device_id" "$BUNDLE_ID" 2>&1)
+    status=$?
+    set -e
+    if [ $status -eq 0 ]; then
+      printf '%s\n' "$launch_out"
+      return 0
+    fi
+
     case "$launch_out" in
-      *"could not be, unlocked"*) echo "👉 [$device_name] שחרר נעילת מסך." ;;
-      *"not been explicitly trusted"*|*"invalid code signature"*) echo "👉 [$device_name] אשר את המפתח תחת VPN & Device Management." ;;
+      *"could not be, unlocked"*)
+        if [ $launch_attempt -lt $max_launch_attempts ]; then
+          echo "🔒 [$device_name] נעול. פתח את המסך — מנסה שוב בעוד 5 שניות ($launch_attempt/$max_launch_attempts)..."
+          sleep 5
+          launch_attempt=$((launch_attempt + 1))
+          continue
+        fi
+        echo "❌ [$device_name] נשאר נעול במשך דקה. האפליקציה מותקנת, אך לא הופעלה."
+        ;;
+      *"not been explicitly trusted"*|*"invalid code signature"*)
+        echo "👉 [$device_name] אשר את המפתח תחת VPN & Device Management."
+        ;;
     esac
+    printf '%s\n' "$launch_out"
     return $status
-  fi
+  done
 }
 
 echo "📲 מתקין ומפעיל במקביל..."
@@ -223,7 +246,7 @@ INDEX=0
 while IFS=$'\t' read -r DEVICE_NAME DEVICE_ID; do
   [ -z "$DEVICE_ID" ] && continue
   DEVICE_LOG="$DERIVED/deploy-$DEVICE_ID.log"
-  deploy_device "$DEVICE_NAME" "$DEVICE_ID" > "$DEVICE_LOG" 2>&1 &
+  deploy_device "$DEVICE_NAME" "$DEVICE_ID" 2>&1 | tee "$DEVICE_LOG" &
   PIDS[$INDEX]=$!
   LOGS[$INDEX]="$DEVICE_LOG"
   NAMES[$INDEX]="$DEVICE_NAME"
@@ -235,7 +258,6 @@ set +e
 for ((INDEX=0; INDEX<${#PIDS[@]}; INDEX++)); do
   wait "${PIDS[$INDEX]}"
   STATUS=$?
-  cat "${LOGS[$INDEX]}"
   if [ $STATUS -ne 0 ]; then
     echo "❌ ${NAMES[$INDEX]} נכשל (קוד $STATUS)."
     DEPLOY_STATUS=$STATUS
