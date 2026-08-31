@@ -32,7 +32,7 @@ export function SoldCouponsScreen() {
           <Text style={[styles.line, { color: theme.text }]}>מחיר מכירה: {formatIls(sale.sale_price)}</Text>
           <Text style={[styles.line, { color: profit >= 0 ? theme.success : theme.danger }]}>רווח: {formatIls(profit)}</Text>
           <Text style={[styles.meta, { color: theme.textMuted }]}>שווי {formatIls(sale.coupon_value_snapshot)} · עלות {formatIls(sale.coupon_cost_snapshot)}</Text>
-          <Text style={[styles.meta, { color: theme.textMuted }]}>נמכר ל{sale.buyer_first_name} {sale.buyer_last_name} · {sale.buyer_phone}</Text>
+          {sale.buyer_name || sale.buyer_phone ? <Text style={[styles.meta, { color: theme.textMuted }]}>נמכר ל{[sale.buyer_name, sale.buyer_phone].filter(Boolean).join(" · ")}</Text> : null}
           {sale.buyer_email ? <Text style={[styles.meta, { color: theme.textMuted }]}>{sale.buyer_email}</Text> : null}
           <Text style={[styles.meta, { color: theme.textMuted }]}>{formatDateHebrew(sale.sold_at || sale.created_at)} · {sale.sale_type === "transfer" ? "העברה באפליקציה" : "סימון ידני"}</Text>
         </View>;

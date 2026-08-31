@@ -105,18 +105,17 @@ function assertIds(value: unknown): number[] {
   return Array.from(new Set(ids));
 }
 
-function saleInput(value: unknown): { salePrice: number; buyerFirstName: string; buyerLastName: string; buyerPhone: string; buyerEmail: string | null } | null {
+function saleInput(value: unknown): { salePrice: number; buyerName: string | null; buyerPhone: string | null; buyerEmail: string | null } | null {
   if (value == null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_SALE_INPUT');
   const row = value as Record<string, unknown>;
-  const salePrice = Number(row.salePrice);
-  const buyerFirstName = String(row.buyerFirstName || '').trim();
-  const buyerLastName = String(row.buyerLastName || '').trim();
-  const buyerPhone = String(row.buyerPhone || '').trim();
+  const salePrice = row.salePrice == null || row.salePrice === '' ? 0 : Number(row.salePrice);
+  const buyerName = String(row.buyerName || '').trim() || null;
+  const buyerPhone = String(row.buyerPhone || '').trim() || null;
   const buyerEmail = String(row.buyerEmail || '').trim().toLowerCase() || null;
-  if (!Number.isFinite(salePrice) || salePrice < 0 || !buyerFirstName || !buyerLastName || !buyerPhone
+  if (!Number.isFinite(salePrice) || salePrice < 0
     || (buyerEmail && !/^\S+@\S+\.\S+$/.test(buyerEmail))) throw new Error('INVALID_SALE_INPUT');
-  return { salePrice, buyerFirstName, buyerLastName, buyerPhone, buyerEmail };
+  return { salePrice, buyerName, buyerPhone, buyerEmail };
 }
 
 async function createPendingSale(db: ReturnType<typeof admin>, userId: number, couponId: number, sale: ReturnType<typeof saleInput>): Promise<number | null> {
@@ -126,8 +125,8 @@ async function createPendingSale(db: ReturnType<typeof admin>, userId: number, c
   if (couponError) throw couponError;
   const { data, error } = await db.from('coupon_sales').insert({
     coupon_id: coupon.id, seller_user_id: userId, sale_type: 'transfer', status: 'pending',
-    buyer_first_name: sale.buyerFirstName, buyer_last_name: sale.buyerLastName,
-    buyer_phone: sale.buyerPhone, buyer_email: sale.buyerEmail, sale_price: sale.salePrice,
+    buyer_name: sale.buyerName, buyer_phone: sale.buyerPhone,
+    buyer_email: sale.buyerEmail, sale_price: sale.salePrice,
     coupon_value_snapshot: coupon.value, coupon_cost_snapshot: coupon.cost,
     coupon_used_value_snapshot: coupon.used_value, company_snapshot: coupon.company,
     description_snapshot: coupon.description, expiration_snapshot: coupon.expiration,
@@ -255,8 +254,7 @@ Deno.serve(async (req) => {
       });
       const { data, error } = await callerDb.rpc('record_manual_coupon_sale', {
         p_coupon_id: couponId, p_sale_price: sale.salePrice,
-        p_buyer_first_name: sale.buyerFirstName, p_buyer_last_name: sale.buyerLastName,
-        p_buyer_phone: sale.buyerPhone, p_buyer_email: sale.buyerEmail,
+        p_buyer_name: sale.buyerName, p_buyer_phone: sale.buyerPhone, p_buyer_email: sale.buyerEmail,
       });
       if (error) throw error;
       return jsonResponseFor(req, { data: { id: data } }, 201);

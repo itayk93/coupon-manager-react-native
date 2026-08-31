@@ -5,9 +5,8 @@ import { notify } from "@/lib/notify";
 
 export type SaleInput = {
   salePrice: number;
-  buyerFirstName: string;
-  buyerLastName: string;
-  buyerPhone: string;
+  buyerName?: string;
+  buyerPhone?: string;
   buyerEmail?: string;
 };
 
@@ -18,9 +17,8 @@ export type CouponSale = {
   buyer_user_id: number | null;
   sale_type: "manual" | "transfer";
   status: "pending" | "completed" | "declined" | "cancelled";
-  buyer_first_name: string;
-  buyer_last_name: string;
-  buyer_phone: string;
+  buyer_name: string | null;
+  buyer_phone: string | null;
   buyer_email: string | null;
   sale_price: number;
   coupon_value_snapshot: number;
