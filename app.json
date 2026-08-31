@@ -82,6 +82,11 @@
               "scheme": "https",
               "host": "coupons.itaykarkason.com",
               "pathPrefix": "/r/"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/s/"
             }
           ],
           "category": [

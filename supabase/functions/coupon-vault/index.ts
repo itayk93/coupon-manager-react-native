@@ -10,6 +10,28 @@ const WRITABLE = new Set([
   'last_detail_view', 'last_company_view', 'last_code_view', 'show_in_widget', 'widget_display_order', 'source',
 ]);
 
+// A share link lives for a day. Long enough to hand a phone to a friend,
+// short enough that a link forwarded by mistake is worthless by tomorrow.
+const SHARE_LINK_TTL_MS = 24 * 60 * 60 * 1000;
+
+type OpenShare = {
+  id: number; coupon_id: number; shared_by_user_id: number;
+  share_type: string; share_expires_at: string;
+};
+
+async function openShareByToken(db: ReturnType<typeof admin>, token: unknown): Promise<OpenShare> {
+  if (typeof token !== 'string' || !/^[0-9a-f-]{36}$/i.test(token)) throw new Error('INVALID_INPUT');
+  const { data, error } = await db.from('coupon_shares')
+    .select('id,coupon_id,shared_by_user_id,share_type,share_expires_at,status,shared_with_user_id')
+    .eq('share_token', token).maybeSingle();
+  if (error) throw error;
+  // One error for "wrong token", "already taken" and "too late". Distinguishing
+  // them would tell a stranger holding a guessed token what they nearly had.
+  if (!data || data.status !== 'pending' || data.shared_with_user_id !== null) throw new Error('SHARE_LINK_INVALID');
+  if (new Date(data.share_expires_at).getTime() <= Date.now()) throw new Error('SHARE_LINK_INVALID');
+  return data as OpenShare;
+}
+
 const admin = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -363,6 +385,91 @@ Deno.serve(async (req) => {
       }
       return jsonResponseFor(req, { data: { ...data, emailSent } }, 201);
     }
+    // An open link is a bearer credential: whoever holds the token is the
+    // recipient. It is kept deliberately short-lived and single-use, because
+    // unlike an email invitation it cannot be aimed at anyone in particular.
+    if (body.action === 'create_share_link') {
+      const couponId = assertId(body.couponId);
+      const shareType = body.shareType === 'transfer' ? 'transfer' : body.shareType === 'shared' ? 'shared' : null;
+      if (!shareType) throw new Error('INVALID_INPUT');
+      const { data: coupon } = await db.from('coupon').select('id').eq('id', couponId).eq('user_id', user.id).maybeSingle();
+      if (!coupon) throw new Error('NOT_FOUND');
+      // Replacing beats erroring: the previous link was never handed to anyone
+      // in particular, and leaving it live would defeat revocation.
+      await db.from('coupon_shares').update({ status: 'revoked', revoked_at: new Date().toISOString() })
+        .eq('coupon_id', couponId).eq('shared_by_user_id', user.id)
+        .eq('status', 'pending').is('shared_with_user_id', null);
+      const token = crypto.randomUUID();
+      const expires = new Date(Date.now() + SHARE_LINK_TTL_MS);
+      const { data, error } = await db.from('coupon_shares').insert({
+        coupon_id: couponId, shared_by_user_id: user.id, shared_with_user_id: null,
+        recipient_email: null, share_type: shareType, share_token: token,
+        share_expires_at: expires.toISOString(), status: 'pending', created_at: new Date().toISOString(),
+      }).select('id').single();
+      if (error) throw error;
+      return jsonResponseFor(req, { data: { id: data.id, token, shareType, expiresAt: expires.toISOString() } }, 201);
+    }
+
+    // The preview names the coupon without giving it away. The code stays out
+    // of the response until the claim goes through.
+    if (body.action === 'share_link_preview') {
+      const share = await openShareByToken(db, body.token);
+      const { data: coupon } = await db.from('coupon')
+        .select('id,company,description,value,used_value,expiration').eq('id', share.coupon_id).maybeSingle();
+      if (!coupon) throw new Error('NOT_FOUND');
+      const { data: sender } = await db.from('users').select('first_name').eq('id', share.shared_by_user_id).maybeSingle();
+      const decrypted = await decryptCoupon(coupon as Record<string, unknown>);
+      return jsonResponseFor(req, { data: {
+        company: decrypted.company,
+        description: decrypted.description,
+        value: coupon.value,
+        usedValue: coupon.used_value,
+        expiration: coupon.expiration,
+        shareType: share.share_type,
+        senderFirstName: sender?.first_name || null,
+        isOwnLink: share.shared_by_user_id === user.id,
+        expiresAt: share.share_expires_at,
+      } });
+    }
+
+    if (body.action === 'claim_share_link') {
+      if (typeof body.accept !== 'boolean') throw new Error('INVALID_INPUT');
+      const share = await openShareByToken(db, body.token);
+      if (share.shared_by_user_id === user.id) throw new Error('CANNOT_CLAIM_OWN_SHARE');
+      const { data: existing } = await db.from('coupon_shares').select('id')
+        .eq('coupon_id', share.coupon_id).eq('shared_with_user_id', user.id)
+        .in('status', ['pending', 'accepted']).maybeSingle();
+      if (existing) throw new Error('SHARE_ALREADY_EXISTS');
+      if (!body.accept) {
+        // Declining burns the link. A coupon offered and refused should not sit
+        // around waiting for the next person who happens to see the QR code.
+        const { error } = await db.from('coupon_shares').update({ status: 'declined' })
+          .eq('id', share.id).eq('status', 'pending').is('shared_with_user_id', null);
+        if (error) throw error;
+        return jsonResponseFor(req, { data: { status: 'declined', couponId: share.coupon_id } });
+      }
+      // Claiming the row and answering it are two steps, so the update is
+      // conditional on the row still being unclaimed. Two people scanning the
+      // same code race here, and exactly one of them wins.
+      const { data: claimed, error: claimError } = await db.from('coupon_shares')
+        .update({ shared_with_user_id: user.id })
+        .eq('id', share.id).eq('status', 'pending').is('shared_with_user_id', null)
+        .select('id').maybeSingle();
+      if (claimError) throw claimError;
+      if (!claimed) throw new Error('SHARE_ALREADY_CLAIMED');
+      const callerDb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: req.headers.get('Authorization') || '' } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data, error } = await callerDb.rpc('respond_to_coupon_share', { p_share_id: share.id, p_accept: true });
+      if (error) {
+        // Do not leave the row bound to someone who never received anything.
+        await db.from('coupon_shares').update({ shared_with_user_id: null }).eq('id', share.id).eq('status', 'pending');
+        throw error;
+      }
+      return jsonResponseFor(req, { data: { status: data?.[0]?.new_status || 'accepted', couponId: share.coupon_id } });
+    }
+
     if (body.action === 'respond_to_share') {
       const id = assertId(body.id);
       if (typeof body.accept !== 'boolean') throw new Error('INVALID_INPUT');
@@ -384,7 +491,7 @@ Deno.serve(async (req) => {
     throw new Error('INVALID_ACTION');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'INTERNAL_ERROR';
-    const status = message === 'UNAUTHENTICATED' ? 401 : message === 'FORBIDDEN' ? 403 : message === 'NOT_FOUND' ? 404 : message === 'SHARE_ALREADY_EXISTS' ? 409 : message.startsWith('INVALID_') || message === 'RECIPIENT_NOT_FOUND' ? 400 : 500;
+    const status = message === 'UNAUTHENTICATED' ? 401 : message === 'FORBIDDEN' ? 403 : message === 'NOT_FOUND' ? 404 : message === 'SHARE_ALREADY_EXISTS' || message === 'SHARE_ALREADY_CLAIMED' ? 409 : message === 'SHARE_LINK_INVALID' ? 410 : message === 'CANNOT_CLAIM_OWN_SHARE' ? 400 : message.startsWith('INVALID_') || message === 'RECIPIENT_NOT_FOUND' ? 400 : 500;
     console.error('coupon-vault', message);
     return jsonResponseFor(req, { error: message }, status);
   }

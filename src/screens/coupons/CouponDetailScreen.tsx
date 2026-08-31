@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
-  Share,
   Switch,
   Linking,
   Platform,
@@ -36,6 +35,7 @@ import {
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { QuickShareSheet } from "@/components/coupons/QuickShareSheet";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -152,6 +152,7 @@ export function CouponDetailScreen() {
   const widget = useWidgetToggle(coupon);
 
   const [isUsageOpen, setIsUsageOpen] = useState(false);
+  const [isQuickShareOpen, setIsQuickShareOpen] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedMapLocation, setSelectedMapLocation] = useState<{
@@ -204,6 +205,7 @@ export function CouponDetailScreen() {
   const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
   const isSharedWithMe = coupon.is_shared_with_me === true;
+
   const usageLocations = history.filter(
     (row) =>
       row.source_table !== "sum_row" &&
@@ -279,17 +281,6 @@ export function CouponDetailScreen() {
     }
   };
 
-  const handleNativeShare = async () => {
-    try {
-      await Share.share({
-        message: `קופון ל-${coupon.company}\nקוד: ${coupon.code}\nשווי: ${formatIls(
-          remaining
-        )}`,
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const logo = getCompanyLogoSource(coupon.company);
 
@@ -475,14 +466,18 @@ export function CouponDetailScreen() {
             </TouchableOpacity>
           ) : null}
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleNativeShare}
-            style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-          >
-            <Share2 size={18} color={theme.text} />
-            <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
-          </TouchableOpacity>
+          {/* Only an owner can hand a coupon on. A coupon shared with you is
+              not yours to pass along, and the server refuses it anyway. */}
+          {!isSharedWithMe ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setIsQuickShareOpen(true)}
+              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+            >
+              <Share2 size={18} color={theme.text} />
+              <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Redemption Link if available */}
@@ -811,6 +806,14 @@ export function CouponDetailScreen() {
         onClose={() => setIsUsageOpen(false)}
         coupons={[coupon]}
         preselectedCoupon={coupon}
+      />
+
+      <QuickShareSheet
+        visible={isQuickShareOpen}
+        onClose={() => setIsQuickShareOpen(false)}
+        couponId={coupon.id}
+        company={coupon.company}
+        remaining={remaining}
       />
 
       <Modal

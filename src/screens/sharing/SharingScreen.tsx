@@ -314,7 +314,7 @@ export function SharingScreen() {
                           numberOfLines={2}
                           style={[styles.sharedWithText, { color: theme.textMuted }]}
                         >
-                          {`שיתפתי את ${item.coupon?.company || "הקופון"} עם ${item.shared_with?.email || "מישהו שעוד לא הצטרף"}`}
+                          {`שיתפתי את ${item.coupon?.company || "הקופון"} ${item.shared_with?.email ? `עם ${item.shared_with.email}` : item.recipient_email ? `עם ${item.recipient_email}` : "בקישור פתוח"}`}
                         </Text>
                         <Text
                           numberOfLines={1}
