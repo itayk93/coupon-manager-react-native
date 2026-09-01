@@ -44,6 +44,21 @@ export function extractRedemptionUrl(text: string): string | null {
   return labeled?.[1]?.replace(/[.,]+$/, "") || null;
 }
 
+/** URL supplied by a browser share sheet. Unlike redemption URLs embedded in
+ * coupon copy, this may be the only shared value and is also the page to read. */
+export function extractSharedPageUrl(text: string): string | null {
+  const match = searchableText(text).match(/https?:\/\/[^\s<>\])}]+/i);
+  if (!match) return null;
+
+  const candidate = match[0].replace(/[.,;:!?]+$/, "");
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Converts "תוקף השובר: 5 שנים" to an absolute date from import day. */
 export function extractRelativeExpiration(text: string, now = new Date()): string | null {
   const normalized = searchableText(text);

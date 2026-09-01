@@ -7,6 +7,7 @@ import {
   extractExpiration,
   extractRedemptionUrl,
   extractRelativeExpiration,
+  extractSharedPageUrl,
   extractVerificationCode,
   extractVoucherCode,
   isActivationOffer,
@@ -40,8 +41,10 @@ export function useParseCoupon() {
     mutationFn: async ({ text, imageBase64, companyNames }: { text?: string; imageBase64?: string; companyNames?: string[] }) => {
       if (!text && !imageBase64) throw new Error("צריך טקסט או תמונה");
 
+      const sharedPageUrl = text ? extractSharedPageUrl(text) : null;
+
       const { data, error } = await supabase.functions.invoke("parse-coupon", {
-        body: { text, imageBase64, companyNames },
+        body: { text, imageBase64, companyNames, sourceUrl: sharedPageUrl },
       });
 
       if (error) {
@@ -79,7 +82,9 @@ export function useParseCoupon() {
         card_exp: textCardExpiry || coupon.card_exp,
         cvv: textCvv || coupon.cvv,
         expiration: textExpiration || relativeExpiration || cardExpiration || coupon.expiration,
-        redemption_url: textRedemptionUrl || coupon.redemption_url,
+        // A browser share explicitly identifies the coupon page. Preserve it
+        // even if page copy also contains unrelated balance/help links.
+        redemption_url: sharedPageUrl || textRedemptionUrl || coupon.redemption_url,
       }));
 
       const filteredCoupons = normalizedCoupons.filter(isLikelyCoupon);

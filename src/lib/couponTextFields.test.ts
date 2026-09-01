@@ -4,10 +4,22 @@ import {
   extractCardExpiry,
   extractRedemptionUrl,
   extractRelativeExpiration,
+  extractSharedPageUrl,
   isActivationOffer,
   extractVerificationCode,
   extractVoucherCode,
 } from "./couponTextFields";
+
+describe("extractSharedPageUrl", () => {
+  it("extracts a browser-shared URL and removes sentence punctuation", () => {
+    expect(extractSharedPageUrl("מבצע באתר https://example.com/coupon?id=7."))
+      .toBe("https://example.com/coupon?id=7");
+  });
+
+  it("returns null when the shared text has no web URL", () => {
+    expect(extractSharedPageUrl("קוד קופון 12345678")).toBeNull();
+  });
+});
 
 describe("coupon text card fields", () => {
   const directInsuranceMessage = `

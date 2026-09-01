@@ -142,6 +142,94 @@ async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGE_BASE64_CHARS = 8 * 1024 * 1024;
 const MAX_TEXT_CHARS = 20000;
+const MAX_WEB_PAGE_BYTES = 1_000_000;
+const MAX_WEB_PAGE_TEXT_CHARS = 16_000;
+const MAX_WEB_REDIRECTS = 3;
+
+function isPrivateIpAddress(address: string): boolean {
+  const value = address.toLowerCase();
+  if (value.includes(':')) {
+    return value === '::1' || value.startsWith('fc') || value.startsWith('fd') ||
+      value.startsWith('fe8') || value.startsWith('fe9') || value.startsWith('fea') ||
+      value.startsWith('feb') || value.startsWith('::ffff:127.') ||
+      value.startsWith('::ffff:10.') || value.startsWith('::ffff:192.168.') ||
+      /^::ffff:172\.(1[6-9]|2\d|3[01])\./.test(value) ||
+      value.startsWith('::ffff:169.254.');
+  }
+  return /^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(value);
+}
+
+async function assertPublicWebUrl(rawUrl: string): Promise<URL> {
+  const url = new URL(rawUrl);
+  if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) {
+    throw new Error('כתובת האתר אינה תקינה');
+  }
+  if (url.port && url.port !== '80' && url.port !== '443') {
+    throw new Error('כתובת האתר משתמשת ביציאה לא נתמכת');
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.internal')) {
+    throw new Error('כתובת האתר אינה ציבורית');
+  }
+
+  const recordType = hostname.includes(':') ? null : 'A';
+  const addresses = recordType ? await Deno.resolveDns(hostname, recordType) : [hostname];
+  const ipv6 = recordType ? await Deno.resolveDns(hostname, 'AAAA').catch(() => [] as string[]) : [];
+  if (addresses.length + ipv6.length === 0 || [...addresses, ...ipv6].some(isPrivateIpAddress)) {
+    throw new Error('כתובת האתר אינה ציבורית');
+  }
+  return url;
+}
+
+function htmlToReadableText(html: string): string {
+  return html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<(?:br|\/p|\/div|\/li|\/h[1-6]|\/tr)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;|&#34;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n')
+    .trim()
+    .slice(0, MAX_WEB_PAGE_TEXT_CHARS);
+}
+
+async function readPublicWebPage(rawUrl: string): Promise<string> {
+  let url = await assertPublicWebUrl(rawUrl);
+  for (let redirect = 0; redirect <= MAX_WEB_REDIRECTS; redirect++) {
+    const response = await fetch(url, {
+      redirect: 'manual',
+      headers: { 'user-agent': 'CouponMaster/1.0', accept: 'text/html,text/plain' },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (!location || redirect === MAX_WEB_REDIRECTS) throw new Error('יותר מדי הפניות באתר');
+      url = await assertPublicWebUrl(new URL(location, url).toString());
+      continue;
+    }
+    if (!response.ok) throw new Error(`האתר החזיר שגיאה ${response.status}`);
+    const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+    if (!contentType.includes('text/html') && !contentType.includes('text/plain')) {
+      throw new Error('הקישור אינו עמוד טקסט');
+    }
+    const declaredLength = Number(response.headers.get('content-length') || 0);
+    if (declaredLength > MAX_WEB_PAGE_BYTES) throw new Error('עמוד האתר גדול מדי');
+    const body = await response.text();
+    if (new TextEncoder().encode(body).byteLength > MAX_WEB_PAGE_BYTES) {
+      throw new Error('עמוד האתר גדול מדי');
+    }
+    return htmlToReadableText(body);
+  }
+  throw new Error('לא הצלחנו לקרוא את האתר');
+}
 
 /** Parses per user per rolling 24h. Generous for real use, fatal for a script. */
 const MAX_PARSES_PER_DAY = 60;
@@ -195,7 +283,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'הבקשה גדולה מדי. נסה תמונה קטנה יותר.' }, 413);
     }
 
-    const { text, imageBase64, companyNames } = await req.json();
+    const { text, imageBase64, companyNames, sourceUrl } = await req.json();
     if (!text && !imageBase64) return jsonResponse({ error: 'צריך טקסט או תמונה' }, 400);
 
     if (typeof text === 'string' && text.length > MAX_TEXT_CHARS) {
@@ -207,6 +295,19 @@ Deno.serve(async (req: Request) => {
       }
       if (!/^[A-Za-z0-9+/=\s]+$/.test(imageBase64)) {
         return jsonResponse({ error: 'התמונה אינה בפורמט תקין.' }, 400);
+      }
+    }
+
+    let inputText = typeof text === 'string' ? text : '';
+    if (sourceUrl != null) {
+      if (typeof sourceUrl !== 'string' || sourceUrl.length > 2048) {
+        return jsonResponse({ error: 'כתובת האתר אינה תקינה' }, 400);
+      }
+      try {
+        const pageText = await readPublicWebPage(sourceUrl);
+        inputText = `קישור עמוד הקופון: ${sourceUrl}\n\nתוכן העמוד:\n${pageText}`;
+      } catch (error) {
+        return jsonResponse({ error: `לא הצלחנו לקרוא את עמוד הקופון: ${String(error)}` }, 422);
       }
     }
 
@@ -238,8 +339,8 @@ Deno.serve(async (req: Request) => {
     const content: unknown[] = [
       {
         type: 'text',
-        text: (text
-          ? `חלץ את פרטי הקופון מהטקסט הבא:\n\n${text}`
+        text: (inputText
+          ? `חלץ את פרטי הקופון מהטקסט הבא:\n\n${inputText}`
           : 'חלץ את פרטי הקופון מהתמונה המצורפת.') + companyGuidance,
       },
     ];
