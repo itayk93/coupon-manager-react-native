@@ -268,6 +268,10 @@ export function CharacterSpotlight({
   // spilling out of the top of it (which is what made the small size look
   // like a cropped sticker).
   const scale = (box * 0.92) / SLOT_H;
+  // The investigator artwork has more transparent space below than above, so
+  // geometric centering makes the hat hug the top edge. Nudge the artwork —
+  // not the bubble — down just enough to balance the visible silhouette.
+  const artworkOffsetY = Math.min(8, box * 0.08);
   // `tone: "none"` means the character is sitting directly on a host surface,
   // so the ring and the gloss go too. Keeping them draws a pale disc on the
   // banner's own colour and the mascot reads as a sticker.
@@ -295,7 +299,7 @@ export function CharacterSpotlight({
       accessibilityElementsHidden
     >
       {bare ? null : <View style={[styles.spotlightGloss, { borderRadius: box / 2 }]} />}
-      <NativeAnimated.View style={[styles.spotlightBody, safeMotionStyle, { transform: [...safeMotionStyle.transform, { scale }] }]}>
+      <NativeAnimated.View style={[styles.spotlightBody, safeMotionStyle, { transform: [...safeMotionStyle.transform, { translateY: artworkOffsetY }, { scale }] }]}>
         {character === "investigator" ? (
           <SafeInvestigator animate={shouldAnimate} />
         ) : (
