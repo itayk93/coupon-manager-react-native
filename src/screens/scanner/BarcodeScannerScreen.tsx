@@ -325,14 +325,6 @@ export function BarcodeScannerScreen() {
                 },
               ]}
             >
-              {parseCoupon.isPending ? (
-                <View style={styles.characterLoading} accessibilityLiveRegion="polite">
-                  <CharacterSpotlight character="investigator" state="scanning" />
-                  <Text style={[styles.characterLoadingText, { color: theme.textMuted }]}>
-                    בודקים את החברה, הקוד והסכומים…
-                  </Text>
-                </View>
-              ) : null}
               <View style={styles.aiHeader}>
                 <Sparkles size={20} color={theme.primary} style={styles.aiHeaderIcon} />
                 <Text style={[styles.aiTitle, { color: theme.text, fontSize: aiTitleFontSize }]}>
@@ -399,6 +391,40 @@ export function BarcodeScannerScreen() {
                 icon={<Sparkles size={18} color="#ffffff" />}
                 style={{ marginTop: 16 }}
               />
+
+              {parseCoupon.isPending ? (
+                <View
+                  style={[
+                    styles.loadingOverlay,
+                    { backgroundColor: `${theme.background}D9` },
+                  ]}
+                  accessibilityViewIsModal
+                  accessibilityRole="progressbar"
+                  accessibilityLabel="בודקים את החברה, הקוד והסכומים"
+                  accessibilityLiveRegion="polite"
+                >
+                  <View
+                    style={[
+                      styles.loadingModal,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.cardBorder,
+                      },
+                    ]}
+                  >
+                    <CharacterSpotlight
+                      character="investigator"
+                      state="scanning"
+                      size="small"
+                    />
+                    <Text
+                      style={[styles.characterLoadingText, { color: theme.textMuted }]}
+                    >
+                      בודקים את החברה, הקוד והסכומים…
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
             </View>
           </ScrollView>
         )}
@@ -440,10 +466,29 @@ const styles = StyleSheet.create({
   imageBtnTextCompact: {
     fontSize: 10.5,
   },
-  characterLoading: {
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    borderRadius: 23,
+    padding: 20,
+    zIndex: 10,
+  },
+  loadingModal: {
+    width: "100%",
+    maxWidth: 250,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    elevation: 8,
   },
   characterLoadingText: {
     fontSize: 13,
@@ -589,6 +634,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   aiCard: {
+    position: "relative",
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
