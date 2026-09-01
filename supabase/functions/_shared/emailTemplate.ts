@@ -51,6 +51,17 @@ function money(amount: number) {
   return `${amount.toFixed(2)}&nbsp;₪`;
 }
 
+/**
+ * Signed ILS inside an RTL email.
+ *
+ * Gmail reorders the logical `+44.80 ₪` into `₪ 44.80+`. Keeping the plus
+ * after the digits in the source makes both symbols render to their left:
+ * `₪ +44.80`.
+ */
+function positiveMoney(amount: number) {
+  return `${amount.toFixed(2)}+&nbsp;₪`;
+}
+
 export type ExpiryCoupon = {
   company: string;
   remaining: number;
@@ -259,7 +270,7 @@ function multipassCouponCard(item: MultipassSummaryItem) {
                 <td width="8" style="font-size:0">&nbsp;</td>
                 <td dir="rtl" align="center" width="33%" style="${RTL};text-align:center;background:${COLOR.primaryTint};border-radius:12px;padding:12px 6px">
                   <div style="font-family:${FONT};font-size:11px;color:${COLOR.primary}">נוסף בשימוש</div>
-                  <div style="font-family:${FONT};font-size:17px;font-weight:800;color:${COLOR.primary};padding-top:3px;white-space:nowrap">${RLM}+${money(Number(item.delta || 0))}</div>
+                  <div style="font-family:${FONT};font-size:17px;font-weight:800;color:${COLOR.primary};padding-top:3px;white-space:nowrap">${RLM}${positiveMoney(Number(item.delta || 0))}</div>
                 </td>
                 <td width="8" style="font-size:0">&nbsp;</td>
                 <td dir="rtl" align="center" width="33%" style="${RTL};text-align:center;background:${depleted ? COLOR.dangerBg : '#dcfce7'};border-radius:12px;padding:12px 6px">
@@ -325,7 +336,7 @@ export function multipassSummaryEmailHtml(options: {
             <tr>
               <td align="center" style="background:${COLOR.primaryTint};border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:${COLOR.primary}">נסרקו</div><div style="font-family:${FONT};font-size:22px;font-weight:800;color:${COLOR.primary}">${scanned}</div></td>
               <td width="8">&nbsp;</td>
-              <td align="center" style="background:#dcfce7;border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:#15803d">שינוי כולל</div><div style="font-family:${FONT};font-size:18px;font-weight:800;color:#15803d;white-space:nowrap">${RLM}+${money(totalDelta)}</div></td>
+              <td align="center" style="background:#dcfce7;border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:#15803d">שינוי כולל</div><div style="font-family:${FONT};font-size:18px;font-weight:800;color:#15803d;white-space:nowrap">${RLM}${positiveMoney(totalDelta)}</div></td>
               <td width="8">&nbsp;</td>
               <td align="center" style="background:${COLOR.surface};border-radius:14px;padding:13px 6px"><div style="font-family:${FONT};font-size:11px;color:${COLOR.textMuted}">נכשלו</div><div style="font-family:${FONT};font-size:22px;font-weight:800;color:${failed ? COLOR.dangerText : COLOR.text}">${failed}</div></td>
             </tr>
