@@ -71,6 +71,7 @@ export function SharedScreenshotUsage() {
       router.push({
         pathname: "/coupons/add",
         params: {
+          initialImportId: pendingImport.id,
           initialCompany: parsed.company || "",
           initialCode: parsed.code || "",
           ...(parsed.value ? { initialValue: String(parsed.value) } : {}),

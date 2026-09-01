@@ -54,6 +54,7 @@ export function AddEditCouponScreen() {
     initialDescription?: string;
     initialCvv?: string;
     initialCardExp?: string;
+    initialImportId?: string;
   }>();
 
   const couponIdentifier = params.couponId;
@@ -85,6 +86,7 @@ export function AddEditCouponScreen() {
 
   return (
     <CouponForm
+      key={params.initialImportId || couponIdentifier || "new-coupon"}
       existingCoupon={existingCoupon}
       initialCompany={params.initialCompany}
       initialCode={params.initialCode}
