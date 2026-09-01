@@ -167,15 +167,20 @@ async function assertPublicWebUrl(rawUrl: string): Promise<URL> {
   if (url.port && url.port !== '80' && url.port !== '443') {
     throw new Error('כתובת האתר משתמשת ביציאה לא נתמכת');
   }
-  const hostname = url.hostname.toLowerCase();
-  if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.internal')) {
-    throw new Error('כתובת האתר אינה ציבורית');
-  }
-
-  const recordType = hostname.includes(':') ? null : 'A';
-  const addresses = recordType ? await Deno.resolveDns(hostname, recordType) : [hostname];
-  const ipv6 = recordType ? await Deno.resolveDns(hostname, 'AAAA').catch(() => [] as string[]) : [];
-  if (addresses.length + ipv6.length === 0 || [...addresses, ...ipv6].some(isPrivateIpAddress)) {
+  // The Supabase edge runtime has no `Deno.resolveDns`, so the host is screened
+  // by name only: reject localhost, internal suffixes, and any literal private
+  // or link-local IP. A domain that resolves to a private address slips past
+  // this — the same residual risk the shared `safeFetch` accepts — but the
+  // input here is a coupon page the user chose to share, not attacker-driven.
+  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.internal') ||
+    hostname === '0.0.0.0' ||
+    hostname === '169.254.169.254' ||
+    isPrivateIpAddress(hostname)
+  ) {
     throw new Error('כתובת האתר אינה ציבורית');
   }
   return url;
@@ -342,6 +347,7 @@ Deno.serve(async (req: Request) => {
         const pageText = await readPublicWebPage(sourceUrl);
         inputText = `קישור עמוד הקופון: ${sourceUrl}\n\nתוכן העמוד:\n${pageText}`;
       } catch (error) {
+        console.error('readPublicWebPage failed', sourceUrl, error);
         return jsonResponse({ error: `לא הצלחנו לקרוא את עמוד הקופון: ${String(error)}` }, 422);
       }
     }
