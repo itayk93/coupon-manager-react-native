@@ -34,6 +34,7 @@ type CouponFormProps = {
   initialCvv?: string;
   initialCardExp?: string;
   initialRedemptionUrl?: string;
+  returnAfterSave?: boolean;
 };
 
 /**
@@ -58,6 +59,7 @@ export function AddEditCouponScreen() {
     initialCardExp?: string;
     initialImportId?: string;
     initialRedemptionUrl?: string;
+    returnToPrevious?: string;
   }>();
 
   const couponIdentifier = params.couponId;
@@ -101,6 +103,7 @@ export function AddEditCouponScreen() {
       initialCvv={importedCoupon?.cvv || params.initialCvv}
       initialCardExp={importedCoupon?.card_exp || params.initialCardExp}
       initialRedemptionUrl={importedCoupon?.redemption_url || params.initialRedemptionUrl}
+      returnAfterSave={params.returnToPrevious === "1"}
     />
   );
 }
@@ -116,6 +119,7 @@ function CouponForm({
   initialCvv,
   initialCardExp,
   initialRedemptionUrl,
+  returnAfterSave,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -172,6 +176,7 @@ function CouponForm({
     initialCvv,
     initialCardExp,
     initialRedemptionUrl,
+    returnAfterSave,
   });
 
   return (

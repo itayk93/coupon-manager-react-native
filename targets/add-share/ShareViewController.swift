@@ -81,6 +81,13 @@ class ShareViewController: UIViewController {
       return
     }
 
+    if let provider = attachments.first(where: {
+      $0.hasItemConformingToTypeIdentifier(UTType.url.identifier)
+    }) {
+      loadSharedURL(provider)
+      return
+    }
+
     showFailure("לא מצאנו תמונה או טקסט בהודעה")
   }
 
@@ -150,6 +157,38 @@ class ShareViewController: UIViewController {
           self.showReady()
         } catch {
           self.showFailure("לא הצלחנו לשמור את הטקסט")
+        }
+      }
+    }
+  }
+
+  private func loadSharedURL(_ provider: NSItemProvider) {
+    provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] value, _ in
+      let text: String? = {
+        if let url = value as? URL { return url.absoluteString }
+        if let text = value as? String { return text }
+        return nil
+      }()
+
+      DispatchQueue.main.async {
+        guard let self else { return }
+        guard let text, !text.isEmpty else {
+          self.showFailure("לא הצלחנו לקרוא את הקישור")
+          return
+        }
+        do {
+          try? FileManager.default.removeItem(at: sharedImageURL())
+          try Data(text.utf8).write(to: sharedTextURL(), options: .atomic)
+          let job = SharedImportJob(
+            id: UUID().uuidString,
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            mode: importMode,
+            state: "pending"
+          )
+          try JSONEncoder().encode(job).write(to: sharedImportURL(), options: .atomic)
+          self.showReady()
+        } catch {
+          self.showFailure("לא הצלחנו לשמור את הקישור")
         }
       }
     }

@@ -74,6 +74,7 @@ export function SharedScreenshotUsage() {
         pathname: "/coupons/add",
         params: {
           initialImportId: pendingImport.id,
+          returnToPrevious: "1",
         },
       });
     } catch (e) {

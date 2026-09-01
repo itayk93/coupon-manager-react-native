@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.util.Base64
 import expo.modules.kotlin.modules.Module
@@ -47,29 +48,44 @@ class CouponWidgetModule : Module() {
     Function("peekSharedImport") {
       val context = appContext.reactContext ?: return@Function null
       val cachedImage = File(context.filesDir, "shared-usage-screenshot.jpg")
+      val cachedText = File(context.filesDir, "shared-coupon-text.txt")
       val cachedJob = File(context.filesDir, "shared-usage-import.json")
-      if (cachedImage.exists() && cachedJob.exists()) {
+      if (cachedJob.exists() && (cachedImage.exists() || cachedText.exists())) {
         val job = JSONObject(cachedJob.readText())
-        job.put("imageBase64", Base64.encodeToString(cachedImage.readBytes(), Base64.NO_WRAP))
+        if (cachedImage.exists()) {
+          job.put("imageBase64", Base64.encodeToString(cachedImage.readBytes(), Base64.NO_WRAP))
+        } else {
+          job.put("text", cachedText.readText())
+        }
         return@Function job.toString()
       }
 
       val activity = appContext.currentActivity
       val intent = activity?.intent
-      val uri: Uri? = when {
-        intent == null -> null
-        intent.action != Intent.ACTION_SEND -> null
-        intent.type?.startsWith("image/") != true -> null
-        else -> extraStream(intent)
-      }
-
-      if (uri == null) return@Function null
+      if (intent == null || intent.action != Intent.ACTION_SEND) return@Function null
       val currentActivity = activity ?: return@Function null
       val currentIntent = intent ?: return@Function null
-      val image = readScaledImage(currentActivity, uri) ?: return@Function null
       val mode = shareMode(currentActivity, currentIntent)
-      val bytes = Base64.decode(image, Base64.NO_WRAP)
-      cachedImage.writeBytes(bytes)
+      val mimeType = currentIntent.type.orEmpty().lowercase()
+      val uri = extraStream(currentIntent)
+      val image = when {
+        uri == null -> null
+        mimeType == "application/pdf" -> readFirstPdfPage(currentActivity, uri)
+        else -> readScaledImage(currentActivity, uri)
+      }
+      val sharedText = currentIntent.getCharSequenceExtra(Intent.EXTRA_TEXT)
+        ?.toString()
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+
+      if (image == null && sharedText == null) return@Function null
+      if (image != null) {
+        cachedText.delete()
+        cachedImage.writeBytes(Base64.decode(image, Base64.NO_WRAP))
+      } else {
+        cachedImage.delete()
+        cachedText.writeText(sharedText!!)
+      }
       val job = JSONObject()
         .put("id", UUID.randomUUID().toString())
         .put("createdAt", Instant.now().toString())
@@ -78,12 +94,15 @@ class CouponWidgetModule : Module() {
       cachedJob.writeText(job.toString())
       currentIntent.action = null
       currentIntent.removeExtra(Intent.EXTRA_STREAM)
-      job.put("imageBase64", image).toString()
+      currentIntent.removeExtra(Intent.EXTRA_TEXT)
+      if (image != null) job.put("imageBase64", image) else job.put("text", sharedText)
+      job.toString()
     }
 
     Function("completeSharedImport") {
       val context = appContext.reactContext ?: return@Function false
       File(context.filesDir, "shared-usage-screenshot.jpg").delete()
+      File(context.filesDir, "shared-coupon-text.txt").delete()
       File(context.filesDir, "shared-usage-import.json").delete()
       true
     }
@@ -124,6 +143,29 @@ private fun readScaledImage(context: android.content.Context, uri: Uri): String?
     bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out)
     bitmap.recycle()
     Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+  }
+}
+
+private fun readFirstPdfPage(context: android.content.Context, uri: Uri): String? {
+  val descriptor = context.contentResolver.openFileDescriptor(uri, "r") ?: return null
+  return descriptor.use { fileDescriptor ->
+    PdfRenderer(fileDescriptor).use rendererUse@ { renderer ->
+      if (renderer.pageCount == 0) return@rendererUse null
+      renderer.openPage(0).use { page ->
+        val longest = maxOf(page.width, page.height).coerceAtLeast(1)
+        val scale = minOf(1f, MAX_DIMENSION.toFloat() / longest)
+        val width = (page.width * scale).toInt().coerceAtLeast(1)
+        val height = (page.height * scale).toInt().coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(android.graphics.Color.WHITE)
+        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        ByteArrayOutputStream().use { out ->
+          bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out)
+          bitmap.recycle()
+          Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+        }
+      }
+    }
   }
 }
 

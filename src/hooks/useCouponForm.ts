@@ -27,6 +27,8 @@ export type UseCouponFormArgs = {
   initialCvv?: string;
   initialCardExp?: string;
   initialRedemptionUrl?: string;
+  /** Return to the interrupted screen after a share-sheet import is saved. */
+  returnAfterSave?: boolean;
 };
 
 /**
@@ -48,6 +50,7 @@ export function useCouponForm({
   initialCvv,
   initialCardExp,
   initialRedemptionUrl,
+  returnAfterSave = false,
 }: UseCouponFormArgs) {
   const router = useRouter();
   const isEditing = existingCoupon !== undefined;
@@ -289,6 +292,14 @@ export function useCouponForm({
 
     if (!tagsApplied) {
       notify.error("הקופון נשמר", "התגיות לא נשמרו. אפשר להוסיף אותן בעריכה.");
+    }
+
+    // A share-sheet import is a temporary detour over the current task. Pop it
+    // so the exact route underneath is restored. Normal scanner adds still go
+    // to the dashboard because the scanner task is complete.
+    if (returnAfterSave) {
+      router.back();
+      return;
     }
 
     // A new coupon usually arrives via the scanner, and going `back` would
