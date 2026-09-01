@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   Switch,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Building2, ChevronDown, ChevronLeft, Plus, X } from "lucide-react-native";
@@ -191,12 +193,21 @@ function CouponForm({
         onBack={() => router.back()}
       />
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      {/* iOS adjusts the ScrollView inset natively below. Android instead
+          shrinks this viewport; using both mechanisms would double the gap. */}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior="height"
+        enabled={Platform.OS === "android"}
       >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        >
         <View
           style={[
             styles.card,
@@ -503,7 +514,8 @@ function CouponForm({
             style={{ marginTop: 18 }}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <CompanyPickerModal
         visible={isCompanyPickerOpen}
@@ -524,6 +536,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: {
+    flex: 1,
+  },
+  keyboardAvoider: {
     flex: 1,
   },
   scrollContent: {
