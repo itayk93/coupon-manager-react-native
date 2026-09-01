@@ -92,10 +92,13 @@ export function findDuplicateCoupons<T extends DuplicateCandidate>(
   return coupons.filter((coupon) => couponCodeKey(coupon.code) === key);
 }
 
-export function validateCouponForm(fields: CouponFormFields): CouponFormErrors {
+export function validateCouponForm(
+  fields: CouponFormFields,
+  options: { allowEmptyCode?: boolean } = {}
+): CouponFormErrors {
   const errors: CouponFormErrors = {};
   if (!fields.company.trim()) errors.company = "יש לבחור או להזין חברה";
-  if (!fields.code.trim()) errors.code = "קוד קופון הוא שדה חובה";
+  if (!options.allowEmptyCode && !fields.code.trim()) errors.code = "קוד קופון הוא שדה חובה";
   if (
     !fields.value.trim() ||
     isNaN(Number(fields.value)) ||

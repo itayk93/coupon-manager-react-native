@@ -29,6 +29,7 @@ export type UseCouponFormArgs = {
   initialRedemptionUrl?: string;
   /** Return to the interrupted screen after a share-sheet import is saved. */
   returnAfterSave?: boolean;
+  allowEmptyCode?: boolean;
 };
 
 /**
@@ -51,6 +52,7 @@ export function useCouponForm({
   initialCardExp,
   initialRedemptionUrl,
   returnAfterSave = false,
+  allowEmptyCode = false,
 }: UseCouponFormArgs) {
   const router = useRouter();
   const isEditing = existingCoupon !== undefined;
@@ -225,7 +227,7 @@ export function useCouponForm({
   };
 
   const handleSubmit = async () => {
-    const validationErrors = validateCouponForm(currentFields());
+    const validationErrors = validateCouponForm(currentFields(), { allowEmptyCode });
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -318,7 +320,7 @@ export function useCouponForm({
     isEditing,
     showAutoUsageUpdater,
     isSaving: addCoupon.isPending || updateCoupon.isPending,
-    canSubmit: Object.keys(validateCouponForm(currentFields())).length === 0,
+    canSubmit: Object.keys(validateCouponForm(currentFields(), { allowEmptyCode })).length === 0,
 
     company,
     setCompany,

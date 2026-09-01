@@ -9,6 +9,7 @@ import {
   extractRelativeExpiration,
   extractVerificationCode,
   extractVoucherCode,
+  isActivationOffer,
 } from "@/lib/couponTextFields";
 
 export type ParsedCoupon = {
@@ -61,6 +62,7 @@ export function useParseCoupon() {
         : null;
       const textCvv = text ? extractVerificationCode(text) : null;
       const textVoucherCode = text ? extractVoucherCode(text) : null;
+      const activationOffer = text ? isActivationOffer(text) : false;
       // A single-coupon text is the only case where a date found in the text can
       // safely be applied: with several coupons there is no telling which one it
       // belongs to.
@@ -71,7 +73,9 @@ export function useParseCoupon() {
       const textRedemptionUrl = text ? extractRedemptionUrl(text) : null;
       const normalizedCoupons = coupons.map((coupon: ParsedCoupon) => ({
         ...coupon,
-        code: textVoucherCode || coupon.code,
+        code: activationOffer ? null : textVoucherCode || coupon.code,
+        value: activationOffer && coupon.value == null ? 0 : coupon.value,
+        description: activationOffer ? text?.trim() || coupon.description : coupon.description,
         card_exp: textCardExpiry || coupon.card_exp,
         cvv: textCvv || coupon.cvv,
         expiration: textExpiration || relativeExpiration || cardExpiration || coupon.expiration,

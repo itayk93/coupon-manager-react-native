@@ -4,6 +4,7 @@ import {
   extractCardExpiry,
   extractRedemptionUrl,
   extractRelativeExpiration,
+  isActivationOffer,
   extractVerificationCode,
   extractVoucherCode,
 } from "./couponTextFields";
@@ -52,5 +53,11 @@ describe("coupon text card fields", () => {
       extractRelativeExpiration("תוקף השובר: 5 שנים.", new Date("2026-09-01T00:00:00Z"))
     ).toBe("2031-09-01");
     expect(extractRelativeExpiration("אין תוקף מצוין")).toBeNull();
+  });
+
+  it("recognizes an activation-only birthday offer and expires it at month end", () => {
+    const sms = `יום הולדת שמח מ-Babka. מתנה תקף בחודש הקלנדרי של יום ההולדת. להסרה יש לשלוח 508 למספר 0529990043`;
+    expect(isActivationOffer(sms)).toBe(true);
+    expect(extractRelativeExpiration(sms, new Date("2026-09-01T07:00:00+03:00"))).toBe("2026-09-30");
   });
 });

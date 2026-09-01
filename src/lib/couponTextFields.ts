@@ -46,7 +46,18 @@ export function extractRedemptionUrl(text: string): string | null {
 
 /** Converts "תוקף השובר: 5 שנים" to an absolute date from import day. */
 export function extractRelativeExpiration(text: string, now = new Date()): string | null {
-  const match = searchableText(text).match(
+  const normalized = searchableText(text);
+  if (
+    /(?:תקף|בתוקף).*בחודש\s+הקלנדרי\s+של\s+יום\s+ההולדת/.test(normalized) ||
+    /בחודש\s+יום\s+ההולדת/.test(normalized)
+  ) {
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const lastDay = new Date(year, month, 0).getDate();
+    return `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  }
+
+  const match = normalized.match(
     /תוקף\s+(?:ה?שובר|ה?קופון)\s*[:：-]?\s*(\d{1,2})\s*(?:שנים|שנה)(?:\s|[.,]|$)/
   );
   if (!match) return null;
@@ -59,6 +70,13 @@ export function extractRelativeExpiration(text: string, now = new Date()): strin
     now.getUTCDate()
   ));
   return result.toISOString().slice(0, 10);
+}
+
+/** A promotion that requires sending an activation SMS before a redeemable code exists. */
+export function isActivationOffer(text: string): boolean {
+  const normalized = searchableText(text);
+  return /(?:להסרה\s+יש\s+לשלוח|יש\s+לשלוח)\s+\d{2,6}\s+למספר\s+\d{7,}/.test(normalized) &&
+    /(?:מתנה|מבצע|הטבה|יום\s+הולדת)/.test(normalized);
 }
 
 /**

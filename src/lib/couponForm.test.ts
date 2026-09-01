@@ -54,6 +54,11 @@ describe("validateCouponForm", () => {
     expect(validateCouponForm(fields({ value: "0" }))).toEqual({});
   });
 
+  it("allows an empty code only for an imported activation offer", () => {
+    expect(validateCouponForm(fields({ code: "", value: "0" }), { allowEmptyCode: true })).toEqual({});
+    expect(validateCouponForm(fields({ code: "", value: "0" })).code).toBeTruthy();
+  });
+
   it("does not require an expiration date", () => {
     expect(validateCouponForm(fields({ expiration: "" }))).toEqual({});
   });

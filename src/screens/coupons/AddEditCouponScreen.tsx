@@ -35,6 +35,7 @@ type CouponFormProps = {
   initialCardExp?: string;
   initialRedemptionUrl?: string;
   returnAfterSave?: boolean;
+  allowEmptyCode?: boolean;
 };
 
 /**
@@ -96,7 +97,7 @@ export function AddEditCouponScreen() {
       existingCoupon={existingCoupon}
       initialCompany={importedCoupon?.company || params.initialCompany}
       initialCode={importedCoupon?.code || params.initialCode}
-      initialValue={importedCoupon?.value ? String(importedCoupon.value) : params.initialValue}
+      initialValue={importedCoupon?.value != null ? String(importedCoupon.value) : params.initialValue}
       initialCost={importedCoupon?.cost ? String(importedCoupon.cost) : params.initialCost}
       initialExpiration={importedCoupon?.expiration?.slice(0, 10) || params.initialExpiration}
       initialDescription={importedCoupon?.description || params.initialDescription}
@@ -104,6 +105,7 @@ export function AddEditCouponScreen() {
       initialCardExp={importedCoupon?.card_exp || params.initialCardExp}
       initialRedemptionUrl={importedCoupon?.redemption_url || params.initialRedemptionUrl}
       returnAfterSave={params.returnToPrevious === "1"}
+      allowEmptyCode={Boolean(importedCoupon && !importedCoupon.code)}
     />
   );
 }
@@ -120,6 +122,7 @@ function CouponForm({
   initialCardExp,
   initialRedemptionUrl,
   returnAfterSave,
+  allowEmptyCode,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -177,6 +180,7 @@ function CouponForm({
     initialCardExp,
     initialRedemptionUrl,
     returnAfterSave,
+    allowEmptyCode,
   });
 
   return (
@@ -246,7 +250,7 @@ function CouponForm({
 
           {/* Code */}
           <Input
-            label="קוד הקופון *"
+            label={allowEmptyCode ? "קוד הקופון (עדיין לא התקבל)" : "קוד הקופון *"}
             placeholder="קוד הקופון..."
             value={code}
             onChangeText={setCode}
