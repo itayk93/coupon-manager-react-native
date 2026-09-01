@@ -496,8 +496,13 @@ export function BarcodeScannerScreen() {
             ]}
             accessibilityViewIsModal
           >
-            <View style={[styles.tutorialHero, { backgroundColor: theme.primaryTint }]}>
-              <Sparkles size={34} color={theme.primary} />
+            <View style={styles.tutorialMascot}>
+              <CharacterSpotlight
+                character="investigator"
+                state="talking"
+                size="small"
+                tone="blue"
+              />
             </View>
             <Text style={[styles.tutorialTitle, { color: theme.text }]}>קופון נכנס. הפרטים מסתדרים.</Text>
             <Text style={[styles.tutorialSubtitle, { color: theme.textMuted }]}>
@@ -508,7 +513,7 @@ export function BarcodeScannerScreen() {
               <TutorialStep
                 icon={<MessageSquareText size={20} color={theme.primary} />}
                 title="מדביקים את מה שקיבלת"
-                text="SMS, מייל או כל טקסט של השובר."
+                text="הודעת SMS, מייל או כל טקסט של השובר."
                 iconBackground={theme.primaryTint}
                 textColor={theme.text}
                 mutedColor={theme.textMuted}
@@ -607,14 +612,12 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
-  tutorialHero: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
+  tutorialMascot: {
+    height: 94,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+    marginBottom: 8,
   },
   tutorialTitle: {
     fontFamily: fonts.display,
@@ -622,12 +625,14 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     fontWeight: "800",
     textAlign: "center",
+    writingDirection: "rtl",
   },
   tutorialSubtitle: {
     fontFamily: fonts.body,
     fontSize: 14,
     lineHeight: 21,
     textAlign: "center",
+    writingDirection: "rtl",
     marginTop: 6,
   },
   tutorialSteps: {
@@ -655,12 +660,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     textAlign: "right",
+    writingDirection: "rtl",
   },
   tutorialStepText: {
     fontFamily: fonts.body,
     fontSize: 12.5,
     lineHeight: 18,
     textAlign: "right",
+    writingDirection: "rtl",
     marginTop: 1,
   },
   tutorialSkip: {
@@ -673,6 +680,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
     fontWeight: "600",
+    writingDirection: "rtl",
   },
   aiDividerText: {
     fontSize: 12,
