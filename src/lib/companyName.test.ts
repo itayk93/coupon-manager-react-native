@@ -13,6 +13,13 @@ describe("companyKey", () => {
     expect(companyKey(null)).toBe("");
     expect(companyKey("   ")).toBe("");
   });
+
+  it("folds known Hebrew aliases into their canonical companies", () => {
+    expect(companyKey("אקסטרה")).toBe("xtra");
+    expect(companyKey("XTRA")).toBe("xtra");
+    expect(companyKey("משלוחה-ארצי")).toBe("משלוחה");
+    expect(companyKey("משלוחה")).toBe("משלוחה");
+  });
 });
 
 describe("groupCouponsByCompany", () => {
@@ -34,5 +41,17 @@ describe("groupCouponsByCompany", () => {
     ]);
     expect(groups).toHaveLength(1);
     expect(groups[0].items).toHaveLength(2);
+  });
+
+  it("merges XTRA and Mishloha aliases", () => {
+    const groups = groupCouponsByCompany([
+      { company: "XTRA" },
+      { company: "אקסטרה" },
+      { company: "משלוחה" },
+      { company: "משלוחה-ארצי" },
+    ]);
+    expect(groups).toHaveLength(2);
+    expect(groups[0].items).toHaveLength(2);
+    expect(groups[1].items).toHaveLength(2);
   });
 });

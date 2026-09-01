@@ -19,7 +19,6 @@ const POPULAR_COMPANIES = [
   "קרפור",
   "מגה ספורט",
   "XTRA",
-  "אקסטרה",
   "Dream Card",
   "Power Gift",
   "GoodPharm",

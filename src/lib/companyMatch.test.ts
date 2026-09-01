@@ -8,4 +8,10 @@ describe("matchCompanyName", () => {
     expect(matchCompanyName("גוד-פארם", known)).toBe("GoodPharm");
     expect(matchCompanyName("goodpharm", known)).toBe("GoodPharm");
   });
+
+  it("maps Hebrew aliases to XTRA and Mishloha", () => {
+    const known = ["XTRA", "משלוחה", "Wolt"];
+    expect(matchCompanyName("אקסטרה", known)).toBe("XTRA");
+    expect(matchCompanyName("משלוחה-ארצי", known)).toBe("משלוחה");
+  });
 });

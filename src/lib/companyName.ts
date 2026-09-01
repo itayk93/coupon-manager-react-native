@@ -9,6 +9,8 @@
 
 const COMPANY_ALIASES: Record<string, string> = {
   "גוד פארם": "goodpharm",
+  "אקסטרה": "xtra",
+  "משלוחה ארצי": "משלוחה",
 };
 
 /** Stable identity for grouping: punctuation, case, whitespace and known aliases. */
