@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import {
+  cardExpiryToExpiration,
   extractCardExpiry,
   extractExpiration,
   extractVerificationCode,
@@ -52,6 +53,9 @@ export function useParseCoupon() {
 
       if (coupons.length === 0) throw new Error("לא זוהו קופונים בטקסט או בתמונה");
       const textCardExpiry = text ? extractCardExpiry(text) : null;
+      const cardExpiration = textCardExpiry
+        ? cardExpiryToExpiration(textCardExpiry)
+        : null;
       const textCvv = text ? extractVerificationCode(text) : null;
       const textVoucherCode = text ? extractVoucherCode(text) : null;
       // A single-coupon text is the only case where a date found in the text can
@@ -64,7 +68,7 @@ export function useParseCoupon() {
         code: textVoucherCode || coupon.code,
         card_exp: textCardExpiry || coupon.card_exp,
         cvv: textCvv || coupon.cvv,
-        expiration: textExpiration || coupon.expiration,
+        expiration: textExpiration || cardExpiration || coupon.expiration,
       }));
 
       const filteredCoupons = normalizedCoupons.filter(isLikelyCoupon);
