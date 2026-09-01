@@ -49,6 +49,16 @@ export function useCouponForm({
 }: UseCouponFormArgs) {
   const router = useRouter();
   const isEditing = existingCoupon !== undefined;
+  const hasImportedValues = Boolean(
+    initialCompany ||
+      initialCode ||
+      initialValue ||
+      initialCost ||
+      initialExpiration ||
+      initialDescription ||
+      initialCvv ||
+      initialCardExp
+  );
 
   const addCoupon = useAddCoupon();
   const updateCoupon = useUpdateCoupon();
@@ -106,7 +116,10 @@ export function useCouponForm({
   const [errors, setErrors] = useState<CouponFormErrors>({});
 
   useEffect(() => {
-    if (isEditing) return;
+    // An import is authoritative. Restoring an older (often empty) draft here
+    // runs asynchronously and would overwrite the parsed values moments after
+    // the form first renders.
+    if (isEditing || hasImportedValues) return;
     void loadCouponDraft().then((draft) => {
       if (!draft) return;
       setCompany(draft.company);
@@ -122,7 +135,7 @@ export function useCouponForm({
       setCardExp(draft.cardExp);
       setRedemptionUrl(draft.redemptionUrl);
     });
-  }, [isEditing]);
+  }, [hasImportedValues, isEditing]);
 
   useEffect(() => {
     if (existingTags.length > 0) {
