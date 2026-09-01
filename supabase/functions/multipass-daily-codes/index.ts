@@ -6,6 +6,9 @@ import { sendPushToUser } from '../_shared/push.ts';
 const TOKEN_SHA256 = '1a0a0f98c12e7e45bd4876fbc8c399861ee4fdbb17c3350bd47a45f15d3d1303';
 const GOOGLE_GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 const GOOGLE_PLACES_TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
+const RLM = '\u200F';
+const LRI = '\u2066';
+const PDI = '\u2069';
 
 type CouponRow = {
   id: number;
@@ -324,7 +327,12 @@ async function notifyUsage(body: Record<string, unknown>) {
   const company = String(body.company || 'קופון').trim();
   if (!Number.isSafeInteger(userId) || userId <= 0 || delta <= 0) throw new Error('INVALID_INPUT');
 
-  const message = `זוהה שימוש חדש ב-${company}: ${delta.toFixed(2)} ₪`;
+  // Notification banners offer no reliable layout control on iOS. Keep each
+  // LTR fragment isolated so the company, punctuation, and amount cannot
+  // reorder one another inside the surrounding Hebrew sentence.
+  const isolatedCompany = `${LRI}${company}${PDI}`;
+  const isolatedAmount = `${LRI}₪\u00A0${delta.toFixed(2)}${PDI}`;
+  const message = `${RLM}זוהה שימוש חדש ב־${isolatedCompany}: ${isolatedAmount}`;
   const db = adminClient();
   const { data: coupon } = couponId > 0
     ? await db.from('coupon').select('public_id').eq('id', couponId).eq('user_id', userId).maybeSingle()
