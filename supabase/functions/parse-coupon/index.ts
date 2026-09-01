@@ -181,8 +181,39 @@ async function assertPublicWebUrl(rawUrl: string): Promise<URL> {
   return url;
 }
 
+const MAX_EMBEDDED_JSON_CHARS = 8_000;
+
+/** Coupon sites are usually client-rendered: the served HTML is an empty shell
+ * and the real coupon (code, balance, expiry) sits in a hydration script such
+ * as `window.__PAGE_DATA__ = {...}` or an `application/ld+json` block. Pull that
+ * JSON out before the tags are stripped, otherwise the page reads as blank. */
+function extractEmbeddedJson(html: string): string {
+  const chunks: string[] = [];
+  const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+  for (const match of html.matchAll(scriptPattern)) {
+    const attrs = match[1].toLowerCase();
+    const body = match[2];
+    const isJsonType = /type\s*=\s*["']application\/(ld\+)?json["']/.test(attrs);
+    const hasHydrationMarker = /(__PAGE_DATA__|__NEXT_DATA__|__NUXT__|__INITIAL_STATE__|__APOLLO_STATE__|window\.__[A-Z0-9_]+\s*=)/.test(body);
+    if (!isJsonType && !hasHydrationMarker) continue;
+
+    const start = body.indexOf('{');
+    const end = body.lastIndexOf('}');
+    if (start === -1 || end <= start) continue;
+    const candidate = body.slice(start, end + 1).trim();
+    try {
+      chunks.push(JSON.stringify(JSON.parse(candidate)));
+    } catch {
+      chunks.push(candidate);
+    }
+    if (chunks.join('\n').length >= MAX_EMBEDDED_JSON_CHARS) break;
+  }
+  return chunks.join('\n').slice(0, MAX_EMBEDDED_JSON_CHARS);
+}
+
 function htmlToReadableText(html: string): string {
-  return html
+  const embedded = extractEmbeddedJson(html);
+  const visible = html
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
     .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
@@ -197,8 +228,12 @@ function htmlToReadableText(html: string): string {
     .replace(/&gt;/gi, '>')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n\s*\n+/g, '\n')
-    .trim()
-    .slice(0, MAX_WEB_PAGE_TEXT_CHARS);
+    .trim();
+
+  const combined = embedded
+    ? `${visible}\n\nנתונים מוטמעים בעמוד:\n${embedded}`
+    : visible;
+  return combined.slice(0, MAX_WEB_PAGE_TEXT_CHARS);
 }
 
 async function readPublicWebPage(rawUrl: string): Promise<string> {
