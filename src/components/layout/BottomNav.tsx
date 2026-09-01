@@ -14,6 +14,12 @@ type Item = {
   Icon: typeof Home;
   /** Extra paths that should light this tab up. */
   match: string[];
+  /**
+   * Optical-centering nudge, in pixels. Most lucide glyphs are centered in
+   * their 24px box; `share-2` is drawn ~3 units left of center, so it reads
+   * offset under its label without this.
+   */
+  iconNudgeX?: number;
 };
 
 // Declared right-to-left: דשבורד leads, as Hebrew expects.
@@ -25,7 +31,7 @@ function buildItems(isAdmin: boolean): Item[] {
   return [
     { label: "דשבורד", path: "/", Icon: Home, match: [] },
     { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
-    { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"] },
+    { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"], iconNudgeX: 2.5 },
     {
       label: "שותפים",
       path: isAdmin ? "/admin?tab=referrals" : "/invite",
@@ -97,7 +103,7 @@ export function BottomNav() {
             accessibilityLabel={item.label}
             accessibilityState={{ selected: active }}
           >
-            <View>
+            <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
               <item.Icon color={color} size={20} strokeWidth={1.8} />
               {item.path === "/notifications" && unread > 0 ? (
                 <View style={[styles.badge, { borderColor: theme.card }]}>
