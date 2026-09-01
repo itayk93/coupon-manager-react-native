@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   ScrollView,
   useWindowDimensions,
+  Modal,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -21,6 +22,9 @@ import {
   RotateCcw,
   PlusCircle,
   ImagePlus,
+  HelpCircle,
+  MessageSquareText,
+  BadgeCheck,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
@@ -29,6 +33,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { usePageTutorial } from "@/hooks/usePageTutorial";
 
 export function BarcodeScannerScreen() {
   const router = useRouter();
@@ -45,7 +50,30 @@ export function BarcodeScannerScreen() {
   const scannedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
   const [aiText, setAiText] = useState("");
+  const [showTutorial, setShowTutorial] = useState(false);
+  const tutorialAutoOpened = useRef(false);
   const parseCoupon = useParseCoupon();
+  const pageTutorial = usePageTutorial("coupon_import");
+
+  useEffect(() => {
+    if (
+      pageTutorial.isReady &&
+      !pageTutorial.hasSeen &&
+      !tutorialAutoOpened.current
+    ) {
+      tutorialAutoOpened.current = true;
+      setShowTutorial(true);
+    }
+  }, [pageTutorial.hasSeen, pageTutorial.isReady]);
+
+  const closeTutorial = () => {
+    setShowTutorial(false);
+    if (!pageTutorial.hasSeen) {
+      void pageTutorial.markSeen().catch((error) => {
+        console.error("Failed to save tutorial progress:", error);
+      });
+    }
+  };
 
   const handleBarcodeScanned = ({ data, type }: { data: string; type: string }) => {
     if (scannedRef.current) return;
@@ -182,7 +210,22 @@ export function BarcodeScannerScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="סורק שוברים וקודים" showBack onBack={() => router.back()} />
+      <Header
+        title="קופון חדש בקליק"
+        subtitle="טקסט, תמונה או סריקה — מה שנוח"
+        showBack
+        onBack={() => router.back()}
+        rightAction={
+          <TouchableOpacity
+            onPress={() => setShowTutorial(true)}
+            style={[styles.helpButton, { backgroundColor: theme.surfaceAlt }]}
+            accessibilityRole="button"
+            accessibilityLabel="הצגת מדריך למסך הוספת קופון"
+          >
+            <HelpCircle size={20} color={theme.primary} />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={styles.container}>
         {/* Top Mode Selector Tabs */}
@@ -210,7 +253,7 @@ export function BarcodeScannerScreen() {
                 { color: activeTab === "ai" ? "#ffffff" : theme.textMuted },
               ]}
             >
-              הוספת קופון מטקסט
+              טקסט או תמונה
             </Text>
           </TouchableOpacity>
 
@@ -237,7 +280,7 @@ export function BarcodeScannerScreen() {
                 { color: activeTab === "camera" ? "#ffffff" : theme.textMuted },
               ]}
             >
-              סריקת מצלמה
+              סריקת קוד
             </Text>
           </TouchableOpacity>
         </View>
@@ -328,11 +371,11 @@ export function BarcodeScannerScreen() {
               <View style={styles.aiHeader}>
                 <Sparkles size={20} color={theme.primary} style={styles.aiHeaderIcon} />
                 <Text style={[styles.aiTitle, { color: theme.text, fontSize: aiTitleFontSize }]}>
-                  הדבק הודעת SMS או טקסט שקיבלת
+                  יש קופון? מדביקים וממשיכים
                 </Text>
               </View>
               <Text style={[styles.aiSubtitle, { color: theme.textMuted }]}>
-                מערכת ה-AI תחלץ אוטומטית את שם החברה, קוד הקופון, השווי והתוקף!
+                מערכת ה-AI תחלץ אוטומטית את שם החברה, קוד הקופון, השווי והתוקף.
               </Text>
 
               <TextInput
@@ -437,7 +480,95 @@ export function BarcodeScannerScreen() {
           />
         </View>
       </View>
+
+      <Modal
+        visible={showTutorial}
+        transparent
+        animationType="fade"
+        onRequestClose={closeTutorial}
+        statusBarTranslucent
+      >
+        <View style={styles.tutorialBackdrop}>
+          <View
+            style={[
+              styles.tutorialCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+            ]}
+            accessibilityViewIsModal
+          >
+            <View style={[styles.tutorialHero, { backgroundColor: theme.primaryTint }]}>
+              <Sparkles size={34} color={theme.primary} />
+            </View>
+            <Text style={[styles.tutorialTitle, { color: theme.text }]}>קופון נכנס. הפרטים מסתדרים.</Text>
+            <Text style={[styles.tutorialSubtitle, { color: theme.textMuted }]}>
+              לא צריך להקליד הכול ידנית. בוחרים דרך, וה־AI עושה את העבודה.
+            </Text>
+
+            <View style={styles.tutorialSteps}>
+              <TutorialStep
+                icon={<MessageSquareText size={20} color={theme.primary} />}
+                title="מדביקים את מה שקיבלת"
+                text="SMS, מייל או כל טקסט של השובר."
+                iconBackground={theme.primaryTint}
+                textColor={theme.text}
+                mutedColor={theme.textMuted}
+              />
+              <TutorialStep
+                icon={<BadgeCheck size={20} color={theme.success} />}
+                title="הפרטים מתמלאים לבד"
+                text="שם החברה, קוד הקופון, השווי והתוקף."
+                iconBackground={theme.successBg}
+                textColor={theme.text}
+                mutedColor={theme.textMuted}
+              />
+              <TutorialStep
+                icon={<Camera size={20} color={theme.accent} />}
+                title="אפשר גם בלי טקסט"
+                text="מצרפים תמונה, מצלמים שובר או סורקים קוד."
+                iconBackground={theme.surface}
+                textColor={theme.text}
+                mutedColor={theme.textMuted}
+              />
+            </View>
+
+            <Button title="יאללה, מוסיפים קופון" onPress={closeTutorial} />
+            <TouchableOpacity
+              onPress={closeTutorial}
+              style={styles.tutorialSkip}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.tutorialSkipText, { color: theme.textMuted }]}>אולי אחר כך</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function TutorialStep({
+  icon,
+  title,
+  text,
+  iconBackground,
+  textColor,
+  mutedColor,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  iconBackground: string;
+  textColor: string;
+  mutedColor: string;
+}) {
+  return (
+    <View style={styles.tutorialStep}>
+      <View style={[styles.tutorialStepIcon, { backgroundColor: iconBackground }]}>{icon}</View>
+      <View style={styles.tutorialStepCopy}>
+        <Text style={[styles.tutorialStepTitle, { color: textColor }]}>{title}</Text>
+        <Text style={[styles.tutorialStepText, { color: mutedColor }]}>{text}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -449,6 +580,99 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
+  },
+  helpButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tutorialBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.58)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  tutorialCard: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 20,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  tutorialHero: {
+    width: 64,
+    height: 64,
+    borderRadius: 22,
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  tutorialTitle: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    lineHeight: 29,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  tutorialSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+    marginTop: 6,
+  },
+  tutorialSteps: {
+    gap: 13,
+    marginVertical: 20,
+  },
+  tutorialStep: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+  },
+  tutorialStepIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tutorialStepCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  tutorialStepTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "right",
+  },
+  tutorialStepText: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    textAlign: "right",
+    marginTop: 1,
+  },
+  tutorialSkip: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  tutorialSkipText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    fontWeight: "600",
   },
   aiDividerText: {
     fontSize: 12,

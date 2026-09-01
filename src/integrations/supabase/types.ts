@@ -1539,6 +1539,7 @@ export type Database = {
           coupon_detail_timestamp: string | null
           id: number
           index_timestamp: string | null
+          tutorials: Json
           user_id: number
         }
         Insert: {
@@ -1546,6 +1547,7 @@ export type Database = {
           coupon_detail_timestamp?: string | null
           id?: number
           index_timestamp?: string | null
+          tutorials?: Json
           user_id: number
         }
         Update: {
@@ -1553,6 +1555,7 @@ export type Database = {
           coupon_detail_timestamp?: string | null
           id?: number
           index_timestamp?: string | null
+          tutorials?: Json
           user_id?: number
         }
         Relationships: []

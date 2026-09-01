@@ -21,7 +21,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
 
   try {
-    const { action, user_id, step } = await req.json();
+    const { action, user_id, step, tutorial_key } = await req.json();
     const authenticatedUser = await requireUser(req);
     requireSameUser(user_id, authenticatedUser);
     const userId = authenticatedUser.id;
@@ -42,6 +42,19 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ progress: data ?? null });
     }
 
+    if (action === 'get_tutorial') {
+      if (typeof tutorial_key !== 'string' || !/^[a-z][a-z0-9_]{1,49}$/.test(tutorial_key)) {
+        return jsonResponse({ error: 'tutorial_key חסר או לא תקין' }, 400);
+      }
+      const { data, error } = await supabase
+        .from('user_tour_progress')
+        .select('tutorials')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      return jsonResponse({ tutorials: data?.tutorials ?? {} });
+    }
+
     if (action === 'mark_step') {
       if (!step || !(step in STEP_COLUMN_MAP)) {
         return jsonResponse({ error: 'step חסר או לא תקין' }, 400);
@@ -59,6 +72,18 @@ Deno.serve(async (req: Request) => {
         );
       if (error) throw error;
 
+      return jsonResponse({ ok: true });
+    }
+
+    if (action === 'mark_tutorial') {
+      if (typeof tutorial_key !== 'string' || !/^[a-z][a-z0-9_]{1,49}$/.test(tutorial_key)) {
+        return jsonResponse({ error: 'tutorial_key חסר או לא תקין' }, 400);
+      }
+      const { error } = await supabase.rpc('mark_user_page_tutorial', {
+        p_user_id: userId,
+        p_tutorial_key: tutorial_key,
+      });
+      if (error) throw error;
       return jsonResponse({ ok: true });
     }
 
