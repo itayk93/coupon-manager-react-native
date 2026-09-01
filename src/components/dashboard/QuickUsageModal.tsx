@@ -192,6 +192,7 @@ export function QuickUsageModal({
   };
 
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId);
+  const isOneTimeCoupon = selectedCoupon?.is_one_time === true;
   const remaining = selectedCoupon
     ? Math.max(0, (selectedCoupon.value || 0) - (selectedCoupon.used_value || 0))
     : 0;
@@ -251,6 +252,11 @@ export function QuickUsageModal({
   const handleSubmit = async () => {
     if (!selectedCouponId) {
       setError("יש לבחור קופון לדיווח");
+      setAmountError("");
+      return;
+    }
+    if (isOneTimeCoupon) {
+      setError("קופון חד־פעמי ניתן לסמן רק כנוצל במלואו");
       setAmountError("");
       return;
     }
@@ -434,7 +440,7 @@ export function QuickUsageModal({
       visible={visible}
       onClose={onClose}
       title="דיווח מהיר על שימוש"
-      subtitle="הורד סכום שנוצל מיתרת הקופון"
+      subtitle={isOneTimeCoupon ? "סמן את הקופון כנוצל במלואו" : "הורד סכום שנוצל מיתרת הקופון"}
     >
       <View style={styles.container}>
         {parseUsage.isPending ? (
@@ -713,17 +719,19 @@ export function QuickUsageModal({
 
         {/* Amount Input */}
         <View style={styles.amountContainer}>
-          <Input
-            label="סכום השימוש (₪) *"
-            placeholder="0.00"
-            keyboardType="numeric"
-            value={amount}
-            onChangeText={(val) => {
-              setAmount(val);
-              setAmountError("");
-            }}
-            error={amountError}
-          />
+          {!isOneTimeCoupon ? (
+            <Input
+              label="סכום השימוש (₪) *"
+              placeholder="0.00"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={(val) => {
+                setAmount(val);
+                setAmountError("");
+              }}
+              error={amountError}
+            />
+          ) : null}
           {remaining > 0 ? (
             isConfirmingFullUse ? (
               <View
@@ -821,12 +829,14 @@ export function QuickUsageModal({
           </Text>
         ) : null}
 
-        <Button
-          title="רשום שימוש ועדכן יתרה"
-          onPress={handleSubmit}
-          loading={recordUsage.isPending}
-          style={{ marginTop: 12 }}
-        />
+        {!isOneTimeCoupon ? (
+          <Button
+            title="רשום שימוש ועדכן יתרה"
+            onPress={handleSubmit}
+            loading={recordUsage.isPending}
+            style={{ marginTop: 12 }}
+          />
+        ) : null}
       </View>
     </Modal>
   );
