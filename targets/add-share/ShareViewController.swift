@@ -66,10 +66,14 @@ class ShareViewController: UIViewController {
       return finish()
     }
 
+    // A shared web page hands over both a URL and a page snapshot image. This
+    // target adds a coupon from the page, so the URL/text wins; the image is
+    // only the fallback for a plain screenshot share.
     if let provider = attachments.first(where: {
-      $0.hasItemConformingToTypeIdentifier(UTType.image.identifier)
+      $0.hasItemConformingToTypeIdentifier(UTType.url.identifier)
+        && !$0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
     }) {
-      loadSharedImage(provider)
+      loadSharedURL(provider)
       return
     }
 
@@ -82,9 +86,9 @@ class ShareViewController: UIViewController {
     }
 
     if let provider = attachments.first(where: {
-      $0.hasItemConformingToTypeIdentifier(UTType.url.identifier)
+      $0.hasItemConformingToTypeIdentifier(UTType.image.identifier)
     }) {
-      loadSharedURL(provider)
+      loadSharedImage(provider)
       return
     }
 
