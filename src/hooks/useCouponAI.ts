@@ -5,6 +5,8 @@ import {
   cardExpiryToExpiration,
   extractCardExpiry,
   extractExpiration,
+  extractRedemptionUrl,
+  extractRelativeExpiration,
   extractVerificationCode,
   extractVoucherCode,
 } from "@/lib/couponTextFields";
@@ -18,6 +20,7 @@ export type ParsedCoupon = {
   description: string | null;
   cvv: string | null;
   card_exp: string | null;
+  redemption_url?: string | null;
 };
 
 function isLikelyCoupon(candidate: ParsedCoupon): boolean {
@@ -63,12 +66,16 @@ export function useParseCoupon() {
       // belongs to.
       const textExpiration =
         text && coupons.length === 1 ? extractExpiration(text) : null;
+      const relativeExpiration =
+        text && coupons.length === 1 ? extractRelativeExpiration(text) : null;
+      const textRedemptionUrl = text ? extractRedemptionUrl(text) : null;
       const normalizedCoupons = coupons.map((coupon: ParsedCoupon) => ({
         ...coupon,
         code: textVoucherCode || coupon.code,
         card_exp: textCardExpiry || coupon.card_exp,
         cvv: textCvv || coupon.cvv,
-        expiration: textExpiration || cardExpiration || coupon.expiration,
+        expiration: textExpiration || relativeExpiration || cardExpiration || coupon.expiration,
+        redemption_url: textRedemptionUrl || coupon.redemption_url,
       }));
 
       const filteredCoupons = normalizedCoupons.filter(isLikelyCoupon);

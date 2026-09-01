@@ -30,8 +30,9 @@ const SINGLE_COUPON_SCHEMA = {
     description: { type: ['string', 'null'], description: 'תיאור או הערות' },
     cvv: { type: ['string', 'null'], description: 'קוד CVV אם קיים' },
     card_exp: { type: ['string', 'null'], description: 'תוקף כרטיס בפורמט MM/YY' },
+    redemption_url: { type: ['string', 'null'], description: 'קישור למימוש או לרשימת בתי העסק' },
   },
-  required: ['company', 'code', 'value', 'cost', 'expiration', 'description', 'cvv', 'card_exp'],
+  required: ['company', 'code', 'value', 'cost', 'expiration', 'description', 'cvv', 'card_exp', 'redemption_url'],
 };
 
 const COUPONS_SCHEMA = {
@@ -91,12 +92,13 @@ const SYSTEM_PROMPT = `אתה עוזר שמחלץ קופון אחד או כמה 
 - expiration: תאריך תפוגה בפורמט YYYY-MM-DD בלבד
 - description: תיאור קצר אם רלוונטי
 - cvv: חלץ קוד אימות/CVV כאשר הוא מופיע, למשל "קוד אימות: 359".
-- card_exp: תוקף הכרטיס בפורמט MM/YY כאשר מופיע ערך כמו "תוקף: 08/31" או "תוקף כרטיס: 08/31". במקרה כזה זהו card_exp, ולא expiration. אל תשאיר card_exp כ-null כאשר מופיע בטקסט תוקף בפורמט MM/YY.`;
+- card_exp: תוקף הכרטיס בפורמט MM/YY כאשר מופיע ערך כמו "תוקף: 08/31" או "תוקף כרטיס: 08/31". במקרה כזה זהו card_exp, ולא expiration. אל תשאיר card_exp כ-null כאשר מופיע בטקסט תוקף בפורמט MM/YY.
+- redemption_url: כאשר מופיעים כמה קישורים, העדף קישור שמסומן כרשימת העסקים/בתי העסק או קישור למימוש. אל תחזיר קישור לבדיקת יתרה. אם כתוב שהתוקף הוא מספר שנים, חשב expiration ממועד ההודעה הנוכחי.`;
 
 const FALLBACK_JSON_PROMPT = `${SYSTEM_PROMPT}
 
 החזר JSON בלבד, בלי הסברים, בפורמט המדויק הבא:
-{"coupons":[{"company":null,"code":null,"value":null,"cost":null,"expiration":null,"description":null,"cvv":null,"card_exp":null}]}`;
+{"coupons":[{"company":null,"code":null,"value":null,"cost":null,"expiration":null,"description":null,"cvv":null,"card_exp":null,"redemption_url":null}]}`;
 
 async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: boolean) {
   const body = useStrictSchema

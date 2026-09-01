@@ -26,6 +26,7 @@ export type UseCouponFormArgs = {
   initialDescription?: string;
   initialCvv?: string;
   initialCardExp?: string;
+  initialRedemptionUrl?: string;
 };
 
 /**
@@ -46,6 +47,7 @@ export function useCouponForm({
   initialDescription,
   initialCvv,
   initialCardExp,
+  initialRedemptionUrl,
 }: UseCouponFormArgs) {
   const router = useRouter();
   const isEditing = existingCoupon !== undefined;
@@ -57,7 +59,8 @@ export function useCouponForm({
       initialExpiration ||
       initialDescription ||
       initialCvv ||
-      initialCardExp
+      initialCardExp ||
+      initialRedemptionUrl
   );
 
   const addCoupon = useAddCoupon();
@@ -107,6 +110,7 @@ export function useCouponForm({
       existingCoupon?.strauss_coupon_url ||
       existingCoupon?.xgiftcard_coupon_url ||
       existingCoupon?.xtra_coupon_url ||
+      initialRedemptionUrl ||
       ""
   );
 

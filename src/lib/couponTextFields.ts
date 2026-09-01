@@ -35,6 +35,32 @@ export function cardExpiryToExpiration(cardExpiry: string): string | null {
   return `${year}-${match[1]}-${String(lastDay).padStart(2, "0")}`;
 }
 
+/** Picks the merchant-list URL, never a later balance-check URL. */
+export function extractRedemptionUrl(text: string): string | null {
+  const normalized = searchableText(text);
+  const labeled = normalized.match(
+    /(?:לרשימת\s+(?:העסקים|בתי\s+העסק)|למימוש\s+(?:מקוון|אונליין))[^\n]*\n\s*(?:\[[^\]]*\]\()?\s*(https?:\/\/[^\s)\]]+)/i
+  );
+  return labeled?.[1]?.replace(/[.,]+$/, "") || null;
+}
+
+/** Converts "תוקף השובר: 5 שנים" to an absolute date from import day. */
+export function extractRelativeExpiration(text: string, now = new Date()): string | null {
+  const match = searchableText(text).match(
+    /תוקף\s+(?:ה?שובר|ה?קופון)\s*[:：-]?\s*(\d{1,2})\s*(?:שנים|שנה)(?:\s|[.,]|$)/
+  );
+  if (!match) return null;
+  const years = Number(match[1]);
+  if (years < 1 || years > 20) return null;
+
+  const result = new Date(Date.UTC(
+    now.getUTCFullYear() + years,
+    now.getUTCMonth(),
+    now.getUTCDate()
+  ));
+  return result.toISOString().slice(0, 10);
+}
+
 /**
  * Reads an explicit full coupon-expiration date. MM/YY values belong to the
  * prepaid card and are handled by extractCardExpiry instead.

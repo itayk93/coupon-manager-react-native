@@ -33,6 +33,7 @@ type CouponFormProps = {
   initialDescription?: string;
   initialCvv?: string;
   initialCardExp?: string;
+  initialRedemptionUrl?: string;
 };
 
 /**
@@ -56,6 +57,7 @@ export function AddEditCouponScreen() {
     initialCvv?: string;
     initialCardExp?: string;
     initialImportId?: string;
+    initialRedemptionUrl?: string;
   }>();
 
   const couponIdentifier = params.couponId;
@@ -98,6 +100,7 @@ export function AddEditCouponScreen() {
       initialDescription={importedCoupon?.description || params.initialDescription}
       initialCvv={importedCoupon?.cvv || params.initialCvv}
       initialCardExp={importedCoupon?.card_exp || params.initialCardExp}
+      initialRedemptionUrl={importedCoupon?.redemption_url || params.initialRedemptionUrl}
     />
   );
 }
@@ -112,6 +115,7 @@ function CouponForm({
   initialDescription,
   initialCvv,
   initialCardExp,
+  initialRedemptionUrl,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -167,6 +171,7 @@ function CouponForm({
     initialDescription,
     initialCvv,
     initialCardExp,
+    initialRedemptionUrl,
   });
 
   return (
@@ -286,7 +291,10 @@ function CouponForm({
           >
             <Switch
               value={isOneTime}
-              onValueChange={setIsOneTime}
+              onValueChange={(enabled) => {
+                setIsOneTime(enabled);
+                if (!enabled) setPurpose("");
+              }}
               trackColor={{ false: theme.inputBorder, true: theme.primary }}
               thumbColor="#ffffff"
             />
@@ -296,12 +304,15 @@ function CouponForm({
             </View>
           </View>
 
-          <Input
-            label="מטרת הקופון"
-            placeholder="למשל: ארוחת ערב, מתנה..."
-            value={purpose}
-            onChangeText={setPurpose}
-          />
+          {isOneTime ? (
+            <Input
+              label="מטרת הקופון"
+              placeholder="למשל: ארוחת ערב, מתנה..."
+              value={purpose}
+              onChangeText={setPurpose}
+              autoFocus
+            />
+          ) : null}
 
           <TouchableOpacity
             onPress={() => setShowAdvanced((value) => !value)}

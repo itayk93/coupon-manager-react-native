@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   cardExpiryToExpiration,
   extractCardExpiry,
+  extractRedemptionUrl,
+  extractRelativeExpiration,
   extractVerificationCode,
   extractVoucherCode,
 } from "./couponTextFields";
@@ -38,5 +40,17 @@ describe("coupon text card fields", () => {
   it("uses the real last day of the expiry month", () => {
     expect(cardExpiryToExpiration("02/28")).toBe("2028-02-29");
     expect(cardExpiryToExpiration("02/29")).toBe("2029-02-28");
+  });
+
+  it("extracts the merchant-list URL instead of the balance URL", () => {
+    const text = `לרשימת העסקים המכבדים את שובר FOOD.STYLE:\n[https://food.style.co.il/](https://food.style.co.il/)\nלבדיקת יתרת השובר: https://multipass.co.il/GetBalance`;
+    expect(extractRedemptionUrl(text)).toBe("https://food.style.co.il/");
+  });
+
+  it("turns a relative validity period into an absolute expiration date", () => {
+    expect(
+      extractRelativeExpiration("תוקף השובר: 5 שנים.", new Date("2026-09-01T00:00:00Z"))
+    ).toBe("2031-09-01");
+    expect(extractRelativeExpiration("אין תוקף מצוין")).toBeNull();
   });
 });

@@ -12,6 +12,7 @@ describe("shared coupon import handoff", () => {
       description: null,
       cvv: "643",
       card_exp: "09/31",
+      redemption_url: "https://food.style.co.il/",
     });
 
     expect(getSharedCouponImport("import-1")).toMatchObject({
