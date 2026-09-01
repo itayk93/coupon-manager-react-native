@@ -321,8 +321,9 @@ export function CouponsListScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/coupons/add")}
+            onPress={() => router.push("/scanner")}
             style={[styles.addBtn, { backgroundColor: theme.primary }]}
+            accessibilityLabel="הוספת קופון מטקסט או SMS"
           >
             <Plus size={16} color="#ffffff" />
             <Text style={styles.addBtnText}>הוספת קופון</Text>
@@ -643,7 +644,7 @@ export function CouponsListScreen() {
                   : "הקופון הראשון שלך מתחיל כאן."
               }
               actionTitle="הוספת קופון"
-              onAction={() => router.push("/coupons/add")}
+              onAction={() => router.push("/scanner")}
             />
           }
         />
