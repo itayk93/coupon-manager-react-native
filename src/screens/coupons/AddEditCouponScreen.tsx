@@ -21,6 +21,7 @@ import { useCouponForm } from "@/hooks/useCouponForm";
 import { AUTO_PROVIDERS } from "@/lib/couponForm";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { getSharedCouponImport } from "@/lib/sharedCouponImport";
 
 type CouponFormProps = {
   existingCoupon?: DecryptedCoupon;
@@ -59,6 +60,7 @@ export function AddEditCouponScreen() {
 
   const couponIdentifier = params.couponId;
   const isEditing = couponIdentifier !== undefined;
+  const importedCoupon = getSharedCouponImport(params.initialImportId);
 
   const { data: existingCoupon, isLoading, isError } = useCoupon(couponIdentifier);
 
@@ -88,14 +90,14 @@ export function AddEditCouponScreen() {
     <CouponForm
       key={params.initialImportId || couponIdentifier || "new-coupon"}
       existingCoupon={existingCoupon}
-      initialCompany={params.initialCompany}
-      initialCode={params.initialCode}
-      initialValue={params.initialValue}
-      initialCost={params.initialCost}
-      initialExpiration={params.initialExpiration}
-      initialDescription={params.initialDescription}
-      initialCvv={params.initialCvv}
-      initialCardExp={params.initialCardExp}
+      initialCompany={importedCoupon?.company || params.initialCompany}
+      initialCode={importedCoupon?.code || params.initialCode}
+      initialValue={importedCoupon?.value ? String(importedCoupon.value) : params.initialValue}
+      initialCost={importedCoupon?.cost ? String(importedCoupon.cost) : params.initialCost}
+      initialExpiration={importedCoupon?.expiration?.slice(0, 10) || params.initialExpiration}
+      initialDescription={importedCoupon?.description || params.initialDescription}
+      initialCvv={importedCoupon?.cvv || params.initialCvv}
+      initialCardExp={importedCoupon?.card_exp || params.initialCardExp}
     />
   );
 }

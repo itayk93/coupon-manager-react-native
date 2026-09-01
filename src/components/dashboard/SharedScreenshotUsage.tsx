@@ -11,6 +11,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useParseCoupon } from "@/hooks/useCouponAI";
 import { useCoupons } from "@/hooks/useCoupons";
 import { fonts } from "@/lib/theme";
+import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
 
 /**
  * Mounted once at the root. When the user shares a screenshot into the app from
@@ -68,18 +69,11 @@ export function SharedScreenshotUsage() {
       completeSharedImport();
       setPendingImport(null);
       setMode(null);
+      storeSharedCouponImport(pendingImport.id, parsed);
       router.push({
         pathname: "/coupons/add",
         params: {
           initialImportId: pendingImport.id,
-          initialCompany: parsed.company || "",
-          initialCode: parsed.code || "",
-          ...(parsed.value ? { initialValue: String(parsed.value) } : {}),
-          ...(parsed.cost ? { initialCost: String(parsed.cost) } : {}),
-          ...(parsed.expiration ? { initialExpiration: parsed.expiration.slice(0, 10) } : {}),
-          ...(parsed.description ? { initialDescription: parsed.description } : {}),
-          ...(parsed.cvv ? { initialCvv: parsed.cvv } : {}),
-          ...(parsed.card_exp ? { initialCardExp: parsed.card_exp } : {}),
         },
       });
     } catch (e) {
