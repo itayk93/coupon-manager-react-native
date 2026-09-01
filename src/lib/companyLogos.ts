@@ -12,7 +12,7 @@ const STORAGE_LOGO_ROOT =
 
 /** Verified brand artwork kept in our own public bucket. */
 const remoteLogoByCompany: Record<string, string> = {
-  babka: "babka.svg",
+  babka: "babka.png",
   base44: "base44.png",
   "food style": "food-style.png",
   "food.style": "food-style.png",
