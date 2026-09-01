@@ -246,7 +246,12 @@ async function readPublicWebPage(rawUrl: string): Promise<string> {
   for (let redirect = 0; redirect <= MAX_WEB_REDIRECTS; redirect++) {
     const response = await fetch(url, {
       redirect: 'manual',
-      headers: { 'user-agent': 'CouponMaster/1.0', accept: 'text/html,text/plain' },
+      headers: {
+        'user-agent':
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'accept-language': 'he-IL,he;q=0.9,en;q=0.8',
+      },
       signal: AbortSignal.timeout(8_000),
     });
     if (response.status >= 300 && response.status < 400) {
