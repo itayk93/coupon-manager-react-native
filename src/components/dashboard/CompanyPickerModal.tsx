@@ -23,7 +23,6 @@ const POPULAR_COMPANIES = [
   "Dream Card",
   "Power Gift",
   "GoodPharm",
-  "גוד פארם",
   "פולגת",
   "פוקס הום",
   "גולדה",

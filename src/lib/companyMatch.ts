@@ -3,6 +3,7 @@
 // iOS app (OpenAIClient.matchCompanyName): exact → case-insensitive → fuzzy
 // (trim whitespace + punctuation). Returns the canonical existing name when a
 // match is found, otherwise null so the caller can keep the detected name as-is.
+import { companyKey } from "./companyName";
 
 const PUNCTUATION = /[!-/:-@[-`{-~׀-׏]+/g; // ASCII punctuation + Hebrew punctuation marks
 
@@ -27,12 +28,17 @@ export function matchCompanyName(detectedName: string, companyNames: string[]): 
   const caseMatch = companyNames.find((name) => name.toLowerCase() === lowered);
   if (caseMatch) return caseMatch;
 
-  // 3. Fuzzy match: ignore whitespace and punctuation differences.
+  // 3. Known cross-language identity. Example: "גוד פארם" in a Hebrew
+  // voucher is the existing "GoodPharm" company, not a second company.
+  const identityMatch = companyNames.find((name) => companyKey(name) === companyKey(detected));
+  if (identityMatch) return identityMatch;
+
+  // 4. Fuzzy match: ignore whitespace and punctuation differences.
   const cleanedDetected = clean(detected);
   const fuzzy = companyNames.find((name) => clean(name) === cleanedDetected);
   if (fuzzy) return fuzzy;
 
-  // 4. Substring match: DB name is a leading word of the detected name, or vice versa.
+  // 5. Substring match: DB name is a leading word of the detected name, or vice versa.
   // e.g. "Xtra Giftcard" → matches DB entry "Xtra"
   //      "BuyMe Gift"    → matches DB entry "BuyMe"
   const detectedWords = cleanedDetected.split(" ");
