@@ -253,29 +253,16 @@ export function BarcodeScannerScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setActiveTab("camera")}
+            onPress={() => router.push("/coupons/add")}
             style={[
               styles.tabBtn,
               compactLayout && styles.tabBtnCompact,
-              {
-                backgroundColor:
-                  activeTab === "camera"
-                    ? theme.primary
-                    : theme.surfaceAlt,
-              },
+              { backgroundColor: theme.surfaceAlt },
             ]}
           >
-            <Camera
-              size={18}
-              color={activeTab === "camera" ? "#ffffff" : theme.textMuted}
-            />
-            <Text
-              style={[
-                styles.tabBtnText,
-                { color: activeTab === "camera" ? "#ffffff" : theme.textMuted },
-              ]}
-            >
-              סריקת קוד
+            <PlusCircle size={18} color={theme.textMuted} />
+            <Text style={[styles.tabBtnText, { color: theme.textMuted }]}>
+              טופס ידני
             </Text>
           </TouchableOpacity>
         </View>
@@ -409,14 +396,14 @@ export function BarcodeScannerScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Button
-                    title={fontScale > 1.2 ? "צילום שובר" : "צלם שובר"}
+                    title="סריקת קוד"
                     variant="outline"
                     size={compactImageButtons ? "sm" : "md"}
                     style={compactImageButtons ? styles.imageBtnCompact : undefined}
                     textStyle={compactImageButtons ? styles.imageBtnTextCompact : undefined}
-                    onPress={() => handlePickImage("camera")}
+                    onPress={() => setActiveTab("camera")}
                     disabled={parseCoupon.isPending}
-                    icon={<Camera size={18} color={theme.primary} />}
+                    icon={<QrCode size={18} color={theme.primary} />}
                   />
                 </View>
               </View>
@@ -467,13 +454,6 @@ export function BarcodeScannerScreen() {
           </ScrollView>
         )}
 
-        <View style={styles.manualAddContainer}>
-          <Button
-            title="הוספת קופון ידנית"
-            onPress={() => router.push("/coupons/add")}
-            icon={<PlusCircle size={18} color="#ffffff" />}
-          />
-        </View>
       </View>
 
       <Modal
@@ -898,9 +878,5 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 14,
     lineHeight: 20,
-  },
-  manualAddContainer: {
-    marginTop: 10,
-    marginBottom: 20,
   },
 });
