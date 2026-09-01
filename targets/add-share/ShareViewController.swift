@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 /// `modules/coupon-widget/ios/CouponWidgetModule.swift`.
 private let appGroup = "group.com.itaykarkason.couponmaster"
 private let sharedImageName = "shared-usage-screenshot.jpg"
+private let sharedTextName = "shared-coupon-text.txt"
 private let sharedImportName = "shared-usage-import.json"
 
 /// Deep link that brings the app to the foreground so the approval sheet opens
@@ -52,21 +53,38 @@ class ShareViewController: UIViewController {
     super.viewDidAppear(animated)
     animateIn()
     startMascotIdle()
-    loadSharedImage()
+    loadSharedContent()
   }
 
   // MARK: - Work
 
-  private func loadSharedImage() {
+  private func loadSharedContent() {
     guard
       let item = extensionContext?.inputItems.first as? NSExtensionItem,
-      let provider = item.attachments?.first(where: {
-        $0.hasItemConformingToTypeIdentifier(UTType.image.identifier)
-      })
+      let attachments = item.attachments
     else {
       return finish()
     }
 
+    if let provider = attachments.first(where: {
+      $0.hasItemConformingToTypeIdentifier(UTType.image.identifier)
+    }) {
+      loadSharedImage(provider)
+      return
+    }
+
+    if let provider = attachments.first(where: {
+      $0.hasItemConformingToTypeIdentifier(UTType.plainText.identifier)
+        || $0.hasItemConformingToTypeIdentifier(UTType.text.identifier)
+    }) {
+      loadSharedText(provider)
+      return
+    }
+
+    showFailure("לא מצאנו תמונה או טקסט בהודעה")
+  }
+
+  private func loadSharedImage(_ provider: NSItemProvider) {
     provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] value, _ in
       let image: UIImage? = {
         if let image = value as? UIImage { return image }
@@ -82,6 +100,7 @@ class ShareViewController: UIViewController {
           return
         }
         do {
+          try? FileManager.default.removeItem(at: sharedTextURL())
           try jpeg.write(to: sharedImageURL(), options: .atomic)
           let job = SharedImportJob(
             id: UUID().uuidString,
@@ -93,6 +112,44 @@ class ShareViewController: UIViewController {
           self.showReady()
         } catch {
           self.showFailure("לא הצלחנו לשמור את התמונה")
+        }
+      }
+    }
+  }
+
+  private func loadSharedText(_ provider: NSItemProvider) {
+    let typeIdentifier = provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier)
+      ? UTType.plainText.identifier
+      : UTType.text.identifier
+
+    provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { [weak self] value, _ in
+      let text: String? = {
+        if let text = value as? String { return text }
+        if let attributed = value as? NSAttributedString { return attributed.string }
+        if let data = value as? Data { return String(data: data, encoding: .utf8) }
+        if let url = value as? URL { return try? String(contentsOf: url, encoding: .utf8) }
+        return nil
+      }()
+
+      DispatchQueue.main.async {
+        guard let self else { return }
+        guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+          self.showFailure("לא הצלחנו לקרוא את הטקסט")
+          return
+        }
+        do {
+          try? FileManager.default.removeItem(at: sharedImageURL())
+          try Data(text.utf8).write(to: sharedTextURL(), options: .atomic)
+          let job = SharedImportJob(
+            id: UUID().uuidString,
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            mode: importMode,
+            state: "pending"
+          )
+          try JSONEncoder().encode(job).write(to: sharedImportURL(), options: .atomic)
+          self.showReady()
+        } catch {
+          self.showFailure("לא הצלחנו לשמור את הטקסט")
         }
       }
     }
@@ -342,6 +399,12 @@ private func sharedImportURL() -> URL {
   FileManager.default
     .containerURL(forSecurityApplicationGroupIdentifier: appGroup)!
     .appendingPathComponent(sharedImportName)
+}
+
+private func sharedTextURL() -> URL {
+  FileManager.default
+    .containerURL(forSecurityApplicationGroupIdentifier: appGroup)!
+    .appendingPathComponent(sharedTextName)
 }
 
 private func downscaled(_ image: UIImage) -> UIImage {

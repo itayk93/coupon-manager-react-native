@@ -97,7 +97,8 @@ export type SharedUsageImport = {
   createdAt: string;
   mode?: "add" | "usage";
   state: "pending";
-  imageBase64: string;
+  imageBase64?: string;
+  text?: string;
 };
 
 // A shared screenshot is only interesting right after it was shared. If one is

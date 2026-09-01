@@ -30,7 +30,7 @@ function extractCardExpiry(text: string): string | null {
 }
 
 function extractVoucherCode(text: string): string | null {
-  return text.match(/\b\d{7,12}-\d{4}\b/)?.[0] || null;
+  return text.match(/\b(?:\d{7,12}-\d{4}|\d{4}(?:-\d{4}){3})\b/)?.[0] || null;
 }
 
 /**

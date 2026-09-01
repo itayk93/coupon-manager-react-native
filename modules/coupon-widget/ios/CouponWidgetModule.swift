@@ -8,6 +8,7 @@ public let couponWidgetDataKey = "CouponWidgetData"
 /// Written by the share extension, read once by the app.
 /// Keep in sync with `targets/share/ShareViewController.swift`.
 public let couponSharedImageName = "shared-usage-screenshot.jpg"
+public let couponSharedTextName = "shared-coupon-text.txt"
 public let couponSharedImportName = "shared-usage-import.json"
 
 public class CouponWidgetModule: Module {
@@ -43,13 +44,19 @@ public class CouponWidgetModule: Module {
         .containerURL(forSecurityApplicationGroupIdentifier: couponWidgetAppGroup)
       else { return nil }
 
-      let file = container.appendingPathComponent(couponSharedImageName)
+      let imageFile = container.appendingPathComponent(couponSharedImageName)
+      let textFile = container.appendingPathComponent(couponSharedTextName)
       let jobFile = container.appendingPathComponent(couponSharedImportName)
-      guard let data = try? Data(contentsOf: file) else { return nil }
       guard let jobData = try? Data(contentsOf: jobFile),
             var job = try? JSONSerialization.jsonObject(with: jobData) as? [String: Any]
       else { return nil }
-      job["imageBase64"] = data.base64EncodedString()
+      if let imageData = try? Data(contentsOf: imageFile) {
+        job["imageBase64"] = imageData.base64EncodedString()
+      } else if let text = try? String(contentsOf: textFile, encoding: .utf8), !text.isEmpty {
+        job["text"] = text
+      } else {
+        return nil
+      }
       guard let payload = try? JSONSerialization.data(withJSONObject: job) else { return nil }
       return String(data: payload, encoding: .utf8)
     }
@@ -59,6 +66,7 @@ public class CouponWidgetModule: Module {
         .containerURL(forSecurityApplicationGroupIdentifier: couponWidgetAppGroup)
       else { return }
       try? FileManager.default.removeItem(at: container.appendingPathComponent(couponSharedImageName))
+      try? FileManager.default.removeItem(at: container.appendingPathComponent(couponSharedTextName))
       try? FileManager.default.removeItem(at: container.appendingPathComponent(couponSharedImportName))
     }
 

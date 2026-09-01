@@ -8,12 +8,15 @@
   <dict>
       <key>NSExtensionAttributes</key>
       <dict>
-        <!-- Only offer the action for a single image: a usage screenshot is one
-             picture, and a wider rule would put us in share sheets we cannot serve. -->
+        <!-- Add Coupon accepts either a screenshot or coupon text copied from a
+             message. Keep both limits at one so unrelated multi-item shares do
+             not offer this extension. -->
         <key>NSExtensionActivationRule</key>
         <dict>
           <key>NSExtensionActivationSupportsImageWithMaxCount</key>
           <integer>1</integer>
+          <key>NSExtensionActivationSupportsText</key>
+          <true/>
         </dict>
       </dict>
       <key>NSExtensionPrincipalClass</key>

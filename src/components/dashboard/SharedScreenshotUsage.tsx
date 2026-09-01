@@ -61,6 +61,7 @@ export function SharedScreenshotUsage() {
     try {
       const [parsed] = await parseCoupon.mutateAsync({
         imageBase64: pendingImport.imageBase64,
+        text: pendingImport.text,
         companyNames: coupons.map((coupon) => coupon.company),
       });
 
@@ -98,7 +99,7 @@ export function SharedScreenshotUsage() {
       <Modal
         visible
         onClose={closeImport}
-        title="מה לעשות עם התמונה?"
+        title={`מה לעשות עם ה${pendingImport.text ? "הודעה" : "תמונה"}?`}
         subtitle="אפשר להוסיף קופון חדש או לדווח שימוש בקופון קיים"
       >
         <View style={styles.choiceContainer}>
@@ -154,7 +155,7 @@ export function SharedScreenshotUsage() {
       visible
       onClose={closeImport}
       coupons={coupons}
-      initialScreenshotBase64={pendingImport.imageBase64}
+      initialScreenshotBase64={pendingImport.imageBase64!}
       importId={pendingImport.id}
       onImportPaused={() => {
         setPendingImport(null);
