@@ -2,12 +2,37 @@ import { getLogoAsset } from "./companyLogoAssets";
 import { logoColorByFile } from "./companyLogoColors";
 
 /**
- * Company logos live on the legacy web host, not in Supabase Storage — that
- * project has no buckets at all, so every `/storage/v1/object/public/...` URL
- * this file used to build returned `NoSuchBucket`. `companies.image_path` holds
- * paths relative to this root, e.g. "images/carrefour.png".
+ * Existing curated logos live on the legacy web host. Newly verified logos are
+ * mirrored into the public `company-logos` bucket so their URLs stay under our
+ * control. Older `companies.image_path` values remain relative to this root.
  */
 const LEGACY_IMAGE_ROOT = "https://www.couponmasteril.com/static";
+const STORAGE_LOGO_ROOT =
+  "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public/company-logos";
+
+/** Verified brand artwork kept in our own public bucket. */
+const remoteLogoByCompany: Record<string, string> = {
+  babka: "babka.svg",
+  base44: "base44.png",
+  "food style": "food-style.png",
+  "food.style": "food-style.png",
+  "spa zone": "spa-zone.png",
+  "אגאדיר": "agadir.png",
+  agadir: "agadir.png",
+  "בורגרסבר": "burgersbar.jpg",
+  burgersbar: "burgersbar.jpg",
+  "גודי": "goodi.png",
+  goodi: "goodi.png",
+  "גולף אנד קו": "golf-and-co.jpg",
+  "golf & co": "golf-and-co.jpg",
+  "לה פרינה": "la-farina.png",
+  "la farina": "la-farina.png",
+  "נונו ומימי": "nono-mimi.png",
+  "nono & mimi": "nono-mimi.png",
+  "תו הזהב": "tav-hazahav.png",
+  "תן ביס": "tenbis.png",
+  "10bis": "tenbis.png",
+};
 
 const logoByCompany: Record<string, string> = {
   carrefour: "carrefour.png",
@@ -112,7 +137,12 @@ const logoByCompany: Record<string, string> = {
 export function hasStaticLogo(company: string) {
   if (!company) return false;
   const trimmed = company.trim();
-  return Boolean(logoByCompany[trimmed.toLowerCase()] || logoByCompany[trimmed]);
+  return Boolean(
+    logoByCompany[trimmed.toLowerCase()] ||
+      logoByCompany[trimmed] ||
+      remoteLogoByCompany[trimmed.toLowerCase()] ||
+      remoteLogoByCompany[trimmed]
+  );
 }
 
 export function getCompanyLogo(company: string) {
@@ -142,6 +172,10 @@ export function resolveCompanyLogo(company: string, dbImagePath?: string | null)
     if (file && file !== "default.png") {
       return `${LEGACY_IMAGE_ROOT}/images/${file}`;
     }
+
+    const remoteFile =
+      remoteLogoByCompany[trimmed.toLowerCase()] || remoteLogoByCompany[trimmed];
+    if (remoteFile) return `${STORAGE_LOGO_ROOT}/${remoteFile}`;
   }
 
   // Fallback to Google Favicon service
@@ -218,6 +252,10 @@ export function getCompanyLogoSource(
     const asset = getLogoAsset(file);
     if (asset) return asset;
   }
+
+  const remoteFile =
+    remoteLogoByCompany[trimmed.toLowerCase()] || remoteLogoByCompany[trimmed];
+  if (remoteFile) return { uri: `${STORAGE_LOGO_ROOT}/${remoteFile}` };
 
   return { uri: resolveCompanyLogo(company, dbImagePath) };
 }
