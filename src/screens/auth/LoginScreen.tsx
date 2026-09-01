@@ -138,6 +138,7 @@ export function LoginScreen() {
             <View style={styles.fields}>
               <Input
                 label="אימייל"
+                testID="login-email"
                 placeholder="you@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -149,6 +150,7 @@ export function LoginScreen() {
 
               <Input
                 label="סיסמה"
+                testID="login-password"
                 placeholder="••••••••"
                 isPassword
                 value={password}
@@ -167,7 +169,7 @@ export function LoginScreen() {
                 <Text style={[styles.link, { color: theme.primary }]}>שכחתי סיסמה</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity activeOpacity={0.85} onPress={handleLogin} disabled={loading}>
+              <TouchableOpacity testID="login-submit" activeOpacity={0.85} onPress={handleLogin} disabled={loading}>
                 <LinearGradient
                   colors={[palette.primary, palette.primaryDeep]}
                   start={{ x: 0, y: 0 }}
@@ -221,7 +223,11 @@ export function LoginScreen() {
           </View>
 
           <Text style={[styles.legal, { color: theme.textSubtle }]}>
-            מידע על השימוש בפרטים שלך מופיע ב
+            השימוש באפליקציה כפוף ל
+            <Text style={{ color: theme.primary }} onPress={() => router.push("/terms")}>
+              תנאי השימוש
+            </Text>
+            {" ול"}
             <Text style={{ color: theme.primary }} onPress={() => router.push("/privacy")}>
               מדיניות הפרטיות
             </Text>

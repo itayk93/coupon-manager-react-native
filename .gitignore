@@ -55,6 +55,9 @@ supabase/.temp/
 /build/
 /build-widget-*/
 docs/
+!docs/
+docs/*
+!docs/APP_STORE_LAUNCH_CHECKLIST.md
 # Authenticated QA screenshots may contain coupon codes. Keep them local only.
 /docs/android-qa/
 .commandcode/

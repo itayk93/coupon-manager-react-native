@@ -8,6 +8,7 @@ const LINKS = [
   { label: "אודות", path: "/about" },
   { label: "שאלות נפוצות", path: "/faq" },
   { label: "מדיניות פרטיות", path: "/privacy" },
+  { label: "תנאי שימוש", path: "/terms" },
 ] as const;
 
 /**

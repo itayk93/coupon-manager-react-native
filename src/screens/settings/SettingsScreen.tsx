@@ -385,6 +385,17 @@ export function SettingsScreen() {
                 <AlertCircle size={20} color={theme.textMuted} />
               </View>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/terms")}
+              style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
+            >
+              <ChevronLeft size={18} color={theme.textMuted} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>תנאי שימוש</Text>
+                <FileText size={20} color={theme.textMuted} />
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -401,6 +412,7 @@ export function SettingsScreen() {
           >
             <TouchableOpacity
               onPress={handleExportData}
+              testID="account-export"
               disabled={exportAccount.isPending}
               style={styles.menuItem}
             >
@@ -415,6 +427,7 @@ export function SettingsScreen() {
 
             <TouchableOpacity
               onPress={handleDeleteAccount}
+              testID="account-delete"
               disabled={deleteAccount.isPending}
               style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}
             >

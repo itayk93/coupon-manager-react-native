@@ -28,6 +28,7 @@
     "size": "expo export --platform ios --output-dir .expo/size-report >/dev/null && du -sh .expo/size-report/_expo .expo/size-report/assets",
     "check:links": "node scripts/check-deep-links.mjs",
     "e2e:activity-log": "node scripts/e2e-activity-log.mjs",
+    "e2e:account-privacy": "node scripts/e2e-account-privacy.mjs",
     "e2e:browser:create": "node scripts/e2e-browser-fixture.mjs create",
     "e2e:browser:cleanup": "node scripts/e2e-browser-fixture.mjs cleanup",
     "e2e:notifications": "node scripts/e2e-notifications.mjs",

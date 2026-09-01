@@ -111,7 +111,7 @@ function useAuthGuard() {
   // link from an email has to work in the recipient's inbox, without a login.
   // `r` is public for the same reason: an invite link is opened by someone who
   // does not have an account yet, which is the entire point of it.
-  const inPublicContent = ["about", "faq", "privacy", "issues", "unsubscribe", "r"].includes(
+  const inPublicContent = ["about", "faq", "privacy", "terms", "issues", "unsubscribe", "r"].includes(
     String(segments[0] ?? ""),
   );
 

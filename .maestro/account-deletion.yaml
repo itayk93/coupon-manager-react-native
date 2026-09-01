@@ -1,0 +1,32 @@
+# Requires a dedicated disposable account. Never use a reviewer or customer account.
+# E2E_DELETE_ACCOUNT_EMAIL and E2E_DELETE_ACCOUNT_PASSWORD must be supplied by
+# the release operator through environment variables, never committed here.
+appId: com.itaykarkason.couponmaster
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-email"
+- inputText: ${E2E_DELETE_ACCOUNT_EMAIL}
+- tapOn:
+    id: "login-password"
+- inputText: ${E2E_DELETE_ACCOUNT_PASSWORD}
+- tapOn:
+    id: "login-submit"
+- extendedWaitUntil:
+    visible: "הגדרות"
+    timeout: 15000
+- tapOn: "הגדרות"
+- scrollUntilVisible:
+    element:
+      id: "account-export"
+    direction: DOWN
+- assertVisible:
+    id: "account-export"
+- tapOn:
+    id: "account-delete"
+- assertVisible: "אי אפשר לבטל"
+- tapOn: "מחק את החשבון"
+- extendedWaitUntil:
+    visible: "התחברות"
+    timeout: 15000

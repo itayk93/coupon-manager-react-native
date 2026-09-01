@@ -1,0 +1,11 @@
+appId: com.itaykarkason.couponmaster
+---
+- launchApp:
+    clearState: true
+- assertVisible: "התחברות"
+- openLink: "couponmaster://privacy"
+- assertVisible: "מדיניות הפרטיות"
+- assertVisible: "גרסה 3.0"
+- openLink: "couponmaster://terms"
+- assertVisible: "תנאי שימוש"
+- assertVisible: "גרסה 1.0"
