@@ -34,6 +34,7 @@ import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { usePageTutorial } from "@/hooks/usePageTutorial";
+import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
 
 export function BarcodeScannerScreen() {
   const router = useRouter();
@@ -105,17 +106,11 @@ export function BarcodeScannerScreen() {
   /// resolved has to be forwarded here — anything left out silently comes back
   /// as an empty input, which is what used to happen to the expiry date.
   const goToAddCoupon = (parsed: ParsedCoupon) => {
+    const importId = `scanner-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    storeSharedCouponImport(importId, parsed);
     router.push({
       pathname: "/coupons/add",
-      params: {
-        initialCompany: parsed.company || "",
-        initialCode: parsed.code || "",
-        ...(parsed.value ? { initialValue: String(parsed.value) } : {}),
-        ...(parsed.expiration
-          ? { initialExpiration: parsed.expiration.slice(0, 10) }
-          : {}),
-        ...(parsed.description ? { initialDescription: parsed.description } : {}),
-      },
+      params: { initialImportId: importId },
     });
   };
 

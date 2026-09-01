@@ -76,15 +76,17 @@ try {
     await cleanup(ids);
     await unlink(statePath).catch(() => {});
     console.log("browser E2E fixture cleaned");
-  } else if (process.argv[2] === "create") {
+  } else if (process.argv[2] === "create" || process.argv[2] === "create-empty") {
     await cleanup();
     const stamp = Date.now();
     const instanceId = (await db.query("select instance_id from auth.users limit 1")).rows[0].instance_id;
     const owner = await makeUser(instanceId, stamp, 1);
     const sender = await makeUser(instanceId, stamp, 2);
-    const expiry = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    let primary = null;
+    if (process.argv[2] === "create") {
+      const expiry = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-    const primary = (await vault(owner.token, { action: "create", coupon: {
+      primary = (await vault(owner.token, { action: "create", coupon: {
       company: "GoodPharm", code: "9376760189312784", cvv: "359", card_exp: "08/31",
       description: "fixture", value: 100, cost: 80, used_value: 84.8, status: "פעיל",
       expiration: "2031-08-31", date_added: new Date().toISOString(),
@@ -100,20 +102,21 @@ try {
       expiration: "2031-10-31", date_added: new Date().toISOString(),
     } })).data;
     await vault(sender.token, { action: "create_share", couponId: sharedCoupon.id, recipientEmail: owner.email });
-    await db.query(`insert into public.notifications(user_id,type,title,message,link,shown,viewed,hide_from_view)
+      await db.query(`insert into public.notifications(user_id,type,title,message,link,shown,viewed,hide_from_view)
       values ($1,'balance_updated','היתרה עודכנה','היתרה בקופון GoodPharm עודכנה','/coupons/' || $2,false,false,false),
              ($1,'share_received','קופון שותף איתך','קיבלת קופון חדש מ־Wolt','/sharing',false,null,false),
              ($1,'idle_money','כסף שמחכה למימוש','יש לך יתרה זמינה ב־GoodPharm','/coupons',true,true,false)`,
-      [owner.appId, primary.id]);
+        [owner.appId, primary.id]);
+    }
 
     await writeFile(statePath, JSON.stringify({
       email: owner.email,
       password: owner.password,
       authIds: [owner.id, sender.id],
-      couponId: primary.id,
+      couponId: primary?.id ?? null,
     }), { mode: 0o600 });
     await chmod(statePath, 0o600);
-    console.log("browser E2E fixture ready");
+    console.log(`browser E2E fixture ready (${process.argv[2]})`);
   } else {
     throw new Error("Expected create or cleanup");
   }
