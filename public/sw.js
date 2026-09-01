@@ -55,13 +55,23 @@ self.addEventListener("notificationclick", (event) => {
   const destinationUrl = new URL(targetUrl, self.location.origin).toString();
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
       for (const client of clients) {
         if (client.url === destinationUrl || client.url.startsWith(destinationUrl)) {
-          client.focus();
+          await client.focus();
           client.postMessage({ url: targetUrl });
           return;
         }
+      }
+
+      // Keep notification taps inside an already-open installed PWA even when
+      // it currently shows another route. Matching only the destination used
+      // to open a new Safari window for every different coupon.
+      const appClient = clients.find((client) => new URL(client.url).origin === self.location.origin);
+      if (appClient) {
+        await appClient.navigate(destinationUrl);
+        await appClient.focus();
+        return;
       }
 
       if (self.clients.openWindow) {

@@ -19,6 +19,7 @@ import { CharacterScene, type CharacterState } from "@/components/onboarding/Cha
 import { formatIls } from "@/lib/formatIls";
 import { logActivity } from "@/lib/activityLog";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { takePendingRoute } from "@/lib/pendingRoute";
 
 type Mode = "profile" | "goal" | "volume" | "describe" | "preview";
 
@@ -105,7 +106,7 @@ export function OnboardingScreen() {
 
   const finish = () => {
     if (pendingVerification) router.replace({ pathname: "/(auth)/verify-email", params: { email: pendingVerification } });
-    else if (user) router.replace("/(tabs)");
+    else if (user) router.replace((takePendingRoute() as any) ?? "/(tabs)");
     else router.replace("/(auth)/register");
   };
 

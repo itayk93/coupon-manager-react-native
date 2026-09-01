@@ -325,7 +325,11 @@ async function notifyUsage(body: Record<string, unknown>) {
   const delta = Number(body.delta || 0);
   const couponId = Number(body.coupon_id);
   const company = String(body.company || 'קופון').trim();
-  if (!Number.isSafeInteger(userId) || userId <= 0 || delta <= 0) throw new Error('INVALID_INPUT');
+  if (
+    !Number.isSafeInteger(userId) || userId <= 0 ||
+    !Number.isSafeInteger(couponId) || couponId <= 0 ||
+    delta <= 0
+  ) throw new Error('INVALID_INPUT');
 
   // Notification banners offer no reliable layout control on iOS. Keep each
   // LTR fragment isolated so the company, punctuation, and amount cannot
@@ -333,16 +337,20 @@ async function notifyUsage(body: Record<string, unknown>) {
   const isolatedCompany = `${LRI}${company}${PDI}`;
   const isolatedAmount = `${LRI}₪\u00A0${delta.toFixed(2)}${PDI}`;
   const title = `${RLM}קופון מאסטר`;
-  const message = `${RLM}הרגע נוצלו ${isolatedAmount} ב־${isolatedCompany} 👀`;
+  const message = `${RLM}הרגע נוצלו ${isolatedAmount} ב־${isolatedCompany} 🧾`;
   const db = adminClient();
-  const { data: coupon } = couponId > 0
-    ? await db.from('coupon').select('public_id').eq('id', couponId).eq('user_id', userId).maybeSingle()
-    : { data: null };
-  const couponRouteId = coupon?.public_id || (couponId > 0 ? String(couponId) : null);
+  const { data: coupon, error: couponError } = await db
+    .from('coupon')
+    .select('public_id')
+    .eq('id', couponId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (couponError || !coupon?.public_id) throw new Error('COUPON_NOT_FOUND');
+  const couponPath = `/coupons/${coupon.public_id}`;
   await db.from('notifications').insert({
     user_id: userId,
     message,
-    link: couponRouteId ? `/coupons/${couponRouteId}` : '/notifications',
+    link: couponPath,
     shown: false,
     viewed: false,
     hide_from_view: false,
@@ -351,7 +359,7 @@ async function notifyUsage(body: Record<string, unknown>) {
   const push = await sendPushToUser(db, userId, {
     title,
     body: message,
-    url: couponRouteId ? `/coupons/${couponRouteId}` : '/notifications',
+    url: couponPath,
     tag: `multipass-usage-${userId}`,
     renotify: true,
   });
