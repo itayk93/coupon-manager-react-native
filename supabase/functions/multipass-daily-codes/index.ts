@@ -332,8 +332,8 @@ async function notifyUsage(body: Record<string, unknown>) {
   // reorder one another inside the surrounding Hebrew sentence.
   const isolatedCompany = `${LRI}${company}${PDI}`;
   const isolatedAmount = `${LRI}₪\u00A0${delta.toFixed(2)}${PDI}`;
-  const title = `${RLM}הקופון עודכן`;
-  const message = `${RLM}נרשם שימוש של ${isolatedAmount} ב־${isolatedCompany}`;
+  const title = `${RLM}קופון מאסטר`;
+  const message = `${RLM}הרגע נוצלו ${isolatedAmount} ב־${isolatedCompany} 👀`;
   const db = adminClient();
   const { data: coupon } = couponId > 0
     ? await db.from('coupon').select('public_id').eq('id', couponId).eq('user_id', userId).maybeSingle()
