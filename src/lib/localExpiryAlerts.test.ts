@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 
 vi.mock("expo-notifications", () => ({
@@ -18,12 +18,16 @@ vi.mock("expo-notifications", () => ({
 vi.mock("@/lib/nativeNotifications", () => ({
   ANDROID_CHANNEL_ID: "expiry-alerts",
   ensureAndroidChannel: vi.fn(),
+  getNativePushState: vi.fn(),
 }));
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
 }));
 
-const { planExpiryAlerts } = await import("./localExpiryAlerts");
+const Notifications = await import("expo-notifications");
+const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+const { getNativePushState } = await import("@/lib/nativeNotifications");
+const { planExpiryAlerts, syncLocalExpiryAlerts } = await import("./localExpiryAlerts");
 
 const NOW = Date.parse("2026-01-01T00:00:00Z");
 
@@ -81,5 +85,45 @@ describe("planExpiryAlerts", () => {
   it("holds everything back until a quiet period is over", () => {
     const prefs = { ...PREFS, quiet_until: "2026-02-25T00:00:00Z" };
     expect(planExpiryAlerts([coupon()], prefs, NOW).map((a) => a.daysLeft)).toEqual([1, 0]);
+  });
+});
+
+describe("syncLocalExpiryAlerts", () => {
+  // The sync reads the real clock, so the wallet it is given has to expire
+  // ahead of whenever the suite runs.
+  const future = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+
+  beforeEach(() => {
+    vi.mocked(Notifications.getPermissionsAsync).mockResolvedValue({ granted: true } as never);
+    vi.mocked(Notifications.getAllScheduledNotificationsAsync).mockResolvedValue([] as never);
+    vi.mocked(Notifications.scheduleNotificationAsync).mockClear();
+    vi.mocked(AsyncStorage.getItem).mockResolvedValue(null as never);
+    vi.mocked(AsyncStorage.setItem).mockResolvedValue(undefined as never);
+    vi.mocked(AsyncStorage.removeItem).mockResolvedValue(undefined as never);
+  });
+
+  it("leaves expiry reminders to the server when the device gets push", async () => {
+    vi.mocked(getNativePushState).mockResolvedValue({
+      supported: true,
+      permission: "granted",
+      subscribed: true,
+      expoToken: "ExponentPushToken[x]",
+    } as never);
+
+    await syncLocalExpiryAlerts([coupon()], PREFS);
+
+    expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it("schedules them itself when the device has no push registration", async () => {
+    vi.mocked(getNativePushState).mockResolvedValue({
+      supported: true,
+      permission: "granted",
+      subscribed: false,
+    } as never);
+
+    await syncLocalExpiryAlerts([coupon({ expiration: future })], PREFS);
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
   });
 });

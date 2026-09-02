@@ -3,7 +3,11 @@ import * as Notifications from "expo-notifications";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon, couponRemainingValue } from "@/lib/couponTotals";
 import { DAILY_REMINDER_DAYS } from "@/lib/notificationWindows";
-import { ANDROID_CHANNEL_ID, ensureAndroidChannel } from "@/lib/nativeNotifications";
+import {
+  ANDROID_CHANNEL_ID,
+  ensureAndroidChannel,
+  getNativePushState,
+} from "@/lib/nativeNotifications";
 import { rtlText } from "./rtlText";
 
 /**
@@ -122,6 +126,17 @@ export async function syncLocalExpiryAlerts(
 ): Promise<void> {
   const { granted } = await Notifications.getPermissionsAsync();
   if (!granted) return;
+
+  // The server sends the same reminders by push, from send-expiry-alerts, and
+  // says them better: written per message, and held back during quiet hours.
+  // Two banners for one coupon is the worst of both, so these stay a fallback —
+  // for a device with no push registration, and for the build that cannot have
+  // one at all (see the note at the top of this file).
+  const push = await getNativePushState().catch(() => null);
+  if (push?.subscribed) {
+    await clearLocalExpiryAlerts();
+    return;
+  }
 
   const planned = planExpiryAlerts(coupons, prefs);
   const remainingById = new Map(coupons.map((c) => [c.id, couponRemainingValue(c)]));
