@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { rtlText } from '@/lib/rtlText';
 
 type MaybeStandaloneNavigator = Navigator & { standalone?: boolean };
 
@@ -196,8 +197,8 @@ export async function sendTestPushToUser(userEmail: string) {
     action: 'test-user',
     user_email: userEmail,
     payload: {
-      title: '\u200Fהקופון נוצל עד הסוף 💪',
-      body: '\u200Fקופון מאסטר מ־Wolt נסגר עם חיסכון של 10.00 ש״ח.',
+      title: rtlText('הקופון נוצל עד הסוף 💪'),
+      body: rtlText('קופון מאסטר מ־Wolt נסגר עם חיסכון של 10.00 ש״ח.'),
       dir: 'rtl',
       url: '/notifications',
       tag: 'coupon-master-test',

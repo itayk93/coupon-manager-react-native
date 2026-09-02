@@ -4,6 +4,7 @@ import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon, couponRemainingValue } from "@/lib/couponTotals";
 import { DAILY_REMINDER_DAYS } from "@/lib/notificationWindows";
 import { ANDROID_CHANNEL_ID, ensureAndroidChannel } from "@/lib/nativeNotifications";
+import { rtlText } from "./rtlText";
 
 /**
  * Expiry reminders scheduled on the device itself, with no server and no push.
@@ -136,8 +137,8 @@ export async function syncLocalExpiryAlerts(
   for (const alert of planned) {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "קופון עומד לפוג",
-        body: body(alert.company, alert.daysLeft, remainingById.get(alert.couponId) ?? 0),
+        title: rtlText("קופון עומד לפוג"),
+        body: rtlText(body(alert.company, alert.daysLeft, remainingById.get(alert.couponId) ?? 0)),
         data: { kind: KIND, couponId: alert.couponId },
       },
       trigger: {

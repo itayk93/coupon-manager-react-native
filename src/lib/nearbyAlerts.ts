@@ -4,6 +4,7 @@ import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 import { supabase } from "@/integrations/supabase/client";
+import { rtlText } from "./rtlText";
 import {
   MAX_REGIONS,
   RADIUS_METERS,
@@ -241,8 +242,8 @@ TaskManager.defineTask(NEARBY_TASK, async ({ data, error }: any) => {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: line.title,
-      body: line.body,
+      title: rtlText(line.title),
+      body: rtlText(line.body),
       data: { url: `/coupons/${target.couponPublicId || target.couponId}`, type: "nearby_store" },
     },
     // null means now: the person is standing there.

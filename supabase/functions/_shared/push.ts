@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 import { safeFetch } from '../_shared/ssrf.ts';
+import { rtlText } from './rtlText.ts';
 
 const DEFAULT_SUBJECT = 'mailto:push@couponmaster.app';
 const DEFAULT_PAYLOAD = {
@@ -220,12 +221,23 @@ export async function sendPushToRows(
     return { total: 0, sent: 0, failed: 0, removed: 0 };
   }
 
+  // Every banner text passes through here on its way to iOS, Android and the
+  // PWA, and none of those platforms lets the app control the layout of the
+  // string it is handed. Laid out once, at the last point before it leaves, so
+  // no caller can forget. rtlText is idempotent — text a caller already marked
+  // is re-marked, not double-marked.
+  const laidOut = {
+    ...payload,
+    ...(payload.title ? { title: rtlText(String(payload.title)) } : {}),
+    ...(payload.body ? { body: rtlText(String(payload.body)) } : {}),
+  };
+
   const webRows = rows.filter((row) => row.kind !== 'expo');
   const expoRows = rows.filter((row) => row.kind === 'expo');
 
   const [webStats, expoStats] = await Promise.all([
-    sendWebPush(supabase, webRows, payload),
-    sendExpoPush(supabase, expoRows, payload),
+    sendWebPush(supabase, webRows, laidOut),
+    sendExpoPush(supabase, expoRows, laidOut),
   ]);
 
   return {
