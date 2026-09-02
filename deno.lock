@@ -1,0 +1,80 @@
+{
+  "version": "5",
+  "redirects": {
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.112.3"
+  },
+  "remote": {
+    "https://esm.sh/@supabase/supabase-js@2.112.3": "f6b9130984301066587e8917dfab3b3d60be47dc966bd3d04c733bc9423c1cf9"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@babel/core@^7.25.2",
+        "npm:@bacons/apple-targets@5",
+        "npm:@expo-google-fonts/heebo@~0.4.2",
+        "npm:@expo-google-fonts/outfit@~0.4.3",
+        "npm:@expo/metro-runtime@~57.0.10",
+        "npm:@noble/hashes@^2.2.0",
+        "npm:@opentelemetry/api@^1.9.1",
+        "npm:@react-native-async-storage/async-storage@2.2.0",
+        "npm:@react-native-community/datetimepicker@9.1.0",
+        "npm:@react-native-google-signin/google-signin@^16.1.4",
+        "npm:@supabase/supabase-js@^2.48.0",
+        "npm:@tanstack/react-query@^5.66.0",
+        "npm:@types/pg@^8.23.1",
+        "npm:@types/react@~19.2.2",
+        "npm:babel-preset-expo@~57.0.7",
+        "npm:date-fns@^4.1.0",
+        "npm:expo-asset@~57.0.11",
+        "npm:expo-camera@~57.0.4",
+        "npm:expo-clipboard@~57.0.1",
+        "npm:expo-constants@~57.0.11",
+        "npm:expo-crypto@~57.0.1",
+        "npm:expo-dev-client@~57.0.14",
+        "npm:expo-document-picker@~57.0.1",
+        "npm:expo-file-system@~57.0.3",
+        "npm:expo-font@~57.0.1",
+        "npm:expo-haptics@~57.0.1",
+        "npm:expo-image-picker@~57.0.12",
+        "npm:expo-linear-gradient@~57.0.1",
+        "npm:expo-linking@~57.0.7",
+        "npm:expo-local-authentication@~57.0.2",
+        "npm:expo-location@~57.0.12",
+        "npm:expo-notifications@~57.0.13",
+        "npm:expo-router@~57.0.15",
+        "npm:expo-sensors@~57.0.2",
+        "npm:expo-sharing@~57.0.14",
+        "npm:expo-splash-screen@~57.0.7",
+        "npm:expo-status-bar@~57.0.1",
+        "npm:expo-system-ui@~57.0.2",
+        "npm:expo-task-manager@~57.0.14",
+        "npm:expo-updates@~57.0.16",
+        "npm:expo-video@~57.0.2",
+        "npm:expo-web-browser@~57.0.2",
+        "npm:expo@~57.0.15",
+        "npm:lucide-react-native@^1.31.0",
+        "npm:patch-package@^8.0.1",
+        "npm:pg@^8.23.0",
+        "npm:react-dom@19.2.3",
+        "npm:react-native-gesture-handler@2.32",
+        "npm:react-native-maps@1.27.2",
+        "npm:react-native-qrcode-svg@^6.3.15",
+        "npm:react-native-reanimated@4.5.3",
+        "npm:react-native-safe-area-context@5.7",
+        "npm:react-native-screens@4.26",
+        "npm:react-native-svg@15.15.4",
+        "npm:react-native-web@0.21",
+        "npm:react-native-worklets@0.10.1",
+        "npm:react-native@0.86.2",
+        "npm:react@19.2.3",
+        "npm:typescript@~6.0.3",
+        "npm:vitest@^4.1.9",
+        "npm:zod@^3.24.2"
+      ],
+      "overrides": {
+        "@xmldom/xmldom": "0.8.14",
+        "uuid": "11.1.1"
+      }
+    }
+  }
+}
