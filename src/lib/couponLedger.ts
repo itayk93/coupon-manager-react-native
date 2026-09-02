@@ -74,3 +74,20 @@ export function missingUsageFromLedger(
   const missing = Math.max(0, usedValue - recorded);
   return missing < 0.005 ? 0 : Math.round(missing * 100) / 100;
 }
+
+/**
+ * Prefer the greatest trustworthy spent total. Some legacy/import paths wrote
+ * a ledger row without updating coupon.used_value; other paths only updated
+ * used_value. Taking the maximum keeps both coupons correct and never restores
+ * money because one source is temporarily stale.
+ */
+export function effectiveUsedValue(
+  value: number,
+  storedUsedValue: number,
+  amounts: number[]
+): number {
+  return Math.max(
+    Math.min(value, Math.max(0, storedUsedValue)),
+    usedValueFromLedger(value, amounts)
+  );
+}

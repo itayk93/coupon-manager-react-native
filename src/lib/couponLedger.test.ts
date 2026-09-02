@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  effectiveUsedValue,
   isHiddenLedgerRow,
   ledgerAmountFromTransaction,
   ledgerAmountFromUsage,
@@ -55,6 +56,16 @@ describe("missingUsageFromLedger", () => {
   it("ignores sub-cent floating point noise", () => {
     const amounts = [ledgerAmountFromUsage(84.8)];
     expect(missingUsageFromLedger(100, 84.8000000001, amounts)).toBe(0);
+  });
+});
+
+describe("effectiveUsedValue", () => {
+  it("uses a ledger usage when stored used_value is stale", () => {
+    expect(effectiveUsedValue(100, 0, [ledgerAmountFromUsage(44)])).toBe(44);
+  });
+
+  it("keeps a greater stored value when ledger rows are incomplete", () => {
+    expect(effectiveUsedValue(100, 60, [ledgerAmountFromUsage(44)])).toBe(60);
   });
 });
 

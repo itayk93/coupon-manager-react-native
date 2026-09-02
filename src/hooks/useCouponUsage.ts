@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { COUPON_TRANSACTION_COLUMNS, COUPON_USAGE_COLUMNS } from "@/lib/tableColumns";
 import {
+  effectiveUsedValue,
   isHiddenLedgerRow,
   ledgerAmountFromTransaction,
   ledgerAmountFromUsage,
@@ -264,7 +265,12 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
       });
 
       // Summary / remaining balance row
-      const remainingBalance = Math.max(0, coupon.value - coupon.used_value);
+      const effectiveUsed = effectiveUsedValue(
+        coupon.value,
+        coupon.used_value,
+        ledgerAmounts
+      );
+      const remainingBalance = Math.max(0, coupon.value - effectiveUsed);
       rows.push({
         id: `sum-${coupon.id}`,
         coupon_id: coupon.id,

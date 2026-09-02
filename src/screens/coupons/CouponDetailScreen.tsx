@@ -64,6 +64,7 @@ import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
+import { effectiveUsedValue } from "@/lib/couponLedger";
 import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { SaleForm } from "@/components/coupons/SaleForm";
@@ -209,7 +210,15 @@ export function CouponDetailScreen() {
     );
   }
 
-  const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
+  const ledgerAmounts = history
+    .filter((row) => row.source_table !== "sum_row")
+    .map((row) => row.transaction_amount);
+  const effectiveUsed = effectiveUsedValue(
+    coupon.value || 0,
+    coupon.used_value || 0,
+    ledgerAmounts
+  );
+  const remaining = Math.max(0, (coupon.value || 0) - effectiveUsed);
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
   const isSharedWithMe = coupon.is_shared_with_me === true;
 
