@@ -8,6 +8,10 @@ describe("legacyHebrew", () => {
     );
   });
 
+  it("drops the bidi marks a banner text was stored with", () => {
+    expect(legacyHebrew("\u200Fהקופון ב\u2066Wolt\u2069 נסגר")).toBe("הקופון בWolt נסגר");
+  });
+
   it("translates the share-revoked phrase", () => {
     expect(legacyHebrew("Access to Wolt coupon was revoked")).toBe(
       "הגישה לקופון של Wolt בוטלה"

@@ -35,7 +35,10 @@ self.addEventListener("push", (event) => {
   const title = data.title || "קופון מאסטר";
   const options = {
     body: data.body || "יש עדכון חדש בקופונים שלך.",
+    // Direction and language both: a browser that ignores one may honour the
+    // other, and the text itself carries bidi marks for the rest.
     dir: data.dir || "rtl",
+    lang: data.lang || "he",
     icon: data.icon || "/pwa-192x192.png",
     badge: data.badge || "/pwa-192x192.png",
     tag: data.tag || "coupon-master-update",

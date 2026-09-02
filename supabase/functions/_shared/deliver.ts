@@ -179,16 +179,16 @@ export async function deliver(
   // Written fresh for this message rather than pulled from a fixed string —
   // and falling back to the fixed string the moment anything is off. See
   // notificationVoice.ts.
-  const phrasedCopy = await phrase(type, payload, { supabase, userId: user.id });
-  // Push banners do not expose layout control on every OS, and the sentence may
-  // have been written by the model, so nothing about its shape is known here.
-  // rtlText makes Hebrew win the bidi decision and isolates each Latin run —
-  // brand, amount, punctuation — so they cannot reorder one another. Web Push
-  // also carries `dir: rtl` in push.ts and the service worker.
-  const copy = {
-    ...phrasedCopy,
-    title: rtlText(phrasedCopy.title),
-    body: rtlText(phrasedCopy.body),
+  const copy = await phrase(type, payload, { supabase, userId: user.id });
+  // A banner and an email body get no layout control from their host, and the
+  // sentence may have been written by the model, so nothing about its shape is
+  // known here. rtlText makes Hebrew win the bidi decision and isolates each
+  // Latin run — brand, amount, punctuation — so they cannot reorder one
+  // another. The in-app row keeps the plain text: the screen lays it out with
+  // real styles, and the marks would leak into its dedupe keys.
+  const laidOut = {
+    title: rtlText(copy.title),
+    body: rtlText(copy.body),
   };
   const appBase = Deno.env.get('APP_BASE_URL') || '';
 
@@ -209,8 +209,8 @@ export async function deliver(
 
   if (wantsPush) {
     const stats = await sendPushToRows(supabase, subscriptions, {
-      title: copy.title,
-      body: copy.body,
+      title: laidOut.title,
+      body: laidOut.body,
       url: copy.link,
       // One tag per kind per user: a second summary replaces the first in the
       // shade instead of stacking two of the same thing.
@@ -223,11 +223,11 @@ export async function deliver(
   if (wantsEmail && user.email) {
     result.email = await sendEmail(
       user.email,
-      copy.title,
+      laidOut.title,
       messageEmailHtml({
         firstName: user.first_name || '',
-        title: copy.title,
-        body: copy.body,
+        title: laidOut.title,
+        body: laidOut.body,
         highlight,
         ctaLabel,
         appUrl: appBase ? notificationUrl(appBase, copy.link) : null,
