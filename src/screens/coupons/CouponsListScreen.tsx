@@ -11,7 +11,6 @@ import {
   ScrollView,
   I18nManager,
   Image,
-  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -41,6 +40,7 @@ import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
+import { useContentWidth } from "@/hooks/useContentWidth";
 import { WifiOff } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -61,7 +61,7 @@ export function CouponsListScreen() {
     ids?: string;
   }>();
   const { theme } = useAppTheme();
-  const { width } = useWindowDimensions();
+  const width = useContentWidth();
   const isTablet = width >= 768;
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);

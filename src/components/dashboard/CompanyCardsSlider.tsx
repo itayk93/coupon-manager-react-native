@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -7,6 +7,7 @@ import { isFemaleUser } from "@/lib/gender";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { useAuth } from "@/contexts/AuthContext";
 import { fonts, radii, shadows } from "@/lib/theme";
+import { useContentWidth } from "@/hooks/useContentWidth";
 
 type CompanyCardItem = {
   company: string;
@@ -30,7 +31,7 @@ export function CompanyCardsSlider({
 }: CompanyCardsSliderProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
-  const { width } = useWindowDimensions();
+  const width = useContentWidth();
   const isTablet = width >= 768;
   const collapsedCount = isTablet ? 10 : 6;
   const [isExpanded, setIsExpanded] = useState(false);

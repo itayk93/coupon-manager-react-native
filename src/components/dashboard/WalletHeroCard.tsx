@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   WalletCards,
   CirclePlus,
@@ -13,6 +13,7 @@ import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import { formatIls } from "@/lib/formatIls";
 import { IlsAmount } from "@/components/ui/IlsAmount";
+import { useContentWidth } from "@/hooks/useContentWidth";
 
 type WalletHeroCardProps = {
   coupons: DecryptedCoupon[];
@@ -28,7 +29,7 @@ export function WalletHeroCard({
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const width = useContentWidth();
   const isTablet = width >= 768;
 
   const visibleCoupons = coupons.filter(isSpendableCoupon);

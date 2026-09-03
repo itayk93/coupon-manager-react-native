@@ -71,6 +71,12 @@ export const fonts = {
   bodyBold: Platform.select({ web: "Heebo, sans-serif", default: "Heebo_700Bold" }) as string,
 };
 
+// On desktop web the app renders inside a fixed phone-width frame (see
+// app/_layout.tsx). Layout code must size against this, not the browser window,
+// or it picks the tablet branch and overflows the 430px frame.
+export const DESKTOP_FRAME_WIDTH = 430;
+export const DESKTOP_WEB_MIN_WIDTH = 480;
+
 export const radii = {
   sm: 8,
   md: 11,

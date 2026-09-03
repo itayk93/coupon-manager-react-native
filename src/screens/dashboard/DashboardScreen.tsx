@@ -7,7 +7,6 @@ import {
   RefreshControl,
   SafeAreaView,
   TouchableOpacity,
-  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Sparkles, ChevronLeft, X } from "lucide-react-native";
@@ -24,6 +23,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { useCouponTagsMap } from "@/hooks/useTags";
+import { useContentWidth } from "@/hooks/useContentWidth";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
@@ -36,7 +36,7 @@ export function DashboardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ saved?: string; savedCouponId?: string }>();
   const { theme } = useAppTheme();
-  const { width } = useWindowDimensions();
+  const width = useContentWidth();
   const isTablet = width >= 768;
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);

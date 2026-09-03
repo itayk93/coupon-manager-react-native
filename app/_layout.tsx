@@ -47,7 +47,7 @@ import { useLocalExpiryAlerts } from "@/hooks/useLocalExpiryAlerts";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
-import { fonts } from "@/lib/theme";
+import { fonts, DESKTOP_FRAME_WIDTH, DESKTOP_WEB_MIN_WIDTH } from "@/lib/theme";
 // Imported for its side effect: the geofencing task must be defined before
 // the system can hand an event to it, including on a cold start where the app
 // was launched by that event.
@@ -152,7 +152,7 @@ function RootLayoutNav() {
   usePendingOnboardingCoupon();
   useScreenTracking();
   const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === "web" && width > 480;
+  const isDesktopWeb = Platform.OS === "web" && width > DESKTOP_WEB_MIN_WIDTH;
   const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web" && !peekSharedImport());
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   shellDesktop: {
-    maxWidth: 430,
+    maxWidth: DESKTOP_FRAME_WIDTH,
     maxHeight: 880,
     borderRadius: 28,
     overflow: "hidden",
