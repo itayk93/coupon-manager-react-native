@@ -22,6 +22,7 @@ import { mapsSearchUrl } from "@/lib/mapsUrl";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
+import { PlacePickerModal } from "@/components/dashboard/PlacePickerModal";
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedUsage, useParseUsageScreenshot, verifyCouponCodeInScreenshot } from "@/hooks/useUsageAI";
 import { formatIls } from "@/lib/formatIls";
@@ -75,6 +76,7 @@ export function QuickUsageModal({
   const [isSearchingPlace, setIsSearchingPlace] = useState(false);
   const [placeSearchMessage, setPlaceSearchMessage] = useState("");
   const [isLocating, setIsLocating] = useState(false);
+  const [isPlacePickerOpen, setIsPlacePickerOpen] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [amountError, setAmountError] = useState("");
@@ -106,6 +108,7 @@ export function QuickUsageModal({
     setLocation(null);
     setIsSearchingPlace(false);
     setPlaceSearchMessage("");
+    setIsPlacePickerOpen(false);
     setError("");
     setAmountError("");
     setAiError("");
@@ -801,6 +804,14 @@ export function QuickUsageModal({
           </Text>
         ) : null}
 
+        <Button
+          title="בחר ממקומות שהייתי בהם"
+          onPress={() => setIsPlacePickerOpen(true)}
+          variant="outline"
+          icon={<MapPin size={18} color={theme.primary} />}
+          style={styles.currentLocationButton}
+        />
+
         <Input
           label="כתובת המקום (אופציונלי)"
           placeholder="רחוב, מספר, עיר"
@@ -838,6 +849,18 @@ export function QuickUsageModal({
           />
         ) : null}
       </View>
+
+      <PlacePickerModal
+        visible={isPlacePickerOpen}
+        onClose={() => setIsPlacePickerOpen(false)}
+        onPick={({ placeName: name, placeAddress: address, latitude, longitude }) => {
+          setPlaceName(name);
+          setPlaceAddress(address);
+          setLocation({ latitude, longitude });
+          resolvedPlaceQuery.current = name;
+          setPlaceSearchMessage("המקום נבחר מההיסטוריה");
+        }}
+      />
     </Modal>
   );
 }
