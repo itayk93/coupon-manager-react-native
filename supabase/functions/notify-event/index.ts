@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     // taken on trust: everything below reads from this row, not from the body.
     const { data: coupon } = await supabase
       .from('coupon')
-      .select('id, user_id, company, value, cost, used_value')
+      .select('id, user_id, company, value, cost, used_value, is_one_time')
       .eq('id', body.couponId)
       .maybeSingle();
 
@@ -94,6 +94,7 @@ Deno.serve(async (req) => {
       if (remaining > 0.009) return jsonResponse({ skipped: 'not-finished' });
 
       const saved = Math.max(0, (coupon.value || 0) - (coupon.cost || 0));
+      const isOneTime = coupon.is_one_time === true;
       const recipient = await loadRecipient(supabase, caller.id);
       if (!recipient.user) return jsonResponse({ error: 'FORBIDDEN' }, 403);
 
@@ -115,13 +116,16 @@ Deno.serve(async (req) => {
         },
         subscriptions: recipient.subscriptions,
         type: 'coupon_finished',
-        payload: { company: coupon.company, saved },
+        // A one-time coupon has no meaningful balance: its face value is usually
+        // exactly its cost, so "saved" would read as 0. The message for it names
+        // the action instead of an amount.
+        payload: isOneTime ? { company: coupon.company, isOneTime: true } : { company: coupon.company, saved },
         dedupeKey: String(coupon.id),
         // They are looking at the screen right now. Holding this until nine in
         // the morning would celebrate something they had forgotten about.
         respectQuietHours: false,
-        highlight: money(saved),
-        ctaLabel: 'לראות כמה חסכתי',
+        highlight: isOneTime ? null : money(saved),
+        ctaLabel: isOneTime ? 'לארנק שלי' : 'לראות כמה חסכתי',
       });
       return jsonResponse({ event: body.event, result });
     }

@@ -48,10 +48,6 @@ import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, DESKTOP_FRAME_WIDTH, DESKTOP_WEB_MIN_WIDTH } from "@/lib/theme";
-// Imported for its side effect: the geofencing task must be defined before
-// the system can hand an event to it, including on a cold start where the app
-// was launched by that event.
-import "@/lib/nearbyAlerts";
 import { peekSharedImport } from "coupon-widget";
 
 // Hebrew RTL must be enabled before the first layout pass, so this runs at

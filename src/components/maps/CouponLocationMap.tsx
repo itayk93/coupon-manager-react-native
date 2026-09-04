@@ -1,8 +1,8 @@
 import { useNativeDriver } from "@/lib/animation";
 import React, { useEffect, useRef } from "react";
-import { Linking, Platform, StyleSheet, Text } from "react-native";
+import { Linking, Platform, StyleSheet, Text, View } from "react-native";
 import { Animated, Easing } from "react-native";
-import MapView, { MapPressEvent, Marker } from "react-native-maps";
+import MapView, { Callout, MapPressEvent, Marker } from "react-native-maps";
 import { groupByPoint, ISRAEL_REGION, regionForPoints } from "@/lib/mapMarkers";
 
 export type CouponLocation = {
@@ -119,24 +119,33 @@ export function CouponLocationMap({
         showsUserLocation={false}
         showsCompass
       >
-        {markers.map((item, index) => (
-          <Marker
-            key={item.id || `${item.latitude}-${item.longitude}-${index}`}
-            coordinate={{ latitude: item.latitude, longitude: item.longitude }}
-            draggable={editable && index === 0}
-            onDragEnd={(event) => {
-              if (!editable || !onLocationChange || index !== 0) return;
-              onLocationChange(event.nativeEvent.coordinate);
-            }}
-            title={item.title || "מיקום השימוש"}
-            description={
-              item.visits > 1
-                ? `${item.visits} שימושים${item.description ? ` · ${item.description}` : ""}`
-                : item.description
-            }
-            onPress={() => onLocationPress?.(item)}
-          />
-        ))}
+        {markers.map((item, index) => {
+          const description =
+            item.visits > 1
+              ? `${item.visits} שימושים${item.description ? ` · ${item.description}` : ""}`
+              : item.description;
+          return (
+            <Marker
+              key={item.id || `${item.latitude}-${item.longitude}-${index}`}
+              coordinate={{ latitude: item.latitude, longitude: item.longitude }}
+              draggable={editable && index === 0}
+              onDragEnd={(event) => {
+                if (!editable || !onLocationChange || index !== 0) return;
+                onLocationChange(event.nativeEvent.coordinate);
+              }}
+              title={item.title || "מיקום השימוש"}
+              description={description}
+              onPress={() => onLocationPress?.(item)}
+            >
+              <Callout>
+                <View style={styles.callout}>
+                  <Text style={styles.calloutTitle}>{item.title || "מיקום השימוש"}</Text>
+                  {description ? <Text style={styles.calloutDescription}>{description}</Text> : null}
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
       </MapView>
     </Animated.View>
   );
@@ -147,6 +156,23 @@ const styles = StyleSheet.create({
     width: "100%",
     overflow: "hidden",
     borderRadius: 16,
+  },
+  callout: {
+    maxWidth: 240,
+    padding: 10,
+  },
+  calloutTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  calloutDescription: {
+    fontSize: 12,
+    color: "#52606d",
+    marginTop: 2,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   webMap: {
     width: "100%",

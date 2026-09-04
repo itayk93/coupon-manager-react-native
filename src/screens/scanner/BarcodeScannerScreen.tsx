@@ -44,7 +44,9 @@ export function BarcodeScannerScreen() {
   const aiTitleFontSize = width < 350 || fontScale >= 1.3 ? 13 : compactLayout ? 14 : 16;
   const compactImageButtons = width < 360 || fontScale >= 1.3;
   const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
   const [scanned, setScanned] = useState(false);
+  const [scanningAi, setScanningAi] = useState(false);
   // `onBarcodeScanned` fires several times per second, and a state update does
   // not land before the next frame's callbacks — so the guard has to be a ref,
   // or one barcode produces a burst of toasts and navigations.
@@ -76,7 +78,11 @@ export function BarcodeScannerScreen() {
     }
   };
 
-  const handleBarcodeScanned = ({ data, type }: { data: string; type: string }) => {
+  /// Barcode decode only ever yields the raw code — company, value and expiry
+  /// come from a photo of the voucher at the moment of the scan, run through
+  /// the same AI parser image uploads use. Falls back to the bare code (old
+  /// behavior) if the snapshot or the AI call fails, so a scan never dead-ends.
+  const handleBarcodeScanned = async ({ data, type }: { data: string; type: string }) => {
     if (scannedRef.current) return;
     scannedRef.current = true;
     setScanned(true);
@@ -85,11 +91,44 @@ export function BarcodeScannerScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
 
-    // Navigate to Add Coupon prefilled with scanned code
-    router.push({
-      pathname: "/coupons/add",
-      params: { initialCode: data },
-    });
+    const fallbackToRawCode = () => {
+      router.push({
+        pathname: "/coupons/add",
+        params: { initialCode: data },
+      });
+    };
+
+    try {
+      setScanningAi(true);
+      const photo = await cameraRef.current?.takePictureAsync({
+        base64: true,
+        quality: 0.6,
+        skipProcessing: true,
+      });
+
+      if (!photo?.base64) {
+        fallbackToRawCode();
+        return;
+      }
+
+      const results = await parseCoupon.mutateAsync({
+        text: `קוד קופון שנסרק: ${data}`,
+        imageBase64: photo.base64,
+      });
+
+      if (results && results.length > 0) {
+        // The AI reads the code from the photo too, but the scanner's decode
+        // is exact — prefer it over whatever the model transcribed.
+        goToAddCoupon({ ...results[0], code: results[0].code || data });
+      } else {
+        fallbackToRawCode();
+      }
+    } catch (e: any) {
+      console.error(e);
+      fallbackToRawCode();
+    } finally {
+      setScanningAi(false);
+    }
   };
 
   // Re-arm when the user comes back to the scanner rather than on a timer: the
@@ -294,6 +333,7 @@ export function BarcodeScannerScreen() {
             ) : (
               <View style={styles.cameraWrapper}>
                 <CameraView
+                  ref={cameraRef}
                   style={StyleSheet.absoluteFill}
                   barcodeScannerSettings={{
                     barcodeTypes: [
@@ -322,9 +362,19 @@ export function BarcodeScannerScreen() {
                   </Text>
                 </View>
 
-                {scanned ? (
+                {scanningAi ? (
+                  <View style={styles.overlay} pointerEvents="none">
+                    <ActivityIndicator size="large" color="#ffffff" />
+                    <Text style={[styles.overlayText, { marginTop: 12 }]}>
+                      קורא פרטי קופון עם AI...
+                    </Text>
+                  </View>
+                ) : scanned ? (
                   <TouchableOpacity
-                    onPress={() => setScanned(false)}
+                    onPress={() => {
+                      scannedRef.current = false;
+                      setScanned(false);
+                    }}
                     style={[styles.rescanBtn, { backgroundColor: theme.primary }]}
                   >
                     <RotateCcw size={18} color="#ffffff" />

@@ -21,10 +21,8 @@ export type NotificationTypeId =
   | "share_received"
   | "balance_updated"
   | "coupon_finished"
-  | "savings_milestone"
   | "coupon_milestone"
-  | "expired_unused"
-  | "nearby_store";
+  | "expired_unused";
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -33,6 +31,12 @@ export type NotificationTypeMeta = {
   /** One line of the real thing, so the choice is concrete. */
   sample: string;
   defaults: Record<NotificationChannel, boolean>;
+  /** The full explanation shown from the question mark. */
+  explanation: {
+    what: string;
+    when: string;
+    where: string;
+  };
 };
 
 export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
@@ -42,6 +46,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "תזכורת בזמן, כדי שהיתרה לא תלך לאיבוד",
     sample: "VANS מחכה למימוש — נשארו 11 ימים",
     defaults: { email: true, push: true, in_app: true },
+    explanation: {
+      what: "תזכורת עם שם הקופון וכמה ימים נשארו עד שהוא פג.",
+      when: "כל שעה, לפי החלונות 30 / 7 / 1 / 0 ימים, או כל יום בקירוב לפקיעה.",
+      where: "מסך הקופונים.",
+    },
   },
   {
     id: "share_received",
@@ -49,6 +58,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "כשמגיע אליך קופון ממישהו אחר",
     sample: "נועה שלחה לך קופון של Wolt",
     defaults: { email: true, push: true, in_app: true },
+    explanation: {
+      what: "מישהו הזמין אותך לקבל קופון. הקופון נפתח רק אחרי שתאשר.",
+      when: "מיד כשמישהו שולח אליך הזמנה.",
+      where: "מסך השיתוף.",
+    },
   },
   {
     id: "idle_money",
@@ -56,6 +70,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "פעם בחודש, תזכורת על כסף שעוד מחכה בארנק",
     sample: "240.00 ש״ח עדיין מחכים בארנק",
     defaults: { email: true, push: true, in_app: true },
+    explanation: {
+      what: "תזכורת על יתרה שלא נגעת בה הרבה זמן.",
+      when: "פעם בחודש, אם יש יתרה מעל 50 ש״ח שלא נצפתה 90 יום.",
+      where: "הקופונים הרלוונטיים.",
+    },
   },
   {
     id: "balance_updated",
@@ -63,6 +82,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "כשהיתרה משתנה אחרי בדיקה שלנו",
     sample: "עדכון קטן: נשארו 120.00 ש״ח ב־Multipass",
     defaults: { email: false, push: true, in_app: true },
+    explanation: {
+      what: "האפליקציה בדקה יתרה אוטומטית והסכום השתנה.",
+      when: "אחרי בדיקה אוטומטית של יתרת קופון.",
+      where: "הקופון המעודכן, או רשימת הקופונים.",
+    },
   },
   {
     id: "coupon_finished",
@@ -70,6 +94,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "רגע קטן של סיפוק כשהיתרה מגיעה לאפס",
     sample: "הקופון של גוד פארם נוצל עד הסוף — 60.00 ש״ח נחסכו",
     defaults: { email: false, push: true, in_app: true },
+    explanation: {
+      what: "קופון רגיל: סיכום כמה חסכת. קופון חד־פעמי: אישור שהוא סומן כנוצל, בלי סכום.",
+      when: "כשהיתרה מגיעה לאפס, או כשחד־פעמי מסומן כנוצל.",
+      where: "רגיל — סטטיסטיקות. חד־פעמי — הארנק.",
+    },
   },
   {
     id: "monthly_summary",
@@ -77,13 +106,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "בתחילת כל חודש, סיכום קצר של החיסכון",
     sample: "אוגוסט נסגר עם חיסכון של 869.80 ש״ח",
     defaults: { email: true, push: false, in_app: true },
-  },
-  {
-    id: "savings_milestone",
-    label: "החיסכון עולה שלב",
-    description: "כשסך החיסכון מגיע למספר ששווה לחגוג",
-    sample: "20,000 ש״ח כבר נחסכו 🎉",
-    defaults: { email: true, push: false, in_app: true },
+    explanation: {
+      what: "סיכום הסכום שנחסך בחודש שעבר.",
+      when: "בשלושת הימים הראשונים של החודש, אם נחסך יותר מ־0.",
+      where: "מסך הסטטיסטיקות.",
+    },
   },
   {
     id: "coupon_milestone",
@@ -91,13 +118,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "בקופון הראשון, העשירי ובהמשך הדרך",
     sample: "10 קופונים בארנק. יפה 👏",
     defaults: { email: false, push: false, in_app: true },
-  },
-  {
-    id: "nearby_store",
-    label: "קופון מחכה ממש לידך",
-    description: "תזכורת כשיש יתרה במקום קרוב. המיקום נשאר במכשיר",
-    sample: "רולדין ממש קרוב — ויש שם 45.00 ש״ח לנצל",
-    defaults: { email: false, push: true, in_app: false },
+    explanation: {
+      what: "עידוד כשהארנק מגיע למספר עגול של קופונים.",
+      when: "בקופון הראשון, העשירי, החמישים והמאה.",
+      where: "מסך הקופונים.",
+    },
   },
   {
     id: "expired_unused",
@@ -105,6 +130,11 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
     description: "עדכון חד־פעמי שיעזור לתזכר מוקדם יותר בפעם הבאה",
     sample: "הקופון בקסטרו פג עם יתרה של 80.00 ש״ח",
     defaults: { email: true, push: false, in_app: true },
+    explanation: {
+      what: "קופון פג עם יתרה שנשארה, כדי להזכיר מוקדם יותר בפעם הבאה.",
+      when: "כשקופון פג בשלושת הימים האחרונים עם יתרה גדולה מ־0.",
+      where: "הגדרות התזכורות.",
+    },
   },
 ];
 

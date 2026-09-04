@@ -10,7 +10,6 @@ import { flushActivityLog, logActivity } from "@/lib/activityLog";
 import { claimPendingReferral, resetReferralClaim } from "@/lib/referralClaim";
 import { clearLocalPrivateData } from "@/lib/localPrivateData";
 import { clearLocalExpiryAlerts } from "@/lib/localExpiryAlerts";
-import { stopNearbyGeofences } from "@/lib/nearbyAlerts";
 import { clearOfflineCoupons } from "@/lib/offlineCoupons";
 
 type AuthContextType = {
@@ -133,7 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // still be removed.
       await Promise.allSettled([
         clearLocalExpiryAlerts(),
-        stopNearbyGeofences(),
       ]);
       await Promise.allSettled([
         clearLegacyUser(),

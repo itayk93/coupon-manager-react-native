@@ -27,8 +27,12 @@ type ModalProps = {
   headerAction?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxHeight?: number | string;
+  /** Tap the handle to stretch the sheet to nearly full height. */
+  expandable?: boolean;
 };
+
+/** Whether the sheet is currently stretched — lets bodies relax inner height caps. */
+export const SheetExpandedContext = React.createContext(false);
 
 /**
  * Shared bottom sheet.
@@ -47,16 +51,19 @@ export function Modal({
   headerAction,
   children,
   footer,
+  expandable = false,
 }: ModalProps) {
   const { theme } = useAppTheme();
 
   // Stays mounted through the exit animation, otherwise the sheet would vanish
   // instantly instead of sliding out.
   const [mounted, setMounted] = React.useState(visible);
+  const [expanded, setExpanded] = React.useState(false);
   const progress = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     if (visible) setMounted(true);
+    if (visible) setExpanded(false);
     Animated.timing(progress, {
       toValue: visible ? 1 : 0,
       duration: visible ? 280 : 220,
@@ -74,18 +81,35 @@ export function Modal({
   }, [visible, drag]);
 
   // Only the handle and header drag the sheet, so the body keeps its scrolling.
+  // On an expandable sheet, dragging up (or tapping the handle) stretches it.
   const panResponder = React.useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_evt, g) =>
-          g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+        // Claim the touch from the start so children can't swallow the drag.
+        onStartShouldSetPanResponder: () => true,
         onPanResponderMove: (_evt, g) => {
-          if (g.dy > 0) drag.setValue(g.dy);
+          if (g.dy > 0) {
+            drag.setValue(g.dy);
+          } else if (expandable && g.dy < -30) {
+            setExpanded(true);
+          }
         },
         onPanResponderRelease: (_evt, g) => {
-          if (g.dy > 120 || g.vy > 0.8) {
-            onClose();
+          const isTap = Math.abs(g.dy) < 8 && Math.abs(g.dx) < 8;
+          if (isTap) {
+            if (expandable) setExpanded((value) => !value);
             drag.setValue(0);
+          } else if (g.dy < -40) {
+            if (expandable) setExpanded(true);
+            drag.setValue(0);
+          } else if (g.dy > 120 || g.vy > 0.8) {
+            if (expandable && expanded) {
+              setExpanded(false);
+              drag.setValue(0);
+            } else {
+              onClose();
+              drag.setValue(0);
+            }
           } else {
             Animated.spring(drag, {
               toValue: 0,
@@ -95,7 +119,7 @@ export function Modal({
           }
         },
       }),
-    [drag, onClose]
+    [drag, onClose, expandable, expanded]
   );
 
   const enterY = progress.interpolate({
@@ -133,9 +157,10 @@ export function Modal({
               borderColor: theme.cardBorder,
               transform: [{ translateY }],
             },
+            expandable && expanded ? { height: "97%" } : null,
           ]}
         >
-          <SafeAreaView>
+          <SafeAreaView style={expandable && expanded ? styles.stretched : undefined}>
             <View {...panResponder.panHandlers}>
               <View style={styles.handleContainer}>
                 <View style={[styles.handle, { backgroundColor: theme.border }]} />
@@ -186,12 +211,14 @@ export function Modal({
             </View>
 
             <ScrollView
-              style={styles.body}
+              style={[styles.body, expandable && expanded ? styles.stretched : null]}
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              {children}
+              <SheetExpandedContext.Provider value={expandable && expanded}>
+                {children}
+              </SheetExpandedContext.Provider>
             </ScrollView>
 
             {footer ? (
@@ -295,6 +322,10 @@ const styles = StyleSheet.create({
   },
   body: {
     maxHeight: 480,
+  },
+  stretched: {
+    flex: 1,
+    maxHeight: undefined,
   },
   bodyContent: {
     padding: 20,

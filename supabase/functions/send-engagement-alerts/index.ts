@@ -1,14 +1,13 @@
 // Supabase Edge Function: send-engagement-alerts
 //
-// The five things worth saying that nobody triggers by doing anything:
+// The four things worth saying that nobody triggers by doing anything:
 //
 //   monthly_summary    what last month was worth, once a month
 //   idle_money         balance nobody has looked at in a season
-//   savings_milestone  the first time cumulative savings pass a round number
 //   coupon_milestone   the 1st, 10th, 50th, 100th coupon in the wallet
 //   expired_unused     a coupon that ran out with money still on it
 //
-// All five are recomputed from the same coupon rows on every run — none of them
+// All four are recomputed from the same coupon rows on every run — none of them
 // is an event that happens once. What keeps them from repeating is the
 // notification_events ledger, through the dedupe key each one picks below.
 //
@@ -40,7 +39,6 @@ const SUMMARY_WINDOW_DAYS = 3;
 /** A coupon that expired within this many days is still worth mentioning. */
 const EXPIRED_LOOKBACK_DAYS = 3;
 
-const SAVINGS_THRESHOLDS = [1000, 5000, 10000, 20000, 50000, 100000];
 const COUPON_COUNTS = [1, 10, 50, 100];
 
 type UserRow = { id: number; public_id: string; email: string; first_name: string | null };
@@ -183,7 +181,7 @@ Deno.serve(async (req) => {
     const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const sent: Record<string, number> = {
-      monthly_summary: 0, idle_money: 0, savings_milestone: 0,
+      monthly_summary: 0, idle_money: 0,
       coupon_milestone: 0, expired_unused: 0,
     };
 
@@ -250,22 +248,7 @@ Deno.serve(async (req) => {
         if (result.in_app || result.push || result.email) sent.idle_money += 1;
       }
 
-      // 3. Cumulative savings crossing a round number.
-      const totalSavings = userCoupons.reduce(
-        (sum, coupon) => sum + Math.max(0, (coupon.value || 0) - (coupon.cost || 0)),
-        0,
-      );
-      const passed = SAVINGS_THRESHOLDS.filter((threshold) => totalSavings >= threshold);
-      const highest = passed[passed.length - 1];
-      if (highest) {
-        const result = await send(
-          'savings_milestone', { threshold: highest }, String(highest),
-          money(totalSavings), 'לראות את הסיכום',
-        );
-        if (result.in_app || result.push || result.email) sent.savings_milestone += 1;
-      }
-
-      // 4. Wallet size crossing a round number.
+      // 3. Wallet size crossing a round number.
       const reachedCount = COUPON_COUNTS.filter((count) => userCoupons.length >= count);
       const highestCount = reachedCount[reachedCount.length - 1];
       if (highestCount) {
@@ -276,7 +259,7 @@ Deno.serve(async (req) => {
         if (result.in_app || result.push || result.email) sent.coupon_milestone += 1;
       }
 
-      // 5. A coupon that ran out with money still on it. Once per coupon,
+      // 4. A coupon that ran out with money still on it. Once per coupon,
       //    ever — this is the one message that carries bad news.
       const today = new Date().toISOString().slice(0, 10);
       for (const coupon of userCoupons) {

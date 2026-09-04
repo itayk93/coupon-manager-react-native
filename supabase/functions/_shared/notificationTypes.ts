@@ -19,10 +19,8 @@ export type NotificationTypeId =
   | 'share_received'
   | 'balance_updated'
   | 'coupon_finished'
-  | 'savings_milestone'
   | 'coupon_milestone'
-  | 'expired_unused'
-  | 'nearby_store';
+  | 'expired_unused';
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -72,11 +70,6 @@ export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta
     label: 'קופון נוצל עד הסוף',
     defaults: { email: false, push: true, in_app: true },
   },
-  savings_milestone: {
-    id: 'savings_milestone',
-    label: 'החיסכון עולה שלב',
-    defaults: { email: true, push: false, in_app: true },
-  },
   coupon_milestone: {
     id: 'coupon_milestone',
     label: 'הארנק עולה שלב',
@@ -86,13 +79,6 @@ export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta
     id: 'expired_unused',
     label: 'יתרה שלא הספקנו לנצל',
     defaults: { email: true, push: false, in_app: true },
-  },
-  nearby_store: {
-    id: 'nearby_store',
-    label: 'קופון מחכה ממש לידך',
-    // The device raises this one itself, from a geofence, with no server
-    // involved — so push is the only channel that can carry it.
-    defaults: { email: false, push: true, in_app: false },
   },
 };
 
@@ -182,18 +168,20 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
           : `/coupons/${payload.couponPublicId || payload.couponId}`,
       };
     }
-    case 'coupon_finished':
+    case 'coupon_finished': {
+      if (payload.isOneTime) {
+        return {
+          title: 'הקופון נוצל 🙌',
+          body: `${payload.company} סומן כנוצל וירד מהארנק.`,
+          link: '/coupons',
+        };
+      }
       return {
         title: 'הקופון נוצל עד הסוף 💪',
         body: `${payload.company} נסגר עם חיסכון של ${money(payload.saved)}.`,
         link: '/statistics',
       };
-    case 'savings_milestone':
-      return {
-        title: 'החיסכון עלה שלב',
-        body: `${money(payload.threshold)} כבר נחסכו. הכול התחיל מקופון אחד 🎉`,
-        link: '/statistics',
-      };
+    }
     case 'coupon_milestone':
       return {
         title: payload.count === 1 ? 'הקופון הראשון בארנק' : 'הארנק מתמלא',
@@ -201,14 +189,6 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
           ? 'הכנסת את הקופון הראשון שלך. מכאן אנחנו שומרים עליו — נזכיר לך לפני שהוא פג.'
           : `${payload.count} קופונים בארנק. יפה 👏`,
         link: '/coupons',
-      };
-    case 'nearby_store':
-      return {
-        title: `${payload.company} ממש קרוב`,
-        body: `יש כאן קופון עם ${money(payload.remaining)} שעוד אפשר לנצל.`,
-        link: payload.couponPublicId || payload.couponId
-          ? `/coupons/${payload.couponPublicId || payload.couponId}`
-          : '/coupons',
       };
     case 'expired_unused':
       return {

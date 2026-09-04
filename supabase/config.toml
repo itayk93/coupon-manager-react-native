@@ -87,11 +87,6 @@ verify_jwt = false
 # has nothing to report.
 verify_jwt = true
 
-[functions.phrase-notification]
-# Wording for a notification the device will raise later. Requires a session so
-# the model spend is always attributable to an account.
-verify_jwt = true
-
 [functions.send-verification-code]
 # Public by necessity: it is what a person calls while creating an account, so
 # there is no session to present yet. It hands back nothing but {sent:true} —

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Check, MapPin } from "lucide-react-native";
-import { Modal } from "@/components/ui/Modal";
+import { Modal, SheetExpandedContext } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -36,6 +36,7 @@ type PlacePickerModalProps = {
 export function PlacePickerModal({ visible, onClose, onPick }: PlacePickerModalProps) {
   const { theme } = useAppTheme();
   const { data: places = [], isLoading } = useWhereBought();
+  const expanded = React.useContext(SheetExpandedContext);
 
   const [area, setArea] = useState("");
   const [center, setCenter] = useState<GeoPoint | null>(null);
@@ -87,7 +88,10 @@ export function PlacePickerModal({ visible, onClose, onPick }: PlacePickerModalP
   }, [area, visible]);
 
   const nearby = useMemo(
-    () => filterPlacesWithinRadius(places, center, RADIUS_KM),
+    () =>
+      filterPlacesWithinRadius(places, center, RADIUS_KM).sort((a, b) =>
+        a.name.localeCompare(b.name, "he"),
+      ),
     [places, center],
   );
 
@@ -117,7 +121,7 @@ export function PlacePickerModal({ visible, onClose, onPick }: PlacePickerModalP
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title="מקומות שהייתי בהם" subtitle="הקלד אזור ובחר מקום מהעבר">
+    <Modal visible={visible} onClose={onClose} title="מקומות שהייתי בהם" subtitle="הקלד אזור ובחר מקום מהעבר" expandable>
       <View style={styles.container}>
         <Input
           label="אזור"
@@ -155,7 +159,10 @@ export function PlacePickerModal({ visible, onClose, onPick }: PlacePickerModalP
               onLocationPress={(location) => setSelectedId(location.id || null)}
               height={200}
             />
-            <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={[styles.list, expanded ? styles.listStretched : null]}
+              keyboardShouldPersistTaps="handled"
+            >
               {nearby.map((place) => {
                 const isSelected = place.id === selectedId;
                 return (
@@ -202,6 +209,7 @@ const styles = StyleSheet.create({
   message: { fontSize: 12, marginTop: -4, marginBottom: 8, textAlign: "right" },
   loader: { marginVertical: 24 },
   list: { maxHeight: 240, marginTop: 12 },
+  listStretched: { maxHeight: undefined, flexGrow: 1 },
   row: {
     flexDirection: "row-reverse",
     alignItems: "center",
