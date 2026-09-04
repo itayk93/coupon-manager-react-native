@@ -31,6 +31,7 @@ import {
 } from "lucide-react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Modal } from "@/components/ui/Modal";
 import { useCoupons, useBulkDeleteCoupons, useRestoreCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { Swipeable } from "react-native-gesture-handler";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
@@ -50,6 +51,7 @@ import { useContentWidth } from "@/hooks/useContentWidth";
 import { WifiOff } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMerchantQuery, useCouponMerchantSearch } from "@/hooks/useCouponMerchantSearch";
+import { formatIls } from "@/lib/formatIls";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
@@ -109,6 +111,7 @@ export function CouponsListScreen() {
   const [isSelectMode, setIsSelectMode] = useState(false);
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
+  const [isMerchantResultsOpen, setIsMerchantResultsOpen] = useState(false);
   const merchantSearch = useCouponMerchantSearch(merchantQuery);
   const merchantResultIds = useMemo(
     () => new Set([
@@ -481,8 +484,8 @@ export function CouponsListScreen() {
                       ? "אפשר לנסות שוב בלי לצאת מהעמוד."
                       : primaryMerchantResult
                         ? merchantResultCoupons.length > 1
-                          ? `נמצאו ${merchantResultCoupons.length} אפשרויות. הראשונה מוכנה לפתיחה.`
-                          : `הקופון של ${primaryMerchantResult.company} מוכן לפתיחה.`
+                          ? `נמצאו ${merchantResultCoupons.length} אפשרויות. אפשר לבחור את הקופון המתאים.`
+                          : `הקופון של ${primaryMerchantResult.company} מוכן לבחירה.`
                         : "נבדקו גם הכרטיסים הכלליים מול בתי העסק באינטרנט."}
                 </Text>
               </View>
@@ -490,13 +493,17 @@ export function CouponsListScreen() {
 
             {!merchantSearch.isFetching && primaryMerchantResult ? (
               <TouchableOpacity
-                onPress={() => router.push(`/coupons/${couponRouteId(primaryMerchantResult)}`)}
-                accessibilityRole="link"
-                accessibilityLabel={`פתיחת הקופון של ${primaryMerchantResult.company}`}
+                onPress={() => setIsMerchantResultsOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`הצגת ${merchantResultCoupons.length} הקופונים שמתאימים ל${merchantQuery}`}
                 style={[styles.merchantResultButton, { backgroundColor: theme.primary }]}
               >
                 <ArrowLeft size={18} color="#ffffff" />
-                <Text style={styles.merchantResultButtonText}>מעבר לקופון</Text>
+                <Text style={styles.merchantResultButtonText}>
+                  {merchantResultCoupons.length > 1
+                    ? `בחירה מתוך ${merchantResultCoupons.length} קופונים`
+                    : "בחירת הקופון"}
+                </Text>
               </TouchableOpacity>
             ) : null}
 
@@ -789,6 +796,58 @@ export function CouponsListScreen() {
         coupons={coupons}
         preselectedCoupon={usageCoupon}
       />
+
+      <Modal
+        visible={isMerchantResultsOpen}
+        onClose={() => setIsMerchantResultsOpen(false)}
+        title={`קופונים שמתאימים ל־${merchantQuery}`}
+        subtitle={`${merchantResultCoupons.length} אפשרויות זמינות לבחירה`}
+        titleIcon={<Sparkles size={18} color={theme.primary} />}
+        expandable
+      >
+        <View style={styles.merchantResultsList}>
+          {merchantResultCoupons.map((coupon) => {
+            const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
+            const match = merchantSearch.data?.matches.find((item) => item.couponId === coupon.id);
+            return (
+              <TouchableOpacity
+                key={coupon.id}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`בחירת קופון ${coupon.company}, יתרה ${formatIls(remaining)}`}
+                onPress={() => {
+                  setIsMerchantResultsOpen(false);
+                  router.push(`/coupons/${couponRouteId(coupon)}`);
+                }}
+                style={[
+                  styles.merchantResultOption,
+                  { backgroundColor: theme.surfaceAlt, borderColor: theme.border },
+                ]}
+              >
+                <ArrowLeft size={19} color={theme.primary} />
+                <View style={styles.merchantResultOptionCopy}>
+                  <Text style={[styles.merchantResultOptionTitle, { color: theme.text }]}>
+                    {coupon.company}
+                  </Text>
+                  <Text style={[styles.merchantResultOptionBalance, { color: theme.primary }]}>
+                    יתרה {formatIls(remaining)}
+                  </Text>
+                  <Text style={[styles.merchantResultOptionReason, { color: theme.textMuted }]}>
+                    {match?.reason || "התאמה ישירה לשם בית העסק"}
+                  </Text>
+                </View>
+                <View style={[styles.merchantResultOptionLogo, { backgroundColor: theme.card }]}>
+                  <Image
+                    source={getCompanyLogoSource(coupon.company)}
+                    style={styles.merchantResultOptionLogoImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -989,6 +1048,53 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     fontWeight: "800",
+  },
+  merchantResultsList: {
+    gap: 10,
+    paddingBottom: 8,
+  },
+  merchantResultOption: {
+    minHeight: 96,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  merchantResultOptionCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  merchantResultOptionTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  merchantResultOptionBalance: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  merchantResultOptionReason: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "right",
+  },
+  merchantResultOptionLogo: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  merchantResultOptionLogoImage: {
+    width: 40,
+    height: 40,
   },
   statusTabsRow: {
     flexDirection: "row-reverse",
