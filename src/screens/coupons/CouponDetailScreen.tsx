@@ -13,6 +13,7 @@ import {
   Switch,
   Linking,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -32,6 +33,9 @@ import {
   MapPin,
   Navigation,
   BadgeDollarSign,
+  Store,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -70,6 +74,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import { SaleCelebration } from "@/components/coupons/SaleCelebration";
 import { useRecordManualSale } from "@/hooks/useCouponSales";
+import { useCouponMerchantDirectory } from "@/hooks/useCouponMerchantSearch";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Confirmation for deleting a history record. It unfolds under the row it
@@ -143,6 +149,7 @@ export function CouponDetailScreen() {
   const { id, highlightUsage } = useLocalSearchParams<{ id: string; highlightUsage?: string }>();
   const couponIdentifier = typeof id === "string" ? id : undefined;
   const { theme } = useAppTheme();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: coupon, isLoading } = useCoupon(couponIdentifier);
@@ -160,6 +167,7 @@ export function CouponDetailScreen() {
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [isQuickShareOpen, setIsQuickShareOpen] = useState(false);
   const [isSaleOpen, setIsSaleOpen] = useState(false);
+  const [isMerchantDirectoryOpen, setIsMerchantDirectoryOpen] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -168,6 +176,7 @@ export function CouponDetailScreen() {
     longitude: number;
     title: string;
   } | null>(null);
+  const merchantDirectory = useCouponMerchantDirectory(couponId, isMerchantDirectoryOpen);
 
   // Feeds the automatic balance updater, same as the legacy app.
   const { markDetailViewed } = useCouponViewTracking();
@@ -295,6 +304,11 @@ export function CouponDetailScreen() {
       logActivity("open_redemption_url", { couponId: coupon.id });
       await WebBrowser.openBrowserAsync(url);
     }
+  };
+
+  const handleOpenMerchantSource = async (url: string) => {
+    if (!url.startsWith("https://")) return;
+    await WebBrowser.openBrowserAsync(url);
   };
 
 
@@ -471,6 +485,19 @@ export function CouponDetailScreen() {
 
         {/* Action Buttons Row */}
         <View style={styles.actionsGrid}>
+          {user?.id === 1 ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setIsMerchantDirectoryOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`בדיקת החנויות שמכבדות את הקופון של ${coupon.company}`}
+              style={[styles.actionBtn, { backgroundColor: theme.primaryTint }]}
+            >
+              <Store size={18} color={theme.primary} />
+              <Text style={[styles.actionBtnText, { color: theme.primary }]}>איפה אפשר לממש?</Text>
+            </TouchableOpacity>
+          ) : null}
+
           {!isFullyUsed && coupon.is_one_time ? (
             <TouchableOpacity
               activeOpacity={0.85}
@@ -844,6 +871,83 @@ export function CouponDetailScreen() {
       />
 
       <Modal
+        visible={isMerchantDirectoryOpen}
+        onClose={() => setIsMerchantDirectoryOpen(false)}
+        title="איפה אפשר לממש?"
+        subtitle={`בתי עסק שמכבדים את הקופון של ${coupon.company}`}
+        titleIcon={<Store size={18} color={theme.primary} />}
+        expandable
+      >
+        {merchantDirectory.isLoading || merchantDirectory.isFetching ? (
+          <View style={styles.merchantDirectoryLoading} accessibilityLiveRegion="polite">
+            <View style={[styles.merchantDirectoryLoader, { backgroundColor: theme.primaryTint }]}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Sparkles size={18} color={theme.primary} />
+            </View>
+            <Text style={[styles.merchantDirectoryTitle, { color: theme.text }]}>בודק את רשימת בתי העסק...</Text>
+            <Text style={[styles.merchantDirectorySubtitle, { color: theme.textMuted }]}>מחפש מקור רשמי ועדכני באינטרנט</Text>
+          </View>
+        ) : merchantDirectory.isError ? (
+          <View style={styles.merchantDirectoryLoading}>
+            <AlertTriangle size={28} color={theme.danger} />
+            <Text style={[styles.merchantDirectoryTitle, { color: theme.text }]}>לא הצלחנו להשלים את הבדיקה</Text>
+            <TouchableOpacity
+              onPress={() => void merchantDirectory.refetch()}
+              accessibilityRole="button"
+              style={[styles.merchantDirectoryRetry, { borderColor: theme.primary }]}
+            >
+              <RefreshCw size={17} color={theme.primary} />
+              <Text style={[styles.merchantDirectoryRetryText, { color: theme.primary }]}>בדיקה חוזרת</Text>
+            </TouchableOpacity>
+          </View>
+        ) : merchantDirectory.data?.merchants.length ? (
+          <View style={styles.merchantDirectoryList}>
+            <View style={[styles.merchantDirectorySummary, { backgroundColor: theme.successBg }]}>
+              <CheckCircle2 size={19} color={theme.success} />
+              <Text style={[styles.merchantDirectorySummaryText, { color: theme.text }]}>
+                נמצאו {merchantDirectory.data.merchants.length} בתי עסק ממקור רשמי
+              </Text>
+            </View>
+            {merchantDirectory.data.merchants.map((merchant) => (
+              <TouchableOpacity
+                key={`${merchant.name}-${merchant.sourceUrl}`}
+                activeOpacity={0.8}
+                onPress={() => void handleOpenMerchantSource(merchant.sourceUrl)}
+                accessibilityRole="link"
+                accessibilityLabel={`פתיחת המקור עבור ${merchant.name}`}
+                style={[styles.merchantDirectoryRow, { borderColor: theme.border, backgroundColor: theme.surfaceAlt }]}
+              >
+                <ExternalLink size={18} color={theme.primary} />
+                <View style={styles.merchantDirectoryRowCopy}>
+                  <Text style={[styles.merchantDirectoryName, { color: theme.text }]}>{merchant.name}</Text>
+                  {merchant.reason ? (
+                    <Text style={[styles.merchantDirectoryReason, { color: theme.textMuted }]}>{merchant.reason}</Text>
+                  ) : null}
+                  <Text style={[styles.merchantDirectorySource, { color: theme.primary }]}>פתיחת המקור הרשמי</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.merchantDirectoryLoading}>
+            <Store size={28} color={theme.textMuted} />
+            <Text style={[styles.merchantDirectoryTitle, { color: theme.text }]}>לא נמצאה רשימה מאומתת</Text>
+            <Text style={[styles.merchantDirectorySubtitle, { color: theme.textMuted }]}>לא מציגים חנויות בלי מקור רשמי שמאמת אותן.</Text>
+            {merchantDirectory.data?.sources[0] ? (
+              <TouchableOpacity
+                onPress={() => void handleOpenMerchantSource(merchantDirectory.data!.sources[0])}
+                accessibilityRole="link"
+                style={[styles.merchantDirectoryRetry, { borderColor: theme.primary }]}
+              >
+                <ExternalLink size={17} color={theme.primary} />
+                <Text style={[styles.merchantDirectoryRetryText, { color: theme.primary }]}>פתיחת המקור שנבדק</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        )}
+      </Modal>
+
+      <Modal
         visible={isSaleOpen}
         onClose={() => setIsSaleOpen(false)}
         title="סימון הקופון כנמכר"
@@ -1056,15 +1160,18 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: "row-reverse",
+    flexWrap: "wrap",
     gap: 10,
     marginVertical: 12,
   },
   actionBtn: {
     flex: 1,
+    flexBasis: "45%",
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
+    minHeight: 48,
     borderRadius: 14,
     gap: 6,
   },
@@ -1076,6 +1183,101 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 13,
     fontWeight: "700",
+  },
+  merchantDirectoryLoading: {
+    minHeight: 240,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  merchantDirectoryLoader: {
+    width: 72,
+    height: 48,
+    borderRadius: 24,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  merchantDirectoryTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  merchantDirectorySubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  merchantDirectoryRetry: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 6,
+  },
+  merchantDirectoryRetryText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  merchantDirectoryList: {
+    gap: 10,
+    paddingBottom: 8,
+  },
+  merchantDirectorySummary: {
+    minHeight: 48,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+  },
+  merchantDirectorySummaryText: {
+    flex: 1,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "right",
+  },
+  merchantDirectoryRow: {
+    minHeight: 76,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+  },
+  merchantDirectoryRowCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3,
+  },
+  merchantDirectoryName: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  merchantDirectoryReason: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "right",
+  },
+  merchantDirectorySource: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "right",
   },
   externalLinkBtn: {
     flexDirection: "row-reverse",

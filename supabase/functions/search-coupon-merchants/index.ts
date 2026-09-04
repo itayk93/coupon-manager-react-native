@@ -50,6 +50,11 @@ function webSources(payload: Record<string, unknown>): string[] {
   return [...sources].slice(0, 12);
 }
 
+function safeSourceUrl(value: unknown, sources: string[]): string {
+  const url = String(value || '');
+  return sources.includes(url) ? url : '';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeadersFor(req) });
   try {
@@ -57,8 +62,14 @@ Deno.serve(async (req) => {
     if (user.id !== MAINTAINER_USER_ID) throw new Error('FORBIDDEN');
 
     const body = await req.json();
-    const query = normalizeQuery(body?.query);
-    if (query.length < 2 || !/[\p{L}]/u.test(query)) throw new Error('INVALID_INPUT');
+    const directoryMode = body?.mode === 'directory';
+    const couponId = Number(body?.couponId);
+    const query = directoryMode ? `coupon:${couponId}` : normalizeQuery(body?.query);
+    if (directoryMode) {
+      if (!Number.isSafeInteger(couponId) || couponId <= 0) throw new Error('INVALID_INPUT');
+    } else if (query.length < 2 || !/[\p{L}]/u.test(query)) {
+      throw new Error('INVALID_INPUT');
+    }
 
     const db = dbClient();
     const { data: cached } = await db.from('coupon_merchant_search_cache')
@@ -68,6 +79,99 @@ Deno.serve(async (req) => {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
     if (cached?.result) return jsonResponseFor(req, { data: { ...cached.result, cached: true } });
+
+    if (directoryMode) {
+      const { data: couponRow, error: couponError } = await db.from('coupon')
+        .select('id,company,description,source,status,deleted_at,value,used_value')
+        .eq('id', couponId)
+        .eq('user_id', MAINTAINER_USER_ID)
+        .maybeSingle();
+      if (couponError) throw couponError;
+      if (!couponRow || couponRow.deleted_at) throw new Error('NOT_FOUND');
+
+      const coupon = {
+        id: couponRow.id,
+        company: couponRow.company,
+        description: couponRow.description ? await decryptCouponValue(couponRow.description) : null,
+        source: couponRow.source || null,
+      };
+      const apiKey = Deno.env.get('OPENAI_API_KEY_V2') || Deno.env.get('OPENAI_API_KEY');
+      if (!apiKey) throw new Error('OPENAI_NOT_CONFIGURED');
+      const directorySchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          provider: { type: 'string' },
+          merchants: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                name: { type: 'string' },
+                reason: { type: 'string' },
+                source_url: { type: 'string' },
+              },
+              required: ['name', 'reason', 'source_url'],
+            },
+          },
+        },
+        required: ['provider', 'merchants'],
+      };
+      const aiResponse = await safeFetch(OPENAI_URL, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: MODEL,
+          tools: [{ type: 'web_search', search_context_size: 'high' }],
+          tool_choice: 'required',
+          max_tool_calls: 8,
+          max_output_tokens: 6000,
+          store: false,
+          input: `מצא אילו חנויות ובתי עסק מכבדים כיום את הקופון הבא: ${JSON.stringify(coupon)}.
+השתמש רק בעמודים רשמיים ועדכניים של מנפיק הקופון. החזר רשימה שימושית של שמות החנויות שמופיעות במקור, בלי לנחש ובלי להוסיף חנויות שנמכרות כקופון נפרד. לכל חנות צרף URL מדויק של המקור הרשמי שמוכיח שהיא מכובדת. אם אין רשימה מאומתת, החזר merchants ריק.`,
+          text: { format: { type: 'json_schema', name: 'coupon_merchant_directory', strict: true, schema: directorySchema } },
+          include: ['web_search_call.action.sources'],
+        }),
+      });
+      if (!aiResponse.ok) {
+        console.error('[search-coupon-merchants] directory OpenAI status:', aiResponse.status);
+        throw new Error('SEARCH_UNAVAILABLE');
+      }
+      const payload = await aiResponse.json() as Record<string, unknown>;
+      const parsed = JSON.parse(responseText(payload) || '{"provider":"","merchants":[]}');
+      const sources = webSources(payload);
+      const seen = new Set<string>();
+      const merchants = (Array.isArray(parsed.merchants) ? parsed.merchants : [])
+        .map((merchant: Record<string, unknown>) => ({
+          name: String(merchant.name || '').trim().slice(0, 100),
+          reason: String(merchant.reason || '').trim().slice(0, 220),
+          sourceUrl: safeSourceUrl(merchant.source_url, sources),
+        }))
+        .filter((merchant: { name: string; sourceUrl: string }) => {
+          const key = normalizeQuery(merchant.name);
+          if (!key || !merchant.sourceUrl || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 80);
+      const result = {
+        couponId,
+        provider: String(parsed.provider || coupon.company).trim().slice(0, 100),
+        merchants,
+        sources,
+        checkedAt: new Date().toISOString(),
+        cached: false,
+      };
+      await db.from('coupon_merchant_search_cache').upsert({
+        user_id: MAINTAINER_USER_ID,
+        normalized_query: query,
+        result,
+        expires_at: new Date(Date.now() + CACHE_TTL_MS).toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,normalized_query' });
+      return jsonResponseFor(req, { data: result });
+    }
 
     const { data: rows, error } = await db.from('coupon')
       .select('id,public_id,company,description,source,value,used_value,expiration')
@@ -170,6 +274,7 @@ Deno.serve(async (req) => {
     if (message === 'UNAUTHENTICATED') return jsonResponseFor(req, { error: message }, 401);
     if (message === 'FORBIDDEN') return jsonResponseFor(req, { error: message }, 403);
     if (message === 'INVALID_INPUT') return jsonResponseFor(req, { error: message }, 400);
+    if (message === 'NOT_FOUND') return jsonResponseFor(req, { error: message }, 404);
     console.error('[search-coupon-merchants] fatal:', error);
     return jsonResponseFor(req, { error: 'SEARCH_UNAVAILABLE' }, 503);
   }

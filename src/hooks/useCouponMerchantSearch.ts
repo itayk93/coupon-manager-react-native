@@ -18,6 +18,21 @@ export type CouponMerchantSearchResult = {
   cached: boolean;
 };
 
+export type CouponMerchantDirectoryItem = {
+  name: string;
+  reason: string;
+  sourceUrl: string;
+};
+
+export type CouponMerchantDirectoryResult = {
+  couponId: number;
+  provider: string;
+  merchants: CouponMerchantDirectoryItem[];
+  sources: string[];
+  checkedAt: string;
+  cached: boolean;
+};
+
 export function isMerchantQuery(value: string): boolean {
   const query = value.trim();
   return query.length >= 2 && /[\p{L}]/u.test(query);
@@ -39,6 +54,26 @@ export function useCouponMerchantSearch(query: string) {
     queryKey: ["coupon-merchant-search", user?.id, normalized.toLocaleLowerCase("he-IL")],
     queryFn: () => searchCouponMerchants(normalized),
     enabled: user?.id === 1 && isMerchantQuery(normalized),
+    staleTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+async function loadCouponMerchantDirectory(couponId: number): Promise<CouponMerchantDirectoryResult> {
+  const { data, error } = await supabase.functions.invoke("search-coupon-merchants", {
+    body: { couponId, mode: "directory" },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data.data as CouponMerchantDirectoryResult;
+}
+
+export function useCouponMerchantDirectory(couponId: number | undefined, enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["coupon-merchant-directory", user?.id, couponId],
+    queryFn: () => loadCouponMerchantDirectory(couponId as number),
+    enabled: user?.id === 1 && typeof couponId === "number" && enabled,
     staleTime: 24 * 60 * 60 * 1000,
     retry: 1,
   });
