@@ -36,6 +36,10 @@ verify_jwt = false
 [functions.coupon-vault]
 verify_jwt = true
 
+[functions.search-coupon-merchants]
+# Paid OpenAI web search. The function also enforces user_id=1 internally.
+verify_jwt = true
+
 [functions.update-balance]
 verify_jwt = true
 

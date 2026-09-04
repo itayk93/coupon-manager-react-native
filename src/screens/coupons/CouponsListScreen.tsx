@@ -43,6 +43,7 @@ import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
 import { useContentWidth } from "@/hooks/useContentWidth";
 import { WifiOff } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
+import { isMerchantQuery, useCouponMerchantSearch } from "@/hooks/useCouponMerchantSearch";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
@@ -85,6 +86,7 @@ export function CouponsListScreen() {
   });
 
   const [search, setSearch] = useState("");
+  const [merchantQuery, setMerchantQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(
     params.initialFilterTag || null
   );
@@ -101,6 +103,20 @@ export function CouponsListScreen() {
   const [isSelectMode, setIsSelectMode] = useState(false);
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
+  const merchantSearch = useCouponMerchantSearch(merchantQuery);
+  const merchantMatchIds = useMemo(
+    () => new Set((merchantSearch.data?.matches || []).map((match) => match.couponId)),
+    [merchantSearch.data?.matches],
+  );
+
+  React.useEffect(() => {
+    if (user?.id !== 1 || !isMerchantQuery(search)) {
+      setMerchantQuery("");
+      return;
+    }
+    const timer = setTimeout(() => setMerchantQuery(search.trim()), 600);
+    return () => clearTimeout(timer);
+  }, [search, user?.id]);
 
   // Company chips — ordered left-to-right from lowest usage/recency to highest usage/recency, so
   // the right edge (where the row lands after scrollToEnd) is the most recently used/highest-usage company.
@@ -145,7 +161,7 @@ export function CouponsListScreen() {
       if (focusIds && !focusIds.includes(coupon.public_id) && !focusIds.includes(String(coupon.id))) return false;
 
       // Search
-      if (!matchesCouponSearch(coupon, search)) return false;
+      if (!matchesCouponSearch(coupon, search) && !merchantMatchIds.has(coupon.id)) return false;
 
       if (!isCompanyFiltered(coupon)) return false;
 
@@ -157,7 +173,7 @@ export function CouponsListScreen() {
 
       return true;
     });
-  }, [coupons, focusIds, pendingDeleteIds, search, selectedCompany, selectedTag, tagsMap]);
+  }, [coupons, focusIds, merchantMatchIds, pendingDeleteIds, search, selectedCompany, selectedTag, tagsMap]);
 
   const sections = useMemo(() => {
     const active: DecryptedCoupon[] = [];
@@ -370,7 +386,7 @@ export function CouponsListScreen() {
             <Search size={18} color={theme.textMuted} />
           )}
           <TextInput
-            placeholder="חיפוש לפי חברה, תיאור או מספר קופון"
+            placeholder={showMaintainerAutoUpdate ? "באיזו חנות רוצים לקנות?" : "חיפוש לפי חברה, תיאור או מספר קופון"}
             placeholderTextColor={theme.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -378,6 +394,22 @@ export function CouponsListScreen() {
             style={[styles.searchInput, { color: theme.text }]}
           />
         </View>
+
+        {showMaintainerAutoUpdate && isMerchantQuery(search) ? (
+          <View style={[styles.merchantSearchStatus, { backgroundColor: theme.surfaceAlt }]}>
+            <Text style={[styles.merchantSearchStatusText, { color: merchantSearch.isError ? theme.danger : theme.textMuted }]}>
+              {merchantSearch.isFetching
+                ? "בודק באינטרנט גם בתוך הכרטיסים הכלליים..."
+                : merchantSearch.isError
+                  ? "החיפוש החכם לא זמין כרגע. מוצגות התאמות ישירות בלבד."
+                  : merchantMatchIds.size > 0
+                    ? `נמצאו ${merchantMatchIds.size} קופונים כלליים שמתאימים לחנות`
+                    : merchantQuery
+                      ? "לא נמצאה התאמה מאומתת בתוך הכרטיסים הכלליים"
+                      : "ממתין לסיום ההקלדה..."}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Company chips — ordered by coupon count, most on the right */}
         <ScrollView
@@ -778,6 +810,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "right",
     writingDirection: "rtl",
+  },
+  merchantSearchStatus: {
+    minHeight: 38,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    marginTop: -6,
+    marginBottom: 10,
+  },
+  merchantSearchStatusText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12.5,
+    textAlign: "right",
   },
   statusTabsRow: {
     flexDirection: "row-reverse",
