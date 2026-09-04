@@ -11,6 +11,8 @@ import {
   ScrollView,
   I18nManager,
   Image,
+  ActivityIndicator,
+  Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -22,6 +24,10 @@ import {
   X,
   QrCode,
   ReceiptText,
+  Sparkles,
+  ArrowLeft,
+  CircleCheck,
+  CircleAlert,
 } from "lucide-react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -104,19 +110,31 @@ export function CouponsListScreen() {
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const merchantSearch = useCouponMerchantSearch(merchantQuery);
-  const merchantMatchIds = useMemo(
-    () => new Set((merchantSearch.data?.matches || []).map((match) => match.couponId)),
-    [merchantSearch.data?.matches],
+  const merchantResultIds = useMemo(
+    () => new Set([
+      ...(merchantSearch.data?.directCouponIds || []),
+      ...(merchantSearch.data?.matches || []).map((match) => match.couponId),
+    ]),
+    [merchantSearch.data?.directCouponIds, merchantSearch.data?.matches],
   );
+  const merchantResultCoupons = useMemo(
+    () => coupons.filter((coupon) => merchantResultIds.has(coupon.id)),
+    [coupons, merchantResultIds],
+  );
+  const primaryMerchantResult = merchantResultCoupons[0];
+  const currentSearchHasMerchantResults =
+    search.trim().toLocaleLowerCase("he-IL") === merchantQuery.toLocaleLowerCase("he-IL");
 
-  React.useEffect(() => {
-    if (user?.id !== 1 || !isMerchantQuery(search)) {
-      setMerchantQuery("");
+  const startMerchantSearch = () => {
+    const query = search.trim();
+    if (!isMerchantQuery(query)) return;
+    Keyboard.dismiss();
+    if (query.toLocaleLowerCase("he-IL") === merchantQuery.toLocaleLowerCase("he-IL")) {
+      void merchantSearch.refetch();
       return;
     }
-    const timer = setTimeout(() => setMerchantQuery(search.trim()), 600);
-    return () => clearTimeout(timer);
-  }, [search, user?.id]);
+    setMerchantQuery(query);
+  };
 
   // Company chips — ordered left-to-right from lowest usage/recency to highest usage/recency, so
   // the right edge (where the row lands after scrollToEnd) is the most recently used/highest-usage company.
@@ -161,7 +179,10 @@ export function CouponsListScreen() {
       if (focusIds && !focusIds.includes(coupon.public_id) && !focusIds.includes(String(coupon.id))) return false;
 
       // Search
-      if (!matchesCouponSearch(coupon, search) && !merchantMatchIds.has(coupon.id)) return false;
+      if (
+        !matchesCouponSearch(coupon, search) &&
+        !(currentSearchHasMerchantResults && merchantResultIds.has(coupon.id))
+      ) return false;
 
       if (!isCompanyFiltered(coupon)) return false;
 
@@ -173,7 +194,7 @@ export function CouponsListScreen() {
 
       return true;
     });
-  }, [coupons, focusIds, merchantMatchIds, pendingDeleteIds, search, selectedCompany, selectedTag, tagsMap]);
+  }, [coupons, currentSearchHasMerchantResults, focusIds, merchantResultIds, pendingDeleteIds, search, selectedCompany, selectedTag, tagsMap]);
 
   const sections = useMemo(() => {
     const active: DecryptedCoupon[] = [];
@@ -396,18 +417,98 @@ export function CouponsListScreen() {
         </View>
 
         {showMaintainerAutoUpdate && isMerchantQuery(search) ? (
-          <View style={[styles.merchantSearchStatus, { backgroundColor: theme.surfaceAlt }]}>
-            <Text style={[styles.merchantSearchStatusText, { color: merchantSearch.isError ? theme.danger : theme.textMuted }]}>
-              {merchantSearch.isFetching
-                ? "בודק באינטרנט גם בתוך הכרטיסים הכלליים..."
-                : merchantSearch.isError
-                  ? "החיפוש החכם לא זמין כרגע. מוצגות התאמות ישירות בלבד."
-                  : merchantMatchIds.size > 0
-                    ? `נמצאו ${merchantMatchIds.size} קופונים כלליים שמתאימים לחנות`
-                    : merchantQuery
-                      ? "לא נמצאה התאמה מאומתת בתוך הכרטיסים הכלליים"
-                      : "ממתין לסיום ההקלדה..."}
+          <TouchableOpacity
+            onPress={startMerchantSearch}
+            disabled={merchantSearch.isFetching && currentSearchHasMerchantResults}
+            accessibilityRole="button"
+            accessibilityLabel={`בדיקת הקופונים שלי עבור ${search.trim()}`}
+            style={[
+              styles.merchantSearchButton,
+              { backgroundColor: theme.primary },
+              merchantSearch.isFetching && currentSearchHasMerchantResults && styles.buttonDisabled,
+            ]}
+          >
+            <Sparkles size={18} color="#ffffff" />
+            <Text style={styles.merchantSearchButtonText} numberOfLines={1}>
+              {`איזה קופון שלי מתאים ל־${search.trim()}?`}
             </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {showMaintainerAutoUpdate && merchantQuery ? (
+          <View
+            style={[
+              styles.merchantTaskCard,
+              {
+                backgroundColor: merchantSearch.isError
+                  ? theme.dangerBg
+                  : primaryMerchantResult
+                    ? theme.successBg
+                    : theme.primaryTint,
+                borderColor: merchantSearch.isError
+                  ? theme.danger
+                  : primaryMerchantResult
+                    ? theme.success
+                    : theme.primary,
+              },
+            ]}
+            accessibilityLiveRegion="polite"
+          >
+            <View style={styles.merchantTaskContent}>
+              {merchantSearch.isFetching ? (
+                <ActivityIndicator size="small" color={theme.primary} />
+              ) : merchantSearch.isError ? (
+                <CircleAlert size={20} color={theme.danger} />
+              ) : primaryMerchantResult ? (
+                <CircleCheck size={20} color={theme.success} />
+              ) : (
+                <Search size={20} color={theme.textMuted} />
+              )}
+              <View style={styles.merchantTaskCopy}>
+                <Text style={[styles.merchantTaskTitle, { color: theme.text }]}>
+                  {merchantSearch.isFetching
+                    ? `מחפש קופון ל־${merchantQuery}...`
+                    : merchantSearch.isError
+                      ? `הבדיקה עבור ${merchantQuery} נכשלה`
+                      : primaryMerchantResult
+                        ? `נמצא קופון מתאים ל־${merchantQuery}`
+                        : `לא נמצא קופון מתאים ל־${merchantQuery}`}
+                </Text>
+                <Text style={[styles.merchantTaskSubtitle, { color: theme.textMuted }]}>
+                  {merchantSearch.isFetching
+                    ? "עובר על הקופונים והכרטיסים הכלליים. אפשר להמשיך לעבוד בינתיים."
+                    : merchantSearch.isError
+                      ? "אפשר לנסות שוב בלי לצאת מהעמוד."
+                      : primaryMerchantResult
+                        ? merchantResultCoupons.length > 1
+                          ? `נמצאו ${merchantResultCoupons.length} אפשרויות. הראשונה מוכנה לפתיחה.`
+                          : `הקופון של ${primaryMerchantResult.company} מוכן לפתיחה.`
+                        : "נבדקו גם הכרטיסים הכלליים מול בתי העסק באינטרנט."}
+                </Text>
+              </View>
+            </View>
+
+            {!merchantSearch.isFetching && primaryMerchantResult ? (
+              <TouchableOpacity
+                onPress={() => router.push(`/coupons/${couponRouteId(primaryMerchantResult)}`)}
+                accessibilityRole="link"
+                accessibilityLabel={`פתיחת הקופון של ${primaryMerchantResult.company}`}
+                style={[styles.merchantResultButton, { backgroundColor: theme.primary }]}
+              >
+                <ArrowLeft size={18} color="#ffffff" />
+                <Text style={styles.merchantResultButtonText}>מעבר לקופון</Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {!merchantSearch.isFetching && merchantSearch.isError ? (
+              <TouchableOpacity
+                onPress={() => void merchantSearch.refetch()}
+                accessibilityRole="button"
+                style={[styles.merchantRetryButton, { borderColor: theme.danger }]}
+              >
+                <Text style={[styles.merchantRetryButtonText, { color: theme.danger }]}>בדיקה חוזרת</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         ) : null}
 
@@ -811,19 +912,83 @@ const styles = StyleSheet.create({
     textAlign: "right",
     writingDirection: "rtl",
   },
-  merchantSearchStatus: {
-    minHeight: 38,
-    borderRadius: 10,
+  merchantSearchButton: {
+    minHeight: 48,
+    borderRadius: radii.lg,
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    gap: 8,
     marginTop: -6,
     marginBottom: 10,
   },
-  merchantSearchStatusText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 12.5,
+  merchantSearchButtonText: {
+    color: "#ffffff",
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    fontWeight: "800",
+    flexShrink: 1,
     textAlign: "right",
+  },
+  buttonDisabled: {
+    opacity: 0.55,
+  },
+  merchantTaskCard: {
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    padding: 12,
+    marginBottom: 12,
+    gap: 10,
+  },
+  merchantTaskContent: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+  },
+  merchantTaskCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  merchantTaskTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13.5,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  merchantTaskSubtitle: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "right",
+  },
+  merchantResultButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingHorizontal: 14,
+  },
+  merchantResultButtonText: {
+    color: "#ffffff",
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  merchantRetryButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  merchantRetryButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    fontWeight: "800",
   },
   statusTabsRow: {
     flexDirection: "row-reverse",
