@@ -31,6 +31,9 @@ export type WidgetPayload = {
   oneTimeCouponsCount: number;
   totalRemainingValue: number;
   coupons: WidgetCouponPayload[];
+  urgentCoupon?: WidgetCouponPayload | null;
+  urgentDaysRemaining?: number | null;
+  mascotTier?: number;
 };
 
 export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
@@ -39,6 +42,9 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
   oneTimeCouponsCount: 0,
   totalRemainingValue: 0,
   coupons: [],
+  urgentCoupon: null,
+  urgentDaysRemaining: null,
+  mascotTier: 1,
 };
 
 type CouponWidgetNativeModule = {

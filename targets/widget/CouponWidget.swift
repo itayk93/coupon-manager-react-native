@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Design tokens
 //
@@ -277,50 +278,318 @@ private struct CouponCardView: View {
     }
 }
 
-// MARK: - Small
+// MARK: - Mascot Urgency Model
+
+enum MascotUrgencyTier: Int {
+    case normal = 1      // 0 expiring or > 7 days
+    case approaching = 2 // 5-7 days
+    case warning = 3     // 2-4 days
+    case urgent = 4      // 1 day (tomorrow)
+    case critical = 5    // 0 days (today)
+
+    var imageName: String {
+        "MascotState\(rawValue)"
+    }
+
+    var badgeTitle: String {
+        switch self {
+        case .critical: return "פג היום!"
+        case .urgent: return "פג מחר!"
+        case .warning: return "דחיפות עולה"
+        case .approaching: return "מתקרב"
+        case .normal: return "הכל תקין"
+        }
+    }
+
+    var badgeColor: Color {
+        switch self {
+        case .critical: return Color(red: 0xef/255, green: 0x44/255, blue: 0x44/255)
+        case .urgent: return Color(red: 0xf9/255, green: 0x73/255, blue: 0x16/255)
+        case .warning: return Color(red: 0xf5/255, green: 0x9e/255, blue: 0x0b/255)
+        case .approaching: return Color(red: 0x3b/255, green: 0x82/255, blue: 0xf6/255)
+        case .normal: return Color(red: 0x10/255, green: 0xb9/255, blue: 0x81/255)
+        }
+    }
+
+    var backgroundGradient: LinearGradient {
+        switch self {
+        case .critical:
+            return LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0x3b/255, green: 0x07/255, blue: 0x07/255), location: 0.0),
+                    .init(color: Color(red: 0x88/255, green: 0x13/255, blue: 0x13/255), location: 0.45),
+                    .init(color: Color(red: 0xdc/255, green: 0x26/255, blue: 0x26/255), location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .urgent:
+            return LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0x43/255, green: 0x14/255, blue: 0x07/255), location: 0.0),
+                    .init(color: Color(red: 0x9a/255, green: 0x34/255, blue: 0x12/255), location: 0.45),
+                    .init(color: Color(red: 0xea/255, green: 0x58/255, blue: 0x0c/255), location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .warning:
+            return LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0x45/255, green: 0x1a/255, blue: 0x03/255), location: 0.0),
+                    .init(color: Color(red: 0x85/255, green: 0x4d/255, blue: 0x0e/255), location: 0.45),
+                    .init(color: Color(red: 0xd9/255, green: 0x77/255, blue: 0x06/255), location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .approaching:
+            return LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0x0f/255, green: 0x17/255, blue: 0x2a/255), location: 0.0),
+                    .init(color: Color(red: 0x1e/255, green: 0x29/255, blue: 0x3b/255), location: 0.55),
+                    .init(color: Color(red: 0x85/255, green: 0x4d/255, blue: 0x0e/255), location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .normal:
+            return LinearGradient(
+                stops: [
+                    .init(color: Color(red: 0x0f/255, green: 0x17/255, blue: 0x2a/255), location: 0.0),
+                    .init(color: Color(red: 0x1e/255, green: 0x3a/255, blue: 0x8a/255), location: 0.6),
+                    .init(color: Color(red: 0x25/255, green: 0x63/255, blue: 0xeb/255), location: 1.0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+}
+
+@available(iOS 16.0, *)
+struct ToggleWidgetFaceIntent: AppIntent {
+    static var title: LocalizedStringResource = "החלפת תצוגת ווידג'ט"
+    static var isDiscoverable: Bool = false
+
+    func perform() async throws -> some IntentResult {
+        if let defaults = UserDefaults(suiteName: couponWidgetAppGroup) {
+            let current = defaults.bool(forKey: "widget_show_stats_face")
+            defaults.set(!current, forKey: "widget_show_stats_face")
+        }
+        return .result()
+    }
+}
+
+private extension WidgetPayload {
+    var mostUrgentCoupon: WidgetCoupon? {
+        if let urgent = urgentCoupon {
+            return urgent
+        }
+        return coupons
+            .filter { coupon in
+                guard let days = coupon.daysUntilExpiration else { return false }
+                return days >= 0 && days <= 7
+            }
+            .sorted { (c1, c2) in
+                (c1.daysUntilExpiration ?? 999) < (c2.daysUntilExpiration ?? 999)
+            }
+            .first
+    }
+
+    var mascotUrgencyTier: MascotUrgencyTier {
+        if let tierNum = mascotTier, let tier = MascotUrgencyTier(rawValue: tierNum) {
+            return tier
+        }
+        if let days = urgentDaysRemaining {
+            if days <= 0 { return .critical }
+            if days == 1 { return .urgent }
+            if days <= 4 { return .warning }
+            if days <= 7 { return .approaching }
+            return .normal
+        }
+        guard let coupon = mostUrgentCoupon, let days = coupon.daysUntilExpiration else {
+            return .normal
+        }
+        if days <= 0 { return .critical }
+        if days == 1 { return .urgent }
+        if days <= 4 { return .warning }
+        if days <= 7 { return .approaching }
+        return .normal
+    }
+}
+
+// MARK: - Small Mascot View (Duolingo Full-Bleed Style)
+
+struct CouponMascotSmallView: View {
+    let payload: WidgetPayload
+    var isPagedInSmall: Bool = false
+
+    private var tier: MascotUrgencyTier {
+        payload.mascotUrgencyTier
+    }
+
+    private var urgentCoupon: WidgetCoupon? {
+        payload.mostUrgentCoupon
+    }
+
+    private var daysLeft: Int {
+        payload.urgentDaysRemaining ?? urgentCoupon?.daysUntilExpiration ?? 0
+    }
+
+    private var destinationURL: URL {
+        if let coupon = urgentCoupon {
+            return URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))") ?? URL(string: "couponmaster:///coupons")!
+        }
+        return URL(string: "couponmaster:///coupons")!
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            // Unified Full-Bleed 3D Scene
+            Image(tier.imageName)
+                .resizable()
+                .scaledToFill()
+                .edgesIgnoringSafeArea(.all)
+
+            // Subtle top shadow vignette so UI text is razor sharp on any background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.black.opacity(0.45),
+                    Color.black.opacity(0.18),
+                    Color.clear
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 70)
+            .edgesIgnoringSafeArea(.top)
+
+            // Top Header (Duolingo style: Big number + Icon + Subtitle + Glass Chip)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text(tier == .critical ? "🚨" : (tier == .urgent ? "⏳" : (tier == .normal ? "✨" : "🔥")))
+                            .font(.system(size: 20))
+
+                        Text(tier == .critical ? "0" : (tier == .normal ? "✓" : "\(daysLeft)"))
+                            .couponFont(24, .extraBold)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.6), radius: 3, x: 0, y: 1)
+
+                        if let coupon = urgentCoupon {
+                            HStack(spacing: 3) {
+                                Text(coupon.company)
+                                    .couponFont(10, .bold)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                Text("•")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .font(.system(size: 8))
+                                Text(formatShekels(coupon.remainingValue))
+                                    .couponFont(9, .extraBold)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.black.opacity(0.45))
+                            .overlay(
+                                Capsule().stroke(Color.white.opacity(0.22), lineWidth: 1)
+                            )
+                            .clipShape(Capsule())
+                        }
+                    }
+
+                    Text(tier.badgeTitle)
+                        .couponFont(11, .bold)
+                        .foregroundColor(.white.opacity(0.95))
+                        .shadow(color: .black.opacity(0.6), radius: 2, x: 0, y: 1)
+                }
+
+                Spacer(minLength: 0)
+
+                // Interactive page flip button
+                if isPagedInSmall, #available(iOS 17.0, *) {
+                    Button(intent: ToggleWidgetFaceIntent()) {
+                        HStack(spacing: 3) {
+                            Circle().fill(Color.white).frame(width: 5, height: 5)
+                            Circle().fill(Color.white.opacity(0.35)).frame(width: 5, height: 5)
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.black.opacity(0.45))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+        }
+        .widgetURL(destinationURL)
+        .widgetBackground(
+            Image(tier.imageName)
+                .resizable()
+                .scaledToFill()
+        )
+    }
+}
+
+// MARK: - Small Stats View
 
 private struct CouponStatsSmallView: View {
     let payload: WidgetPayload
 
-    private var expiringThisWeek: [WidgetCoupon] {
-        let today = Date()
-        let inAWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? today
-        return payload.coupons
-            .filter { coupon in
-                guard let date = coupon.expirationDate else { return false }
-                return date >= today && date <= inAWeek
-            }
-            .sorted { ($0.expirationDate ?? .distantFuture) < ($1.expirationDate ?? .distantFuture) }
-    }
-
-    /// The alert face takes over for the first few seconds of each minute, as on the original.
-    private var shouldShowExpiringAlert: Bool {
-        guard !expiringThisWeek.isEmpty else { return false }
-        return Int(Date().timeIntervalSince1970) % 60 < 3
+    private var showStats: Bool {
+        UserDefaults(suiteName: couponWidgetAppGroup)?.bool(forKey: "widget_show_stats_face") ?? false
     }
 
     var body: some View {
         Group {
-            if shouldShowExpiringAlert {
-                expiringView
+            // Default to Mascot view whenever any coupon is expiring within 7 days unless user toggled
+            if !showStats && payload.mascotUrgencyTier != .normal {
+                CouponMascotSmallView(payload: payload, isPagedInSmall: true)
             } else {
                 statsView
+                    .widgetBackground(WidgetStyle.background)
             }
         }
         .widgetURL(URL(string: "couponmaster:///coupons"))
-        .widgetBackground(Color.clear)
     }
 
     /// One idea per tile: the money is the hero, everything else is one line of
-    /// context under it. The old face gave three numbers equal visual weight,
-    /// which left no entry point for the eye.
+    /// context under it.
     private var statsView: some View {
         ZStack {
             WidgetStyle.background.edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
-                AppLogoView(height: 12)
-                    .opacity(0.75)
+                HStack {
+                    AppLogoView(height: 12)
+                        .opacity(0.75)
+
+                    Spacer()
+
+                    if #available(iOS 17.0, *) {
+                        Button(intent: ToggleWidgetFaceIntent()) {
+                            HStack(spacing: 3) {
+                                Circle().fill(Color.white.opacity(0.35)).frame(width: 5, height: 5)
+                                Circle().fill(Color.white).frame(width: 5, height: 5)
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(WidgetStyle.primaryLight)
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
 
                 Spacer(minLength: 0)
 
@@ -339,8 +608,6 @@ private struct CouponStatsSmallView: View {
 
                 Spacer(minLength: 0)
 
-                // Same affordance the bank widgets use: one short verb phrase
-                // plus a chevron, in the accent colour, pinned to the bottom.
                 HStack(spacing: 4) {
                     Text("לכל הקופונים")
                         .couponFont(12, .bold)
@@ -349,52 +616,10 @@ private struct CouponStatsSmallView: View {
                 }
                 .foregroundColor(WidgetStyle.primaryLight)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var expiringView: some View {
-        ZStack {
-            WidgetStyle.alertGradient.edgesIgnoringSafeArea(.all)
-
-            VStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .couponFont(16, .bold)
-                        .foregroundColor(.white)
-                    Text("קופון עומד לפוג תוקף!")
-                        .couponFont(12, .bold)
-                        .foregroundColor(.white)
-                }
-
-                if let first = expiringThisWeek.first {
-                    VStack(spacing: 4) {
-                        Text(first.company)
-                            .couponFont(16, .bold)
-                            .foregroundColor(.white)
-
-                        Text(formatShekels(first.remainingValue))
-                            .couponFont(24, .extraBold)
-                            .foregroundColor(.white)
-
-                        if let date = first.expirationDate {
-                            let daysLeft = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
-                            Text("נותרו \(daysLeft) ימים")
-                                .couponFont(11, .medium)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-                    }
-                }
-
-                Text("מתחלף לסטטיסטיקות...")
-                    .couponFont(8)
-                    .foregroundColor(WidgetStyle.textSubtle)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(12)
-        }
     }
 }
 
@@ -523,7 +748,23 @@ struct CouponWidgetEntryView: View {
     }
 }
 
+struct CouponMascotEntryView: View {
+    var entry: CouponProvider.Entry
+
+    var body: some View {
+        CouponMascotSmallView(payload: entry.payload)
+            .environment(\.layoutDirection, .rightToLeft)
+    }
+}
+
 @main
+struct CouponWidgetsBundle: WidgetBundle {
+    var body: some Widget {
+        CouponWidget()
+        CouponMascotWidget()
+    }
+}
+
 struct CouponWidget: Widget {
     let kind = "CouponWidget"
 
@@ -534,6 +775,25 @@ struct CouponWidget: Widget {
         .configurationDisplayName("ניהול קופונים")
         .description("עקוב אחר הקופונים שלך ותאריכי התפוגה")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+
+        if #available(iOSApplicationExtension 17.0, *) {
+            return config.contentMarginsDisabled()
+        } else {
+            return config
+        }
+    }
+}
+
+struct CouponMascotWidget: Widget {
+    let kind = "CouponMascotWidget"
+
+    var body: some WidgetConfiguration {
+        let config = StaticConfiguration(kind: kind, provider: CouponProvider()) { entry in
+            CouponMascotEntryView(entry: entry)
+        }
+        .configurationDisplayName("מאסקט התראת תפוגה")
+        .description("מאסקט שממריץ לפעולה לפני שקופון מסתיים (בסגנון Duolingo)")
+        .supportedFamilies([.systemSmall])
 
         if #available(iOSApplicationExtension 17.0, *) {
             return config.contentMarginsDisabled()

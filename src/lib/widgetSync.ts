@@ -17,6 +17,15 @@ export { MAX_WIDGET_COUPONS } from "@/lib/widgetSelection";
  * The counts and balance deliberately use the same predicate as the dashboard
  * (`isSpendableCoupon`) so the widget and the app can never disagree.
  */
+function daysUntilExpiration(expiration: string): number | null {
+  const target = new Date(expiration);
+  if (Number.isNaN(target.getTime())) return null;
+  const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
+}
+
 export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
   const spendable = coupons.filter(isSpendableCoupon);
 
@@ -34,12 +43,54 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     cvv: coupon.cvv ?? null,
   }));
 
+  // Find most urgent expiring coupon across ALL spendable coupons
+  let urgentCoupon: WidgetCouponPayload | null = null;
+  let minDays: number | null = null;
+
+  for (const coupon of spendable) {
+    if (!coupon.expiration) continue;
+    const days = daysUntilExpiration(coupon.expiration);
+    if (days !== null && days >= 0 && days <= 7) {
+      if (minDays === null || days < minDays) {
+        minDays = days;
+        urgentCoupon = {
+          id: coupon.id,
+          publicId: coupon.public_id,
+          company: coupon.company,
+          code: coupon.code,
+          remainingValue: couponRemainingValue(coupon),
+          expiration: coupon.expiration ?? null,
+          logoFile: null,
+          cardExp: coupon.card_exp ?? null,
+          cvv: coupon.cvv ?? null,
+        };
+      }
+    }
+  }
+
+  let mascotTier = 1;
+  if (minDays !== null) {
+    if (minDays <= 0) mascotTier = 5;
+    else if (minDays === 1) mascotTier = 4;
+    else if (minDays <= 4) mascotTier = 3;
+    else if (minDays <= 7) mascotTier = 2;
+  }
+
+  // Ensure urgent coupon is in the coupons list so its logo gets prepared
+  const allCoupons = [...selected];
+  if (urgentCoupon && !allCoupons.some((c) => c.id === urgentCoupon!.id)) {
+    allCoupons.push(urgentCoupon);
+  }
+
   return {
     updatedAt: new Date().toISOString(),
     activeCouponsCount: spendable.length,
     oneTimeCouponsCount: spendable.filter((coupon) => coupon.is_one_time === true).length,
     totalRemainingValue: totalRemainingValue(coupons),
-    coupons: selected,
+    coupons: allCoupons,
+    urgentCoupon,
+    urgentDaysRemaining: minDays,
+    mascotTier,
   };
 }
 

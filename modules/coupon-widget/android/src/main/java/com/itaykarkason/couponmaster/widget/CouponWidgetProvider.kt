@@ -59,9 +59,62 @@ class CouponWidgetProvider : AppWidgetProvider() {
     height: Int,
     logos: Map<Int, Bitmap?>,
   ): RemoteViews = when {
-    width < MEDIUM_MIN_WIDTH_DP && height < LARGE_MIN_HEIGHT_DP -> statsViews(context, payload)
+    width < MEDIUM_MIN_WIDTH_DP && height < LARGE_MIN_HEIGHT_DP -> smallViews(context, payload)
     height < LARGE_MIN_HEIGHT_DP -> listViews(context, payload, logos, limit = 2, showHeader = false)
     else -> listViews(context, payload, logos, limit = MAX_CARDS, showHeader = true)
+  }
+
+  private fun smallViews(context: Context, payload: WidgetPayload): RemoteViews {
+    val urgent = getUrgentCoupon(payload)
+    return if (urgent != null) {
+      mascotViews(context, payload, urgent.first, urgent.second)
+    } else {
+      statsViews(context, payload)
+    }
+  }
+
+  private fun getUrgentCoupon(payload: WidgetPayload): Pair<WidgetCoupon, Int>? {
+    val now = java.util.Calendar.getInstance()
+    now.set(java.util.Calendar.HOUR_OF_DAY, 0)
+    now.set(java.util.Calendar.MINUTE, 0)
+    now.set(java.util.Calendar.SECOND, 0)
+    now.set(java.util.Calendar.MILLISECOND, 0)
+    val todayMs = now.timeInMillis
+
+    return payload.coupons.mapNotNull { coupon ->
+      val exp = coupon.expiration ?: return@mapNotNull null
+      try {
+        val dateStr = if (exp.contains("T")) exp.substring(0, exp.indexOf("T")) else exp
+        val parts = dateStr.split("-")
+        if (parts.size != 3) return@mapNotNull null
+        val cal = java.util.Calendar.getInstance()
+        cal.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt(), 0, 0, 0)
+        val diffDays = ((cal.timeInMillis - todayMs) / (1000 * 60 * 60 * 24)).toInt()
+        if (diffDays in 0..7) coupon to diffDays else null
+      } catch (e: Exception) {
+        null
+      }
+    }.minByOrNull { it.second }
+  }
+
+  private fun mascotViews(
+    context: Context,
+    payload: WidgetPayload,
+    coupon: WidgetCoupon,
+    days: Int,
+  ): RemoteViews = RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
+    val (mascotRes, statusText) = when {
+      days <= 0 -> R.drawable.mascot_state_5 to "🚨 פג תוקף היום!"
+      days == 1 -> R.drawable.mascot_state_4 to "⏳ פג תוקף מחר!"
+      days <= 4 -> R.drawable.mascot_state_3 to "⏱️ פג בעוד $days ימים!"
+      else -> R.drawable.mascot_state_2 to "🗓️ פג בעוד $days ימים"
+    }
+    setImageViewResource(R.id.mascot_image, mascotRes)
+    setTextViewText(R.id.mascot_status_text, statusText)
+    setTextViewText(R.id.mascot_coupon_company, coupon.company)
+    setTextViewText(R.id.mascot_coupon_value, "יתרה: " + formatShekels(coupon.remainingValue))
+    val deepLink = "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
+    setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, deepLink))
   }
 
   private fun statsViews(context: Context, payload: WidgetPayload): RemoteViews =

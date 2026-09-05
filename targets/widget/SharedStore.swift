@@ -20,7 +20,19 @@ struct WidgetCoupon: Codable, Identifiable {
 
     var expirationDate: Date? {
         guard let expiration else { return nil }
+        if expiration.contains("T") {
+            return ISO8601DateFormatter().date(from: expiration)
+        }
         return ISO8601DateFormatter().date(from: expiration + "T00:00:00Z")
+    }
+
+    var daysUntilExpiration: Int? {
+        guard let expirationDate else { return nil }
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date())
+        let startOfExp = calendar.startOfDay(for: expirationDate)
+        let components = calendar.dateComponents([.day], from: startOfToday, to: startOfExp)
+        return components.day
     }
 }
 
@@ -29,12 +41,18 @@ struct WidgetPayload: Codable {
     let oneTimeCouponsCount: Int
     let totalRemainingValue: Double
     let coupons: [WidgetCoupon]
+    let urgentCoupon: WidgetCoupon?
+    let urgentDaysRemaining: Int?
+    let mascotTier: Int?
 
     static let empty = WidgetPayload(
         activeCouponsCount: 0,
         oneTimeCouponsCount: 0,
         totalRemainingValue: 0,
-        coupons: []
+        coupons: [],
+        urgentCoupon: nil,
+        urgentDaysRemaining: nil,
+        mascotTier: 1
     )
 }
 
