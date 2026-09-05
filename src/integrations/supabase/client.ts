@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { sessionStorage } from "@/lib/secureSessionStorage";
 import type { Database } from "./types";
 
 const SUPABASE_URL =
@@ -18,7 +18,7 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: AsyncStorage,
+    storage: sessionStorage,
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: Platform.OS === "web",

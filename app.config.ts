@@ -7,6 +7,7 @@ const supabaseAnonKey =
 
 export default ({ config }: { config: typeof appJson.expo }) => ({
   ...config,
+  plugins: [...((config.plugins as string[]) ?? []), "expo-secure-store"],
   android: {
     ...config.android,
     config: {

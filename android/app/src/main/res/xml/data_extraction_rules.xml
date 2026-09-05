@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auth tokens and user data live in SharedPreferences / the AsyncStorage
+     database and must never leave the device through cloud backup or a
+     device-to-device transfer. See compliance-audit/REMEDIATION-2026-09-05.md. -->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="sharedpref" path="."/>
+    <exclude domain="database" path="."/>
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="sharedpref" path="."/>
+    <exclude domain="database" path="."/>
+  </device-transfer>
+</data-extraction-rules>

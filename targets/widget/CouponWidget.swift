@@ -147,6 +147,7 @@ private struct CompanyLogoView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
+                    .accessibilityHidden(true)
             } else {
                 Circle().fill(WidgetStyle.codeFill)
                 Text(String(company.prefix(2).uppercased()))
@@ -168,6 +169,7 @@ private struct AppLogoView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: height)
+                .accessibilityHidden(true)
         } else {
             HStack(spacing: 4.5) {
                 Text("COUPON")
@@ -176,7 +178,7 @@ private struct AppLogoView: View {
                     .tracking(1.0)
 
                 Image(systemName: "ticket.fill")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundColor(WidgetStyle.primaryLight)
                     .rotationEffect(.degrees(-15))
 
@@ -343,7 +345,7 @@ private struct CouponStatsSmallView: View {
                     Text("לכל הקופונים")
                         .couponFont(12, .bold)
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.caption2.weight(.bold))
                 }
                 .foregroundColor(WidgetStyle.primaryLight)
             }

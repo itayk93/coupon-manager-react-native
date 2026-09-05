@@ -23,11 +23,31 @@ private let importMode = "add"
 /// small enough to upload over cellular.
 private let maxDimension: CGFloat = 1600
 
+private extension UIColor {
+  /// 0xRRGGBB convenience, kept out of the call sites so the palette reads in one place.
+  convenience init(rgb: UInt32) {
+    self.init(
+      red: CGFloat((rgb >> 16) & 0xFF) / 255,
+      green: CGFloat((rgb >> 8) & 0xFF) / 255,
+      blue: CGFloat(rgb & 0xFF) / 255,
+      alpha: 1
+    )
+  }
+}
+
 private enum Brand {
-  static let blue = UIColor(red: 40 / 255, green: 100 / 255, blue: 240 / 255, alpha: 1)
-  static let mint = UIColor(red: 88 / 255, green: 223 / 255, blue: 198 / 255, alpha: 1)
-  static let cream = UIColor(red: 250 / 255, green: 249 / 255, blue: 246 / 255, alpha: 1)
-  static let ink = UIColor(red: 24 / 255, green: 28 / 255, blue: 40 / 255, alpha: 1)
+  /// Every colour swaps in a stronger variant when "Increase Contrast" is on
+  /// (Accessibility settings), per Apple's accessibility guidance.
+  private static func adaptive(_ regular: UInt32, _ highContrast: UInt32) -> UIColor {
+    UIColor { _ in
+      UIAccessibility.isDarkerSystemColorsEnabled ? UIColor(rgb: highContrast) : UIColor(rgb: regular)
+    }
+  }
+
+  static let blue = adaptive(0x2864F0, 0x143CA0)
+  static let mint = adaptive(0x58DFC6, 0x1F9C82)
+  static let cream = adaptive(0xFAF9F6, 0xF2EFE8)
+  static let ink = adaptive(0x181C28, 0x000000)
 }
 
 class ShareViewController: UIViewController {
@@ -229,6 +249,7 @@ class ShareViewController: UIViewController {
     titleLabel.text = "פותחים..."
     detailLabel.text = ""
     fillProgress(to: 1)
+    announceState()
     celebrateMascot()
 
     // Hand off while the confirmation is still on screen, then close.
@@ -242,6 +263,7 @@ class ShareViewController: UIViewController {
     titleLabel.text = "לא הצלחנו להכין את הקופון"
     detailLabel.text = message
     progressTrack.isHidden = true
+    announceState()
     DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { [weak self] in self?.finish() }
   }
 
@@ -317,6 +339,13 @@ class ShareViewController: UIViewController {
     card.addSubview(stack)
     view.addSubview(card)
 
+    // VoiceOver: the mascot and status badge are decoration; the card itself
+    // is the single element that reads the current state.
+    mascot.isAccessibilityElement = false
+    badge.isAccessibilityElement = false
+    card.isAccessibilityElement = true
+    card.accessibilityTraits = .none
+
     progressWidth = progressBar.widthAnchor.constraint(equalToConstant: 0)
 
     NSLayoutConstraint.activate([
@@ -354,12 +383,23 @@ class ShareViewController: UIViewController {
     // Indeterminate crawl until the file is written, then showReady fills it.
     view.layoutIfNeeded()
     fillProgress(to: 0.7, duration: 1.1)
+    announceState()
   }
 
   private func setBadge(systemName: String, tint: UIColor) {
     let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .bold)
     badge.image = UIImage(systemName: systemName, withConfiguration: config)
     badge.backgroundColor = tint
+  }
+
+  /// Keeps the card's VoiceOver label in step with the visible state and moves
+  /// focus onto it, so the outcome is announced without hunting for it.
+  private func announceState() {
+    card.accessibilityLabel = [titleLabel.text, detailLabel.text]
+      .compactMap { $0 }
+      .filter { !$0.isEmpty }
+      .joined(separator: ". ")
+    UIAccessibility.post(notification: .screenChanged, argument: card)
   }
 
   private func fillProgress(to fraction: CGFloat, duration: TimeInterval = 0.35) {

@@ -1,6 +1,6 @@
 # App Store launch checklist
 
-Updated: 2026-09-01
+Updated: 2026-09-05
 
 This file is release evidence. Never commit reviewer passwords, API keys, recovery codes, or production customer data.
 
@@ -57,7 +57,14 @@ Source media belongs under `store-assets/ios`, `store-assets/android`, and `stor
 - [ ] Put credentials only in App Store Connect / Play Console review notes or approved secret manager.
 - [ ] Rotate password after review completes.
 
-Review notes must explain scanner permission, location permission, notification permission, account deletion path, and any feature unavailable without a physical device.
+Review notes must explain scanner permission, location permission, notification permission, account deletion path, the OTA mechanism, and any feature unavailable without a physical device.
+
+OTA disclosure to paste into the review notes (Apple 3.3.2 / 2.5.2):
+
+> This app uses Expo Updates (expo-updates) to deliver over-the-air
+> JavaScript bug fixes and performance improvements between app releases.
+> OTA updates never change the app's purpose, add features, or alter the UI
+> beyond what was reviewed.
 
 ## 5. Public legal URLs
 
@@ -74,7 +81,7 @@ Declare behavior, not only dependencies. Recheck after every permission, SDK, an
 - Account data: name, email, account identifiers, authentication provider.
 - User content: coupon codes, voucher metadata, notes, profile image, support messages.
 - Purchase/history data entered by user: coupon values, usage, sale records.
-- Location: optional precise device location for user-triggered map features; on-device geofencing when enabled.
+- Location: optional precise foreground-only device location for user-triggered map features. Background location was removed from the app on 2026-09-05 (unused permission; see `compliance-audit/REMEDIATION-2026-09-05.md` §1.1).
 - Diagnostics/analytics: app actions, device description, IP, derived city/region, error and security events.
 - Contacts entered by user: sharing recipient and optional buyer details.
 - AI processing: selected text/images sent through server to OpenAI for extraction; validate current retention contract.
@@ -126,3 +133,25 @@ Current product has no in-app billing SDK or paid digital entitlement. Coupon-sa
 ## Release sign-off
 
 Release may ship only when every unchecked item is either completed or explicitly accepted in a dated release note by the release owner.
+
+## 11. Platform compliance items (from 2026-09-05 audit)
+
+Full findings and code fixes: `compliance-audit/REMEDIATION-2026-09-05.md`. Items below are the console-side actions that source code cannot prove.
+
+### App Store Connect
+
+- [ ] Answer the 2026 age-rating questionnaire (13+/16+/18+ categories; the app has no gambling, user-generated content, or age-restricted content).
+- [ ] Complete App Privacy (Nutrition Labels) per §6 and `ios/CouponMaster/PrivacyInfo.xcprivacy` — email, user ID, user content, coarse location; all linked to identity, all app functionality, no tracking.
+- [ ] Confirm `ITSAppUsesNonExemptEncryption = false` was picked up from the archive (export compliance no longer blocks in "Missing Compliance").
+- [ ] Accept any pending Developer Program License Agreement.
+- [ ] Verify Sign in with Apple end-to-end in a release build (guideline 4.8): Apple button on the login screen is implemented in the app; the Supabase Apple provider must be enabled on the hosted project (Authentication → Providers → Apple, Services ID `com.itaykarkason.couponmaster`, callback `https://dugjsiyenazpsoiyduuz.supabase.co/auth/v1/callback`). Local-dev template lives commented in `supabase/config.toml`.
+- [ ] Verify the share extensions (VoiceOver labels, Increase Contrast) in the TestFlight build.
+
+### Google Play Console
+
+- [ ] Confirm the uploaded AAB reports `targetSdk 36` (verified in source: react-native `gradle/libs.versions.toml` pins compile/target 36; the 31.8.2026 deadline is met on the next build).
+- [ ] Complete the Data Safety form per §6 (background location is no longer declared anywhere in the app).
+- [ ] Supply the account deletion URL/path (uses the in-app deletion + `coupons.itaykarkason.com` web route).
+- [ ] Closed testing: 12 testers over 14 consecutive days if the Play account is a new personal account.
+- [ ] Android Developer Verification: register and verify developer identity before 2026-09-30 (required for Brazil, Indonesia, Singapore, Thailand installs).
+- [ ] Confirm no Play Billing migration is needed — the app ships no billing SDK (Play Billing 8 deadline is not applicable).

@@ -112,3 +112,18 @@ verify_jwt = true
 [auth.mfa.totp]
 enroll_enabled = true
 verify_enabled = true
+
+# Sign in with Apple — required by App Store guideline 4.8 because Google
+# sign-in exists (see compliance-audit/REMEDIATION-2026-09-05.md section 2.1).
+# The app already renders the Apple button (src/lib/socialAuth.ts), but the
+# provider must be configured on the hosted project in the Supabase dashboard
+# (Authentication → Providers → Apple): Services ID com.itaykarkason.couponmaster,
+# a secret key generated from the Apple developer account, and
+# https://<project>.supabase.co/auth/v1/callback as the return URL. The block
+# below keeps a local stack in step — fill the two env vars in .env.local and
+# uncomment, otherwise `supabase start` fails on the missing references.
+# [auth.external.apple]
+# enabled = true
+# client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
+# secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+# redirect_url = "http://localhost:54321/auth/v1/callback"

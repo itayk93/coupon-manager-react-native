@@ -35,7 +35,7 @@ function assertPushSupport() {
   const isStandalone = isStandaloneMode();
 
   if (!window.isSecureContext) {
-    return { supported: false, reason: 'Push דורש HTTPS או localhost.', isIos, isStandalone };
+    return { supported: false, reason: 'Push דורש חיבור מאובטח (HTTPS).', isIos, isStandalone };
   }
 
   if (!('serviceWorker' in navigator)) {
