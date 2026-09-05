@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
@@ -19,6 +20,11 @@ export function useLocalExpiryAlerts() {
       return;
     }
     if (!coupons || !preferences) return;
-    void syncLocalExpiryAlerts(coupons, preferences);
+    const sync = () => { void syncLocalExpiryAlerts(coupons, preferences).catch(() => {}); };
+    sync();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") sync();
+    });
+    return () => subscription.remove();
   }, [user, coupons, preferences]);
 }

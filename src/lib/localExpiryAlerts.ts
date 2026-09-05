@@ -120,7 +120,7 @@ async function cancelOurs(): Promise<void> {
  * Cheap to call on every wallet change: an unchanged plan is detected by hash
  * and costs one storage read, not 50 cancel-and-reschedule round trips.
  */
-export async function syncLocalExpiryAlerts(
+async function syncLocalExpiryAlertsNow(
   coupons: DecryptedCoupon[],
   prefs: Prefs,
 ): Promise<void> {
@@ -133,8 +133,8 @@ export async function syncLocalExpiryAlerts(
   // for a device with no push registration, and for the build that cannot have
   // one at all (see the note at the top of this file).
   const push = await getNativePushState().catch(() => null);
-  if (push?.subscribed) {
-    await clearLocalExpiryAlerts();
+  if (!push || push.subscribed) {
+    await clearLocalExpiryAlertsNow();
     return;
   }
 
@@ -168,7 +168,24 @@ export async function syncLocalExpiryAlerts(
 }
 
 /** Clears every reminder this module owns. Called on sign-out. */
-export async function clearLocalExpiryAlerts(): Promise<void> {
+async function clearLocalExpiryAlertsNow(): Promise<void> {
   await cancelOurs().catch(() => {});
   await AsyncStorage.removeItem(PLAN_KEY).catch(() => {});
+}
+
+// Serialize wallet changes and push registration cleanup so an older sync
+// cannot schedule local reminders after registration has cancelled them.
+let pending: Promise<void> = Promise.resolve();
+function enqueue(operation: () => Promise<void>): Promise<void> {
+  const result = pending.then(operation);
+  pending = result.catch(() => {});
+  return result;
+}
+
+export function syncLocalExpiryAlerts(coupons: DecryptedCoupon[], prefs: Prefs): Promise<void> {
+  return enqueue(() => syncLocalExpiryAlertsNow(coupons, prefs));
+}
+
+export function clearLocalExpiryAlerts(): Promise<void> {
+  return enqueue(clearLocalExpiryAlertsNow);
 }

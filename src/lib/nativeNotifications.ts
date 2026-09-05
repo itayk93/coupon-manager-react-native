@@ -1,9 +1,11 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ANDROID_CHANNEL_ID = "expiry-alerts";
+const PUSH_REGISTERED_KEY = "native-push:registered:v1";
 
 /**
  * Without a handler, a notification that arrives while the app is open is
@@ -102,6 +104,8 @@ export async function getNativePushState(): Promise<NativePushState> {
     }
   }
 
+  if (expoToken) await AsyncStorage.setItem(PUSH_REGISTERED_KEY, "true");
+
   return {
     supported: true,
     permission:
@@ -110,7 +114,8 @@ export async function getNativePushState(): Promise<NativePushState> {
         : settings.status === "denied"
           ? "denied"
           : "undetermined",
-    subscribed: Boolean(expoToken),
+    // A temporary token/network failure must not turn local reminders back on.
+    subscribed: Boolean(expoToken) || (await AsyncStorage.getItem(PUSH_REGISTERED_KEY)) === "true",
     expoToken,
   };
 }
@@ -143,6 +148,10 @@ export async function subscribeToNativePush() {
     platform: Platform.OS,
   });
 
+  await AsyncStorage.setItem(PUSH_REGISTERED_KEY, "true");
+  const { clearLocalExpiryAlerts } = await import("./localExpiryAlerts");
+  await clearLocalExpiryAlerts();
+
   return expoToken;
 }
 
@@ -160,6 +169,7 @@ export async function unsubscribeFromNativePush() {
   if (!expoToken) return;
 
   await invokePushFunction({ action: "unsubscribe-expo", expo_token: expoToken });
+  await AsyncStorage.removeItem(PUSH_REGISTERED_KEY);
 }
 
 export async function sendTestNativePush() {

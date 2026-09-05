@@ -126,4 +126,22 @@ describe("syncLocalExpiryAlerts", () => {
 
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
   });
+
+  it("cancels old local reminders when push is active, without touching other reminders", async () => {
+    vi.mocked(getNativePushState).mockResolvedValue({ subscribed: true } as never);
+    vi.mocked(Notifications.getAllScheduledNotificationsAsync).mockResolvedValue([
+      { identifier: "expiry", content: { data: { kind: "local-expiry" } } },
+      { identifier: "other", content: { data: { kind: "other" } } },
+    ] as never);
+    vi.mocked(Notifications.cancelScheduledNotificationAsync).mockClear();
+    await syncLocalExpiryAlerts([coupon()], PREFS);
+    expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledExactlyOnceWith("expiry");
+    expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it("does not schedule duplicate reminders when push status cannot be checked", async () => {
+    vi.mocked(getNativePushState).mockRejectedValue(new Error("offline"));
+    await syncLocalExpiryAlerts([coupon({ expiration: future })], PREFS);
+    expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
 });
