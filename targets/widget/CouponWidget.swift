@@ -549,12 +549,11 @@ private struct CouponStatsSmallView: View {
 
     var body: some View {
         Group {
-            // Default to Mascot view whenever any coupon is expiring within 7 days unless user toggled
-            if !showStats && payload.mascotUrgencyTier != .normal {
-                CouponMascotSmallView(payload: payload, isPagedInSmall: true)
-            } else {
+            if showStats {
                 statsView
                     .widgetBackground(WidgetStyle.background)
+            } else {
+                CouponMascotSmallView(payload: payload, isPagedInSmall: true)
             }
         }
         .widgetURL(URL(string: "couponmaster:///coupons"))
