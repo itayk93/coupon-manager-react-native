@@ -44,6 +44,9 @@ struct WidgetPayload: Codable {
     let urgentCoupon: WidgetCoupon?
     let urgentDaysRemaining: Int?
     let mascotTier: Int?
+    /// How many spendable coupons expire inside the same urgency bucket as the
+    /// most urgent one. Drives the headline count ("2 קופונים הולכים לפח מחר").
+    let expiringCount: Int?
 
     static let empty = WidgetPayload(
         activeCouponsCount: 0,
@@ -52,7 +55,8 @@ struct WidgetPayload: Codable {
         coupons: [],
         urgentCoupon: nil,
         urgentDaysRemaining: nil,
-        mascotTier: 1
+        mascotTier: 1,
+        expiringCount: 0
     )
 }
 

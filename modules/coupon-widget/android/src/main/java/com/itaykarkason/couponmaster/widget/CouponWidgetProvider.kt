@@ -103,16 +103,24 @@ class CouponWidgetProvider : AppWidgetProvider() {
     coupon: WidgetCoupon,
     days: Int,
   ): RemoteViews = RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
+    val n = maxOf(payload.expiringCount, 1)
+    val many = n > 1
+    val dayWord = if (days == 2) "יומיים" else "${maxOf(days, 2)} ימים"
     val (mascotRes, statusText) = when {
-      days <= 0 -> R.drawable.mascot_state_5 to "🚨 פג תוקף היום!"
-      days == 1 -> R.drawable.mascot_state_4 to "⏳ פג תוקף מחר!"
-      days <= 4 -> R.drawable.mascot_state_3 to "⏱️ פג בעוד $days ימים!"
-      else -> R.drawable.mascot_state_2 to "🗓️ פג בעוד $days ימים"
+      days <= 0 -> R.drawable.mascot_state_5 to
+        (if (many) "היום ייגמר התוקף של $n קופונים!!" else "היום ייגמר התוקף של הקופון!!")
+      days == 1 -> R.drawable.mascot_state_4 to
+        (if (many) "מחר הולכים $n קופונים!" else "מחר הולך הקופון!")
+      days <= 4 -> R.drawable.mascot_state_3 to
+        (if (many) "עוד $dayWord ו-$n קופונים הולכים!!" else "עוד $dayWord והלך הקופון!!")
+      else -> R.drawable.mascot_state_2 to
+        (if (many) "נשאר שבוע ל-$n קופונים!" else "נשאר שבוע לקופון!")
     }
     setImageViewResource(R.id.mascot_image, mascotRes)
     setTextViewText(R.id.mascot_status_text, statusText)
-    setTextViewText(R.id.mascot_coupon_company, coupon.company)
-    setTextViewText(R.id.mascot_coupon_value, "יתרה: " + formatShekels(coupon.remainingValue))
+    // The status line already carries the company; the extra rows stay hidden.
+    setViewVisibility(R.id.mascot_coupon_company, View.GONE)
+    setViewVisibility(R.id.mascot_coupon_value, View.GONE)
     val deepLink = "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
     setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, deepLink))
   }

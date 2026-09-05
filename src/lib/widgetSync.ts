@@ -76,6 +76,22 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     else if (minDays <= 7) mascotTier = 2;
   }
 
+  // How many coupons share the most-urgent one's bucket, for the headline count.
+  let expiringCount = 0;
+  if (minDays !== null) {
+    const inBucket = (d: number): boolean => {
+      if (minDays <= 0) return d <= 0;
+      if (minDays === 1) return d <= 1;
+      if (minDays <= 4) return d >= 2 && d <= 4;
+      return d >= 5 && d <= 7;
+    };
+    for (const coupon of spendable) {
+      if (!coupon.expiration) continue;
+      const days = daysUntilExpiration(coupon.expiration);
+      if (days !== null && days >= 0 && days <= 7 && inBucket(days)) expiringCount += 1;
+    }
+  }
+
   // Ensure urgent coupon is in the coupons list so its logo gets prepared
   const allCoupons = [...selected];
   if (urgentCoupon && !allCoupons.some((c) => c.id === urgentCoupon!.id)) {
@@ -91,6 +107,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     urgentCoupon,
     urgentDaysRemaining: minDays,
     mascotTier,
+    expiringCount,
   };
 }
 

@@ -34,6 +34,8 @@ object SharedStore {
         oneTimeCouponsCount = root.optInt("oneTimeCouponsCount", 0),
         totalRemainingValue = root.optDouble("totalRemainingValue", 0.0),
         coupons = root.optJSONArray("coupons").toCoupons(),
+        urgentDaysRemaining = if (root.isNull("urgentDaysRemaining")) null else root.optInt("urgentDaysRemaining"),
+        expiringCount = root.optInt("expiringCount", 0),
       )
     } catch (e: Exception) {
       WidgetPayload.EMPTY
@@ -80,6 +82,8 @@ data class WidgetPayload(
   val oneTimeCouponsCount: Int,
   val totalRemainingValue: Double,
   val coupons: List<WidgetCoupon>,
+  val urgentDaysRemaining: Int? = null,
+  val expiringCount: Int = 0,
 ) {
   companion object {
     val EMPTY = WidgetPayload(0, 0, 0.0, emptyList())

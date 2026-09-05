@@ -1,6 +1,5 @@
 import WidgetKit
 import SwiftUI
-import AppIntents
 
 // MARK: - Design tokens
 //
@@ -72,6 +71,11 @@ private extension View {
     func couponFont(_ size: CGFloat, _ weight: HeeboWeight = .regular) -> some View {
         font(.custom(weight.rawValue, size: size))
     }
+}
+
+/// "יומיים" for 2, "N ימים" otherwise. Callers handle 0/1 (today/tomorrow).
+private func dayWord(_ days: Int) -> String {
+    days == 2 ? "יומיים" : "\(max(days, 2)) ימים"
 }
 
 /// Formats an amount: ₪ on the left, no space, grouped digits.
@@ -291,13 +295,23 @@ enum MascotUrgencyTier: Int {
         "MascotState\(rawValue)"
     }
 
-    var badgeTitle: String {
+    /// Casual, spoken copy, count-aware. `minDays` is the first coupon to go.
+    func message(count: Int, minDays: Int) -> String {
+        let n = max(count, 1)
+        let many = n > 1
         switch self {
-        case .critical: return "פג היום!"
-        case .urgent: return "פג מחר!"
-        case .warning: return "דחיפות עולה"
-        case .approaching: return "מתקרב"
-        case .normal: return "הכל תקין"
+        case .critical:
+            return many ? "היום ייגמר התוקף של \(n) קופונים!!" : "היום ייגמר התוקף של הקופון!!"
+        case .urgent:
+            return many ? "מחר הולכים \(n) קופונים!" : "מחר הולך הקופון!"
+        case .warning:
+            return many
+                ? "עוד \(dayWord(minDays)) ו-\(n) קופונים הולכים!!"
+                : "עוד \(dayWord(minDays)) והלך הקופון!!"
+        case .approaching:
+            return many ? "נשאר שבוע ל-\(n) קופונים!" : "נשאר שבוע לקופון!"
+        case .normal:
+            return ""
         }
     }
 
@@ -367,20 +381,6 @@ enum MascotUrgencyTier: Int {
     }
 }
 
-@available(iOS 16.0, *)
-struct ToggleWidgetFaceIntent: AppIntent {
-    static var title: LocalizedStringResource = "החלפת תצוגת ווידג'ט"
-    static var isDiscoverable: Bool = false
-
-    func perform() async throws -> some IntentResult {
-        if let defaults = UserDefaults(suiteName: couponWidgetAppGroup) {
-            let current = defaults.bool(forKey: "widget_show_stats_face")
-            defaults.set(!current, forKey: "widget_show_stats_face")
-        }
-        return .result()
-    }
-}
-
 private extension WidgetPayload {
     var mostUrgentCoupon: WidgetCoupon? {
         if let urgent = urgentCoupon {
@@ -419,14 +419,25 @@ private extension WidgetPayload {
     }
 }
 
-// MARK: - Small Mascot View (Duolingo Full-Bleed Style)
+// MARK: - Small Mascot View
+//
+// One frosted bar across the top, everything in it, nothing below — the mascot
+// stays whole. The bar carries three things at a glance:
+//   • the countdown chip   → how urgent (tier-coloured)
+//   • the app logo         → whose widget this is
+//   • the detail line      → which coupon, how much
 
 struct CouponMascotSmallView: View {
     let payload: WidgetPayload
-    var isPagedInSmall: Bool = false
+
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     private var tier: MascotUrgencyTier {
         payload.mascotUrgencyTier
+    }
+
+    private var expiringCount: Int {
+        max(payload.expiringCount ?? 1, 1)
     }
 
     private var urgentCoupon: WidgetCoupon? {
@@ -435,6 +446,14 @@ struct CouponMascotSmallView: View {
 
     private var daysLeft: Int {
         payload.urgentDaysRemaining ?? urgentCoupon?.daysUntilExpiration ?? 0
+    }
+
+    /// The one line in the bar — the dugri sentence, or the wallet summary.
+    private var barText: String {
+        if tier == .normal {
+            return "\(formatShekels(payload.totalRemainingValue)) בארנק · \(payload.activeCouponsCount) קופונים"
+        }
+        return tier.message(count: expiringCount, minDays: daysLeft)
     }
 
     private var destinationURL: URL {
@@ -446,179 +465,48 @@ struct CouponMascotSmallView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            // Unified Full-Bleed 3D Scene
+            background
+
+            VStack(spacing: 3) {
+                AppLogoView(height: 15)
+                    .opacity(0.95)
+
+                Text(barText)
+                    .couponFont(13.5, .regular)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .background(.ultraThinMaterial)
+            .overlay(Color.white.opacity(0.05))
+            .environment(\.colorScheme, .dark)
+            .overlay(
+                Rectangle().fill(tier.badgeColor).frame(height: 1),
+                alignment: .bottom
+            )
+            .shadow(color: .black.opacity(0.22), radius: 5, x: 0, y: 2)
+        }
+        .widgetURL(destinationURL)
+        .widgetBackground(background)
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if renderingMode == .fullColor {
             Image(tier.imageName)
                 .resizable()
                 .scaledToFill()
                 .edgesIgnoringSafeArea(.all)
-
-            // Subtle top shadow vignette so UI text is razor sharp on any background
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.black.opacity(0.45),
-                    Color.black.opacity(0.18),
-                    Color.clear
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 70)
-            .edgesIgnoringSafeArea(.top)
-
-            // Top Header (Duolingo style: Big number + Icon + Subtitle + Glass Chip)
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 5) {
-                        Text(tier == .critical ? "🚨" : (tier == .urgent ? "⏳" : (tier == .normal ? "✨" : "🔥")))
-                            .font(.system(size: 20))
-
-                        Text(tier == .critical ? "0" : (tier == .normal ? "✓" : "\(daysLeft)"))
-                            .couponFont(24, .extraBold)
-                            .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.6), radius: 3, x: 0, y: 1)
-
-                        if let coupon = urgentCoupon {
-                            HStack(spacing: 3) {
-                                Text(coupon.company)
-                                    .couponFont(10, .bold)
-                                    .foregroundColor(.white)
-                                    .lineLimit(1)
-                                Text("•")
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .font(.system(size: 8))
-                                Text(formatShekels(coupon.remainingValue))
-                                    .couponFont(9, .extraBold)
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.black.opacity(0.45))
-                            .overlay(
-                                Capsule().stroke(Color.white.opacity(0.22), lineWidth: 1)
-                            )
-                            .clipShape(Capsule())
-                        }
-                    }
-
-                    Text(tier.badgeTitle)
-                        .couponFont(11, .bold)
-                        .foregroundColor(.white.opacity(0.95))
-                        .shadow(color: .black.opacity(0.6), radius: 2, x: 0, y: 1)
-                }
-
-                Spacer(minLength: 0)
-
-                // Interactive page flip button
-                if isPagedInSmall, #available(iOS 17.0, *) {
-                    Button(intent: ToggleWidgetFaceIntent()) {
-                        HStack(spacing: 3) {
-                            Circle().fill(Color.white).frame(width: 5, height: 5)
-                            Circle().fill(Color.white.opacity(0.35)).frame(width: 5, height: 5)
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.black.opacity(0.45))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
+        } else {
+            // Tinted / transparent home screen: a photo would wash out, so fall
+            // back to the flat chrome the rest of the widget already uses.
+            WidgetStyle.chrome.edgesIgnoringSafeArea(.all)
         }
-        .widgetURL(destinationURL)
-        .widgetBackground(
-            Image(tier.imageName)
-                .resizable()
-                .scaledToFill()
-        )
-    }
-}
-
-// MARK: - Small Stats View
-
-private struct CouponStatsSmallView: View {
-    let payload: WidgetPayload
-
-    private var showStats: Bool {
-        UserDefaults(suiteName: couponWidgetAppGroup)?.bool(forKey: "widget_show_stats_face") ?? false
-    }
-
-    var body: some View {
-        Group {
-            if showStats {
-                statsView
-                    .widgetBackground(WidgetStyle.background)
-            } else {
-                CouponMascotSmallView(payload: payload, isPagedInSmall: true)
-            }
-        }
-        .widgetURL(URL(string: "couponmaster:///coupons"))
-    }
-
-    /// One idea per tile: the money is the hero, everything else is one line of
-    /// context under it.
-    private var statsView: some View {
-        ZStack {
-            WidgetStyle.background.edgesIgnoringSafeArea(.all)
-
-            VStack(spacing: 0) {
-                HStack {
-                    AppLogoView(height: 12)
-                        .opacity(0.75)
-
-                    Spacer()
-
-                    if #available(iOS 17.0, *) {
-                        Button(intent: ToggleWidgetFaceIntent()) {
-                            HStack(spacing: 3) {
-                                Circle().fill(Color.white.opacity(0.35)).frame(width: 5, height: 5)
-                                Circle().fill(Color.white).frame(width: 5, height: 5)
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(WidgetStyle.primaryLight)
-                            }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.white.opacity(0.12))
-                            .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                Spacer(minLength: 0)
-
-                Text(formatShekels(payload.totalRemainingValue))
-                    .couponFont(34, .extraBold)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-
-                Text("נותר ב־\(payload.activeCouponsCount) קופונים")
-                    .couponFont(12, .medium)
-                    .foregroundColor(WidgetStyle.textSubtle)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .padding(.top, 4)
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: 4) {
-                    Text("לכל הקופונים")
-                        .couponFont(12, .bold)
-                    Image(systemName: "chevron.left")
-                        .font(.caption2.weight(.bold))
-                }
-                .foregroundColor(WidgetStyle.primaryLight)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -740,7 +628,7 @@ struct CouponWidgetEntryView: View {
             switch family {
             case .systemMedium: CouponMediumView(payload: entry.payload)
             case .systemLarge: CouponLargeView(payload: entry.payload)
-            default: CouponStatsSmallView(payload: entry.payload)
+            default: CouponMascotSmallView(payload: entry.payload)
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
