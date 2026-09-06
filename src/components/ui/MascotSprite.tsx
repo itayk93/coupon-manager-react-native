@@ -15,7 +15,7 @@ type MascotSpriteProps = {
 };
 
 /** Plays one square cell from a 4x4 sprite sheet at a time. */
-export function MascotSprite({ size = 168, accessibilityLabel }: MascotSpriteProps) {
+export function MascotSprite({ size = 156, accessibilityLabel }: MascotSpriteProps) {
   const cell = Math.min(size, NATIVE_CELL);
   const [frame, setFrame] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
