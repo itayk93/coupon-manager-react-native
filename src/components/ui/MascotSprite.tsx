@@ -2,20 +2,20 @@ import React, { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Image, StyleSheet, View } from "react-native";
 
 const SHARING_SPRITE = require("../../../assets/mascot/sharing-offer-sprite.webp");
-const GRID_SIZE = 12;
+const GRID_SIZE = 4;
 const FRAME_COUNT = GRID_SIZE * GRID_SIZE;
-// Sheet cells are 180px. Keep the on-screen frame at or below that so the
+// Sheet cells are 256px. Keep the on-screen frame at or below that so the
 // image is only ever downscaled (sharp), never upscaled (blurry).
-const NATIVE_CELL = 180;
-const FRAME_DURATION = 55;
+const NATIVE_CELL = 256;
+const FRAME_DURATION = 90;
 
 type MascotSpriteProps = {
   size?: number;
   accessibilityLabel: string;
 };
 
-/** Plays one square cell from a 12x12 sprite sheet at a time. */
-export function MascotSprite({ size = 132, accessibilityLabel }: MascotSpriteProps) {
+/** Plays one square cell from a 4x4 sprite sheet at a time. */
+export function MascotSprite({ size = 168, accessibilityLabel }: MascotSpriteProps) {
   const cell = Math.min(size, NATIVE_CELL);
   const [frame, setFrame] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
