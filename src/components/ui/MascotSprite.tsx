@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, Image, StyleSheet, View } from "react-native";
 import { useNativeDriver } from "@/lib/animation";
 
-const SHARING_SPRITE = require("../../../assets/mascot/sharing-offer-sprite.png");
+const SHARING_SPRITE = require("../../../assets/mascot/sharing-offer-sprite.webp");
 const GRID_SIZE = 12;
 const FRAME_COUNT = GRID_SIZE * GRID_SIZE;
 // Sheet cells are 160px. Keep the on-screen frame at or below that so the
