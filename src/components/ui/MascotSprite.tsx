@@ -4,9 +4,10 @@ import { AccessibilityInfo, Image, StyleSheet, View } from "react-native";
 const SHARING_SPRITE = require("../../../assets/mascot/sharing-offer-sprite.webp");
 const GRID_SIZE = 4;
 const FRAME_COUNT = GRID_SIZE * GRID_SIZE;
-// Sheet cells are 256px. Keep the on-screen frame at or below that so the
-// image is only ever downscaled (sharp), never upscaled (blurry).
-const NATIVE_CELL = 256;
+// Sheet cells are 320px. The on-screen cell is always an exact integer fraction
+// of that (320 / 160 / 80) so the browser only ever scales by a clean ratio —
+// fractional scaling is what makes the sprite shimmer / "shake" between frames.
+const NATIVE_CELL = 320;
 const FRAME_DURATION = 115;
 
 type MascotSpriteProps = {
@@ -15,8 +16,9 @@ type MascotSpriteProps = {
 };
 
 /** Plays one square cell from a 4x4 sprite sheet at a time. */
-export function MascotSprite({ size = 164, accessibilityLabel }: MascotSpriteProps) {
-  const cell = Math.min(size, NATIVE_CELL);
+export function MascotSprite({ size = 160, accessibilityLabel }: MascotSpriteProps) {
+  const divisor = Math.min(4, Math.max(1, Math.round(NATIVE_CELL / size)));
+  const cell = NATIVE_CELL / divisor;
   const [frame, setFrame] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   const frameRef = useRef(0);
@@ -67,7 +69,7 @@ function SpriteFrame({ frame, cell }: { frame: number; cell: number }) {
     <Image
       accessible={false}
       source={SHARING_SPRITE}
-      resizeMode="cover"
+      resizeMode="stretch"
       fadeDuration={0}
       style={{
         width: sheetSize,
