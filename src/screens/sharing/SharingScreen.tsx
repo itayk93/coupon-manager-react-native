@@ -33,6 +33,7 @@ import { formatIls } from "@/lib/formatIls";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import type { SaleInput } from "@/hooks/useCouponSales";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { MascotSprite } from "@/components/ui/MascotSprite";
 
 export function SharingScreen() {
   const router = useRouter();
@@ -279,7 +280,11 @@ export function SharingScreen() {
               })
             ) : (
               <EmptyState
-                mascot="helper"
+                visual={
+                  <MascotSprite
+                    accessibilityLabel="המאסקוט מושיט קופון ומזמין אותך להתחיל לשתף"
+                  />
+                }
                 largeVisual
                 title="עדיין לא שיתפו איתך קופונים"
                 subtitle="כשמישהו ישתף קופון, הוא יופיע כאן. אפשר להתחיל ולשתף קופון משלך."

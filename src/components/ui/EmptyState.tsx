@@ -14,6 +14,7 @@ type EmptyStateProps = {
   style?: ViewStyle;
   largeVisual?: boolean;
   mascot?: "helper" | "investigator";
+  visual?: React.ReactNode;
 };
 
 export function EmptyState({
@@ -25,6 +26,7 @@ export function EmptyState({
   style,
   largeVisual = false,
   mascot = "helper",
+  visual,
 }: EmptyStateProps) {
   const { theme } = useAppTheme();
 
@@ -39,12 +41,14 @@ export function EmptyState({
         style,
       ]}
     >
-      <CharacterSpotlight
-        character={mascot}
-        state="thinking"
-        size={largeVisual ? "large" : "medium"}
-        tone="coral"
-      />
+      {visual ?? (
+        <CharacterSpotlight
+          character={mascot}
+          state="thinking"
+          size={largeVisual ? "large" : "medium"}
+          tone="coral"
+        />
+      )}
 
       {icon ? <View style={[styles.iconBadge, { backgroundColor: theme.coralBg, borderColor: theme.coralBorder }]}>{icon}</View> : null}
 
