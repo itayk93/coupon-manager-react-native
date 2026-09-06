@@ -13,17 +13,24 @@ import { Platform } from "react-native";
  *
  * iOS Keychain items and Keystore entries have a small per-item size limit,
  * and a Supabase session is comfortably past it, so the JSON is split across
- * numbered chunks; the `:count` key records how many there are.
+ * numbered chunks; the `.count` key records how many there are.
+ *
+ * SecureStore only accepts keys made of alphanumerics, ".", "-" and "_" — a
+ * ":" separator throws "Invalid key provided to SecureStore" on every call,
+ * which silently breaks session persistence — so the chunk suffix uses ".".
  */
 
 const MAX_CHUNK = 1800;
 
+const countKey = (name: string) => `${name}.count`;
+const chunkKey = (name: string, i: number) => `${name}.${i}`;
+
 async function secureGet(name: string): Promise<string | null> {
-  const count = Number((await SecureStore.getItemAsync(`${name}:count`)) ?? 0);
+  const count = Number((await SecureStore.getItemAsync(countKey(name))) ?? 0);
   if (!count) return null;
   const parts: string[] = [];
   for (let i = 0; i < count; i += 1) {
-    const part = await SecureStore.getItemAsync(`${name}:${i}`);
+    const part = await SecureStore.getItemAsync(chunkKey(name, i));
     if (part === null) return null;
     parts.push(part);
   }
@@ -34,17 +41,17 @@ async function secureSet(name: string, value: string): Promise<void> {
   await secureRemove(name);
   const chunks = Math.ceil(value.length / MAX_CHUNK);
   for (let i = 0; i < chunks; i += 1) {
-    await SecureStore.setItemAsync(`${name}:${i}`, value.slice(i * MAX_CHUNK, (i + 1) * MAX_CHUNK));
+    await SecureStore.setItemAsync(chunkKey(name, i), value.slice(i * MAX_CHUNK, (i + 1) * MAX_CHUNK));
   }
-  await SecureStore.setItemAsync(`${name}:count`, String(chunks));
+  await SecureStore.setItemAsync(countKey(name), String(chunks));
 }
 
 async function secureRemove(name: string): Promise<void> {
-  const count = Number((await SecureStore.getItemAsync(`${name}:count`)) ?? 0);
+  const count = Number((await SecureStore.getItemAsync(countKey(name))) ?? 0);
   for (let i = 0; i < count; i += 1) {
-    await SecureStore.deleteItemAsync(`${name}:${i}`);
+    await SecureStore.deleteItemAsync(chunkKey(name, i));
   }
-  await SecureStore.deleteItemAsync(`${name}:count`);
+  await SecureStore.deleteItemAsync(countKey(name));
 }
 
 /**
@@ -56,8 +63,13 @@ async function secureGetWithMigration(name: string): Promise<string | null> {
   if (value !== null) return value;
   const legacy = await AsyncStorage.getItem(name);
   if (legacy === null) return null;
-  await secureSet(name, legacy);
-  await AsyncStorage.removeItem(name);
+  try {
+    await secureSet(name, legacy);
+    await AsyncStorage.removeItem(name);
+  } catch {
+    // Keychain write refused — keep the legacy copy in place and stay signed in
+    // rather than losing the session to a failed upgrade.
+  }
   return legacy;
 }
 
