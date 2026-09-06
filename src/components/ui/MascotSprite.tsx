@@ -7,7 +7,7 @@ const FRAME_COUNT = GRID_SIZE * GRID_SIZE;
 // Sheet cells are 180px. Keep the on-screen frame at or below that so the
 // image is only ever downscaled (sharp), never upscaled (blurry).
 const NATIVE_CELL = 180;
-const FRAME_DURATION = 85;
+const FRAME_DURATION = 55;
 
 type MascotSpriteProps = {
   size?: number;
