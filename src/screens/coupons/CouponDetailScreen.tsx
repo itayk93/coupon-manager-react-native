@@ -1,5 +1,5 @@
 import { useNativeDriver } from "@/lib/animation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Animated,
   Easing,
@@ -76,6 +76,7 @@ import { SaleCelebration } from "@/components/coupons/SaleCelebration";
 import { useRecordManualSale } from "@/hooks/useCouponSales";
 import { useCouponMerchantDirectory } from "@/hooks/useCouponMerchantSearch";
 import { useAuth } from "@/contexts/AuthContext";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 /**
  * Confirmation for deleting a history record. It unfolds under the row it
@@ -169,6 +170,7 @@ export function CouponDetailScreen() {
   const [isSaleOpen, setIsSaleOpen] = useState(false);
   const [isMerchantDirectoryOpen, setIsMerchantDirectoryOpen] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
+  const [showUsageCelebration, setShowUsageCelebration] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedMapLocation, setSelectedMapLocation] = useState<{
@@ -229,6 +231,12 @@ export function CouponDetailScreen() {
   );
   const remaining = Math.max(0, (coupon.value || 0) - effectiveUsed);
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
+
+  useEffect(() => {
+    if (!showUsageCelebration) return;
+    const timer = setTimeout(() => setShowUsageCelebration(false), 2200);
+    return () => clearTimeout(timer);
+  }, [showUsageCelebration]);
   const isSharedWithMe = coupon.is_shared_with_me === true;
 
   const usageLocations = history.filter(
@@ -278,6 +286,7 @@ export function CouponDetailScreen() {
             usedAmount: remaining,
             details: "סימון יתרת הקופון כנוצלה",
           });
+          setShowUsageCelebration(true);
           return;
         }
 
@@ -287,6 +296,7 @@ export function CouponDetailScreen() {
           id: coupon.id,
           updates: { status: "נוצל" },
         });
+        setShowUsageCelebration(true);
       },
       "סמן כנוצל"
     );
@@ -436,6 +446,26 @@ export function CouponDetailScreen() {
 
         {/* Barcode & QR Code Presentation Box */}
         <CouponBarcodeView coupon={coupon} />
+
+        {showUsageCelebration ? (
+          <View
+            style={[styles.usageCelebration, { backgroundColor: theme.successBg }]}
+            accessibilityLiveRegion="polite"
+            accessible
+            accessibilityLabel="השימוש נשמר בהצלחה"
+          >
+            <CharacterSpotlight
+              character="investigator"
+              state="cheering"
+              size="small"
+              tone="success"
+            />
+            <View style={styles.usageCelebrationCopy}>
+              <Text style={[styles.usageCelebrationTitle, { color: theme.successText }]}>השימוש נשמר</Text>
+              <Text style={[styles.usageCelebrationText, { color: theme.successText }]}>היתרה בארנק כבר מעודכנת.</Text>
+            </View>
+          </View>
+        ) : null}
 
         {coupon.expiration ? (
           <View
@@ -860,6 +890,7 @@ export function CouponDetailScreen() {
         onClose={() => setIsUsageOpen(false)}
         coupons={[coupon]}
         preselectedCoupon={coupon}
+        onUsageSaved={() => setShowUsageCelebration(true)}
       />
 
       <QuickShareSheet
@@ -1147,6 +1178,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 2,
     marginBottom: 12,
+  },
+  usageCelebration: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  usageCelebrationCopy: { flex: 1, alignItems: "flex-end" },
+  usageCelebrationTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  usageCelebrationText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "right",
+    marginTop: 2,
   },
   expirationLabel: {
     fontSize: 14,

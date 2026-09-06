@@ -18,6 +18,7 @@ import { referralShareMessage, referralUrl } from "@/lib/referral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 const APP_BASE_URL = "https://coupons.itaykarkason.com";
 
@@ -70,6 +71,18 @@ export function InviteScreen() {
       <Header title="הזמנת חברים" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <View
+            style={styles.mascotInvite}
+            accessible
+            accessibilityLabel="המאסקוט מזמין חברים לקבל קופון"
+          >
+            <CharacterSpotlight
+              character="investigator"
+              state="talking"
+              size="medium"
+              tone="blue"
+            />
+          </View>
           <Text style={[styles.label, { color: theme.textMuted }]}>הקוד שלך</Text>
           <Text style={[styles.code, { color: theme.text }]}>{status.code}</Text>
           <Text style={[styles.link, { color: theme.textMuted }]} numberOfLines={1}>
@@ -110,6 +123,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   content: { padding: 16, gap: 16 },
   card: { borderRadius: radii.lg, borderWidth: StyleSheet.hairlineWidth, padding: 20, gap: 8, ...shadows.card },
+  mascotInvite: { alignItems: "center", marginBottom: 4 },
   label: { fontFamily: fonts.body, fontSize: 13 },
   code: { fontFamily: fonts.display, fontSize: 34, letterSpacing: 4, textAlign: "center" },
   link: { fontFamily: fonts.body, fontSize: 12, textAlign: "center", marginBottom: 8 },

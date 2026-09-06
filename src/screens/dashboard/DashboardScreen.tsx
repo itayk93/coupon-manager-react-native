@@ -280,6 +280,7 @@ export function DashboardScreen() {
           ))
         ) : visibleCoupons.length === 0 ? (
           <EmptyState
+            mascot="investigator"
             icon={<Sparkles size={32} color={theme.primary} />}
             title="הארנק מחכה לקופון הראשון"
             subtitle="מוסיפים קופון ומתחילים לשמור על כל שקל."

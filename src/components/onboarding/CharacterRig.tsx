@@ -21,7 +21,17 @@ import Animated, { Easing, cancelAnimation, interpolate, useAnimatedStyle, useDe
  * blue stays #2864F0, mint stays #58DFC6.
  */
 
-export type CharacterState = "talking" | "thinking" | "cheering" | "scanning" | "success";
+export type CharacterState =
+  | "talking"
+  | "thinking"
+  | "cheering"
+  | "scanning"
+  | "success"
+  | "calm"
+  | "concerned"
+  | "anxious"
+  | "panic"
+  | "emergency";
 
 const BLUE = "#2864F0";
 const BLUE_DARK = "#1B47B4";
@@ -96,8 +106,23 @@ function useBlink(active: boolean, offset: number) {
  * Keep the detailed rig in its stable pose and animate the whole character
  * through React Native's native animation driver instead.
  */
-function useSafeMascotMotion(active: boolean, period = 1700) {
+function useSafeMascotMotion(active: boolean, state: CharacterState = "talking") {
   const progress = useRef(new NativeAnimated.Value(0)).current;
+
+  const profile = (() => {
+    switch (state) {
+      case "calm": return { period: 2200, lift: -1, tilt: "1deg", scale: 1.005 };
+      case "concerned": return { period: 1600, lift: -2, tilt: "2deg", scale: 1.01 };
+      case "anxious": return { period: 1100, lift: -4, tilt: "3deg", scale: 1.015 };
+      case "panic": return { period: 760, lift: -7, tilt: "5deg", scale: 1.025 };
+      case "emergency": return { period: 520, lift: -10, tilt: "8deg", scale: 1.04 };
+      case "scanning": return { period: 950, lift: -4, tilt: "4deg", scale: 1.015 };
+      case "cheering": return { period: 720, lift: -12, tilt: "3deg", scale: 1.06 };
+      case "success": return { period: 820, lift: -9, tilt: "3deg", scale: 1.045 };
+      case "thinking": return { period: 1900, lift: -2, tilt: "2deg", scale: 1.008 };
+      default: return { period: 1600, lift: -5, tilt: "3deg", scale: 1.015 };
+    }
+  })();
 
   useEffect(() => {
     if (!active) {
@@ -106,30 +131,31 @@ function useSafeMascotMotion(active: boolean, period = 1700) {
       return;
     }
 
-    const animation = NativeAnimated.loop(
+    const cycle =
       NativeAnimated.sequence([
         NativeAnimated.timing(progress, {
           toValue: 1,
-          duration: period / 2,
+          duration: profile.period / 2,
           easing: NativeEasing.inOut(NativeEasing.ease),
           useNativeDriver: true,
         }),
         NativeAnimated.timing(progress, {
           toValue: 0,
-          duration: period / 2,
+          duration: profile.period / 2,
           easing: NativeEasing.inOut(NativeEasing.ease),
           useNativeDriver: true,
         }),
-      ])
-    );
+      ]);
+    const animation = isCelebration(state) ? cycle : NativeAnimated.loop(cycle);
     animation.start();
     return () => animation.stop();
-  }, [active, period, progress]);
+  }, [active, profile.period, progress, state]);
 
   return {
     transform: [
-      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
-      { rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ["-1deg", "1deg"] }) },
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, profile.lift] }) },
+      { rotate: progress.interpolate({ inputRange: [0, 1], outputRange: [`-${profile.tilt}`, profile.tilt] }) },
+      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, profile.scale] }) },
     ],
   };
 }
@@ -231,7 +257,7 @@ function SafeCoupon() {
 export function CharacterScene({ state, reduceMotion, compact }: { state: CharacterState; reduceMotion?: boolean; compact?: boolean }) {
   const systemReducedMotion = useReducedMotion();
   const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
-  const safeMotionStyle = useSafeMascotMotion(shouldAnimate, state === "scanning" ? 1050 : 1700);
+  const safeMotionStyle = useSafeMascotMotion(shouldAnimate, state);
   const scale = compact ? 0.82 : 1;
   return <View style={styles.scene}>
     <NativeAnimated.View style={safeMotionStyle}>
@@ -261,7 +287,7 @@ export function CharacterSpotlight({
 }) {
   const systemReducedMotion = useReducedMotion();
   const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
-  const safeMotionStyle = useSafeMascotMotion(shouldAnimate, state === "scanning" ? 950 : 1600);
+  const safeMotionStyle = useSafeMascotMotion(shouldAnimate, state);
   const box = size === "small" ? 88 : size === "large" ? 176 : 132;
   // The rig is SLOT_H tall; derive the scale from the bubble instead of
   // hard-coding it, so the character sits inside the disc rather than
@@ -346,7 +372,7 @@ export function FloatingMascot({
 }) {
   const systemReducedMotion = useReducedMotion();
   const shouldAnimate = !(reduceMotion ?? systemReducedMotion);
-  const idleStyle = useSafeMascotMotion(shouldAnimate);
+  const idleStyle = useSafeMascotMotion(shouldAnimate, "calm");
   const scale = size / SLOT_H;
   const width = 92 * scale;
 

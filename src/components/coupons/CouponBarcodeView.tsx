@@ -15,6 +15,7 @@ import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette } from "@/lib/theme";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 
 type CouponBarcodeViewProps = {
@@ -117,13 +118,27 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
       >
         <View style={styles.modalContent}>
           {code ? (
-            <View style={styles.modalQrWrapper}>
-              <QRCodeSVG
-                value={code}
-                size={230}
-                color="#000000"
-                backgroundColor="#ffffff"
-              />
+            <View
+              style={styles.modalQrStage}
+              accessible
+              accessibilityLabel={`קוד QR לסריקה בקופה עבור ${coupon.company || "הקופון"}`}
+            >
+              <View style={styles.modalQrWrapper}>
+                <QRCodeSVG
+                  value={code}
+                  size={230}
+                  color="#000000"
+                  backgroundColor="#ffffff"
+                />
+              </View>
+              <View style={styles.scannerMascot} pointerEvents="none">
+                <CharacterSpotlight
+                  character="investigator"
+                  state="scanning"
+                  size="small"
+                  tone="none"
+                />
+              </View>
             </View>
           ) : (
             <View style={styles.noCodeBox}>
@@ -269,6 +284,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
     elevation: 4,
+  },
+  modalQrStage: {
+    position: "relative",
+    paddingBottom: 20,
+    paddingLeft: 24,
+  },
+  scannerMascot: {
+    position: "absolute",
+    left: -24,
+    bottom: -8,
+    width: 88,
+    height: 88,
   },
   noCodeBox: {
     height: 200,

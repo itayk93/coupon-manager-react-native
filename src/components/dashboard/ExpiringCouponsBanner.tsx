@@ -153,6 +153,16 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
   // How loud the banner is allowed to be. See `expiryUrgency.ts`: still above
   // three days, one pass at two or three, a slow breath inside 48 hours.
   const emphasis = expiryEmphasis(soonest.days);
+  const mascotState =
+    soonest.days <= 0
+      ? "emergency"
+      : soonest.days === 1
+        ? "panic"
+        : soonest.days <= 4
+          ? "anxious"
+          : soonest.days <= 7
+            ? "concerned"
+            : "calm";
   const headlineFontSize = fitFontSize(headline.length, headlineWidth);
 
   return (
@@ -168,7 +178,12 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           the banner's own overflow it has a ground to stand on, and it costs
           the strip no height at all. */}
       <View style={styles.mascot} pointerEvents="none">
-        <CharacterSpotlight character="helper" state="talking" size="small" tone="none" />
+        <CharacterSpotlight
+          character="investigator"
+          state={mascotState}
+          size="small"
+          tone="none"
+        />
       </View>
       {/* Equal slots at both ends, and the line centred between them.
           The mascot is absolutely positioned and overhangs the strip, so it

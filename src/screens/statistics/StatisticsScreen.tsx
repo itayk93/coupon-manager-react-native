@@ -31,6 +31,7 @@ import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownM
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRouteId } from "@/lib/couponId";
 import { useCouponSales } from "@/hooks/useCouponSales";
+import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 
 export function StatisticsScreen() {
   const router = useRouter();
@@ -117,6 +118,33 @@ export function StatisticsScreen() {
     return months.map((m) => ({ ...m, pct: Math.round((m.value / max) * 100) }));
   }, [coupons]);
 
+  const savingsStory = useMemo(() => {
+    const current = monthlyTrend.at(-1)?.value ?? 0;
+    const previous = monthlyTrend.at(-2)?.value ?? 0;
+    if (current > previous) {
+      return {
+        state: "cheering" as const,
+        title: "החיסכון החודשי עלה",
+        text: `חסכת ${formatIls(current - previous)} יותר מהחודש הקודם.`,
+        tone: "success" as const,
+      };
+    }
+    if (statusStats.expired > 0) {
+      return {
+        state: "thinking" as const,
+        title: `${statusStats.expired} קופונים פגו`,
+        text: "שווה לבדוק את הקופונים הפעילים לפני התאריך הבא.",
+        tone: "coral" as const,
+      };
+    }
+    return {
+      state: "talking" as const,
+      title: "כל חיסכון מתחיל במימוש",
+      text: "כאן יופיע הסיפור החודשי שלך ככל שישתמשו בקופונים.",
+      tone: "blue" as const,
+    };
+  }, [monthlyTrend, statusStats.expired]);
+
   const kpiConfigs: KpiConfig[] = [
     { key: "remaining", title: "יתרה זמינה" },
     { key: "savings", title: "חיסכון מצטבר" },
@@ -135,6 +163,23 @@ export function StatisticsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <View
+          style={[styles.mascotStory, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+          accessible
+          accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}`}
+        >
+          <CharacterSpotlight
+            character="investigator"
+            state={savingsStory.state}
+            size="small"
+            tone={savingsStory.tone}
+          />
+          <View style={styles.mascotStoryCopy}>
+            <Text style={[styles.mascotStoryTitle, { color: theme.text }]}>{savingsStory.title}</Text>
+            <Text style={[styles.mascotStoryText, { color: theme.textMuted }]}>{savingsStory.text}</Text>
+          </View>
+        </View>
+
         {/* KPI Top 4-Grid */}
         <View style={styles.kpiGrid}>
           {[
@@ -458,6 +503,30 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 14,
+  },
+  mascotStory: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: radii.cardLg,
+    padding: 12,
+    marginBottom: 14,
+    ...shadows.card,
+  },
+  mascotStoryCopy: { flex: 1, alignItems: "flex-end" },
+  mascotStoryTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  mascotStoryText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "right",
+    marginTop: 3,
   },
   kpiCard: {
     width: "48%",
