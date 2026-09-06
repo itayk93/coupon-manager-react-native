@@ -7,7 +7,7 @@ const FRAME_COUNT = GRID_SIZE * GRID_SIZE;
 // Sheet cells are 256px. Keep the on-screen frame at or below that so the
 // image is only ever downscaled (sharp), never upscaled (blurry).
 const NATIVE_CELL = 256;
-const FRAME_DURATION = 90;
+const FRAME_DURATION = 115;
 
 type MascotSpriteProps = {
   size?: number;
@@ -15,7 +15,7 @@ type MascotSpriteProps = {
 };
 
 /** Plays one square cell from a 4x4 sprite sheet at a time. */
-export function MascotSprite({ size = 156, accessibilityLabel }: MascotSpriteProps) {
+export function MascotSprite({ size = 164, accessibilityLabel }: MascotSpriteProps) {
   const cell = Math.min(size, NATIVE_CELL);
   const [frame, setFrame] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
