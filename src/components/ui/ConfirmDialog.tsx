@@ -120,7 +120,7 @@ export function ConfirmHost() {
               activeOpacity={0.85}
               style={[styles.btn, { backgroundColor: accent }]}
             >
-              <Text style={[styles.btnText, styles.btnTextPrimary]}>{shown.confirmText}</Text>
+              <Text maxFontSizeMultiplier={1.35} style={[styles.btnText, styles.btnTextPrimary]}>{shown.confirmText}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -128,7 +128,7 @@ export function ConfirmHost() {
               activeOpacity={0.85}
               style={[styles.btn, { backgroundColor: theme.surfaceAlt }]}
             >
-              <Text style={[styles.btnText, { color: theme.label }]}>ביטול</Text>
+              <Text maxFontSizeMultiplier={1.35} style={[styles.btnText, { color: theme.label }]}>ביטול</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -177,7 +177,9 @@ const styles = StyleSheet.create({
   },
   btn: {
     flex: 1,
-    height: 46,
+    minHeight: 46,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",

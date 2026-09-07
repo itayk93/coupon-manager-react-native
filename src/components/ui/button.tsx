@@ -84,12 +84,12 @@ export function Button({
   const getPadding = () => {
     switch (size) {
       case "sm":
-        return { height: 40, paddingHorizontal: 16, borderRadius: 11 };
+        return { minHeight: 40, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 11 };
       case "lg":
-        return { height: 48, paddingHorizontal: 24, borderRadius: 12 };
+        return { minHeight: 48, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 };
       case "md":
       default:
-        return { height: 46, paddingHorizontal: 18, borderRadius: 12 };
+        return { minHeight: 46, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12 };
     }
   };
 
@@ -127,6 +127,7 @@ export function Button({
       ) : (
         <>
           <Text
+            maxFontSizeMultiplier={1.35}
             style={[
               styles.text,
               {

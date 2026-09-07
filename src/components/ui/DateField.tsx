@@ -60,7 +60,7 @@ export function DateField({
   return (
     <View style={styles.container}>
       {label ? (
-        <Text style={[styles.label, { color: theme.label }]}>{label}</Text>
+        <Text maxFontSizeMultiplier={1.35} style={[styles.label, { color: theme.label }]}>{label}</Text>
       ) : null}
 
       <TouchableOpacity
@@ -81,6 +81,7 @@ export function DateField({
         </View>
 
         <Text
+          maxFontSizeMultiplier={1.35}
           style={[
             styles.valueText,
             { color: selected ? theme.text : theme.textSubtle },
@@ -109,14 +110,14 @@ export function DateField({
 
       {open && Platform.OS === "ios" ? (
         <TouchableOpacity onPress={() => setOpen(false)} style={styles.doneBtn}>
-          <Text style={[styles.doneText, { color: theme.primary }]}>סיום</Text>
+          <Text maxFontSizeMultiplier={1.35} style={[styles.doneText, { color: theme.primary }]}>סיום</Text>
         </TouchableOpacity>
       ) : null}
 
       {error ? (
-        <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
+        <Text maxFontSizeMultiplier={1.35} style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
       ) : helperText ? (
-        <Text style={[styles.helperText, { color: theme.textMuted }]}>
+        <Text maxFontSizeMultiplier={1.35} style={[styles.helperText, { color: theme.textMuted }]}>
           {helperText}
         </Text>
       ) : null}
@@ -144,7 +145,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     paddingHorizontal: 10,
-    height: 46,
+    minHeight: 46,
+    paddingVertical: 8,
     gap: 10,
   },
   iconBtn: {

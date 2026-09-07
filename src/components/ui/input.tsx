@@ -39,7 +39,7 @@ export function Input({
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? (
-        <Text style={[styles.label, { color: theme.label, textAlign: "right" }]}>
+        <Text maxFontSizeMultiplier={1.35} style={[styles.label, { color: theme.label, textAlign: "right" }]}>
           {label}
         </Text>
       ) : null}
@@ -74,6 +74,7 @@ export function Input({
 
         <TextInput
           {...rest}
+          maxFontSizeMultiplier={1.35}
           secureTextEntry={isPassword ? !showPassword : secureTextEntry}
           placeholderTextColor={theme.textSubtle}
           onFocus={() => setIsFocused(true)}
@@ -90,9 +91,9 @@ export function Input({
       </View>
 
       {error ? (
-        <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
+        <Text maxFontSizeMultiplier={1.35} style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
       ) : helperText ? (
-        <Text style={[styles.helperText, { color: theme.textMuted }]}>
+        <Text maxFontSizeMultiplier={1.35} style={[styles.helperText, { color: theme.textMuted }]}>
           {helperText}
         </Text>
       ) : null}
@@ -118,13 +119,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     paddingHorizontal: 14,
-    height: 46,
+    minHeight: 46,
+    paddingVertical: 4,
   },
   input: {
     flex: 1,
     minWidth: 0,
     fontSize: 15,
-    height: "100%",
+    paddingVertical: 6,
   },
   eyeButton: {
     padding: 4,

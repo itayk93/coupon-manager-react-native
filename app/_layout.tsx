@@ -5,6 +5,7 @@ import {
   Platform,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -57,6 +58,17 @@ try {
 } catch (e) {
   console.warn("RTL setup warning:", e);
 }
+
+// Cap extreme accessibility font scaling to 1.35x globally to preserve layout integrity
+if ((Text as any).defaultProps == null) {
+  (Text as any).defaultProps = {};
+}
+(Text as any).defaultProps.maxFontSizeMultiplier = 1.35;
+
+if ((TextInput as any).defaultProps == null) {
+  (TextInput as any).defaultProps = {};
+}
+(TextInput as any).defaultProps.maxFontSizeMultiplier = 1.35;
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
