@@ -11,6 +11,7 @@ import {
   ScrollView,
   useWindowDimensions,
   Modal,
+  Keyboard,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -53,6 +54,15 @@ export function BarcodeScannerScreen() {
   const scannedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
   const [aiText, setAiText] = useState("");
+
+  // A paste lands as one big jump in the text. Close the keyboard so it stops
+  // hiding the "extract" button — the user almost always pastes then taps it.
+  const handleAiTextChange = useCallback((next: string) => {
+    setAiText((prev) => {
+      if (next.length - prev.length >= 20) Keyboard.dismiss();
+      return next;
+    });
+  }, []);
   const [showTutorial, setShowTutorial] = useState(false);
   const tutorialAutoOpened = useRef(false);
   const parseCoupon = useParseCoupon();
@@ -416,7 +426,7 @@ export function BarcodeScannerScreen() {
                 placeholder="למשל: שלום ישראל, קבל שובר על סך 100 ש״ח למגה ספורט. קוד: 123456 בתוקף עד 31.12.2026..."
                 placeholderTextColor={theme.textMuted}
                 value={aiText}
-                onChangeText={setAiText}
+                onChangeText={handleAiTextChange}
                 style={[
                   styles.aiInput,
                   {

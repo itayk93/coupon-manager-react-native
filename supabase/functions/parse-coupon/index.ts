@@ -440,6 +440,12 @@ Deno.serve(async (req: Request) => {
 
     const data = JSON.parse(rawText);
     const outputText = data.choices?.[0]?.message?.content;
+    console.log('parse-coupon model output', JSON.stringify({
+      finish_reason: data.choices?.[0]?.finish_reason,
+      usage: data.usage,
+      outputText,
+      inputPreview: inputText.slice(0, 400),
+    }));
     if (!outputText) return jsonResponse({ error: 'לא התקבל פלט מהמודל' }, 502);
 
     let coupons;
@@ -475,6 +481,7 @@ Deno.serve(async (req: Request) => {
     });
 
     if (coupons.length === 0) {
+      console.log('parse-coupon filtered to empty', outputText);
       return jsonResponse({ error: 'לא זוהו פרטי קופון אמיתיים בתמונה או בטקסט' }, 422);
     }
 
