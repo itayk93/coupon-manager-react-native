@@ -142,7 +142,7 @@ async function callOpenAI(apiKey: string, messages: unknown[], useStrictSchema: 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGE_BASE64_CHARS = 8 * 1024 * 1024;
 const MAX_TEXT_CHARS = 20000;
-const MAX_WEB_PAGE_BYTES = 1_000_000;
+const MAX_WEB_PAGE_BYTES = 3_000_000;
 const MAX_WEB_PAGE_TEXT_CHARS = 16_000;
 const MAX_WEB_REDIRECTS = 3;
 
@@ -353,7 +353,14 @@ Deno.serve(async (req: Request) => {
         inputText = `קישור עמוד הקופון: ${sourceUrl}\n\nתוכן העמוד:\n${pageText}`;
       } catch (error) {
         console.error('readPublicWebPage failed', sourceUrl, error);
-        return jsonResponse({ error: `לא הצלחנו לקרוא את עמוד הקופון: ${String(error)}` }, 422);
+        // The page content is a bonus (store list, balance link). If the caller
+        // also sent coupon text, parse that instead of failing the whole request.
+        // Only a bare URL share with no usable text is a hard error.
+        const hasUsableText = typeof text === 'string' && text.trim().length >= 12;
+        if (!hasUsableText) {
+          return jsonResponse({ error: `לא הצלחנו לקרוא את עמוד הקופון: ${String(error)}` }, 422);
+        }
+        inputText = `${text}\n\n(לא הצלחנו לקרוא את העמוד בקישור ${sourceUrl})`;
       }
     }
 

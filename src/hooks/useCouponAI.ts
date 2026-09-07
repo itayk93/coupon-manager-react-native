@@ -48,7 +48,19 @@ export function useParseCoupon() {
       });
 
       if (error) {
-        throw error;
+        // A non-2xx from the edge function lands here with `data` null and the
+        // real Hebrew reason sitting in the unread response body. Surface it
+        // instead of the generic "couldn't connect" message.
+        const body = (error as { context?: Response })?.context;
+        let serverMessage: string | null = null;
+        if (body && typeof body.json === "function") {
+          try {
+            serverMessage = (await body.json())?.error ?? null;
+          } catch {
+            serverMessage = null;
+          }
+        }
+        throw serverMessage ? new Error(serverMessage) : error;
       }
       if (data?.error) throw new Error(data.error);
 
