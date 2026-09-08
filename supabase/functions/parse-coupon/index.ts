@@ -14,6 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
+import { combineCouponInput } from './input.ts';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = 'gpt-5-mini';
@@ -350,7 +351,7 @@ Deno.serve(async (req: Request) => {
       }
       try {
         const pageText = await readPublicWebPage(sourceUrl);
-        inputText = `קישור עמוד הקופון: ${sourceUrl}\n\nתוכן העמוד:\n${pageText}`;
+        inputText = combineCouponInput(inputText, sourceUrl, pageText);
       } catch (error) {
         console.error('readPublicWebPage failed', sourceUrl, error);
         // The page content is a bonus (store list, balance link). If the caller
