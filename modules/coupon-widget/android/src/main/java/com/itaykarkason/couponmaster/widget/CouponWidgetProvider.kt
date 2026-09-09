@@ -97,7 +97,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
       days <= 0 -> "בתוקף עד היום"
       days == 1 -> "בתוקף עד מחר"
       days == 2 -> "בתוקף עוד יומיים"
-      days in 3..6 -> "בתוקף עוד $days ימים"
+      days in 3..7 -> "בתוקף עוד $days ימים"
       else -> "בתוקף עוד שבוע"
     }
     setViewVisibility(R.id.mascot_today_title, if (isExpiring) View.VISIBLE else View.GONE)

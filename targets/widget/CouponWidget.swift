@@ -353,7 +353,7 @@ struct CouponMascotSmallView: View {
         case ...0: return "בתוקף עד היום"
         case 1: return "בתוקף עד מחר"
         case 2: return "בתוקף עוד יומיים"
-        case 3...6: return "בתוקף עוד \(days) ימים"
+        case 3...7: return "בתוקף עוד \(days) ימים"
         default: return "בתוקף עוד שבוע"
         }
     }
@@ -378,16 +378,17 @@ struct CouponMascotSmallView: View {
             background
 
             if let days = daysLeft, days >= 0 && days <= 7 {
+                let isExtendedDays = days >= 3
                 VStack {
-                    VStack(spacing: 0) {
-                        AppLogoView(height: 11.5)
+                    VStack(spacing: isExtendedDays ? 2.5 : 0) {
+                        AppLogoView(height: isExtendedDays ? 14 : 11.5)
                         Text(expiryHeadline(days: days))
                             .couponFont(16, .bold)
                             .foregroundColor(.white)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                     }
-                    .padding(.top, 8.5)
+                    .padding(.top, isExtendedDays ? 10.5 : 8.5)
                     Spacer()
                     if let coupon = payload.mostUrgentCoupon {
                         let company = coupon.company.trimmingCharacters(in: .whitespacesAndNewlines)
