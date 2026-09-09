@@ -369,14 +369,15 @@ struct CouponMascotSmallView: View {
 
             if daysLeft == 0 {
                 VStack {
-                    AppLogoView(height: 12)
-                        .padding(.top, 6)
-                    Text("בתוקף עד היום")
-                        .couponFont(17, .bold)
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .padding(.top, 1)
+                    VStack(spacing: 2) {
+                        AppLogoView(height: 12)
+                        Text("בתוקף עד היום")
+                            .couponFont(16, .bold)
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    .padding(.top, 6)
                     Spacer()
                     if let coupon = payload.mostUrgentCoupon {
                         let company = coupon.company.trimmingCharacters(in: .whitespacesAndNewlines)
