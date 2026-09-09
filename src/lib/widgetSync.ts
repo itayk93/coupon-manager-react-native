@@ -55,7 +55,12 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     : null;
 
   // Tapping the widget opens the coupons list filtered to exactly these.
-  const expiringIds = expiring.map((e) => e.coupon.public_id);
+  // Swift decodes this as [String]. Never let an absent legacy public_id
+  // serialize as null inside the array, because one null would invalidate the
+  // complete widget payload and make the native widget fall back to zeroes.
+  const expiringIds = expiring
+    .map((e) => e.coupon.public_id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
 
   let mascotTier = 1;
   if (minDays !== null) {
