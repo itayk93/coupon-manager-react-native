@@ -97,7 +97,7 @@ export function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Radial wash behind the card, per the design */}
       <LinearGradient
-        colors={["#e8f2fd", "#f5f6fd", "#f5f6fd"]}
+        colors={["#faf9f6", "#faf9f6", "#f5f6fd"]}
         locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -114,11 +114,11 @@ export function LoginScreen() {
           {/* Brand */}
           <View style={styles.brand}>
             <Image
-              source={require("../../../public/logo-icon.png")}
+              source={require("../../../assets/brand-logo-premium.png")}
               style={styles.brandMark}
               resizeMode="contain"
+              accessibilityLabel="Coupon Master"
             />
-            <Text style={[styles.brandName, { color: theme.text }]}>קופון מאסטר</Text>
           </View>
 
           {/* Card */}
@@ -257,19 +257,8 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   brandMark: {
-    width: 52,
-    height: 52,
-    borderRadius: radii.card,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0px 8px 20px rgba(31, 111, 209, 0.28)",
-    elevation: 6,
-  },
-  brandName: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.2,
+    width: 190,
+    height: 190,
   },
   card: {
     width: "100%",

@@ -33,7 +33,7 @@ import {
 import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outfit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BiometricGate } from "@/components/layout/BiometricGate";
-import { BrandLaunchVideo } from "@/components/layout/BrandLaunchVideo";
+import { BrandLaunchAnimation } from "@/components/layout/BrandLaunchAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
@@ -187,10 +187,10 @@ function RootLayoutNav() {
   const isReady = authReady && fontsSettled;
 
   useEffect(() => {
-    if (fontsSettled) {
+    if (fontsSettled && !launchVisible) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsSettled]);
+  }, [fontsSettled, launchVisible]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 
@@ -241,7 +241,7 @@ function RootLayoutNav() {
           <InstallPrompt />
 
           {launchVisible ? (
-            <BrandLaunchVideo
+            <BrandLaunchAnimation
               appReady={isReady}
               canReveal={fontsSettled}
               onFinish={() => setLaunchVisible(false)}
