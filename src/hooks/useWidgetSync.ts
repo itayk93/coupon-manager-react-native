@@ -10,7 +10,7 @@ import { clearWidgetData, isWidgetSupported } from "../../modules/coupon-widget"
  * Mount once, near the root.
  */
 export function useWidgetSync() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { data: coupons } = useCoupons();
   const { data: companies } = useCompanies();
 
@@ -24,6 +24,8 @@ export function useWidgetSync() {
   useEffect(() => {
     if (!isWidgetSupported) return;
 
+    if (isLoading) return;
+
     if (!user) {
       // Don't leave coupon codes on the home screen after sign-out. The widget
       // itself is for every account — `users.allow_widget_access` is a legacy
@@ -33,5 +35,5 @@ export function useWidgetSync() {
     }
 
     if (coupons) void syncWidget(coupons, imagePathByCompany);
-  }, [user, coupons, imagePathByCompany]);
+  }, [isLoading, user, coupons, imagePathByCompany]);
 }

@@ -23,17 +23,20 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
 
   const chosen = widgetSelection(spendable).slice(0, MAX_WIDGET_COUPONS);
 
-  const selected: WidgetCouponPayload[] = chosen.map((coupon) => ({
-    id: coupon.id,
-    publicId: coupon.public_id,
-    company: coupon.company,
-    code: coupon.code,
-    remainingValue: couponRemainingValue(coupon),
-    expiration: coupon.expiration ?? null,
-    logoFile: null,
-    cardExp: coupon.card_exp ?? null,
-    cvv: coupon.cvv ?? null,
-  }));
+  const selected: WidgetCouponPayload[] = chosen.map((coupon) => {
+    const remaining = couponRemainingValue(coupon);
+    return {
+      id: coupon.id,
+      publicId: coupon.public_id ?? null,
+      company: coupon.company || "קופון",
+      code: coupon.code || "",
+      remainingValue: Number.isFinite(remaining) ? remaining : 0,
+      expiration: coupon.expiration ?? null,
+      logoFile: null,
+      cardExp: coupon.card_exp ?? null,
+      cvv: coupon.cvv ?? null,
+    };
+  });
 
   // Every spendable coupon expiring within the week, soonest first. Drives the
   // mascot scene and the "show me what's expiring" tap target.
@@ -43,10 +46,12 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
   const urgentCoupon: WidgetCouponPayload | null = expiring.length
     ? {
         id: expiring[0].coupon.id,
-        publicId: expiring[0].coupon.public_id,
-        company: expiring[0].coupon.company,
-        code: expiring[0].coupon.code,
-        remainingValue: couponRemainingValue(expiring[0].coupon),
+        publicId: expiring[0].coupon.public_id ?? null,
+        company: expiring[0].coupon.company || "קופון",
+        code: expiring[0].coupon.code || "",
+        remainingValue: Number.isFinite(couponRemainingValue(expiring[0].coupon))
+          ? couponRemainingValue(expiring[0].coupon)
+          : 0,
         expiration: expiring[0].coupon.expiration ?? null,
         logoFile: null,
         cardExp: expiring[0].coupon.card_exp ?? null,
@@ -70,6 +75,9 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     else if (minDays <= 7) mascotTier = 2;
   }
 
+  const rawTotal = totalRemainingValue(coupons);
+  const totalValue = Number.isFinite(rawTotal) ? rawTotal : 0;
+
   // Only the coupons the user actually chose (max 4). An expiring coupon is
   // never auto-added here — the mascot scene already handles urgency, and the
   // medium/large lists must show exactly what was picked.
@@ -77,7 +85,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     updatedAt: new Date().toISOString(),
     activeCouponsCount: spendable.length,
     oneTimeCouponsCount: spendable.filter((coupon) => coupon.is_one_time === true).length,
-    totalRemainingValue: totalRemainingValue(coupons),
+    totalRemainingValue: totalValue,
     coupons: selected,
     urgentCoupon,
     urgentDaysRemaining: minDays,

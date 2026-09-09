@@ -66,11 +66,15 @@ enum SharedStore {
     static func read() -> WidgetPayload {
         guard let defaults = UserDefaults(suiteName: couponWidgetAppGroup),
               let json = defaults.string(forKey: couponWidgetDataKey),
-              let data = json.data(using: .utf8),
-              let payload = try? JSONDecoder().decode(WidgetPayload.self, from: data)
+              let data = json.data(using: .utf8)
         else {
             return .empty
         }
-        return payload
+        do {
+            return try JSONDecoder().decode(WidgetPayload.self, from: data)
+        } catch {
+            print("[CouponWidget] SharedStore decode error: \(error)")
+            return .empty
+        }
     }
 }
