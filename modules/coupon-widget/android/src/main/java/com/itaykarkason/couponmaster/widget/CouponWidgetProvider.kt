@@ -98,7 +98,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
     val amount = java.text.NumberFormat.getNumberInstance(java.util.Locale.US).apply {
       maximumFractionDigits = 2
     }.format(coupon?.remainingValue ?: 0.0)
-    setTextViewText(R.id.mascot_company, "$companyName · יתרה \u2066$amount ₪\u2069")
+    setTextViewText(R.id.mascot_company, "$companyName · יתרה \u2066₪$amount\u2069")
     setViewVisibility(R.id.mascot_company, if (days == 0 && companyName.isNotEmpty()) View.VISIBLE else View.GONE)
     val target = if (days == 0 && coupon != null) {
       "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
