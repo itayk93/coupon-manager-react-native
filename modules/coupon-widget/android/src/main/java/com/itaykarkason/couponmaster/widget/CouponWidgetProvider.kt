@@ -65,64 +65,49 @@ class CouponWidgetProvider : AppWidgetProvider() {
   }
 
   private fun smallViews(context: Context, payload: WidgetPayload): RemoteViews {
-    val urgent = getUrgentCoupon(payload)
-    return if (urgent != null) {
-      mascotViews(context, payload, urgent.first, urgent.second)
+    val days = payload.urgentDaysRemaining
+    return if (days != null && days in 0..7) {
+      mascotViews(context, payload.expiringIds, days, payload.urgentCoupon)
     } else {
       statsViews(context, payload)
     }
   }
 
-  private fun getUrgentCoupon(payload: WidgetPayload): Pair<WidgetCoupon, Int>? {
-    val now = java.util.Calendar.getInstance()
-    now.set(java.util.Calendar.HOUR_OF_DAY, 0)
-    now.set(java.util.Calendar.MINUTE, 0)
-    now.set(java.util.Calendar.SECOND, 0)
-    now.set(java.util.Calendar.MILLISECOND, 0)
-    val todayMs = now.timeInMillis
-
-    return payload.coupons.mapNotNull { coupon ->
-      val exp = coupon.expiration ?: return@mapNotNull null
-      try {
-        val dateStr = if (exp.contains("T")) exp.substring(0, exp.indexOf("T")) else exp
-        val parts = dateStr.split("-")
-        if (parts.size != 3) return@mapNotNull null
-        val cal = java.util.Calendar.getInstance()
-        cal.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt(), 0, 0, 0)
-        val diffDays = ((cal.timeInMillis - todayMs) / (1000 * 60 * 60 * 24)).toInt()
-        if (diffDays in 0..7) coupon to diffDays else null
-      } catch (e: Exception) {
-        null
-      }
-    }.minByOrNull { it.second }
-  }
-
+  /** Image-only: the scene illustration for `days` carries its own headline.
+   *  Tapping opens the coupons list filtered to exactly the expiring ids. */
   private fun mascotViews(
     context: Context,
-    payload: WidgetPayload,
-    coupon: WidgetCoupon,
+    expiringIds: List<String>,
     days: Int,
+    coupon: WidgetCoupon?,
   ): RemoteViews = RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
-    val n = maxOf(payload.expiringCount, 1)
-    val many = n > 1
-    val dayWord = if (days == 2) "יומיים" else "${maxOf(days, 2)} ימים"
-    val (mascotRes, statusText) = when {
-      days <= 0 -> R.drawable.mascot_state_5 to
-        (if (many) "היום ייגמר התוקף של $n קופונים!!" else "היום ייגמר התוקף של הקופון!!")
-      days == 1 -> R.drawable.mascot_state_4 to
-        (if (many) "מחר הולכים $n קופונים!" else "מחר הולך הקופון!")
-      days <= 4 -> R.drawable.mascot_state_3 to
-        (if (many) "עוד $dayWord ו-$n קופונים הולכים!!" else "עוד $dayWord והלך הקופון!!")
-      else -> R.drawable.mascot_state_2 to
-        (if (many) "נשאר שבוע ל-$n קופונים!" else "נשאר שבוע לקופון!")
+    val sceneRes = when (days.coerceIn(0, 7)) {
+      0 -> R.drawable.mascot_scene_0
+      1 -> R.drawable.mascot_scene_1
+      2 -> R.drawable.mascot_scene_2
+      3 -> R.drawable.mascot_scene_3
+      4 -> R.drawable.mascot_scene_4
+      5 -> R.drawable.mascot_scene_5
+      6 -> R.drawable.mascot_scene_6
+      else -> R.drawable.mascot_scene_7
     }
-    setImageViewResource(R.id.mascot_image, mascotRes)
-    setTextViewText(R.id.mascot_status_text, statusText)
-    // The status line already carries the company; the extra rows stay hidden.
-    setViewVisibility(R.id.mascot_coupon_company, View.GONE)
-    setViewVisibility(R.id.mascot_coupon_value, View.GONE)
-    val deepLink = "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
-    setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, deepLink))
+    setImageViewResource(R.id.mascot_image, sceneRes)
+    setViewVisibility(R.id.mascot_today_title, if (days == 0) View.VISIBLE else View.GONE)
+    setViewVisibility(R.id.mascot_today_logo, if (days == 0) View.VISIBLE else View.GONE)
+    val companyName = coupon?.company?.trim().orEmpty()
+    val amount = java.text.NumberFormat.getNumberInstance(java.util.Locale.US).apply {
+      maximumFractionDigits = 2
+    }.format(coupon?.remainingValue ?: 0.0)
+    setTextViewText(R.id.mascot_company, "$companyName · יתרה \u2066$amount ₪\u2069")
+    setViewVisibility(R.id.mascot_company, if (days == 0 && companyName.isNotEmpty()) View.VISIBLE else View.GONE)
+    val target = if (days == 0 && coupon != null) {
+      "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
+    } else if (expiringIds.isNotEmpty()) {
+      "couponmaster:///coupons?ids=${expiringIds.joinToString(",")}"
+    } else {
+      "couponmaster:///coupons"
+    }
+    setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, target))
   }
 
   private fun statsViews(context: Context, payload: WidgetPayload): RemoteViews =

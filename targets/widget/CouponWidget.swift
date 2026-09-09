@@ -73,11 +73,6 @@ private extension View {
     }
 }
 
-/// "יומיים" for 2, "N ימים" otherwise. Callers handle 0/1 (today/tomorrow).
-private func dayWord(_ days: Int) -> String {
-    days == 2 ? "יומיים" : "\(max(days, 2)) ימים"
-}
-
 /// Formats an amount: ₪ on the left, no space, grouped digits.
 private func formatShekels(_ value: Double) -> String {
     let formatter = NumberFormatter()
@@ -169,7 +164,7 @@ private struct AppLogoView: View {
     var height: CGFloat = 15
 
     var body: some View {
-        if let uiImage = UIImage(named: "CouponLogo") {
+        if let uiImage = UIImage(named: "CouponLogoWidget") ?? UIImage(named: "CouponLogo") {
             Image(uiImage: uiImage)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -284,100 +279,31 @@ private struct CouponCardView: View {
 
 // MARK: - Mascot Urgency Model
 
-enum MascotUrgencyTier: Int {
-    case normal = 1      // 0 expiring or > 7 days
-    case approaching = 2 // 5-7 days
-    case warning = 3     // 2-4 days
-    case urgent = 4      // 1 day (tomorrow)
-    case critical = 5    // 0 days (today)
-
-    var imageName: String {
-        "MascotState\(rawValue)"
-    }
-
-    /// Casual, spoken copy, count-aware. `minDays` is the first coupon to go.
-    func message(count: Int, minDays: Int) -> String {
-        let n = max(count, 1)
-        let many = n > 1
-        switch self {
-        case .critical:
-            return many ? "היום ייגמר התוקף של \(n) קופונים!!" : "היום ייגמר התוקף של הקופון!!"
-        case .urgent:
-            return many ? "מחר הולכים \(n) קופונים!" : "מחר הולך הקופון!"
-        case .warning:
-            return many
-                ? "עוד \(dayWord(minDays)) ו-\(n) קופונים הולכים!!"
-                : "עוד \(dayWord(minDays)) והלך הקופון!!"
-        case .approaching:
-            return many ? "נשאר שבוע ל-\(n) קופונים!" : "נשאר שבוע לקופון!"
-        case .normal:
-            return ""
+// Each scene is a finished illustration with its own baked-in Hebrew headline
+// ("היום", "מחר", "יומיים", "3 ימים" … "7 ימים"), so the widget just picks the
+// one that matches how many days are left. Today uses native headline/company text.
+// The calm scene (MascotState1) is the exception — it carries no text, so the
+// widget draws the logo and the wallet balance over it.
+enum MascotScene {
+    /// Asset name for the scene matching the days left, or the calm scene when
+    /// nothing is expiring inside the week.
+    static func imageName(daysLeft days: Int?) -> String {
+        guard let days, days >= 0, days <= 7 else { return "MascotState1" }
+        switch days {
+        case 0: return "MascotState9"   // היום
+        case 1: return "MascotState8"   // מחר
+        case 2: return "MascotState7"   // יומיים
+        case 3: return "MascotState6"   // 3 ימים
+        case 4: return "MascotState5"   // 4 ימים
+        case 5: return "MascotState4"   // 5 ימים
+        case 6: return "MascotState3"   // 6 ימים
+        default: return "MascotState2"  // 7 ימים
         }
     }
 
-    var badgeColor: Color {
-        switch self {
-        case .critical: return Color(red: 0xef/255, green: 0x44/255, blue: 0x44/255)
-        case .urgent: return Color(red: 0xf9/255, green: 0x73/255, blue: 0x16/255)
-        case .warning: return Color(red: 0xf5/255, green: 0x9e/255, blue: 0x0b/255)
-        case .approaching: return Color(red: 0x3b/255, green: 0x82/255, blue: 0xf6/255)
-        case .normal: return Color(red: 0x10/255, green: 0xb9/255, blue: 0x81/255)
-        }
-    }
-
-    var backgroundGradient: LinearGradient {
-        switch self {
-        case .critical:
-            return LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0x3b/255, green: 0x07/255, blue: 0x07/255), location: 0.0),
-                    .init(color: Color(red: 0x88/255, green: 0x13/255, blue: 0x13/255), location: 0.45),
-                    .init(color: Color(red: 0xdc/255, green: 0x26/255, blue: 0x26/255), location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        case .urgent:
-            return LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0x43/255, green: 0x14/255, blue: 0x07/255), location: 0.0),
-                    .init(color: Color(red: 0x9a/255, green: 0x34/255, blue: 0x12/255), location: 0.45),
-                    .init(color: Color(red: 0xea/255, green: 0x58/255, blue: 0x0c/255), location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        case .warning:
-            return LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0x45/255, green: 0x1a/255, blue: 0x03/255), location: 0.0),
-                    .init(color: Color(red: 0x85/255, green: 0x4d/255, blue: 0x0e/255), location: 0.45),
-                    .init(color: Color(red: 0xd9/255, green: 0x77/255, blue: 0x06/255), location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        case .approaching:
-            return LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0x0f/255, green: 0x17/255, blue: 0x2a/255), location: 0.0),
-                    .init(color: Color(red: 0x1e/255, green: 0x29/255, blue: 0x3b/255), location: 0.55),
-                    .init(color: Color(red: 0x85/255, green: 0x4d/255, blue: 0x0e/255), location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        case .normal:
-            return LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0x0f/255, green: 0x17/255, blue: 0x2a/255), location: 0.0),
-                    .init(color: Color(red: 0x1e/255, green: 0x3a/255, blue: 0x8a/255), location: 0.6),
-                    .init(color: Color(red: 0x25/255, green: 0x63/255, blue: 0xeb/255), location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
+    static func isCalm(daysLeft days: Int?) -> Bool {
+        guard let days else { return true }
+        return days < 0 || days > 7
     }
 }
 
@@ -397,68 +323,42 @@ private extension WidgetPayload {
             .first
     }
 
-    var mascotUrgencyTier: MascotUrgencyTier {
-        if let tierNum = mascotTier, let tier = MascotUrgencyTier(rawValue: tierNum) {
-            return tier
-        }
-        if let days = urgentDaysRemaining {
-            if days <= 0 { return .critical }
-            if days == 1 { return .urgent }
-            if days <= 4 { return .warning }
-            if days <= 7 { return .approaching }
-            return .normal
-        }
-        guard let coupon = mostUrgentCoupon, let days = coupon.daysUntilExpiration else {
-            return .normal
-        }
-        if days <= 0 { return .critical }
-        if days == 1 { return .urgent }
-        if days <= 4 { return .warning }
-        if days <= 7 { return .approaching }
-        return .normal
+    /// Days until the most urgent coupon expires, or nil when nothing is close.
+    var daysUntilMostUrgent: Int? {
+        urgentDaysRemaining ?? mostUrgentCoupon?.daysUntilExpiration
     }
 }
 
 // MARK: - Small Mascot View
 //
-// One frosted bar across the top, everything in it, nothing below — the mascot
-// stays whole. The bar carries three things at a glance:
-//   • the countdown chip   → how urgent (tier-coloured)
-//   • the app logo         → whose widget this is
-//   • the detail line      → which coupon, how much
+// Expiring: just the matching scene, nothing drawn on top — the illustration
+// already says everything. Calm: the calm scene with the logo and the wallet
+// balance over it.
 
 struct CouponMascotSmallView: View {
     let payload: WidgetPayload
 
     @Environment(\.widgetRenderingMode) private var renderingMode
 
-    private var tier: MascotUrgencyTier {
-        payload.mascotUrgencyTier
+    private var daysLeft: Int? {
+        payload.daysUntilMostUrgent
     }
 
-    private var expiringCount: Int {
-        max(payload.expiringCount ?? 1, 1)
+    private var isCalm: Bool {
+        MascotScene.isCalm(daysLeft: daysLeft)
     }
 
-    private var urgentCoupon: WidgetCoupon? {
-        payload.mostUrgentCoupon
-    }
-
-    private var daysLeft: Int {
-        payload.urgentDaysRemaining ?? urgentCoupon?.daysUntilExpiration ?? 0
-    }
-
-    /// The one line in the bar — the dugri sentence, or the wallet summary.
-    private var barText: String {
-        if tier == .normal {
-            return "\(formatShekels(payload.totalRemainingValue)) בארנק · \(payload.activeCouponsCount) קופונים"
-        }
-        return tier.message(count: expiringCount, minDays: daysLeft)
-    }
-
+    /// Opens the coupons list filtered to exactly the expiring coupons — all of
+    /// them when several are close, just the one when only one is.
     private var destinationURL: URL {
-        if let coupon = urgentCoupon {
-            return URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))") ?? URL(string: "couponmaster:///coupons")!
+        if daysLeft == 0, let coupon = payload.mostUrgentCoupon {
+            return URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))")
+                ?? URL(string: "couponmaster:///coupons")!
+        }
+        let ids = (payload.expiringIds ?? []).filter { !$0.isEmpty }
+        if !ids.isEmpty {
+            return URL(string: "couponmaster:///coupons?ids=\(ids.joined(separator: ","))")
+                ?? URL(string: "couponmaster:///coupons")!
         }
         return URL(string: "couponmaster:///coupons")!
     }
@@ -467,29 +367,76 @@ struct CouponMascotSmallView: View {
         ZStack(alignment: .top) {
             background
 
-            VStack(spacing: 3) {
-                AppLogoView(height: 15)
-                    .opacity(0.95)
-
-                Text(barText)
-                    .couponFont(13.5, .regular)
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
+            if daysLeft == 0 {
+                VStack {
+                    AppLogoView(height: 12)
+                        .padding(.top, 10)
+                    Text("בתוקף עד היום")
+                        .couponFont(17, .bold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .padding(.top, 1)
+                    Spacer()
+                    if let coupon = payload.mostUrgentCoupon {
+                        let company = coupon.company.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let amount = coupon.remainingValue.formatted(.number.precision(.fractionLength(0...2)))
+                        Text("\(company) · יתרה \u{2066}\(amount) ₪\u{2069}")
+                            .couponFont(12, .medium)
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.65)
+                            .padding(.bottom, 12)
+                    }
+                }
+                .shadow(color: .black.opacity(0.75), radius: 3, x: 0, y: 1)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 14)
             }
-            .padding(.horizontal, 10)
-            .padding(.top, 12)
-            .padding(.bottom, 6)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background(.ultraThinMaterial)
-            .overlay(Color.white.opacity(0.05))
-            .environment(\.colorScheme, .dark)
-            .overlay(
-                Rectangle().fill(tier.badgeColor).frame(height: 1),
-                alignment: .bottom
-            )
-            .shadow(color: .black.opacity(0.22), radius: 5, x: 0, y: 2)
+
+            if isCalm {
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            .black.opacity(0.22),
+                            .black.opacity(0.34)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 58)
+                }
+                .edgesIgnoringSafeArea(.bottom)
+
+                VStack(alignment: .center, spacing: 1) {
+                    AppLogoView(height: 15)
+                        .opacity(0.95)
+                    Text(formatShekels(payload.totalRemainingValue))
+                        .couponFont(24, .medium)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .shadow(color: .black.opacity(0.55), radius: 3, x: 0, y: 1)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+
+                VStack {
+                    Spacer()
+                    Text("\(payload.activeCouponsCount) קופונים בארנק")
+                        .couponFont(14, .regular)
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.75), radius: 5, x: 0, y: 2)
+                        .shadow(color: .black.opacity(0.35), radius: 1, x: 0, y: 0)
+                        .padding(.bottom, 12)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 14)
+            }
         }
         .widgetURL(destinationURL)
         .widgetBackground(background)
@@ -498,7 +445,7 @@ struct CouponMascotSmallView: View {
     @ViewBuilder
     private var background: some View {
         if renderingMode == .fullColor {
-            Image(tier.imageName)
+            Image(MascotScene.imageName(daysLeft: daysLeft))
                 .resizable()
                 .scaledToFill()
                 .edgesIgnoringSafeArea(.all)

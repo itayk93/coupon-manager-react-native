@@ -34,8 +34,10 @@ export type WidgetPayload = {
   urgentCoupon?: WidgetCouponPayload | null;
   urgentDaysRemaining?: number | null;
   mascotTier?: number;
-  /** Coupons expiring in the same urgency bucket as the most urgent one. */
+  /** How many coupons expire within the week. */
   expiringCount?: number;
+  /** publicIds of every coupon expiring within the week, soonest first. */
+  expiringIds?: string[];
 };
 
 export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
@@ -48,6 +50,7 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
   urgentDaysRemaining: null,
   mascotTier: 1,
   expiringCount: 0,
+  expiringIds: [],
 };
 
 type CouponWidgetNativeModule = {

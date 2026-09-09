@@ -35,7 +35,23 @@ object SharedStore {
         totalRemainingValue = root.optDouble("totalRemainingValue", 0.0),
         coupons = root.optJSONArray("coupons").toCoupons(),
         urgentDaysRemaining = if (root.isNull("urgentDaysRemaining")) null else root.optInt("urgentDaysRemaining"),
+        urgentCoupon = root.optJSONObject("urgentCoupon")?.let { obj ->
+          WidgetCoupon(
+            id = obj.optInt("id", 0),
+            publicId = obj.optString("publicId", "").ifBlank { null },
+            company = obj.optString("company", ""),
+            code = obj.optString("code", ""),
+            remainingValue = obj.optDouble("remainingValue", 0.0),
+            expiration = obj.optString("expiration", "").ifBlank { null },
+            logoFile = null,
+            cardExp = obj.optString("cardExp", "").ifBlank { null },
+            cvv = obj.optString("cvv", "").ifBlank { null },
+          )
+        },
         expiringCount = root.optInt("expiringCount", 0),
+        expiringIds = root.optJSONArray("expiringIds")?.let { arr ->
+          (0 until arr.length()).mapNotNull { arr.optString(it, "").ifBlank { null } }
+        } ?: emptyList(),
       )
     } catch (e: Exception) {
       WidgetPayload.EMPTY
@@ -83,7 +99,9 @@ data class WidgetPayload(
   val totalRemainingValue: Double,
   val coupons: List<WidgetCoupon>,
   val urgentDaysRemaining: Int? = null,
+  val urgentCoupon: WidgetCoupon? = null,
   val expiringCount: Int = 0,
+  val expiringIds: List<String> = emptyList(),
 ) {
   companion object {
     val EMPTY = WidgetPayload(0, 0, 0.0, emptyList())

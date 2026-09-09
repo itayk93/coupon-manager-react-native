@@ -1,60 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Today overlays a native headline and the expiring coupon company. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layoutDirection="rtl">
+    android:layout_height="match_parent">
 
     <ImageView
         android:id="@+id/mascot_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/mascot_state_1"
-        android:contentDescription="Mascot" />
-
-    <LinearLayout
+        android:src="@drawable/mascot_scene_2"
+        android:contentDescription="Coupon expiry mascot" />
+    <ImageView
+        android:id="@+id/mascot_today_logo"
+        android:layout_width="110dp"
+        android:layout_height="12dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/widget_brand_wordmark"
+        android:scaleType="fitCenter"
+        android:contentDescription="Coupon Master"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/mascot_today_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp"
-        android:background="#66000000">
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="25dp"
+        android:layout_marginHorizontal="14dp"
+        android:gravity="center"
+        android:text="בתוקף עד היום"
+        android:textColor="#FFFFFF"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:shadowColor="#BF000000"
+        android:shadowRadius="3"
+        android:shadowDy="1"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/mascot_status_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:fontFamily="@font/heebo_bold"
-            android:text="קופון עומד לפוג!" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="2dp">
-
-            <TextView
-                android:id="@+id/mascot_coupon_company"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:maxLines="1"
-                android:fontFamily="@font/heebo_bold"
-                android:text="" />
-
-            <TextView
-                android:id="@+id/mascot_coupon_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:textColor="#F59E0B"
-                android:textSize="11sp"
-                android:maxLines="1"
-                android:fontFamily="@font/heebo_bold"
-                android:text="" />
-        </LinearLayout>
-    </LinearLayout>
+    <TextView
+        android:id="@+id/mascot_company"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:layout_marginHorizontal="14dp"
+        android:gravity="center"
+        android:textDirection="firstStrong"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:shadowColor="#BF000000"
+        android:shadowRadius="3"
+        android:shadowDy="1"
+        android:visibility="gone" />
 </FrameLayout>

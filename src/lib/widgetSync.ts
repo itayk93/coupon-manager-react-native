@@ -1,3 +1,4 @@
+import { expiringWidgetCoupons } from "./widgetExpiry";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { prepareWidgetLogos } from "@/lib/widgetLogos";
 import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
@@ -17,15 +18,6 @@ export { MAX_WIDGET_COUPONS } from "@/lib/widgetSelection";
  * The counts and balance deliberately use the same predicate as the dashboard
  * (`isSpendableCoupon`) so the widget and the app can never disagree.
  */
-function daysUntilExpiration(expiration: string): number | null {
-  const target = new Date(expiration);
-  if (Number.isNaN(target.getTime())) return null;
-  const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
-}
-
 export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
   const spendable = coupons.filter(isSpendableCoupon);
 
@@ -43,30 +35,27 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     cvv: coupon.cvv ?? null,
   }));
 
-  // Find most urgent expiring coupon across ALL spendable coupons
-  let urgentCoupon: WidgetCouponPayload | null = null;
-  let minDays: number | null = null;
+  // Every spendable coupon expiring within the week, soonest first. Drives the
+  // mascot scene and the "show me what's expiring" tap target.
+  const expiring = expiringWidgetCoupons(spendable);
 
-  for (const coupon of spendable) {
-    if (!coupon.expiration) continue;
-    const days = daysUntilExpiration(coupon.expiration);
-    if (days !== null && days >= 0 && days <= 7) {
-      if (minDays === null || days < minDays) {
-        minDays = days;
-        urgentCoupon = {
-          id: coupon.id,
-          publicId: coupon.public_id,
-          company: coupon.company,
-          code: coupon.code,
-          remainingValue: couponRemainingValue(coupon),
-          expiration: coupon.expiration ?? null,
-          logoFile: null,
-          cardExp: coupon.card_exp ?? null,
-          cvv: coupon.cvv ?? null,
-        };
+  const minDays = expiring.length ? expiring[0].days : null;
+  const urgentCoupon: WidgetCouponPayload | null = expiring.length
+    ? {
+        id: expiring[0].coupon.id,
+        publicId: expiring[0].coupon.public_id,
+        company: expiring[0].coupon.company,
+        code: expiring[0].coupon.code,
+        remainingValue: couponRemainingValue(expiring[0].coupon),
+        expiration: expiring[0].coupon.expiration ?? null,
+        logoFile: null,
+        cardExp: expiring[0].coupon.card_exp ?? null,
+        cvv: expiring[0].coupon.cvv ?? null,
       }
-    }
-  }
+    : null;
+
+  // Tapping the widget opens the coupons list filtered to exactly these.
+  const expiringIds = expiring.map((e) => e.coupon.public_id);
 
   let mascotTier = 1;
   if (minDays !== null) {
@@ -76,38 +65,20 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     else if (minDays <= 7) mascotTier = 2;
   }
 
-  // How many coupons share the most-urgent one's bucket, for the headline count.
-  let expiringCount = 0;
-  if (minDays !== null) {
-    const inBucket = (d: number): boolean => {
-      if (minDays <= 0) return d <= 0;
-      if (minDays === 1) return d <= 1;
-      if (minDays <= 4) return d >= 2 && d <= 4;
-      return d >= 5 && d <= 7;
-    };
-    for (const coupon of spendable) {
-      if (!coupon.expiration) continue;
-      const days = daysUntilExpiration(coupon.expiration);
-      if (days !== null && days >= 0 && days <= 7 && inBucket(days)) expiringCount += 1;
-    }
-  }
-
-  // Ensure urgent coupon is in the coupons list so its logo gets prepared
-  const allCoupons = [...selected];
-  if (urgentCoupon && !allCoupons.some((c) => c.id === urgentCoupon!.id)) {
-    allCoupons.push(urgentCoupon);
-  }
-
+  // Only the coupons the user actually chose (max 4). An expiring coupon is
+  // never auto-added here — the mascot scene already handles urgency, and the
+  // medium/large lists must show exactly what was picked.
   return {
     updatedAt: new Date().toISOString(),
     activeCouponsCount: spendable.length,
     oneTimeCouponsCount: spendable.filter((coupon) => coupon.is_one_time === true).length,
     totalRemainingValue: totalRemainingValue(coupons),
-    coupons: allCoupons,
+    coupons: selected,
     urgentCoupon,
     urgentDaysRemaining: minDays,
     mascotTier,
-    expiringCount,
+    expiringCount: expiring.length,
+    expiringIds,
   };
 }
 
