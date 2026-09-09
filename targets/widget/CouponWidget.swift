@@ -450,7 +450,9 @@ struct CouponMascotSmallView: View {
             }
         }
         .widgetURL(destinationURL)
-        .widgetBackground(background)
+        // Artwork is already drawn in the ZStack. Keep the container cheap and
+        // opaque; a second full-size image doubles the widget render workload.
+        .widgetBackground(WidgetStyle.chrome)
     }
 
     @ViewBuilder
