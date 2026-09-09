@@ -92,15 +92,26 @@ class CouponWidgetProvider : AppWidgetProvider() {
       else -> R.drawable.mascot_scene_7
     }
     setImageViewResource(R.id.mascot_image, sceneRes)
-    setViewVisibility(R.id.mascot_today_title, if (days == 0) View.VISIBLE else View.GONE)
-    setViewVisibility(R.id.mascot_today_logo, if (days == 0) View.VISIBLE else View.GONE)
+    val isExpiring = days in 0..7
+    val titleText = when {
+      days <= 0 -> "בתוקף עד היום"
+      days == 1 -> "בתוקף עד מחר"
+      days == 2 -> "בתוקף עוד יומיים"
+      days in 3..6 -> "בתוקף עוד $days ימים"
+      else -> "בתוקף עוד שבוע"
+    }
+    setViewVisibility(R.id.mascot_today_title, if (isExpiring) View.VISIBLE else View.GONE)
+    setViewVisibility(R.id.mascot_today_logo, if (isExpiring) View.VISIBLE else View.GONE)
+    if (isExpiring) {
+      setTextViewText(R.id.mascot_today_title, titleText)
+    }
     val companyName = coupon?.company?.trim().orEmpty()
     val amount = java.text.NumberFormat.getNumberInstance(java.util.Locale.US).apply {
       maximumFractionDigits = 2
     }.format(coupon?.remainingValue ?: 0.0)
     setTextViewText(R.id.mascot_company, "$companyName · יתרה \u2066₪$amount\u2069")
-    setViewVisibility(R.id.mascot_company, if (days == 0 && companyName.isNotEmpty()) View.VISIBLE else View.GONE)
-    val target = if (days == 0 && coupon != null) {
+    setViewVisibility(R.id.mascot_company, if (isExpiring && companyName.isNotEmpty()) View.VISIBLE else View.GONE)
+    val target = if (isExpiring && coupon != null) {
       "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
     } else if (expiringIds.isNotEmpty()) {
       "couponmaster:///coupons?ids=${expiringIds.joinToString(",")}"

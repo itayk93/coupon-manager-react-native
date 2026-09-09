@@ -348,10 +348,20 @@ struct CouponMascotSmallView: View {
         MascotScene.isCalm(daysLeft: daysLeft)
     }
 
+    private func expiryHeadline(days: Int) -> String {
+        switch days {
+        case ...0: return "בתוקף עד היום"
+        case 1: return "בתוקף עד מחר"
+        case 2: return "בתוקף עוד יומיים"
+        case 3...6: return "בתוקף עוד \(days) ימים"
+        default: return "בתוקף עוד שבוע"
+        }
+    }
+
     /// Opens the coupons list filtered to exactly the expiring coupons — all of
     /// them when several are close, just the one when only one is.
     private var destinationURL: URL {
-        if daysLeft == 0, let coupon = payload.mostUrgentCoupon {
+        if let days = daysLeft, days >= 0 && days <= 7, let coupon = payload.mostUrgentCoupon {
             return URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))")
                 ?? URL(string: "couponmaster:///coupons")!
         }
@@ -367,11 +377,11 @@ struct CouponMascotSmallView: View {
         ZStack(alignment: .top) {
             background
 
-            if daysLeft == 0 {
+            if let days = daysLeft, days >= 0 && days <= 7 {
                 VStack {
                     VStack(spacing: 0) {
                         AppLogoView(height: 11.5)
-                        Text("בתוקף עד היום")
+                        Text(expiryHeadline(days: days))
                             .couponFont(16, .bold)
                             .foregroundColor(.white)
                             .lineLimit(1)
