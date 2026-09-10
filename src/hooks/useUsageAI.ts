@@ -29,8 +29,13 @@ export async function verifyCouponCodeInScreenshot(imageBase64: string, candidat
   return data?.matches === true && Number(data?.confidence) >= 0.85;
 }
 
+/** What the parser was handed: a screenshot to read, or a pasted SMS. */
+export type ParseUsageInput =
+  | { imageBase64: string; text?: undefined }
+  | { text: string; imageBase64?: undefined };
+
 async function readableFunctionError(error: any): Promise<string> {
-  const fallback = "פענוח התמונה נכשל. אפשר לבחור קופון ולהזין שימוש ידנית.";
+  const fallback = "הפענוח נכשל. אפשר לבחור קופון ולהזין שימוש ידנית.";
   const response = error?.context;
   if (response && typeof response.json === "function") {
     try {
@@ -46,14 +51,15 @@ async function readableFunctionError(error: any): Promise<string> {
 
 export function useParseUsageScreenshot() {
   return useMutation({
-    mutationFn: async (imageBase64: string): Promise<ParsedUsageScreenshot> => {
+    mutationFn: async (input: ParseUsageInput): Promise<ParsedUsageScreenshot> => {
+      const isText = !input.imageBase64;
       const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
-        body: { imageBase64 },
+        body: isText ? { text: input.text } : { imageBase64: input.imageBase64 },
       });
       if (error) throw new Error(await readableFunctionError(error));
       if (data?.error) throw new Error(data.error);
       if (!Array.isArray(data?.usages) || data.usages.length === 0) {
-        throw new Error("לא זוהו שימושים בצילום המסך");
+        throw new Error(isText ? "לא זוהו שימושים בטקסט" : "לא זוהו שימושים בצילום המסך");
       }
 
       const placeQueries = [...new Set(data.usages.map((usage: any) => String(usage.placeName || "").trim()).filter(Boolean))] as string[];
@@ -76,7 +82,7 @@ export function useParseUsageScreenshot() {
             amount: Number(usage.amount) || 0,
             placeName,
             usedAt: usage.usedAt || null,
-            details: String(usage.details || "שימוש שזוהה מצילום מסך"),
+            details: String(usage.details || (isText ? "שימוש שזוהה מהודעה" : "שימוש שזוהה מצילום מסך")),
             placeAddress: place?.placeAddress || "",
             latitude: place?.latitude ?? null,
             longitude: place?.longitude ?? null,
@@ -90,6 +96,6 @@ export function useParseUsageScreenshot() {
         usages,
       };
     },
-    onError: (error: any) => notify.error("לא הצלחנו לפענח את הצילום", error.message),
+    onError: (error: any) => notify.error("לא הצלחנו לפענח", error.message),
   });
 }

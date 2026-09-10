@@ -4,6 +4,8 @@ import { requireUser } from "../_shared/auth.ts";
 import { safeFetch } from "../_shared/ssrf.ts";
 
 const MAX_IMAGE_CHARS = 8 * 1024 * 1024;
+/** A pasted SMS thread, not a document. Well past the longest real one. */
+const MAX_TEXT_CHARS = 20000;
 const MODEL = "gpt-5-mini";
 
 const schema = {
@@ -48,10 +50,18 @@ Deno.serve(async (req: Request) => {
   try {
     let caller;
     try { caller = await requireUser(req); } catch { return jsonResponse({ error: "נדרשת התחברות" }, 401); }
-    const { imageBase64, candidateCouponCode, mode } = await req.json();
-    if (typeof imageBase64 !== "string" || !imageBase64) return jsonResponse({ error: "חסרה תמונה" }, 400);
-    if (imageBase64.length > MAX_IMAGE_CHARS) return jsonResponse({ error: "התמונה גדולה מדי" }, 413);
-    if (!/^[A-Za-z0-9+/=\s]+$/.test(imageBase64)) return jsonResponse({ error: "פורמט תמונה לא תקין" }, 400);
+    const { imageBase64, text, candidateCouponCode, mode } = await req.json();
+    // Two sources, one parse: a screenshot to read visually, or a pasted SMS to
+    // read as text. `verify-code` is image-only — it compares rendered glyphs.
+    const pastedText = typeof text === "string" ? text.trim() : "";
+    const isTextParse = !imageBase64 && pastedText.length > 0 && mode !== "verify-code";
+    if (isTextParse) {
+      if (pastedText.length > MAX_TEXT_CHARS) return jsonResponse({ error: "הטקסט ארוך מדי" }, 413);
+    } else {
+      if (typeof imageBase64 !== "string" || !imageBase64) return jsonResponse({ error: "חסרה תמונה" }, 400);
+      if (imageBase64.length > MAX_IMAGE_CHARS) return jsonResponse({ error: "התמונה גדולה מדי" }, 413);
+      if (!/^[A-Za-z0-9+/=\s]+$/.test(imageBase64)) return jsonResponse({ error: "פורמט תמונה לא תקין" }, 400);
+    }
 
     const apiKey = Deno.env.get("OPENAI_API_KEY_V2") || Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) return jsonResponse({ error: "שירות AI אינו מוגדר" }, 503);
@@ -96,16 +106,18 @@ Deno.serve(async (req: Request) => {
         max_completion_tokens: 6000,
         response_format: { type: "json_schema", json_schema: { name: "coupon_usages", strict: true, schema } },
         messages: [
-          { role: "system", content: `חלץ מצילום מסך של היסטוריית קופון את קוד הקופון ואת כל השימושים. חפש את קוד הקופון בכל התמונה, כולל בכרטיס פרטי קופון בתחתית המסך. couponCode הוא הקוד בדיוק כפי שנראה, כולל מקפים אם קיימים, ללא ניחוש; בדוק כל ספרה פעמיים. אם אינו נראה החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם נראה. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים; אם השורה נראית שימוש אך הסכום חתוך או לא קריא החזר amount 0 והוסף warning, אל תשמיט את השורה. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
-          { role: "user", content: [
-            { type: "text", text: "קרא את כל השימושים בצילום. אל תדלג על שורות." },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-          ] },
+          { role: "system", content: `חלץ ${isTextParse ? "מהודעה או מטקסט של היסטוריית קופון" : "מצילום מסך של היסטוריית קופון"} את קוד הקופון ואת כל השימושים. חפש את קוד הקופון בכל ה${isTextParse ? "טקסט" : "תמונה, כולל בכרטיס פרטי קופון בתחתית המסך"}. couponCode הוא הקוד בדיוק כפי שהוא מופיע, כולל מקפים אם קיימים, ללא ניחוש; בדוק כל ספרה פעמיים. אם אינו מופיע החזר null. couponCodeConfidence בין 0 ל-1. companyName הוא מותג הקופון אם מופיע. warnings מכיל אי-ודאויות קצרות. החזר שורה נפרדת לכל עסקה. amount הוא סכום השימוש החיובי בשקלים; אם השורה נראית שימוש אך הסכום חסר או לא קריא החזר amount 0 והוסף warning, אל תשמיט את השורה. placeName הוא שם העסק והסניף/האזור, בלי סכום ובלי תאריך. usedAt בפורמט ISO 8601 לפי שעון ישראל כאשר מופיעים תאריך ושעה; שנים דו-ספרתיות הן 20xx. אם אין מועד החזר null. details הוא תיאור קצר. אל תחלץ יתרה, שווי קופון, כותרות או קוד קופון כשימוש.` },
+          { role: "user", content: isTextParse
+            ? `קרא את כל השימושים בטקסט הבא. אל תדלג על שורות.\n\n${pastedText}`
+            : [
+                { type: "text", text: "קרא את כל השימושים בצילום. אל תדלג על שורות." },
+                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+              ] },
         ],
       }),
     });
     const raw = await response.text();
-    if (!response.ok) return jsonResponse({ error: "פענוח התמונה נכשל" }, 502);
+    if (!response.ok) return jsonResponse({ error: isTextParse ? "פענוח הטקסט נכשל" : "פענוח התמונה נכשל" }, 502);
     const payload = JSON.parse(raw);
     const output = JSON.parse(payload.choices?.[0]?.message?.content || "{}");
     // A row the model read but could not price (amount cut off, glare) must not
@@ -126,8 +138,10 @@ Deno.serve(async (req: Request) => {
       }));
       return jsonResponse({
         error: finishReason === "length"
-          ? "הצילום מורכב מדי לפענוח בבת אחת — נסו לחתוך אותו לחלק קטן יותר"
-          : "לא זוהו שימושים בצילום המסך",
+          ? (isTextParse
+              ? "הטקסט ארוך מדי לפענוח בבת אחת — נסו להדביק חלק קטן יותר"
+              : "הצילום מורכב מדי לפענוח בבת אחת — נסו לחתוך אותו לחלק קטן יותר")
+          : (isTextParse ? "לא זוהו שימושים בטקסט" : "לא זוהו שימושים בצילום המסך"),
       }, 422);
     }
     const missingAmount = usages.filter((u: any) => u.amount === 0).length;

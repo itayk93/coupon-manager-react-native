@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Linking,
 } from "react-native";
-import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2, AlertTriangle, ChevronLeft, Map } from "lucide-react-native";
+import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2, AlertTriangle, ChevronLeft, Map, MessageSquareText } from "lucide-react-native";
 import * as Location from "expo-location";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,12 @@ export function QuickUsageModal({
 
   const activeCoupons = coupons.filter((c) => c.status !== "נוצל");
 
+  // The form is the screen. The AI readers are shortcuts that fill it in, so
+  // the SMS box is an inline panel the helper button toggles open.
+  const [isSmsOpen, setIsSmsOpen] = useState(false);
+  const [smsText, setSmsText] = useState("");
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(
     preselectedCoupon ? preselectedCoupon.id : null
   );
@@ -97,6 +103,9 @@ export function QuickUsageModal({
 
   useEffect(() => {
     if (!visible) return;
+    setIsSmsOpen(false);
+    setSmsText("");
+    setIsDetailsOpen(false);
     setSelectedCouponId(
       preselectedCoupon ? preselectedCoupon.id : null
     );
@@ -311,9 +320,26 @@ export function QuickUsageModal({
     setAmountError("");
     setAiError("");
     try {
-      await applyParsedResult(await parseUsage.mutateAsync(base64), base64);
+      await applyParsedResult(await parseUsage.mutateAsync({ imageBase64: base64 }), base64);
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "לא הצלחנו לפענח את התמונה");
+      console.error(e);
+    }
+  };
+
+  const parseSmsText = async () => {
+    const text = smsText.trim();
+    if (text.length < 10) {
+      setAiError("צריך להדביק את תוכן ההודעה כדי לנתח אותה");
+      return;
+    }
+    setError("");
+    setAmountError("");
+    setAiError("");
+    try {
+      await applyParsedResult(await parseUsage.mutateAsync({ text }));
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "לא הצלחנו לפענח את ההודעה");
       console.error(e);
     }
   };
@@ -335,7 +361,7 @@ export function QuickUsageModal({
       return;
     }
     parseUsage
-      .mutateAsync(initialScreenshotBase64)
+      .mutateAsync({ imageBase64: initialScreenshotBase64 })
       .then((parsed) => {
         if (importId) cacheParsedUsage(importId, parsed);
         if (!cancelled) void applyParsedResult(parsed, initialScreenshotBase64);
@@ -438,6 +464,13 @@ export function QuickUsageModal({
     }
   };
 
+  // Once the AI has produced rows (or failed to place the coupon), the modal
+  // becomes a review screen and the entry form steps aside.
+  const isReviewing =
+    detectedUsages.length > 0 || matchState === "not-found" || matchState === "ambiguous";
+  const isBusy = parseUsage.isPending;
+  const showForm = !isBusy && !isReviewing;
+
   return (
     <Modal
       visible={visible}
@@ -446,12 +479,70 @@ export function QuickUsageModal({
       subtitle={isOneTimeCoupon ? "סמן את הקופון כנוצל במלואו" : "הורד סכום שנוצל מיתרת הקופון"}
     >
       <View style={styles.container}>
-        {parseUsage.isPending ? (
+        {isBusy ? (
           <View style={[styles.processingCard, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}>
             <ActivityIndicator size="large" color={theme.primary} />
             <Text style={[styles.processingTitle, { color: theme.text }]}>ה־AI קורא את הקופון</Text>
             <Text style={[styles.processingText, { color: theme.textMuted }]}>מזהים קוד, שימושים ומקומות…</Text>
           </View>
+        ) : null}
+
+        {/* Optional shortcuts that fill the form in for you. Compact on purpose
+            — the form below is the actual screen, not a fallback. */}
+        {showForm ? (
+          <View style={styles.aiRow}>
+            <TouchableOpacity
+              onPress={pickUsageScreenshot}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="מילוי אוטומטי מצילום מסך"
+              style={[styles.aiChip, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}
+            >
+              <ImagePlus size={17} color={theme.primary} />
+              <Text style={[styles.aiChipText, { color: theme.primary }]}>מצילום מסך</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setAiError("");
+                setIsSmsOpen((open) => !open);
+              }}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: isSmsOpen }}
+              accessibilityLabel="מילוי אוטומטי מהודעת SMS"
+              style={[styles.aiChip, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}
+            >
+              <MessageSquareText size={17} color={theme.primary} />
+              <Text style={[styles.aiChipText, { color: theme.primary }]}>מ-SMS</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {showForm && isSmsOpen ? (
+          <View style={styles.smsSection}>
+            <Input
+              placeholder="הדביקו כאן את תוכן ההודעה"
+              value={smsText}
+              onChangeText={(value) => {
+                setSmsText(value);
+                setAiError("");
+              }}
+              multiline
+              numberOfLines={5}
+              style={styles.smsInput}
+            />
+            <Button
+              title="ניתוח ההודעה"
+              onPress={parseSmsText}
+              size="md"
+              icon={<Sparkles size={17} color="#ffffff" />}
+            />
+          </View>
+        ) : null}
+
+        {showForm && aiError ? (
+          <Text style={[styles.batchError, { color: theme.danger }]}>{aiError}</Text>
         ) : null}
 
         {matchState === "not-found" ? (
@@ -471,7 +562,9 @@ export function QuickUsageModal({
         ) : null}
         {detectionWarnings.map((warning) => <Text key={warning} style={[styles.matchWarning, { color: theme.warning }]}>{warning}</Text>)}
 
-        {/* Coupon Selector */}
+        {/* Coupon Selector — the review screen and the form both need it */}
+        {isReviewing || showForm ? (
+          <>
         <Text style={[styles.label, { color: theme.text }]}>בחר קופון</Text>
         <TouchableOpacity
           activeOpacity={0.85}
@@ -511,23 +604,7 @@ export function QuickUsageModal({
           )}
         </TouchableOpacity>
         {error && !detectedUsages.length ? <Text style={[styles.batchError, { color: theme.danger }]}>{error}</Text> : null}
-        {aiError ? <Text style={[styles.batchError, { color: theme.danger }]}>{aiError}</Text> : null}
-
-        {!parseUsage.isPending ? (
-          <TouchableOpacity
-            onPress={pickUsageScreenshot}
-            activeOpacity={0.82}
-            accessibilityRole="button"
-            accessibilityLabel="העלאת צילום מסך לדיווח שימושים"
-            style={[styles.aiUploadButton, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}
-          >
-            <ImagePlus size={22} color={theme.primary} />
-            <View style={styles.aiUploadText}>
-              <Text style={[styles.aiUploadTitle, { color: theme.text }]}>דיווח מצילום מסך</Text>
-              <Text style={[styles.aiUploadSubtitle, { color: theme.textMuted }]}>העלאה, זיהוי שימושים ומיקום אוטומטי</Text>
-            </View>
-            <Sparkles size={18} color={theme.primary} />
-          </TouchableOpacity>
+          </>
         ) : null}
 
         {detectedUsages.length ? (
@@ -720,6 +797,8 @@ export function QuickUsageModal({
           </View>
         ) : null}
 
+        {showForm ? (
+          <>
         {/* Amount Input */}
         <View style={styles.amountContainer}>
           {!isOneTimeCoupon ? (
@@ -780,73 +859,104 @@ export function QuickUsageModal({
           ) : null}
         </View>
 
-        {/* Details Input */}
-        <Input
-          label="פרטים נוספים (אופציונלי)"
-          placeholder="הערה על השימוש"
-          value={details}
-          onChangeText={setDetails}
-        />
-
-        <Input
-          label="שם המקום (אופציונלי)"
-          placeholder="למשל: בית קפה דיזנגוף תל אביב"
-          value={placeName}
-          onChangeText={(value) => {
-            setPlaceName(value);
-            resolvedPlaceQuery.current = "";
-            setPlaceSearchMessage("");
-          }}
-        />
-        {isSearchingPlace || placeSearchMessage ? (
-          <Text style={[styles.placeSearchMessage, { color: theme.textMuted }]}>
-            {isSearchingPlace ? "מחפש את המקום..." : placeSearchMessage}
-          </Text>
-        ) : null}
-
-        <Button
-          title="בחר ממקומות שהייתי בהם"
-          onPress={() => setIsPlacePickerOpen(true)}
-          variant="outline"
-          icon={<MapPin size={18} color={theme.primary} />}
-          style={styles.currentLocationButton}
-        />
-
-        <Input
-          label="כתובת המקום (אופציונלי)"
-          placeholder="רחוב, מספר, עיר"
-          value={placeAddress}
-          onChangeText={setPlaceAddress}
-        />
-
-        <Text style={[styles.mapLabel, { color: theme.text }]}>מיקום במפה (אופציונלי)</Text>
-        <Button
-          title={isLocating ? "מאתר אותי..." : "רשום את המקום שבו אני נמצא"}
-          onPress={useCurrentLocation}
-          variant="outline"
-          icon={<MapPin size={18} color={theme.primary} />}
-          disabled={isLocating}
-          style={styles.currentLocationButton}
-        />
-        <CouponLocationMap
-          location={location}
-          editable
-          onLocationChange={setLocation}
-          height={180}
-        />
-        {location ? (
-          <Text style={[styles.coordinates, { color: theme.textMuted }]}>
-            {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-          </Text>
-        ) : null}
-
         {!isOneTimeCoupon ? (
           <Button
             title="רשום שימוש ועדכן יתרה"
             onPress={handleSubmit}
             loading={recordUsage.isPending}
-            style={{ marginTop: 12 }}
+            style={{ marginTop: 4 }}
           />
+        ) : null}
+
+        {/* Everything below is optional — collapsed so the two required fields
+            and the save button fit on screen without scrolling. */}
+        <TouchableOpacity
+          onPress={() => setIsDetailsOpen((open) => !open)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isDetailsOpen }}
+          accessibilityLabel="פרטים ומיקום, אופציונלי"
+          style={[styles.accordionHeader, { borderColor: theme.border }]}
+        >
+          <ChevronDown
+            size={18}
+            color={theme.textMuted}
+            style={{ transform: [{ rotate: isDetailsOpen ? "180deg" : "0deg" }] }}
+          />
+          <Text style={[styles.accordionTitle, { color: theme.text }]}>
+            פרטים ומיקום (אופציונלי)
+          </Text>
+        </TouchableOpacity>
+
+        {isDetailsOpen ? (
+          <View style={styles.accordionBody}>
+            <Input
+              label="פרטים נוספים"
+              placeholder="הערה על השימוש"
+              value={details}
+              onChangeText={setDetails}
+            />
+
+            <Input
+              label="שם המקום"
+              placeholder="למשל: בית קפה דיזנגוף תל אביב"
+              value={placeName}
+              onChangeText={(value) => {
+                setPlaceName(value);
+                resolvedPlaceQuery.current = "";
+                setPlaceSearchMessage("");
+              }}
+            />
+            {isSearchingPlace || placeSearchMessage ? (
+              <Text style={[styles.placeSearchMessage, { color: theme.textMuted }]}>
+                {isSearchingPlace ? "מחפש את המקום..." : placeSearchMessage}
+              </Text>
+            ) : null}
+
+            <View style={styles.placeActions}>
+              <Button
+                title={isLocating ? "מאתר..." : "המיקום שלי"}
+                onPress={useCurrentLocation}
+                variant="outline"
+                size="md"
+                icon={<MapPin size={16} color={theme.primary} />}
+                disabled={isLocating}
+                style={styles.placeActionBtn}
+              />
+              <Button
+                title="מקום שהייתי בו"
+                onPress={() => setIsPlacePickerOpen(true)}
+                variant="outline"
+                size="md"
+                icon={<MapPin size={16} color={theme.primary} />}
+                style={styles.placeActionBtn}
+              />
+            </View>
+
+            <Input
+              label="כתובת המקום"
+              placeholder="רחוב, מספר, עיר"
+              value={placeAddress}
+              onChangeText={setPlaceAddress}
+            />
+
+            {/* The map only earns its 180px once there is a pin to show. */}
+            {location ? (
+              <>
+                <CouponLocationMap
+                  location={location}
+                  editable
+                  onLocationChange={setLocation}
+                  height={180}
+                />
+                <Text style={[styles.coordinates, { color: theme.textMuted }]}>
+                  {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                </Text>
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
+          </>
         ) : null}
       </View>
 
@@ -876,13 +986,6 @@ const styles = StyleSheet.create({
   notFoundTitle: { fontSize: 18, fontWeight: "800", textAlign: "right" },
   notFoundText: { fontSize: 14, lineHeight: 21, textAlign: "right" },
   matchWarning: { fontSize: 14, fontWeight: "700", textAlign: "right", marginBottom: 10 },
-  mapLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 14,
-    marginBottom: 6,
-    textAlign: "right",
-  },
   coordinates: {
     fontSize: 12,
     marginTop: 6,
@@ -893,9 +996,6 @@ const styles = StyleSheet.create({
     marginTop: -8,
     marginBottom: 8,
     textAlign: "right",
-  },
-  currentLocationButton: {
-    marginBottom: 10,
   },
   label: {
     fontSize: 14,
@@ -999,19 +1099,35 @@ const styles = StyleSheet.create({
   confirmBtn: {
     flex: 1,
   },
-  aiUploadButton: {
-    minHeight: 72,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-    flexDirection: "row",
+  aiRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 14 },
+  aiChip: {
+    flex: 1,
+    flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    gap: 6,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 10,
   },
-  aiUploadText: { flex: 1, alignItems: "flex-end" },
-  aiUploadTitle: { fontSize: 15, fontWeight: "800", textAlign: "right" },
-  aiUploadSubtitle: { fontSize: 12, marginTop: 3, textAlign: "right" },
+  aiChipText: { fontSize: 13, fontWeight: "700" },
+  smsSection: { gap: 4, marginBottom: 6 },
+  smsInput: { minHeight: 100, textAlignVertical: "top", paddingTop: 8 },
+  accordionHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    marginTop: 14,
+  },
+  accordionTitle: { fontSize: 14, fontWeight: "700", textAlign: "right" },
+  accordionBody: { marginTop: 12 },
+  placeActions: { flexDirection: "row-reverse", gap: 8, marginBottom: 14 },
+  placeActionBtn: { flex: 1 },
   detectedSection: { gap: 10, marginBottom: 18 },
   detectedHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   detectedTitle: { fontSize: 17, fontWeight: "800" },

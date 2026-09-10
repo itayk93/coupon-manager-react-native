@@ -98,20 +98,11 @@ export function DateField({
           display={Platform.OS === "ios" ? "inline" : "default"}
           minimumDate={minimumDate}
           onChange={(event, date) => {
-            if (Platform.OS !== "ios") setOpen(false);
-            if (event.type === "dismissed") {
-              setOpen(false);
-              return;
-            }
+            setOpen(false);
+            if (event.type === "dismissed") return;
             if (date) onChange(toIsoDay(date));
           }}
         />
-      ) : null}
-
-      {open && Platform.OS === "ios" ? (
-        <TouchableOpacity onPress={() => setOpen(false)} style={styles.doneBtn}>
-          <Text maxFontSizeMultiplier={1.35} style={[styles.doneText, { color: theme.primary }]}>סיום</Text>
-        </TouchableOpacity>
       ) : null}
 
       {error ? (
