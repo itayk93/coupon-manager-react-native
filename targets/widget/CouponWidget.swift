@@ -622,6 +622,26 @@ struct CouponCelebrationSmallView: View {
 
     private var kind: String { payload.celebration ?? "anniversary" }
 
+    /// The app fills the headline in with real numbers; the baked-in string is
+    /// only a fallback for a payload written by an older build.
+    private var headline: String {
+        let text = payload.celebrationText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let text, !text.isEmpty { return text }
+        return CelebrationScene.headline(kind)
+    }
+
+    /// Money milestones belong on the statistics screen — that is where the
+    /// number the headline just quoted is broken down.
+    private var destinationURL: URL {
+        let path: String
+        switch kind {
+        case "savings", "monthly", "record", "milestone": path = "statistics"
+        case "referral": path = "referral-program"
+        default: path = ""
+        }
+        return URL(string: "couponmaster:///\(path)") ?? URL(string: "couponmaster:///")!
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             if renderingMode == .fullColor {
@@ -635,17 +655,18 @@ struct CouponCelebrationSmallView: View {
 
             VStack(spacing: 2) {
                 AppLogoView(height: 12)
-                Text(CelebrationScene.headline(kind))
+                Text(headline)
                     .couponFont(16, .bold)
                     .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.6)
             }
             .padding(.top, 9)
             .padding(.horizontal, 14)
             .shadow(color: .black.opacity(0.75), radius: 3, x: 0, y: 1)
         }
-        .widgetURL(URL(string: "couponmaster:///")!)
+        .widgetURL(destinationURL)
         .widgetBackground(WidgetStyle.chrome)
     }
 }

@@ -50,6 +50,8 @@ struct WidgetPayload: Codable {
     let expiringIds: [String]?
     /// Non-nil forces a celebration scene on the small widget (e.g. "anniversary").
     let celebration: String?
+    /// The celebration headline, already filled in with the user's own numbers.
+    let celebrationText: String?
 
     static let empty = WidgetPayload(
         activeCouponsCount: 0,
@@ -61,7 +63,8 @@ struct WidgetPayload: Codable {
         mascotTier: 1,
         expiringCount: 0,
         expiringIds: [],
-        celebration: nil
+        celebration: nil,
+        celebrationText: nil
     )
 }
 

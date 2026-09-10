@@ -54,6 +54,8 @@ object SharedStore {
         } ?: emptyList(),
         celebration = if (root.isNull("celebration")) null
         else root.optString("celebration", "").ifBlank { null },
+        celebrationText = if (root.isNull("celebrationText")) null
+        else root.optString("celebrationText", "").ifBlank { null },
       )
     } catch (e: Exception) {
       WidgetPayload.EMPTY
@@ -106,6 +108,8 @@ data class WidgetPayload(
   val expiringIds: List<String> = emptyList(),
   /** Non-null forces a celebration scene on the small widget (e.g. "anniversary"). */
   val celebration: String? = null,
+  /** The celebration headline, already filled in with the user's own numbers. */
+  val celebrationText: String? = null,
 ) {
   companion object {
     val EMPTY = WidgetPayload(0, 0, 0.0, emptyList())

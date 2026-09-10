@@ -94,6 +94,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     expiringCount: expiring.length,
     expiringIds,
     celebration: null,
+    celebrationText: null,
   };
 }
 
@@ -140,6 +141,7 @@ export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon
   setWidgetData({
     ...base,
     celebration: null,
+    celebrationText: null,
     urgentCoupon: days === null ? null : { ...sample, expiration },
     urgentDaysRemaining: days,
     expiringCount: days === null ? 0 : 1,
@@ -161,12 +163,59 @@ export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
   { kind: "record", label: "⛰️ שיא ארנק" },
 ];
 
+const shekels = (value: number) => `₪${Math.round(value).toLocaleString("en-US")}`;
+
+/**
+ * The concrete sentence a celebration scene shows.
+ *
+ * A scene title has to name the achievement — "אבן דרך חדשה" tells the user
+ * nothing, "25 קופונים בארנק" does. The numbers come from the wallet the widget
+ * already has, so the headline can never disagree with the app.
+ */
+export function celebrationHeadline(kind: string, coupons: DecryptedCoupon[]): string {
+  const spendable = coupons.filter(isSpendableCoupon);
+  const walletValue = totalRemainingValue(coupons);
+  // What the wallet was worth versus what it cost to acquire.
+  const lifetimeSavings = coupons.reduce(
+    (sum, coupon) => sum + ((coupon.value ?? 0) - (coupon.cost ?? 0)),
+    0
+  );
+  const redeemed = coupons.filter((coupon) => coupon.status === "נוצל").length;
+
+  switch (kind) {
+    case "anniversary":
+      return "שנה איתנו! 🎉";
+    case "milestone":
+      return `${spendable.length} קופונים בארנק!`;
+    case "savings":
+      return `חסכת ${shekels(lifetimeSavings)} עד היום`;
+    // TODO: monthly/streak have no field of their own yet — these read off the
+    // wallet so the scene is at least testable, and get real numbers when the
+    // triggers land.
+    case "monthly":
+      return `החודש חסכת ${shekels(lifetimeSavings / 12)}`;
+    case "streak":
+      return "3 שבועות ברצף של חיסכון";
+    case "rescue":
+      return `מימשת ${shekels(walletValue / Math.max(spendable.length, 1))} יום לפני שפג`;
+    case "clean":
+      return "0 קופונים פגו החודש";
+    case "referral":
+      return "חבר הצטרף בזכותך!";
+    case "record":
+      return `שיא חדש: ${shekels(walletValue)} בארנק`;
+    default:
+      return `${redeemed} קופונים מומשו`;
+  }
+}
+
 /** DEBUG (admin only). Forces a celebration scene onto the small widget. */
 export function previewWidgetCelebration(kind: string, coupons: DecryptedCoupon[]): void {
   const base = buildWidgetPayload(coupons);
   setWidgetData({
     ...base,
     celebration: kind,
+    celebrationText: celebrationHeadline(kind, coupons),
     urgentCoupon: null,
     urgentDaysRemaining: null,
     expiringCount: 0,

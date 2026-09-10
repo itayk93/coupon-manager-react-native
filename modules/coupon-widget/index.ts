@@ -43,6 +43,12 @@ export type WidgetPayload = {
    * mascot (e.g. "anniversary"). Null/absent = normal behaviour.
    */
   celebration?: string | null;
+  /**
+   * The headline that celebration shows, already filled in with the user's own
+   * numbers ("25 קופונים בארנק!"). Composed here so the native side stays
+   * presentation-only and can never disagree with the app.
+   */
+  celebrationText?: string | null;
 };
 
 export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
@@ -57,6 +63,7 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
   expiringCount: 0,
   expiringIds: [],
   celebration: null,
+  celebrationText: null,
 };
 
 type CouponWidgetNativeModule = {

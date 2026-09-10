@@ -65,7 +65,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
   }
 
   private fun smallViews(context: Context, payload: WidgetPayload): RemoteViews {
-    payload.celebration?.let { return celebrationViews(context, it) }
+    payload.celebration?.let { return celebrationViews(context, it, payload.celebrationText) }
     val days = payload.urgentDaysRemaining
     return if (days != null && days in 0..7) {
       mascotViews(context, payload.expiringIds, days, payload.urgentCoupon)
@@ -75,7 +75,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
   }
 
   /** A milestone scene forced onto the small widget. Opens the app on tap. */
-  private fun celebrationViews(context: Context, kind: String): RemoteViews =
+  private fun celebrationViews(context: Context, kind: String, text: String?): RemoteViews =
     RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
       val sceneRes = when (kind) {
         "anniversary" -> R.drawable.celebration_c1
@@ -104,9 +104,17 @@ class CouponWidgetProvider : AppWidgetProvider() {
       setImageViewResource(R.id.mascot_image, sceneRes)
       setViewVisibility(R.id.mascot_today_logo, View.VISIBLE)
       setViewVisibility(R.id.mascot_today_title, View.VISIBLE)
-      setTextViewText(R.id.mascot_today_title, title)
+      // The app fills the headline in with real numbers; `title` is only a
+      // fallback for a payload written by an older build.
+      setTextViewText(R.id.mascot_today_title, text?.takeIf { it.isNotBlank() } ?: title)
       setViewVisibility(R.id.mascot_company, View.GONE)
-      setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, "couponmaster:///"))
+      // Money milestones open the statistics screen, where that number is broken down.
+      val target = when (kind) {
+        "savings", "monthly", "record", "milestone" -> "couponmaster:///statistics"
+        "referral" -> "couponmaster:///referral-program"
+        else -> "couponmaster:///"
+      }
+      setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, target))
     }
 
   /** Image-only: the scene illustration for `days` carries its own headline.
