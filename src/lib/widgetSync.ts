@@ -93,6 +93,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     mascotTier,
     expiringCount: expiring.length,
     expiringIds,
+    celebration: null,
   };
 }
 
@@ -138,12 +139,38 @@ export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon
 
   setWidgetData({
     ...base,
+    celebration: null,
     urgentCoupon: days === null ? null : { ...sample, expiration },
     urgentDaysRemaining: days,
     expiringCount: days === null ? 0 : 1,
     expiringIds: days === null || !sample.publicId ? [] : [sample.publicId],
     mascotTier: days === null ? 1 : days <= 0 ? 5 : days === 1 ? 4 : days <= 4 ? 3 : 2,
   });
+}
+
+/** Celebration scenes the admin debug switcher can force. */
+export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
+  { kind: "anniversary", label: "🎂 יום שנה" },
+];
+
+/** DEBUG (admin only). Forces a celebration scene onto the small widget. */
+export function previewWidgetCelebration(kind: string, coupons: DecryptedCoupon[]): void {
+  const base = buildWidgetPayload(coupons);
+  setWidgetData({
+    ...base,
+    celebration: kind,
+    urgentCoupon: null,
+    urgentDaysRemaining: null,
+    expiringCount: 0,
+    expiringIds: [],
+    mascotTier: 1,
+  });
+}
+
+/** Routes a stored debug token ("1".."9" or a celebration key) to its preview. */
+export function applyWidgetDebugToken(token: string, coupons: DecryptedCoupon[]): void {
+  if (/^\d+$/.test(token)) previewWidgetState(Number(token), coupons);
+  else previewWidgetCelebration(token, coupons);
 }
 
 /**
@@ -164,7 +191,7 @@ export async function syncWidget(
   // coupon changes must not overwrite it.
   const override = await loadWidgetDebugOverride();
   if (override != null) {
-    previewWidgetState(override, coupons);
+    applyWidgetDebugToken(override, coupons);
     return;
   }
 

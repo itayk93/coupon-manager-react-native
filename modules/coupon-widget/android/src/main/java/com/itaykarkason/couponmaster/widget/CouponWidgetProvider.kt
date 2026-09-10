@@ -65,6 +65,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
   }
 
   private fun smallViews(context: Context, payload: WidgetPayload): RemoteViews {
+    payload.celebration?.let { return celebrationViews(context, it) }
     val days = payload.urgentDaysRemaining
     return if (days != null && days in 0..7) {
       mascotViews(context, payload.expiringIds, days, payload.urgentCoupon)
@@ -72,6 +73,25 @@ class CouponWidgetProvider : AppWidgetProvider() {
       statsViews(context, payload)
     }
   }
+
+  /** A milestone scene forced onto the small widget. Opens the app on tap. */
+  private fun celebrationViews(context: Context, kind: String): RemoteViews =
+    RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
+      val sceneRes = when (kind) {
+        "anniversary" -> R.drawable.celebration_c1
+        else -> R.drawable.celebration_c1
+      }
+      val title = when (kind) {
+        "anniversary" -> "שנה איתנו!"
+        else -> "מזל טוב!"
+      }
+      setImageViewResource(R.id.mascot_image, sceneRes)
+      setViewVisibility(R.id.mascot_today_logo, View.VISIBLE)
+      setViewVisibility(R.id.mascot_today_title, View.VISIBLE)
+      setTextViewText(R.id.mascot_today_title, title)
+      setViewVisibility(R.id.mascot_company, View.GONE)
+      setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, "couponmaster:///"))
+    }
 
   /** Image-only: the scene illustration for `days` carries its own headline.
    *  Tapping opens the coupons list filtered to exactly the expiring ids. */

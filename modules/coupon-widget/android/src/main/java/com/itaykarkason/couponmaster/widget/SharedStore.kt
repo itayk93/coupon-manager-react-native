@@ -52,6 +52,8 @@ object SharedStore {
         expiringIds = root.optJSONArray("expiringIds")?.let { arr ->
           (0 until arr.length()).mapNotNull { arr.optString(it, "").ifBlank { null } }
         } ?: emptyList(),
+        celebration = if (root.isNull("celebration")) null
+        else root.optString("celebration", "").ifBlank { null },
       )
     } catch (e: Exception) {
       WidgetPayload.EMPTY
@@ -102,6 +104,8 @@ data class WidgetPayload(
   val urgentCoupon: WidgetCoupon? = null,
   val expiringCount: Int = 0,
   val expiringIds: List<String> = emptyList(),
+  /** Non-null forces a celebration scene on the small widget (e.g. "anniversary"). */
+  val celebration: String? = null,
 ) {
   companion object {
     val EMPTY = WidgetPayload(0, 0, 0.0, emptyList())

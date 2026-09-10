@@ -578,6 +578,62 @@ private func emptyState(text: String) -> some View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
 }
 
+// MARK: - Celebration
+//
+// A milestone scene (anniversary, savings, …) forced onto the small widget. The
+// illustration carries the mood; the widget draws the logo and a headline on top.
+
+enum CelebrationScene {
+    static func assetName(_ kind: String) -> String {
+        switch kind {
+        case "anniversary": return "MascotCelebrationC1"
+        default: return "MascotCelebrationC1"
+        }
+    }
+
+    static func headline(_ kind: String) -> String {
+        switch kind {
+        case "anniversary": return "שנה איתנו!"
+        default: return "מזל טוב!"
+        }
+    }
+}
+
+struct CouponCelebrationSmallView: View {
+    let payload: WidgetPayload
+
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    private var kind: String { payload.celebration ?? "anniversary" }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            if renderingMode == .fullColor {
+                Image(CelebrationScene.assetName(kind))
+                    .resizable()
+                    .scaledToFill()
+                    .edgesIgnoringSafeArea(.all)
+            } else {
+                WidgetStyle.chrome.edgesIgnoringSafeArea(.all)
+            }
+
+            VStack(spacing: 2) {
+                AppLogoView(height: 12)
+                Text(CelebrationScene.headline(kind))
+                    .couponFont(16, .bold)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .padding(.top, 9)
+            .padding(.horizontal, 14)
+            .shadow(color: .black.opacity(0.75), radius: 3, x: 0, y: 1)
+        }
+        .widgetURL(URL(string: "couponmaster:///")!)
+        .widgetBackground(WidgetStyle.chrome)
+    }
+}
+
 // MARK: - Entry point
 
 struct CouponWidgetEntryView: View {
@@ -589,7 +645,12 @@ struct CouponWidgetEntryView: View {
             switch family {
             case .systemMedium: CouponMediumView(payload: entry.payload)
             case .systemLarge: CouponLargeView(payload: entry.payload)
-            default: CouponMascotSmallView(payload: entry.payload)
+            default:
+                if entry.payload.celebration != nil {
+                    CouponCelebrationSmallView(payload: entry.payload)
+                } else {
+                    CouponMascotSmallView(payload: entry.payload)
+                }
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
@@ -600,8 +661,14 @@ struct CouponMascotEntryView: View {
     var entry: CouponProvider.Entry
 
     var body: some View {
-        CouponMascotSmallView(payload: entry.payload)
-            .environment(\.layoutDirection, .rightToLeft)
+        Group {
+            if entry.payload.celebration != nil {
+                CouponCelebrationSmallView(payload: entry.payload)
+            } else {
+                CouponMascotSmallView(payload: entry.payload)
+            }
+        }
+        .environment(\.layoutDirection, .rightToLeft)
     }
 }
 

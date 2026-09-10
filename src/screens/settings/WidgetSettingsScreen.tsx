@@ -14,7 +14,12 @@ import { useCoupons, useUpdateCoupon, type DecryptedCoupon } from "@/hooks/useCo
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
-import { WIDGET_DEBUG_STATES, previewWidgetState, syncWidget } from "@/lib/widgetSync";
+import {
+  WIDGET_DEBUG_CELEBRATIONS,
+  WIDGET_DEBUG_STATES,
+  applyWidgetDebugToken,
+  syncWidget,
+} from "@/lib/widgetSync";
 import {
   clearWidgetDebugOverride,
   loadWidgetDebugOverride,
@@ -41,22 +46,22 @@ export function WidgetSettingsScreen() {
   const { isAdmin } = useAuth();
   const { data: coupons = [], isLoading } = useCoupons();
   const updateCoupon = useUpdateCoupon();
-  const [debugState, setDebugState] = useState<number | null>(null);
+  const [debugToken, setDebugToken] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAdmin) void loadWidgetDebugOverride().then(setDebugState);
+    if (isAdmin) void loadWidgetDebugOverride().then(setDebugToken);
   }, [isAdmin]);
 
-  const pickDebugState = (state: number, label: string) => {
-    void setWidgetDebugOverride(state);
-    setDebugState(state);
-    previewWidgetState(state, coupons);
-    notify.success(`הווידג'ט נעול על מצב ${state} · ${label}`);
+  const pickDebug = (token: string, label: string) => {
+    void setWidgetDebugOverride(token);
+    setDebugToken(token);
+    applyWidgetDebugToken(token, coupons);
+    notify.success(`הווידג'ט נעול על ${label}`);
   };
 
-  const clearDebugState = () => {
+  const clearDebug = () => {
     void clearWidgetDebugOverride().then(() => void syncWidget(coupons));
-    setDebugState(null);
+    setDebugToken(null);
     notify.success("הווידג'ט חזר לנתונים האמיתיים");
   };
 
@@ -146,8 +151,8 @@ export function WidgetSettingsScreen() {
             style={[
               styles.debugCard,
               {
-                backgroundColor: debugState != null ? theme.primaryTint : theme.card,
-                borderColor: debugState != null ? theme.primary : theme.cardBorder,
+                backgroundColor: debugToken != null ? theme.primaryTint : theme.card,
+                borderColor: debugToken != null ? theme.primary : theme.cardBorder,
               },
             ]}
           >
@@ -155,17 +160,50 @@ export function WidgetSettingsScreen() {
               🐞 דיבאג — נעילת מצב הווידג'ט
             </Text>
             <Text style={[styles.hint, { color: theme.textSubtle }]}>
-              {debugState != null
-                ? `הווידג'ט נעול כרגע על מצב ${debugState}. גם קופון שפג לא ישנה אותו עד שחרור.`
+              {debugToken != null
+                ? "הווידג'ט נעול. גם קופון שפג לא ישנה אותו עד שחרור."
                 : "בחר מצב כדי לנעול עליו את הווידג'ט על המכשיר, גם אם אין קופון שפג."}
             </Text>
+
+            <Text style={[styles.debugRowLabel, { color: theme.textMuted }]}>ספירת תפוגה</Text>
             <View style={styles.debugGrid}>
               {WIDGET_DEBUG_STATES.map(({ state, label }) => {
-                const active = debugState === state;
+                const token = String(state);
+                const active = debugToken === token;
                 return (
                   <TouchableOpacity
-                    key={state}
-                    onPress={() => pickDebugState(state, label)}
+                    key={token}
+                    onPress={() => pickDebug(token, `מצב ${state} · ${label}`)}
+                    style={[
+                      styles.debugChip,
+                      {
+                        backgroundColor: active ? theme.primary : theme.background,
+                        borderColor: active ? theme.primary : theme.cardBorder,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.debugChipNum, { color: active ? "#fff" : theme.primary }]}>
+                      {state}
+                    </Text>
+                    <Text
+                      style={[styles.debugChipLabel, { color: active ? "#fff" : theme.textMuted }]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.debugRowLabel, { color: theme.textMuted }]}>חגיגות</Text>
+            <View style={styles.debugGrid}>
+              {WIDGET_DEBUG_CELEBRATIONS.map(({ kind, label }) => {
+                const active = debugToken === kind;
+                return (
+                  <TouchableOpacity
+                    key={kind}
+                    onPress={() => pickDebug(kind, label)}
                     style={[
                       styles.debugChip,
                       {
@@ -175,15 +213,7 @@ export function WidgetSettingsScreen() {
                     ]}
                   >
                     <Text
-                      style={[styles.debugChipNum, { color: active ? "#fff" : theme.primary }]}
-                    >
-                      {state}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.debugChipLabel,
-                        { color: active ? "#fff" : theme.textMuted },
-                      ]}
+                      style={[styles.debugChipLabel, { color: active ? "#fff" : theme.textMuted }]}
                       numberOfLines={1}
                     >
                       {label}
@@ -192,12 +222,13 @@ export function WidgetSettingsScreen() {
                 );
               })}
             </View>
+
             <TouchableOpacity
-              onPress={clearDebugState}
-              disabled={debugState == null}
+              onPress={clearDebug}
+              disabled={debugToken == null}
               style={[
                 styles.debugRestore,
-                { borderColor: theme.cardBorder, opacity: debugState == null ? 0.4 : 1 },
+                { borderColor: theme.cardBorder, opacity: debugToken == null ? 0.4 : 1 },
               ]}
             >
               <Text style={[styles.debugRestoreText, { color: theme.text }]}>
@@ -357,6 +388,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   debugTitle: { fontFamily: fonts.bodyBold, fontSize: 15, textAlign: "right" },
+  debugRowLabel: { fontFamily: fonts.bodyMedium, fontSize: 12, textAlign: "right", marginTop: 10 },
   debugGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginTop: 8 },
   debugChip: {
     flexDirection: "row-reverse",

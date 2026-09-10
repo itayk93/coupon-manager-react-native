@@ -48,6 +48,8 @@ struct WidgetPayload: Codable {
     /// publicIds of every coupon expiring within the week — the widget tap opens
     /// the coupons list filtered to exactly these.
     let expiringIds: [String]?
+    /// Non-nil forces a celebration scene on the small widget (e.g. "anniversary").
+    let celebration: String?
 
     static let empty = WidgetPayload(
         activeCouponsCount: 0,
@@ -58,7 +60,8 @@ struct WidgetPayload: Codable {
         urgentDaysRemaining: nil,
         mascotTier: 1,
         expiringCount: 0,
-        expiringIds: []
+        expiringIds: [],
+        celebration: nil
     )
 }
 

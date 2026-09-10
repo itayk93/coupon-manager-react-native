@@ -38,6 +38,11 @@ export type WidgetPayload = {
   expiringCount?: number;
   /** publicIds of every coupon expiring within the week, soonest first. */
   expiringIds?: string[];
+  /**
+   * When set, the small widget shows a celebration scene instead of the expiry
+   * mascot (e.g. "anniversary"). Null/absent = normal behaviour.
+   */
+  celebration?: string | null;
 };
 
 export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
@@ -51,6 +56,7 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
   mascotTier: 1,
   expiringCount: 0,
   expiringIds: [],
+  celebration: null,
 };
 
 type CouponWidgetNativeModule = {
