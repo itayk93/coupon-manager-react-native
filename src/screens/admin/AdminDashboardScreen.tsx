@@ -19,6 +19,7 @@ import { Modal } from "@/components/ui/Modal";
 import { ReferralsTab } from "@/screens/admin/ReferralsTab";
 import { GeoAnalyticsTab } from "@/screens/admin/GeoAnalyticsTab";
 import { NewslettersTab } from "@/screens/admin/NewslettersTab";
+import { WidgetDebugPanel } from "@/components/WidgetDebugPanel";
 import {
   useManageUsers,
   useCompanies,
@@ -34,9 +35,26 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
-type AdminTab = "users" | "companies" | "tags" | "messages" | "referrals" | "geo" | "newsletters";
+type AdminTab =
+  | "users"
+  | "companies"
+  | "tags"
+  | "messages"
+  | "referrals"
+  | "geo"
+  | "newsletters"
+  | "widget";
 
-const TAB_KEYS: AdminTab[] = ["users", "companies", "tags", "messages", "referrals", "geo", "newsletters"];
+const TAB_KEYS: AdminTab[] = [
+  "users",
+  "companies",
+  "tags",
+  "messages",
+  "referrals",
+  "geo",
+  "newsletters",
+  "widget",
+];
 
 export function AdminDashboardScreen() {
   const router = useRouter();
@@ -125,6 +143,7 @@ export function AdminDashboardScreen() {
                 { key: "referrals", label: "הפניות" },
                 { key: "geo", label: "גאוגרפיה" },
                 { key: "newsletters", label: "ניוזלטר" },
+                { key: "widget", label: "🐞 ווידג'ט" },
               ] as const
             ).map((tab) => {
               const isCurrent = activeTab === tab.key;
@@ -169,6 +188,14 @@ export function AdminDashboardScreen() {
         {/* Tab 7: Newsletters — authoring only. Sending is never wired here;
             drafts are reviewed and sent by hand. */}
         {activeTab === "newsletters" ? <NewslettersTab /> : null}
+
+        {/* Tab 8: Widget debug — pins the home-screen widget to any scene so it
+            can be checked on a device without waiting for a coupon to expire. */}
+        {activeTab === "widget" ? (
+          <ScrollView contentContainerStyle={styles.tabContent}>
+            <WidgetDebugPanel />
+          </ScrollView>
+        ) : null}
 
         {/* Tab 1: Users */}
         {activeTab === "users" ? (
