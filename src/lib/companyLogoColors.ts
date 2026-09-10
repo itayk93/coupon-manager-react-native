@@ -1,7 +1,7 @@
 /**
  * Dominant brand colour per logo file — GENERATED, do not edit by hand.
  *
- * Regenerate after adding logos to public/legacy-images:
+ * Regenerate after adding logos to the company-logos bucket:
  *   npm run logo-colors
  */
 export const logoColorByFile: Record<string, string> = {
@@ -67,6 +67,6 @@ export const logoColorByFile: Record<string, string> = {
   "victory.jpg": "#f67b20",
   "xtra.png": "#ea414e",
   "yes_planet.jpg": "#f3801e",
-  "מחסני_חשמל_68_manual.png": "#fddf04",
-  "משלוחה_64_manual.jpeg": "#fbda6d",
+  "mahsanei_hashmal_68_manual.png": "#fddf04",
+  "mishloha_64_manual.jpeg": "#fbda6d",
 };

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Extract the dominant brand colour of every logo in public/legacy-images and
-write src/lib/companyLogoColors.ts.
+Extract the dominant brand colour of every company logo and write
+src/lib/companyLogoColors.ts.
+
+Logos live in the Supabase `company-logos` bucket. By default this script
+downloads them (the filenames already in companyLogoColors.ts) into a temp
+dir. Point LOGO_SRC_DIR at a local folder to use that instead.
 
 Run after adding logos:  npm run logo-colors
 
@@ -13,13 +17,34 @@ large grey wash. Buckets are averaged for a smooth result.
 import colorsys
 import json
 import os
+import re
+import tempfile
+import urllib.request
 from collections import defaultdict
 
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "public", "legacy-images")
 OUT = os.path.join(ROOT, "src", "lib", "companyLogoColors.ts")
+BUCKET = "https://dugjsiyenazpsoiyduuz.supabase.co/storage/v1/object/public/company-logos"
+
+
+def resolve_src():
+    """Local dir if LOGO_SRC_DIR is set, else download the known logos."""
+    local = os.environ.get("LOGO_SRC_DIR")
+    if local:
+        return local
+    names = re.findall(r'^\s*"?([^"\n:]+\.(?:png|jpe?g|webp|avif|gif))"?\s*:', open(OUT).read(), re.M | re.I)
+    tmp = tempfile.mkdtemp(prefix="logo-colors-")
+    for name in sorted(set(names)):
+        try:
+            urllib.request.urlretrieve(f"{BUCKET}/{urllib.request.quote(name)}", os.path.join(tmp, name))
+        except Exception as err:
+            print(f"skip download {name}: {err}")
+    return tmp
+
+
+SRC = resolve_src()
 SKIP = {"default.png", "default_logo.png", "google-logo.png"}
 BIN = 24  # RGB bucket size
 
@@ -90,7 +115,7 @@ def main():
         "/**",
         " * Dominant brand colour per logo file — GENERATED, do not edit by hand.",
         " *",
-        " * Regenerate after adding logos to public/legacy-images:",
+        " * Regenerate after adding logos to the company-logos bucket:",
         " *   npm run logo-colors",
         " */",
         "export const logoColorByFile: Record<string, string> = {",

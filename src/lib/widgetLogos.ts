@@ -1,4 +1,3 @@
-import { Asset } from "expo-asset";
 import { Directory, File } from "expo-file-system";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { getSharedDirectory } from "../../modules/coupon-widget";
@@ -6,16 +5,11 @@ import { getSharedDirectory } from "../../modules/coupon-widget";
 /**
  * Company logos for the home-screen widget.
  *
- * The app draws logos from Metro-bundled assets (`getCompanyLogoSource` returns
- * a `require()` handle for the 66 bundled files). A widget extension is a
- * separate process with no access to the JS bundle, so it cannot use those.
- *
- * Remote URLs are not a fallback either: `resolveCompanyLogo` points at a
- * Supabase `company-logos` bucket that does not exist, and every request there
- * returns `NoSuchBucket`. That is why the widget showed initials.
- *
- * So the app copies the handful of logos it actually needs (at most 4) into a
- * directory both processes can read, and the payload carries file paths.
+ * `getCompanyLogoSource` now always returns a remote URL (the Supabase
+ * `company-logos` bucket, the legacy host, or a favicon fallback). A widget
+ * extension is a separate process with no network stack of its own, so the app
+ * downloads the handful of logos it actually needs (at most 4) into a directory
+ * both processes can read, and the payload carries file paths.
  */
 
 /** Filesystem-safe, stable name for a coupon's logo. */
@@ -41,21 +35,9 @@ async function materialiseLogo(
   try {
     const source = getCompanyLogoSource(company, dbImagePath);
 
-    // A bundled asset: Metro gives it to us as a module handle.
-    if (typeof source === "number") {
-      const asset = Asset.fromModule(source);
-      await asset.downloadAsync();
-      const localUri = asset.localUri ?? asset.uri;
-      if (!localUri) return null;
+    // Bundled handles are gone; guard anyway so the types stay honest.
+    if (typeof source === "number") return null;
 
-      const target = new File(directory, logoFileName(couponId, extensionOf(localUri)));
-      if (target.exists) target.delete();
-      new File(localUri).copy(target);
-      return target.uri.replace(/^file:\/\//, "");
-    }
-
-    // A remote URL — only reachable for coupons whose DB row carries a full
-    // https path, since the storage bucket is missing.
     if (!/^https?:\/\//i.test(source.uri)) return null;
 
     const target = new File(directory, logoFileName(couponId, extensionOf(source.uri)));
