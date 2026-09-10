@@ -185,26 +185,42 @@ echo "✅ נבנה: $(du -sh "$APP_PATH" | cut -f1)"
 CURRENT_PHASE="deploy"
 
 # 4. Install and launch -------------------------------------------------------
-# Each device gets its own process so two phones install and launch in parallel.
+# CoreDevice is flaky when multiple device installs run at once, so install
+# serially and retry transient connection resets.
 deploy_device() {
   local device_name="$1"
   local device_id="$2"
-  local install_out launch_out status
+  local install_out launch_out status install_attempt max_install_attempts
 
-  echo "📲 [$device_name] מתקין..."
-  set +e
-  install_out=$(xcrun devicectl device install app --device "$device_id" "$APP_PATH" 2>&1)
-  status=$?
-  set -e
-  printf '%s\n' "$install_out"
-  if [ $status -ne 0 ]; then
+  install_attempt=1
+  max_install_attempts=3
+  while [ $install_attempt -le $max_install_attempts ]; do
+    echo "📲 [$device_name] מתקין ($install_attempt/$max_install_attempts)..."
+    set +e
+    install_out=$(xcrun devicectl device install app --device "$device_id" "$APP_PATH" 2>&1)
+    status=$?
+    set -e
+    printf '%s\n' "$install_out"
+    if [ $status -eq 0 ]; then
+      break
+    fi
+
     case "$install_out" in
+      *"Connection reset by peer"*|*"Connection was invalidated"*|*"could not be established"*)
+        if [ $install_attempt -lt $max_install_attempts ]; then
+          echo "🔁 [$device_name] החיבור ל-Xcode נפל. מנתק רגע ומנסה שוב בעוד 5 שניות..."
+          sleep 5
+          install_attempt=$((install_attempt + 1))
+          continue
+        fi
+        echo "👉 [$device_name] CoreDevice ניתק את החיבור. פתח את האייפון, השאר מחובר, ואם זה חוזר — נתק וחבר כבל."
+        ;;
       *"must be paired"*) echo "👉 [$device_name] אשר Pairing ו-Trust." ;;
       *"Developer Mode"*|*0xe800801c*) echo "👉 [$device_name] הפעל Developer Mode." ;;
       *0xe8008012*|*"provisioning profile cannot be installed"*) echo "👉 [$device_name] הפרופיל לא כולל את המכשיר." ;;
     esac
     return $status
-  fi
+  done
 
   local launch_attempt=1
   local max_launch_attempts=12
@@ -238,32 +254,21 @@ deploy_device() {
   done
 }
 
-echo "📲 מתקין ומפעיל במקביל..."
-PIDS=()
-LOGS=()
-NAMES=()
-INDEX=0
+echo "📲 מתקין ומפעיל לפי סדר..."
+DEPLOY_STATUS=0
 while IFS=$'\t' read -r DEVICE_NAME DEVICE_ID; do
   [ -z "$DEVICE_ID" ] && continue
   DEVICE_LOG="$DERIVED/deploy-$DEVICE_ID.log"
-  deploy_device "$DEVICE_NAME" "$DEVICE_ID" 2>&1 | tee "$DEVICE_LOG" &
-  PIDS[$INDEX]=$!
-  LOGS[$INDEX]="$DEVICE_LOG"
-  NAMES[$INDEX]="$DEVICE_NAME"
-  INDEX=$((INDEX + 1))
-done <<< "$MATCHES"
-
-DEPLOY_STATUS=0
-set +e
-for ((INDEX=0; INDEX<${#PIDS[@]}; INDEX++)); do
-  wait "${PIDS[$INDEX]}"
+  set +e
+  deploy_device "$DEVICE_NAME" "$DEVICE_ID" 2>&1 | tee "$DEVICE_LOG"
   STATUS=$?
+  set -e
   if [ $STATUS -ne 0 ]; then
-    echo "❌ ${NAMES[$INDEX]} נכשל (קוד $STATUS)."
+    echo "❌ $DEVICE_NAME נכשל (קוד $STATUS)."
+    echo "   לוג התקנה: $DEVICE_LOG"
     DEPLOY_STATUS=$STATUS
   fi
-done
-set -e
+done <<< "$MATCHES"
 [ $DEPLOY_STATUS -ne 0 ] && exit $DEPLOY_STATUS
 
 trap - EXIT

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -85,13 +85,21 @@ export function CouponsListScreen() {
   // A notification links here with the exact coupons it was written about, so
   // the list opens on those and not on the whole wallet. Cleared from the
   // banner, which is the only way back to everything.
-  const [focusIds, setFocusIds] = useState<string[] | null>(() => {
-    const parsed = String(params.ids ?? "")
+  const parseFocusIds = (raw: unknown): string[] | null => {
+    const parsed = String(raw ?? "")
       .split(",")
       .map((value) => value.trim())
       .filter((value) => /^cpn_[0-9a-f]{20}$/.test(value) || /^[1-9][0-9]*$/.test(value));
     return parsed.length ? parsed : null;
-  });
+  };
+  const [focusIds, setFocusIds] = useState<string[] | null>(() => parseFocusIds(params.ids));
+
+  // A widget or notification can re-open this screen with a different id set
+  // while it is already mounted — keep the focus in step.
+  useEffect(() => {
+    const next = parseFocusIds(params.ids);
+    if (next) setFocusIds(next);
+  }, [params.ids]);
 
   const [search, setSearch] = useState("");
   const [merchantQuery, setMerchantQuery] = useState("");
