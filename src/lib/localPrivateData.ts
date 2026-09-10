@@ -12,6 +12,7 @@ const ACCOUNT_KEYS = [
   "where-bought-corrections",
   "local-expiry:plan:v1",
   "expiring_banner_dismissal",
+  "widget_debug_state",
 ] as const;
 
 const IDENTITY_PREFIXES = [

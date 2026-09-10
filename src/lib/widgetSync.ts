@@ -1,4 +1,5 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
+import { loadWidgetDebugOverride } from "./widgetDebugOverride";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { prepareWidgetLogos } from "@/lib/widgetLogos";
 import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
@@ -159,6 +160,14 @@ export async function syncWidget(
    *  that are not in the bundled `logoByCompany` map. */
   imagePathByCompany: Record<string, string | null> = {}
 ): Promise<void> {
+  // Admin debug: a forced state pins the widget until it is cleared, so real
+  // coupon changes must not overwrite it.
+  const override = await loadWidgetDebugOverride();
+  if (override != null) {
+    previewWidgetState(override, coupons);
+    return;
+  }
+
   const payload = buildWidgetPayload(coupons);
   setWidgetData(payload);
 

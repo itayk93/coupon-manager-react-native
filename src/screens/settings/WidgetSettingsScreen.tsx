@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,11 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { WIDGET_DEBUG_STATES, previewWidgetState, syncWidget } from "@/lib/widgetSync";
+import {
+  clearWidgetDebugOverride,
+  loadWidgetDebugOverride,
+  setWidgetDebugOverride,
+} from "@/lib/widgetDebugOverride";
 import { fonts, radii } from "@/lib/theme";
 import { couponRemainingValue } from "@/lib/couponTotals";
 import {
@@ -36,6 +41,24 @@ export function WidgetSettingsScreen() {
   const { isAdmin } = useAuth();
   const { data: coupons = [], isLoading } = useCoupons();
   const updateCoupon = useUpdateCoupon();
+  const [debugState, setDebugState] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isAdmin) void loadWidgetDebugOverride().then(setDebugState);
+  }, [isAdmin]);
+
+  const pickDebugState = (state: number, label: string) => {
+    void setWidgetDebugOverride(state);
+    setDebugState(state);
+    previewWidgetState(state, coupons);
+    notify.success(`הווידג'ט נעול על מצב ${state} · ${label}`);
+  };
+
+  const clearDebugState = () => {
+    void clearWidgetDebugOverride().then(() => void syncWidget(coupons));
+    setDebugState(null);
+    notify.success("הווידג'ט חזר לנתונים האמיתיים");
+  };
 
   const eligible = coupons.filter(isWidgetEligible);
   const selected = widgetSelection(coupons);
@@ -118,6 +141,72 @@ export function WidgetSettingsScreen() {
       <Header title="ווידג'ט מסך הבית" />
 
       <ScrollView contentContainerStyle={styles.content}>
+        {isAdmin ? (
+          <View
+            style={[
+              styles.debugCard,
+              {
+                backgroundColor: debugState != null ? theme.primaryTint : theme.card,
+                borderColor: debugState != null ? theme.primary : theme.cardBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.debugTitle, { color: theme.text }]}>
+              🐞 דיבאג — נעילת מצב הווידג'ט
+            </Text>
+            <Text style={[styles.hint, { color: theme.textSubtle }]}>
+              {debugState != null
+                ? `הווידג'ט נעול כרגע על מצב ${debugState}. גם קופון שפג לא ישנה אותו עד שחרור.`
+                : "בחר מצב כדי לנעול עליו את הווידג'ט על המכשיר, גם אם אין קופון שפג."}
+            </Text>
+            <View style={styles.debugGrid}>
+              {WIDGET_DEBUG_STATES.map(({ state, label }) => {
+                const active = debugState === state;
+                return (
+                  <TouchableOpacity
+                    key={state}
+                    onPress={() => pickDebugState(state, label)}
+                    style={[
+                      styles.debugChip,
+                      {
+                        backgroundColor: active ? theme.primary : theme.background,
+                        borderColor: active ? theme.primary : theme.cardBorder,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.debugChipNum, { color: active ? "#fff" : theme.primary }]}
+                    >
+                      {state}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.debugChipLabel,
+                        { color: active ? "#fff" : theme.textMuted },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TouchableOpacity
+              onPress={clearDebugState}
+              disabled={debugState == null}
+              style={[
+                styles.debugRestore,
+                { borderColor: theme.cardBorder, opacity: debugState == null ? 0.4 : 1 },
+              ]}
+            >
+              <Text style={[styles.debugRestoreText, { color: theme.text }]}>
+                שחרר — חזרה לנתונים האמיתיים
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View style={[styles.intro, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <LayoutGrid size={20} color={theme.primary} />
           <View style={styles.introText}>
@@ -193,48 +282,6 @@ export function WidgetSettingsScreen() {
           )
         )}
 
-        {isAdmin ? (
-          <>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              🐞 דיבאג — תצוגת מצבי הווידג'ט
-            </Text>
-            <Text style={[styles.hint, { color: theme.textSubtle }]}>
-              מחליף את הווידג'ט למצב הנבחר כדי לבדוק אותו על המכשיר. הנתונים האמיתיים חוזרים
-              בשינוי קופון הבא, או בלחיצה על "שחזר".
-            </Text>
-            <View style={styles.debugGrid}>
-              {WIDGET_DEBUG_STATES.map(({ state, label }) => (
-                <TouchableOpacity
-                  key={state}
-                  onPress={() => {
-                    previewWidgetState(state, coupons);
-                    notify.success(`הווידג'ט הוחלף למצב ${state} · ${label}`);
-                  }}
-                  style={[
-                    styles.debugChip,
-                    { backgroundColor: theme.card, borderColor: theme.cardBorder },
-                  ]}
-                >
-                  <Text style={[styles.debugChipNum, { color: theme.primary }]}>{state}</Text>
-                  <Text style={[styles.debugChipLabel, { color: theme.textMuted }]} numberOfLines={1}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                void syncWidget(coupons);
-                notify.success("הווידג'ט שוחזר לנתונים האמיתיים");
-              }}
-              style={[styles.debugRestore, { borderColor: theme.cardBorder }]}
-            >
-              <Text style={[styles.debugRestoreText, { color: theme.text }]}>
-                שחזר נתונים אמיתיים
-              </Text>
-            </TouchableOpacity>
-          </>
-        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -302,6 +349,14 @@ const styles = StyleSheet.create({
   rowSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "right", writingDirection: "rtl" },
   reorder: { gap: 2 },
   actionButton: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  debugCard: {
+    padding: 14,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 4,
+  },
+  debugTitle: { fontFamily: fonts.bodyBold, fontSize: 15, textAlign: "right" },
   debugGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginTop: 8 },
   debugChip: {
     flexDirection: "row-reverse",
