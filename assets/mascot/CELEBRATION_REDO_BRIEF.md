@@ -11,15 +11,17 @@
 
 | קובץ | רזולוציה | למה דווקא הוא |
 |---|---|---|
-| `assets/mascot/original_app_mascot.png` | 1536×1024 | **קנון הדמות.** הכי גדול והכי ברור. הדמות מבודדת על רקע שחור, גוף מלא, מלפנים — הצללית נקראת מושלם |
+| `assets/mascot/mascot_reference_square.png` | 1024×1024 | **קנון הדמות.** הדמות מבודדת על רקע כהה, גוף מלא, מלפנים — הצללית נקראת מושלם. חתוך לריבוע מ-`original_app_mascot.png` |
 | `assets/mascot/celebration/C7-clean-month.png` | 1254×1254 | **גוף מלא בעמידה** בסגנון הרינדור הנוכחי. רגליים, ידיים ופנים גלויים על רקע נקי |
 | `assets/mascot/celebration/C5-usage-streak.png` | 1254×1254 | **זווית שנייה** — רגליים מפוסקות, הצללית ברורה מול רקע בהיר |
 | `assets/mascot/celebration/C3-lifetime-savings.png` | 1254×1254 | **הקומפוזיציה היחידה שעברה.** ככה אזור ה-40% צריך להיראות |
 
 שלוש הראשונות = צורת הדמות. הרביעית = הקומפוזיציה.
+**כל הארבע ריבועיות 1:1** — כדי שהמודל לא ילמד יחס אחר.
 
-לא להשתמש ב-`widget-originals/MascotState1.png` כרפרנס — הוא 600×600 בלבד
-ומטושטש מדי בשביל לשחזר ממנו את הצללית.
+לא להשתמש ב:
+- `widget-originals/MascotState1.png` — 600×600 בלבד, רך מדי לשחזור הצללית
+- `original_app_mascot.png` — 1536×1024, לא ריבוע. השתמש בגרסה החתוכה במקום
 
 ### לפי סצנה — לצרף גם את התמונה הכושלת שמתקנים
 
@@ -207,7 +209,7 @@ Full-bleed 1:1 square 3D illustration, Pixar/Octane render, the same identical r
 
 ```text
 מצורף המסמך CELEBRATION_REDO_BRIEF.md וארבע תמונות ייחוס קבועות:
-- original_app_mascot.png — קנון הדמות, הכי ברור
+- mascot_reference_square.png — קנון הדמות, ריבוע
 - C7-clean-month.png — גוף מלא בעמידה בסגנון הנוכחי
 - C5-usage-streak.png — זווית שנייה, רגליים מפוסקות
 - C3-lifetime-savings.png — הקומפוזיציה היחידה שעברה
