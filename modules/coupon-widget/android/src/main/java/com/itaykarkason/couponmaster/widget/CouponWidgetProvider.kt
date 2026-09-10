@@ -84,6 +84,9 @@ class CouponWidgetProvider : AppWidgetProvider() {
         "monthly" -> R.drawable.celebration_c4
         "streak" -> R.drawable.celebration_c5
         "rescue" -> R.drawable.celebration_c6
+        "clean" -> R.drawable.celebration_c7
+        "referral" -> R.drawable.celebration_c8
+        "record" -> R.drawable.celebration_c9
         else -> R.drawable.celebration_c1
       }
       val title = when (kind) {
@@ -93,6 +96,9 @@ class CouponWidgetProvider : AppWidgetProvider() {
         "monthly" -> "החיסכון החודשי שלך"
         "streak" -> "רצף מנצח!"
         "rescue" -> "הצלה ברגע האחרון!"
+        "clean" -> "חודש נקי!"
+        "referral" -> "חבר הצטרף!"
+        "record" -> "שיא חדש בארנק!"
         else -> "מזל טוב!"
       }
       setImageViewResource(R.id.mascot_image, sceneRes)

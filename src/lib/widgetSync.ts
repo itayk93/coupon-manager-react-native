@@ -156,6 +156,9 @@ export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
   { kind: "monthly", label: "🐷 סיכום חודשי" },
   { kind: "streak", label: "🔥 רצף שימוש" },
   { kind: "rescue", label: "🦸 הצלה ברגע" },
+  { kind: "clean", label: "🏅 חודש נקי" },
+  { kind: "referral", label: "🤝 חבר הצטרף" },
+  { kind: "record", label: "⛰️ שיא ארנק" },
 ];
 
 /** DEBUG (admin only). Forces a celebration scene onto the small widget. */

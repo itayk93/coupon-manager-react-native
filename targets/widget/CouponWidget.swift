@@ -592,6 +592,9 @@ enum CelebrationScene {
         case "monthly": return "MascotCelebrationC4"
         case "streak": return "MascotCelebrationC5"
         case "rescue": return "MascotCelebrationC6"
+        case "clean": return "MascotCelebrationC7"
+        case "referral": return "MascotCelebrationC8"
+        case "record": return "MascotCelebrationC9"
         default: return "MascotCelebrationC1"
         }
     }
@@ -604,6 +607,9 @@ enum CelebrationScene {
         case "monthly": return "החיסכון החודשי שלך"
         case "streak": return "רצף מנצח!"
         case "rescue": return "הצלה ברגע האחרון!"
+        case "clean": return "חודש נקי!"
+        case "referral": return "חבר הצטרף!"
+        case "record": return "שיא חדש בארנק!"
         default: return "מזל טוב!"
         }
     }
