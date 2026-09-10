@@ -94,9 +94,10 @@
 **הצורה הנכונה:** מלבן מעוגל רך / "שעועית" — **רחב יותר מגובה בחלק התחתון,
 עם קודקוד שטוח-מעוגל למעלה**. לא כדור. לא ביצה. לא טיפה.
 
-הרפרנס המחייב: `assets/mascot/widget-originals/MascotState1.png`
-ו-`assets/mascot/celebration/C3-lifetime-savings.png`.
-**תמיד לצרף את שניהם לכל בקשת הפקה.**
+הרפרנס המחייב לצללית: `assets/mascot/mascot_reference_square.png`,
+`assets/mascot/celebration/C7-clean-month.png`
+ו-`assets/mascot/celebration/C5-usage-streak.png`.
+**תמיד לצרף את שלושתן לכל בקשת הפקה** (ראה טבלת התמונות בראש המסמך).
 
 ---
 
