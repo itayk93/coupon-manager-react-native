@@ -79,10 +79,20 @@ class CouponWidgetProvider : AppWidgetProvider() {
     RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
       val sceneRes = when (kind) {
         "anniversary" -> R.drawable.celebration_c1
+        "milestone" -> R.drawable.celebration_c2
+        "savings" -> R.drawable.celebration_c3
+        "monthly" -> R.drawable.celebration_c4
+        "streak" -> R.drawable.celebration_c5
+        "rescue" -> R.drawable.celebration_c6
         else -> R.drawable.celebration_c1
       }
       val title = when (kind) {
         "anniversary" -> "שנה איתנו!"
+        "milestone" -> "אבן דרך חדשה!"
+        "savings" -> "כמה שחסכת!"
+        "monthly" -> "החיסכון החודשי שלך"
+        "streak" -> "רצף מנצח!"
+        "rescue" -> "הצלה ברגע האחרון!"
         else -> "מזל טוב!"
       }
       setImageViewResource(R.id.mascot_image, sceneRes)

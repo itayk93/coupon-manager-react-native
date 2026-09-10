@@ -587,6 +587,11 @@ enum CelebrationScene {
     static func assetName(_ kind: String) -> String {
         switch kind {
         case "anniversary": return "MascotCelebrationC1"
+        case "milestone": return "MascotCelebrationC2"
+        case "savings": return "MascotCelebrationC3"
+        case "monthly": return "MascotCelebrationC4"
+        case "streak": return "MascotCelebrationC5"
+        case "rescue": return "MascotCelebrationC6"
         default: return "MascotCelebrationC1"
         }
     }
@@ -594,6 +599,11 @@ enum CelebrationScene {
     static func headline(_ kind: String) -> String {
         switch kind {
         case "anniversary": return "שנה איתנו!"
+        case "milestone": return "אבן דרך חדשה!"
+        case "savings": return "כמה שחסכת!"
+        case "monthly": return "החיסכון החודשי שלך"
+        case "streak": return "רצף מנצח!"
+        case "rescue": return "הצלה ברגע האחרון!"
         default: return "מזל טוב!"
         }
     }

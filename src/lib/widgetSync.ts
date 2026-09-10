@@ -151,6 +151,11 @@ export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon
 /** Celebration scenes the admin debug switcher can force. */
 export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
   { kind: "anniversary", label: "🎂 יום שנה" },
+  { kind: "milestone", label: "🏆 אבן דרך" },
+  { kind: "savings", label: "💰 חיסכון מצטבר" },
+  { kind: "monthly", label: "🐷 סיכום חודשי" },
+  { kind: "streak", label: "🔥 רצף שימוש" },
+  { kind: "rescue", label: "🦸 הצלה ברגע" },
 ];
 
 /** DEBUG (admin only). Forces a celebration scene onto the small widget. */
