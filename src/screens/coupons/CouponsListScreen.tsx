@@ -434,11 +434,17 @@ export function CouponsListScreen() {
             onPress={startMerchantSearch}
             accessibilityRole="button"
             accessibilityLabel={`בדיקת הקופונים שלי עבור ${search.trim()}`}
-            style={[styles.merchantSearchButton, { backgroundColor: theme.primary }]}
+            style={[
+              styles.merchantSearchButton,
+              { backgroundColor: theme.primaryTint, borderColor: theme.primary },
+            ]}
           >
-            <Sparkles size={18} color="#ffffff" />
-            <Text style={styles.merchantSearchButtonText} numberOfLines={1}>
-              {`איזה קופון שלי מתאים ל־${search.trim()}?`}
+            <Sparkles size={15} color={theme.primary} />
+            <Text
+              style={[styles.merchantSearchButtonText, { color: theme.primary }]}
+              numberOfLines={1}
+            >
+              איזה מהקופונים שלי מתאים?
             </Text>
           </TouchableOpacity>
         ) : null}
@@ -974,20 +980,20 @@ const styles = StyleSheet.create({
     writingDirection: "rtl",
   },
   merchantSearchButton: {
-    minHeight: 64,
+    height: 38,
     borderRadius: radii.lg,
+    borderWidth: 1,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 16,
-    gap: 8,
-    marginTop: -6,
+    paddingHorizontal: 14,
+    gap: 6,
+    marginTop: -4,
     marginBottom: 10,
   },
   merchantSearchButtonText: {
-    color: "#ffffff",
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "800",
     flexShrink: 1,
     textAlign: "right",
