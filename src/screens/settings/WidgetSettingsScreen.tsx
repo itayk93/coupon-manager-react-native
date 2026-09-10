@@ -12,7 +12,9 @@ import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, useUpdateCoupon, type DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
+import { WIDGET_DEBUG_STATES, previewWidgetState, syncWidget } from "@/lib/widgetSync";
 import { fonts, radii } from "@/lib/theme";
 import { couponRemainingValue } from "@/lib/couponTotals";
 import {
@@ -31,6 +33,7 @@ function WidgetLoadingState() {
 
 export function WidgetSettingsScreen() {
   const { theme } = useAppTheme();
+  const { isAdmin } = useAuth();
   const { data: coupons = [], isLoading } = useCoupons();
   const updateCoupon = useUpdateCoupon();
 
@@ -189,6 +192,49 @@ export function WidgetSettingsScreen() {
             )
           )
         )}
+
+        {isAdmin ? (
+          <>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              🐞 דיבאג — תצוגת מצבי הווידג'ט
+            </Text>
+            <Text style={[styles.hint, { color: theme.textSubtle }]}>
+              מחליף את הווידג'ט למצב הנבחר כדי לבדוק אותו על המכשיר. הנתונים האמיתיים חוזרים
+              בשינוי קופון הבא, או בלחיצה על "שחזר".
+            </Text>
+            <View style={styles.debugGrid}>
+              {WIDGET_DEBUG_STATES.map(({ state, label }) => (
+                <TouchableOpacity
+                  key={state}
+                  onPress={() => {
+                    previewWidgetState(state, coupons);
+                    notify.success(`הווידג'ט הוחלף למצב ${state} · ${label}`);
+                  }}
+                  style={[
+                    styles.debugChip,
+                    { backgroundColor: theme.card, borderColor: theme.cardBorder },
+                  ]}
+                >
+                  <Text style={[styles.debugChipNum, { color: theme.primary }]}>{state}</Text>
+                  <Text style={[styles.debugChipLabel, { color: theme.textMuted }]} numberOfLines={1}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                void syncWidget(coupons);
+                notify.success("הווידג'ט שוחזר לנתונים האמיתיים");
+              }}
+              style={[styles.debugRestore, { borderColor: theme.cardBorder }]}
+            >
+              <Text style={[styles.debugRestoreText, { color: theme.text }]}>
+                שחזר נתונים אמיתיים
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -256,4 +302,24 @@ const styles = StyleSheet.create({
   rowSubtitle: { fontFamily: fonts.body, fontSize: 13, textAlign: "right", writingDirection: "rtl" },
   reorder: { gap: 2 },
   actionButton: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  debugGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  debugChip: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: radii.md,
+    borderWidth: 1,
+  },
+  debugChipNum: { fontFamily: fonts.bodyBold, fontSize: 14 },
+  debugChipLabel: { fontFamily: fonts.body, fontSize: 12 },
+  debugRestore: {
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  debugRestoreText: { fontFamily: fonts.bodyMedium, fontSize: 14 },
 });

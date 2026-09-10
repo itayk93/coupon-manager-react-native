@@ -95,6 +95,56 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
   };
 }
 
+/** Scene labels for the admin debug switcher, index = state number (1..9). */
+export const WIDGET_DEBUG_STATES: { state: number; label: string; days: number | null }[] = [
+  { state: 1, label: "רגוע · 8+ ימים", days: null },
+  { state: 2, label: "שבוע · 7 ימים", days: 7 },
+  { state: 3, label: "6 ימים", days: 6 },
+  { state: 4, label: "5 ימים", days: 5 },
+  { state: 5, label: "4 ימים", days: 4 },
+  { state: 6, label: "3 ימים", days: 3 },
+  { state: 7, label: "יומיים", days: 2 },
+  { state: 8, label: "מחר", days: 1 },
+  { state: 9, label: "היום · פג", days: 0 },
+];
+
+/**
+ * DEBUG (admin only). Forces the home-screen widget into one mascot scene so it
+ * can be eyeballed on a real device without waiting for a coupon to actually
+ * near its expiry. The real payload is restored on the next coupon change, or
+ * immediately via `syncWidget`.
+ */
+export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon[]): void {
+  const base = buildWidgetPayload(coupons);
+  const found = WIDGET_DEBUG_STATES.find((s) => s.state === stateNumber);
+  const days = found ? found.days : null;
+
+  const sample: WidgetCouponPayload =
+    base.coupons[0] ?? {
+      id: -1,
+      publicId: null as unknown as string,
+      company: "רמי לוי",
+      code: "1234567890123",
+      remainingValue: 80,
+      expiration: null,
+      logoFile: null,
+      cardExp: null,
+      cvv: null,
+    };
+
+  const expiration =
+    days === null ? null : new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+
+  setWidgetData({
+    ...base,
+    urgentCoupon: days === null ? null : { ...sample, expiration },
+    urgentDaysRemaining: days,
+    expiringCount: days === null ? 0 : 1,
+    expiringIds: days === null || !sample.publicId ? [] : [sample.publicId],
+    mascotTier: days === null ? 1 : days <= 0 ? 5 : days === 1 ? 4 : days <= 4 ? 3 : 2,
+  });
+}
+
 /**
  * Writes the payload, then upgrades it with logos.
  *
