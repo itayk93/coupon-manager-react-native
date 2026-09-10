@@ -12,6 +12,7 @@ const logoAssets: Record<string, number> = {
   "McDonalds.png": require("../../public/legacy-images/McDonalds.png"),
   "Wolt.png": require("../../public/legacy-images/Wolt.png"),
   "airalo.png": require("../../public/legacy-images/airalo.png"),
+  "all_in_zone.jpg": require("../../public/legacy-images/all_in_zone.jpg"),
   "alm.jpg": require("../../public/legacy-images/alm.jpg"),
   "arcaffe.png": require("../../public/legacy-images/arcaffe.png"),
   "arkia.png": require("../../public/legacy-images/arkia.png"),

@@ -11,6 +11,7 @@ export const logoColorByFile: Record<string, string> = {
   "McDonalds.png": "#144f33",
   "Wolt.png": "#00bade",
   "airalo.png": "#b54970",
+  "all_in_zone.jpg": "#342f1e",
   "alm.jpg": "#0058aa",
   "arcaffe.png": "#791034",
   "arkia.png": "#0042ba",

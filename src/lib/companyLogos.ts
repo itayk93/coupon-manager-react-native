@@ -131,6 +131,11 @@ const logoByCompany: Record<string, string> = {
   "יס פלאנט": "yes_planet.jpg",
   "yes planet": "yes_planet.jpg",
   airalo: "airalo.png",
+  "all-inzone": "all_in_zone.jpg",
+  "all in zone": "all_in_zone.jpg",
+  "all-in zone": "all_in_zone.jpg",
+  "אול אין זון": "all_in_zone.jpg",
+  "היטק זון": "all_in_zone.jpg",
   "מחסני חשמל": "מחסני_חשמל_68_manual.png",
 };
 
@@ -284,6 +289,7 @@ const categoryByCompany: Record<string, string> = {
   "power gift": "שוברים", xtra: "שוברים", "אקסטרה": "שוברים",
   goodpharm: "פארם", "גוד פארם": "פארם",
   "מחסני חשמל": "חשמל", airalo: "תקשורת",
+  "all-inzone": "שוברים", "all in zone": "שוברים", "אול אין זון": "שוברים",
 };
 
 export function getCompanyCategory(company: string): string {
