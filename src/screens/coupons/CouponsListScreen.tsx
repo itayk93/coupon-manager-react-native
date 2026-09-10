@@ -423,6 +423,8 @@ export function CouponsListScreen() {
             value={search}
             onChangeText={setSearch}
             textAlign="right"
+            returnKeyType="search"
+            onSubmitEditing={() => Keyboard.dismiss()}
             style={[styles.searchInput, { color: theme.text }]}
           />
         </View>
@@ -705,6 +707,10 @@ export function CouponsListScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           stickySectionHeadersEnabled={false}
+          // Scrolling the results is the signal that the user is done typing —
+          // drop the keyboard so the list gets the full screen back.
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
