@@ -1,5 +1,13 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
+import { pickCelebration } from "./celebrationTrigger";
+import {
+  isCelebrationFresh,
+  loadCelebrationMemory,
+  noteWalletValue,
+  rememberCelebration,
+  toCelebrationState,
+} from "./celebrationMemory";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { prepareWidgetLogos } from "@/lib/widgetLogos";
 import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
@@ -231,6 +239,38 @@ export function applyWidgetDebugToken(token: string, coupons: DecryptedCoupon[])
 }
 
 /**
+ * A milestone worth showing, or null.
+ *
+ * A coupon about to expire always wins: nudging the user to spend before they
+ * lose money matters more than a pat on the back, and showing both at once is
+ * not an option on a small widget.
+ */
+async function celebrationFor(
+  coupons: DecryptedCoupon[],
+  memberSince: string | null | undefined,
+  urgentDays: number | null
+): Promise<{ kind: string; text: string } | null> {
+  if (urgentDays !== null && urgentDays <= 2) return null;
+
+  const stored = await loadCelebrationMemory();
+  const walletValue = totalRemainingValue(coupons);
+
+  // A scene stays up for its day rather than vanishing on the next sync.
+  if (isCelebrationFresh(stored) && stored.shownKind) {
+    return { kind: stored.shownKind, text: celebrationHeadline(stored.shownKind, coupons) };
+  }
+
+  const pick = pickCelebration(coupons, toCelebrationState(stored, memberSince));
+  if (!pick) {
+    await noteWalletValue(stored, walletValue);
+    return null;
+  }
+
+  await rememberCelebration(stored, pick.kind, pick.token, walletValue);
+  return { kind: pick.kind, text: celebrationHeadline(pick.kind, coupons) };
+}
+
+/**
  * Writes the payload, then upgrades it with logos.
  *
  * Deliberately two writes. Copying logo files touches the filesystem and can
@@ -242,7 +282,9 @@ export async function syncWidget(
   coupons: DecryptedCoupon[],
   /** `companies.image_path` by company name, so logos resolve for companies
    *  that are not in the bundled `logoByCompany` map. */
-  imagePathByCompany: Record<string, string | null> = {}
+  imagePathByCompany: Record<string, string | null> = {},
+  /** The user's signup date, so an anniversary can be recognised. */
+  memberSince: string | null = null
 ): Promise<void> {
   // Admin debug: a forced state pins the widget until it is cleared, so real
   // coupon changes must not overwrite it.
@@ -252,7 +294,22 @@ export async function syncWidget(
     return;
   }
 
-  const payload = buildWidgetPayload(coupons);
+  const base = buildWidgetPayload(coupons);
+  const celebration = await celebrationFor(coupons, memberSince, base.urgentDaysRemaining ?? null);
+
+  const payload: WidgetPayload = celebration
+    ? {
+        ...base,
+        celebration: celebration.kind,
+        celebrationText: celebration.text,
+        urgentCoupon: null,
+        urgentDaysRemaining: null,
+        expiringCount: 0,
+        expiringIds: [],
+        mascotTier: 1,
+      }
+    : base;
+
   setWidgetData(payload);
 
   if (payload.coupons.length === 0) return;

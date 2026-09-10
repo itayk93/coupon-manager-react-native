@@ -13,6 +13,7 @@ const ACCOUNT_KEYS = [
   "local-expiry:plan:v1",
   "expiring_banner_dismissal",
   "widget_debug_state",
+  "widget_celebrations:v1",
 ] as const;
 
 const IDENTITY_PREFIXES = [

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useCompanies } from "@/hooks/useAdminManagement";
+import { useProfile } from "@/hooks/useProfile";
 import { syncWidget } from "@/lib/widgetSync";
 import { clearWidgetData, isWidgetSupported } from "../../modules/coupon-widget";
 
@@ -13,6 +14,9 @@ export function useWidgetSync() {
   const { user, isLoading } = useAuth();
   const { data: coupons } = useCoupons();
   const { data: companies } = useCompanies();
+  // Only used to recognise a signup anniversary; a missing profile just means
+  // that one scene never fires.
+  const { data: profile } = useProfile();
 
   // company name -> companies.image_path, for logo resolution in the widget.
   const imagePathByCompany = useMemo(() => {
@@ -34,6 +38,6 @@ export function useWidgetSync() {
       return;
     }
 
-    if (coupons) void syncWidget(coupons, imagePathByCompany);
-  }, [isLoading, user, coupons, imagePathByCompany]);
+    if (coupons) void syncWidget(coupons, imagePathByCompany, profile?.created_at ?? null);
+  }, [isLoading, user, coupons, imagePathByCompany, profile?.created_at]);
 }
