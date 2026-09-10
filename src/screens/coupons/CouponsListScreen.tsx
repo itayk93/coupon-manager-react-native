@@ -148,10 +148,23 @@ export function CouponsListScreen() {
     setMerchantQuery(query);
   };
 
+  // Only coupons the user can still walk into a shop and use. A company whose
+  // coupons are all spent or expired has no place in the filter row.
+  const usableCoupons = useMemo(
+    () =>
+      coupons.filter((coupon) => {
+        const remaining = (coupon.value || 0) - (coupon.used_value || 0);
+        if (coupon.status === "נוצל" || remaining <= 0) return false;
+        if (coupon.expiration && new Date(coupon.expiration).getTime() < Date.now()) return false;
+        return true;
+      }),
+    [coupons]
+  );
+
   // Company chips — ordered left-to-right from lowest usage/recency to highest usage/recency, so
   // the right edge (where the row lands after scrollToEnd) is the most recently used/highest-usage company.
   const companyChips = useMemo(() => {
-    const counts = coupons.reduce<Record<string, number>>((acc, coupon) => {
+    const counts = usableCoupons.reduce<Record<string, number>>((acc, coupon) => {
       const key = companyKey(coupon.company);
       if (key) acc[key] = (acc[key] || 0) + 1;
       return acc;
@@ -171,18 +184,18 @@ export function CouponsListScreen() {
       })
       .map(([key]) => {
         // Prefer the exact spelling the user sees on their coupons.
-        const source = coupons.find((c) => companyKey(c.company) === key);
+        const source = usableCoupons.find((c) => companyKey(c.company) === key);
         return (source?.company || key).trim();
       });
-  }, [coupons, usageStats]);
+  }, [usableCoupons, usageStats]);
 
   const companyFilterEntries = useMemo(
     () =>
       [...companyChips].reverse().map((name) => ({
         name,
-        count: coupons.filter((coupon) => companyKey(coupon.company) === companyKey(name)).length,
+        count: usableCoupons.filter((coupon) => companyKey(coupon.company) === companyKey(name)).length,
       })),
-    [companyChips, coupons]
+    [companyChips, usableCoupons]
   );
 
   const isCompanyFiltered = (coupon: DecryptedCoupon) =>
@@ -566,7 +579,7 @@ export function CouponsListScreen() {
             ])
           ).map((company) => {
             const isCurrent = companyKey(selectedCompany) === companyKey(company);
-            const count = coupons.filter(
+            const count = usableCoupons.filter(
               (coupon) => companyKey(coupon.company) === companyKey(company)
             ).length;
             return (

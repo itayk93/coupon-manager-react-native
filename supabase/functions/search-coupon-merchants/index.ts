@@ -15,6 +15,15 @@ const dbClient = () => createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 
+/** Same folding as the app's `companyKey`, so "BuyMe" / "buyme " group as one. */
+function companyKey(name: unknown): string {
+  return String(name || '')
+    .trim()
+    .toLocaleLowerCase('he-IL')
+    .replace(/["'׳״.,()\-]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
 function normalizeQuery(value: unknown): string {
   return String(value || '')
     .normalize('NFKC')
@@ -230,6 +239,7 @@ Deno.serve(async (req) => {
         store: false,
         input: `חפש באינטרנט אם החנות "${query}" מכובדת באחד מהקופונים הכלליים הבאים.
 הסתמך על מקור רשמי ועדכני של מנפיק הקופון. אל תנחש. אל תסמן התאמה רק כי המנפיק מוכר קופון נפרד לחנות; צריך להוכיח שהכרטיס המתואר ברשומה עצמה מכבד אותה.
+אם סוג כרטיס מסוים מכבד את החנות, סמן כהתאמה כל קופון ברשימה מאותה חברה/מנפיק — לא רק אחד.
 החזר רק התאמות ברמת ודאות high או medium. אם אין הוכחה, החזר מערך ריק.
 קופונים: ${JSON.stringify(candidates)}`,
         text: { format: { type: 'json_schema', name: 'coupon_merchant_matches', strict: true, schema } },
@@ -242,15 +252,26 @@ Deno.serve(async (req) => {
     }
     const payload = await aiResponse.json() as Record<string, unknown>;
     const parsed = JSON.parse(responseText(payload) || '{"matches":[]}');
-    const candidateIds = new Set(candidates.map((coupon) => coupon.id));
-    const aiMatches = (Array.isArray(parsed.matches) ? parsed.matches : [])
-      .filter((match: Record<string, unknown>) => candidateIds.has(Number(match.coupon_id)))
-      .map((match: Record<string, unknown>) => ({
-        couponId: Number(match.coupon_id),
-        provider: String(match.provider || ''),
-        reason: String(match.reason || '').slice(0, 220),
-        confidence: match.confidence === 'high' ? 'high' : 'medium',
-      }));
+    const candidateById = new Map(candidates.map((coupon) => [coupon.id, coupon]));
+    // The model tends to name one coupon per issuer even when several are held.
+    // A card type either honors the store or it doesn't, so fan every match out
+    // to the other candidates from the same company.
+    const expanded = new Map<number, { couponId: number; provider: string; reason: string; confidence: string }>();
+    for (const match of Array.isArray(parsed.matches) ? parsed.matches : []) {
+      const seed = candidateById.get(Number((match as Record<string, unknown>).coupon_id));
+      if (!seed) continue;
+      const confidence = (match as Record<string, unknown>).confidence === 'high' ? 'high' : 'medium';
+      const reason = String((match as Record<string, unknown>).reason || '').slice(0, 220);
+      const provider = String((match as Record<string, unknown>).provider || seed.company || '');
+      const key = companyKey(seed.company);
+      for (const coupon of candidates) {
+        if (companyKey(coupon.company) !== key) continue;
+        const prior = expanded.get(coupon.id);
+        if (prior && !(prior.confidence !== 'high' && confidence === 'high')) continue;
+        expanded.set(coupon.id, { couponId: coupon.id, provider, reason, confidence });
+      }
+    }
+    const aiMatches = [...expanded.values()];
     const result = {
       query,
       directCouponIds: directIds,
