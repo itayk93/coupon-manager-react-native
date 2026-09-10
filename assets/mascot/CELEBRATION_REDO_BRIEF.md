@@ -9,11 +9,17 @@
 
 ### קבוע — לצרף בכל הודעה, בלי יוצא מן הכלל
 
-| קובץ | למה |
-|---|---|
-| `assets/mascot/widget-originals/MascotState1.png` | **קנון הדמות.** הצורה, הפנים, הצבע, סוג הרינדור |
-| `assets/mascot/widget-originals/MascotState5.png` | **הצללית מזווית אחרת.** מראה שהגוף מלבן מעוגל ולא עיגול |
-| `assets/mascot/celebration/C3-lifetime-savings.png` | **הקומפוזיציה היחידה שעברה.** זה איך שאזור ה-40% צריך להיראות |
+| קובץ | רזולוציה | למה דווקא הוא |
+|---|---|---|
+| `assets/mascot/original_app_mascot.png` | 1536×1024 | **קנון הדמות.** הכי גדול והכי ברור. הדמות מבודדת על רקע שחור, גוף מלא, מלפנים — הצללית נקראת מושלם |
+| `assets/mascot/celebration/C7-clean-month.png` | 1254×1254 | **גוף מלא בעמידה** בסגנון הרינדור הנוכחי. רגליים, ידיים ופנים גלויים על רקע נקי |
+| `assets/mascot/celebration/C5-usage-streak.png` | 1254×1254 | **זווית שנייה** — רגליים מפוסקות, הצללית ברורה מול רקע בהיר |
+| `assets/mascot/celebration/C3-lifetime-savings.png` | 1254×1254 | **הקומפוזיציה היחידה שעברה.** ככה אזור ה-40% צריך להיראות |
+
+שלוש הראשונות = צורת הדמות. הרביעית = הקומפוזיציה.
+
+לא להשתמש ב-`widget-originals/MascotState1.png` כרפרנס — הוא 600×600 בלבד
+ומטושטש מדי בשביל לשחזר ממנו את הצללית.
 
 ### לפי סצנה — לצרף גם את התמונה הכושלת שמתקנים
 
@@ -200,9 +206,10 @@ Full-bleed 1:1 square 3D illustration, Pixar/Octane render, the same identical r
 ## פרומפט פתיחה לצ'אט
 
 ```text
-מצורף המסמך CELEBRATION_REDO_BRIEF.md ושלוש תמונות ייחוס קבועות:
-- MascotState1.png — קנון הדמות
-- MascotState5.png — הצללית מזווית אחרת
+מצורף המסמך CELEBRATION_REDO_BRIEF.md וארבע תמונות ייחוס קבועות:
+- original_app_mascot.png — קנון הדמות, הכי ברור
+- C7-clean-month.png — גוף מלא בעמידה בסגנון הנוכחי
+- C5-usage-streak.png — זווית שנייה, רגליים מפוסקות
 - C3-lifetime-savings.png — הקומפוזיציה היחידה שעברה
 
 בכל סצנה אצרף גם את הגרסה הקודמת שנכשלה.
