@@ -15,6 +15,7 @@ export const logoColorByFile: Record<string, string> = {
   "alm.jpg": "#0058aa",
   "arcaffe.png": "#791034",
   "arkia.png": "#0042ba",
+  "babka.png": "#22252b",
   "be_shufersal.png": "#6d4ae6",
   "ben_and_jerrys.png": "#6eb7e6",
   "benedict.jpeg": "#6ea3cf",

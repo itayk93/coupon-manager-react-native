@@ -12,7 +12,6 @@ const STORAGE_LOGO_ROOT =
 
 /** Verified brand artwork kept in our own public bucket. */
 const remoteLogoByCompany: Record<string, string> = {
-  babka: "babka.png",
   base44: "base44.png",
   "food style": "food-style.png",
   "food.style": "food-style.png",
@@ -131,6 +130,9 @@ const logoByCompany: Record<string, string> = {
   "יס פלאנט": "yes_planet.jpg",
   "yes planet": "yes_planet.jpg",
   airalo: "airalo.png",
+  babka: "babka.png",
+  "בבקה": "babka.png",
+  "בבקה בייקרי": "babka.png",
   "all-inzone": "all_in_zone.jpg",
   "all in zone": "all_in_zone.jpg",
   "all-in zone": "all_in_zone.jpg",
@@ -290,6 +292,7 @@ const categoryByCompany: Record<string, string> = {
   goodpharm: "פארם", "גוד פארם": "פארם",
   "מחסני חשמל": "חשמל", airalo: "תקשורת",
   "all-inzone": "שוברים", "all in zone": "שוברים", "אול אין זון": "שוברים",
+  babka: "מסעדות", "בבקה": "מסעדות",
 };
 
 export function getCompanyCategory(company: string): string {
