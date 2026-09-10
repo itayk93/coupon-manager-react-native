@@ -51,7 +51,19 @@ private enum Brand {
 
 class ShareViewController: UIViewController {
   private let card = UIView()
-  private let mascot = UIImageView(image: UIImage(named: "Mascot"))
+  private static let mascotFrames: [[UIImage]] = {
+    guard let atlas = UIImage(named: "MascotAtlas")?.cgImage else { return [] }
+    let cell = atlas.width / 4
+    return (0..<4).map { row in
+      (0..<4).compactMap { column in
+        let rect = CGRect(x: CGFloat(column * cell), y: CGFloat(row * cell),
+                          width: CGFloat(cell), height: CGFloat(cell))
+        return atlas.cropping(to: rect).map { UIImage(cgImage: $0) }
+      }
+    }
+  }()
+  private let mascot = UIImageView(image: ShareViewController.mascotFrames.first?.first ?? UIImage(named: "Mascot"))
+  private var mascotRow = 0
   private let mascotWell = UIView()
   private let badge = UIImageView()
   private let titleLabel = UILabel()
@@ -66,6 +78,8 @@ class ShareViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     buildInterface()
+    NotificationCenter.default.addObserver(self, selector: #selector(mascotMotionChanged),
+      name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
   }
 
   override func viewDidAppear(_ animated: Bool) {
@@ -325,43 +339,43 @@ class ShareViewController: UIViewController {
 
   /// Calm vertical bob + tiny head tilt, matching the onboarding character rules
   /// (under 10 px of travel, subtle loop).
-  private func startMascotIdle() {
-    guard !reduceMotion else { return }
-    let bob = CABasicAnimation(keyPath: "transform.translation.y")
-    bob.fromValue = -4
-    bob.toValue = 5
-    bob.duration = 1.6
-    bob.autoreverses = true
-    bob.repeatCount = .infinity
-    bob.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-
-    let tilt = CABasicAnimation(keyPath: "transform.rotation.z")
-    tilt.fromValue = -0.05
-    tilt.toValue = 0.05
-    tilt.duration = 2.4
-    tilt.autoreverses = true
-    tilt.repeatCount = .infinity
-    tilt.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-
-    mascot.layer.add(bob, forKey: "bob")
-    mascot.layer.add(tilt, forKey: "tilt")
+  override func viewDidDisappear(_ animated: Bool) {
+    super.viewDidDisappear(animated)
+    stopMascotIdle()
   }
 
+  deinit { NotificationCenter.default.removeObserver(self) }
+
+  @objc private func mascotMotionChanged() {
+    guard isViewLoaded, view.window != nil else { return }
+    playMascot(row: mascotRow, once: mascotRow == 2)
+  }
+
+  private func playMascot(row: Int, once: Bool = false) {
+    mascotRow = row
+    mascot.stopAnimating()
+    mascot.animationImages = nil
+    guard Self.mascotFrames.indices.contains(row), Self.mascotFrames[row].count == 4 else { return }
+    let frames = Self.mascotFrames[row]
+    mascot.image = frames[0]
+    guard !reduceMotion else { return }
+    mascot.animationImages = [0, 1, 2, 3, 2, 1].map { frames[$0] }
+    mascot.animationDuration = 1.56
+    mascot.animationRepeatCount = once ? 1 : 0
+    mascot.startAnimating()
+  }
+
+  private func startMascotIdle() { playMascot(row: 0) }
+
   private func stopMascotIdle() {
+    mascot.stopAnimating()
+    mascot.animationImages = nil
     mascot.layer.removeAllAnimations()
   }
 
   private func celebrateMascot() {
-    guard !reduceMotion else { return }
-    let pop = CAKeyframeAnimation(keyPath: "transform.scale")
-    pop.values = [1, 1.12, 0.97, 1.04, 1]
-    pop.keyTimes = [0, 0.3, 0.55, 0.8, 1]
-    pop.duration = 0.6
-    pop.timingFunction = CAMediaTimingFunction(name: .easeOut)
-    mascot.layer.add(pop, forKey: "pop")
-
+    playMascot(row: 2, once: true)
     mascotWell.backgroundColor = Brand.mint.withAlphaComponent(0.16)
-    UIView.animate(withDuration: 0.3) { self.mascotWell.backgroundColor = Brand.mint.withAlphaComponent(0.16) }
   }
 }
 

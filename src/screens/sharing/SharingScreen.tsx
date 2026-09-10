@@ -282,7 +282,7 @@ export function SharingScreen() {
               <EmptyState
                 visual={
                   <MascotSprite
-                    accessibilityLabel="המאסקוט מושיט קופון ומזמין אותך להתחיל לשתף"
+                    accessibilityLabel="המאסקוט מנופף ומזמין אותך להתחיל לשתף"
                   />
                 }
                 largeVisual
