@@ -212,6 +212,12 @@ export function CouponDetailScreen() {
     return () => clearTimeout(timer);
   }, [highlightUsage, history.length]);
 
+  useEffect(() => {
+    if (!showUsageCelebration) return;
+    const timer = setTimeout(() => setShowUsageCelebration(false), 2200);
+    return () => clearTimeout(timer);
+  }, [showUsageCelebration]);
+
   if (isLoading || !coupon) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -232,11 +238,6 @@ export function CouponDetailScreen() {
   const remaining = Math.max(0, (coupon.value || 0) - effectiveUsed);
   const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
 
-  useEffect(() => {
-    if (!showUsageCelebration) return;
-    const timer = setTimeout(() => setShowUsageCelebration(false), 2200);
-    return () => clearTimeout(timer);
-  }, [showUsageCelebration]);
   const isSharedWithMe = coupon.is_shared_with_me === true;
 
   const usageLocations = history.filter(
