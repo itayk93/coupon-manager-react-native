@@ -30,6 +30,7 @@ import {
   CircleAlert,
 } from "lucide-react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
+import { CompanyFilterSheet } from "@/components/coupons/CompanyFilterSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { useCoupons, useBulkDeleteCoupons, useRestoreCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
@@ -113,7 +114,7 @@ export function CouponsListScreen() {
   const [showStatusRow, setShowStatusRow] = useState(
     Boolean(params.initialFilterTag)
   );
-  const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [companyFilterOpen, setCompanyFilterOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -174,6 +175,15 @@ export function CouponsListScreen() {
         return (source?.company || key).trim();
       });
   }, [coupons, usageStats]);
+
+  const companyFilterEntries = useMemo(
+    () =>
+      [...companyChips].reverse().map((name) => ({
+        name,
+        count: coupons.filter((coupon) => companyKey(coupon.company) === companyKey(name)).length,
+      })),
+    [companyChips, coupons]
+  );
 
   const isCompanyFiltered = (coupon: DecryptedCoupon) =>
     !selectedCompany || companyKey(coupon.company) === companyKey(selectedCompany);
@@ -549,9 +559,11 @@ export function CouponsListScreen() {
             </Text>
           </TouchableOpacity>
 
-          {(showAllCompanies
-            ? companyChips
-            : Array.from(new Set([...companyChips.slice(-6), ...(selectedCompany ? [selectedCompany] : [])]))
+          {Array.from(
+            new Set([
+              ...companyChips.slice(-5),
+              ...(selectedCompany ? [selectedCompany] : []),
+            ])
           ).map((company) => {
             const isCurrent = companyKey(selectedCompany) === companyKey(company);
             const count = coupons.filter(
@@ -588,15 +600,14 @@ export function CouponsListScreen() {
               </TouchableOpacity>
             );
           })}
-          {companyChips.length > 6 ? (
+          {companyChips.length > 5 ? (
             <TouchableOpacity
-              onPress={() => setShowAllCompanies((value) => !value)}
+              onPress={() => setCompanyFilterOpen(true)}
               style={[styles.companyChip, { backgroundColor: theme.surfaceAlt, borderColor: theme.inputBorder }]}
               accessibilityRole="button"
-              accessibilityState={{ expanded: showAllCompanies }}
             >
-              <Text style={[styles.companyChipText, { color: theme.primary }]}> 
-                {showAllCompanies ? "פחות חברות" : `כל החברות (${companyChips.length})`}
+              <Text style={[styles.companyChipText, { color: theme.primary }]}>
+                {`כל החברות (${companyChips.length})`}
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -803,6 +814,14 @@ export function CouponsListScreen() {
         onClose={() => setUsageCoupon(null)}
         coupons={coupons}
         preselectedCoupon={usageCoupon}
+      />
+
+      <CompanyFilterSheet
+        visible={companyFilterOpen}
+        onClose={() => setCompanyFilterOpen(false)}
+        companies={companyFilterEntries}
+        selected={selectedCompany}
+        onSelect={setSelectedCompany}
       />
 
       <Modal
