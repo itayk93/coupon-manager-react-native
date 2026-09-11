@@ -49,7 +49,8 @@ for i,frame in enumerate(frames):
     bg.paste(frame,(0,0),frame)
     bg.paste(frame,(CELL,0),frame)
     preview.append(bg)
-atlas.save(OUT/'six-seven-smooth.png',optimize=True)
+# Lossless WebP: pixel-identical to PNG, ~40% smaller in the bundle.
+atlas.save(OUT/'six-seven-smooth.webp',lossless=True,quality=100,method=6,exact=True)
 preview[0].save(OUT/'six-seven-preview.webp',save_all=True,append_images=preview[1:],duration=[round((i+1)*1000/24)-round(i*1000/24) for i in range(36)],loop=0,quality=95)
 Image.open(ROOT/'assets/mascot/celebration/C10-six-seven.png').convert('RGB').resize((600,600),Image.Resampling.LANCZOS).save(ROOT/'modules/coupon-widget/android/src/main/res/drawable-nodpi/celebration_67.webp',quality=94)
 print('Six-seven: 36 frames, 24fps; widget uses the supplied artwork')

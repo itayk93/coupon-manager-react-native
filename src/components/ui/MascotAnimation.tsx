@@ -4,11 +4,11 @@ import { useFocusEffect } from "expo-router";
 
 export type MascotState = "talking" | "thinking" | "cheering" | "scanning" | "success" | "calm" | "concerned" | "anxious" | "panic" | "emergency" | "six-seven";
 const ATLASES = [
-  require("../../../assets/mascot/3d/scan-smooth.png"),
-  require("../../../assets/mascot/3d/greeting-smooth.png"),
-  require("../../../assets/mascot/3d/success-smooth.png"),
-  require("../../../assets/mascot/3d/concern-smooth.png"),
-  require("../../../assets/mascot/3d/six-seven-smooth.png"),
+  require("../../../assets/mascot/3d/scan-smooth.webp"),
+  require("../../../assets/mascot/3d/greeting-smooth.webp"),
+  require("../../../assets/mascot/3d/success-smooth.webp"),
+  require("../../../assets/mascot/3d/concern-smooth.webp"),
+  require("../../../assets/mascot/3d/six-seven-smooth.webp"),
 ];
 const FRAME_COUNT = 36;
 const GRID = 6;

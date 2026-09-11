@@ -71,7 +71,8 @@ for row, name in enumerate(NAMES):
     for index, frame in enumerate(frames):
         assert frame.getbbox() is not None
         atlas.alpha_composite(frame, ((index % GRID)*CELL, (index // GRID)*CELL))
-    atlas.save(OUT / f'{name}-smooth.png', optimize=True)
+    # Lossless WebP: pixel-identical to PNG, ~40% smaller in the bundle.
+    atlas.save(OUT / f'{name}-smooth.webp', lossless=True, quality=100, method=6, exact=True)
     all_frames.append(frames)
     if name in ('scan', 'success'):
         for target in ('share', 'add-share'):

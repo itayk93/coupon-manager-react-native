@@ -1,6 +1,6 @@
 # 3D mascot animation assets
 
-Status: integrated. The four `*-smooth.png` production atlases each contain
+Status: integrated. The four `*-smooth.webp` (lossless) production atlases each contain
 36 transparent 256px frames in a 6x6 grid. Playback is 24fps, a 1.5-second loop.
 `preview-smooth.webp` previews all actions on light and dark backgrounds.
 `mascot-atlas.png` preserves the approved original keyframes for regeneration.
@@ -72,7 +72,7 @@ current action atlas is displayed; no per-frame image downloads are needed.
 
 ## Six–seven Easter egg
 
-`six-seven-smooth.png` is a separate 36-frame, 24fps loop. The dashboard shows
+`six-seven-smooth.webp` is a separate 36-frame, 24fps loop. The dashboard shows
 it at exactly 67 spendable coupons, independently of search/filter selection.
 The dismissible banner does not replace the normal loading/success animations.
 
