@@ -1,5 +1,6 @@
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "./couponTotals";
+import { isGiftCoupon, totalRealizedSavings } from "./couponSavings";
 
 /**
  * Which celebration scene, if any, the home-screen widget should show today.
@@ -78,9 +79,9 @@ function reachedStep(value: number, steps: number[]): number | null {
   return hit;
 }
 
-/** What the wallet was worth minus what it cost to acquire. */
+/** Money saved so far — the same figure the statistics screen shows. */
 export function lifetimeSavings(coupons: DecryptedCoupon[]): number {
-  return coupons.reduce((sum, coupon) => sum + ((coupon.value ?? 0) - (coupon.cost ?? 0)), 0);
+  return totalRealizedSavings(coupons);
 }
 
 /**
@@ -271,7 +272,8 @@ export function redemptionCelebration(
   }
 
   // Same number the "coupon finished" notification quotes, so the two agree.
-  const saved = Math.max(0, (coupon.value ?? 0) - (coupon.cost ?? 0));
+  // A gift saved nothing — it was received — so it gets no savings line.
+  const saved = isGiftCoupon(coupon) ? 0 : Math.max(0, (coupon.value ?? 0) - (coupon.cost ?? 0));
   const text =
     coupon.is_one_time || saved <= 0
       ? `מימשת את ${company}`

@@ -34,9 +34,14 @@ describe("completedYears", () => {
 });
 
 describe("lifetimeSavings", () => {
-  it("is face value minus what the coupons cost", () => {
-    expect(lifetimeSavings([coupon({ value: 100, cost: 80 }), coupon({ value: 50, cost: 10 })]))
-      .toBe(60);
+  it("is face value minus cost, on the spent part only", () => {
+    expect(
+      lifetimeSavings([coupon({ value: 100, cost: 80, used_value: 50 }), coupon({ value: 50, cost: 10, used_value: 50 })])
+    ).toBe(50);
+  });
+
+  it("leaves out coupons that cost nothing", () => {
+    expect(lifetimeSavings([coupon({ value: 100, cost: 0, used_value: 100 })])).toBe(0);
   });
 });
 
@@ -114,7 +119,7 @@ describe("pickCelebration", () => {
   it("only offers the monthly recap at the start of a month", () => {
     // One coupon expired unused, so the clean-month scene is off the table and
     // the recap is the only month-start candidate left.
-    const wallet = [coupon({ value: 100, cost: 90 }), coupon({ id: 2, expiration: "2026-06-01" })];
+    const wallet = [coupon({ value: 100, cost: 90, used_value: 50 }), coupon({ id: 2, expiration: "2026-06-01" })];
     expect(pickCelebration(wallet, { walletRecord: 99_999 }, MID_MONTH)).toBeNull();
     expect(pickCelebration(wallet, { walletRecord: 99_999 }, MONTH_START)?.kind).toBe("monthly");
   });
@@ -156,12 +161,15 @@ describe("redemptionCelebration", () => {
 
   it("celebrates the saving on an ordinary redemption", () => {
     const scene = redemptionCelebration(
-      { company: "BuyMe", value: 100, cost: 0, expiration: "2026-12-31" },
+      { company: "BuyMe", value: 100, cost: 80, expiration: "2026-12-31" },
       64,
       now
     );
     expect(scene.kind).toBe("redeemed");
-    expect(scene.text).toBe("מימשת את BuyMe\nחסכת 100 ש״ח");
+    expect(scene.text).toBe("מימשת את BuyMe\nחסכת 20 ש״ח");
+    // A coupon that cost nothing was a gift: no savings line.
+    expect(redemptionCelebration({ company: "BuyMe", value: 100, cost: 0, expiration: "2026-12-31" }, 64, now).text)
+      .toBe("מימשת את BuyMe");
     expect(scene.until.toISOString()).toBe("2026-09-11T21:00:00.000Z");
   });
 

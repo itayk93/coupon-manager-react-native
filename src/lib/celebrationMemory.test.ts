@@ -62,7 +62,7 @@ describe("seedCelebrationBaseline", () => {
 
   it("takes a first-seen wallet as done, so a reinstall celebrates nothing old", async () => {
     const wallet = Array.from({ length: 30 }, (_, i) => ({
-      id: i, company: "x", code: "1", value: 100, cost: 0, used_value: 0, status: "פעיל", expiration: null,
+      id: i, company: "x", code: "1", value: 100, cost: 50, used_value: 100, status: "פעיל", expiration: null,
     })) as unknown as DecryptedCoupon[];
     const seeded = await seedCelebrationBaseline({}, 3000, baselineCelebrationTokens(wallet));
     expect(seeded.walletRecord).toBe(3000);

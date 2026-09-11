@@ -7,6 +7,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { Modal } from "@/components/ui/Modal";
+import { isGiftCoupon, realizedSavings, savingsRate } from "@/lib/couponSavings";
 
 type CompanySavingsBreakdownProps = {
   coupons: DecryptedCoupon[];
@@ -16,6 +17,9 @@ type CompanySavings = {
   company: string;
   saved: number;
   value: number;
+  /** Face value of the bought coupons and the discount on them, for `avgPct`. */
+  paidValue: number;
+  discount: number;
   count: number;
   avgPct: number;
   items: DecryptedCoupon[];
@@ -53,12 +57,18 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
     const map = coupons.reduce<Record<string, Omit<CompanySavings, "avgPct">>>(
       (acc, c) => {
         const company = c.company || "אחר";
-        const saved = Math.max(0, (c.value || 0) - (c.cost || 0));
+        // Saved on what was spent (see couponSavings). The average discount
+        // only looks at coupons that were bought — a gift has no discount.
+        const saved = realizedSavings(c);
         if (!acc[company]) {
-          acc[company] = { company, saved: 0, value: 0, count: 0, items: [] };
+          acc[company] = { company, saved: 0, value: 0, paidValue: 0, discount: 0, count: 0, items: [] };
         }
         acc[company].saved += saved;
         acc[company].value += c.value || 0;
+        if (!isGiftCoupon(c)) {
+          acc[company].paidValue += c.value || 0;
+          acc[company].discount += (c.value || 0) * savingsRate(c);
+        }
         acc[company].count += 1;
         acc[company].items.push(c);
         return acc;
@@ -71,7 +81,7 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
       .sort((a, b) => b.saved - a.saved)
       .map((s) => ({
         ...s,
-        avgPct: s.value > 0 ? (s.saved / s.value) * 100 : 0,
+        avgPct: s.paidValue > 0 ? (s.discount / s.paidValue) * 100 : 0,
         items: [...s.items].sort((a, b) => couponTime(b) - couponTime(a)),
       }));
   }, [coupons]);
@@ -174,8 +184,9 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
             {selectedCompany.items.map((c) => {
               const value = c.value || 0;
               const cost = c.cost || 0;
-              const saved = Math.max(0, value - cost);
-              const pct = value > 0 ? (saved / value) * 100 : 0;
+              const saved = realizedSavings(c);
+              const gift = isGiftCoupon(c);
+              const pct = savingsRate(c) * 100;
 
               return (
                 <View
@@ -192,10 +203,10 @@ export function CompanySavingsBreakdown({ coupons }: CompanySavingsBreakdownProp
                     <Text
                       style={[
                         styles.couponPct,
-                        { color: saved > 0 ? theme.primary : theme.textMuted },
+                        { color: pct > 0 ? theme.primary : theme.textMuted },
                       ]}
                     >
-                      {pct.toFixed(1)}% הנחה
+                      {gift ? "מתנה" : `${pct.toFixed(1)}% הנחה`}
                     </Text>
                   </View>
 

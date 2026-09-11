@@ -4,6 +4,7 @@ import { CalendarDays, ChevronDown, ChevronRight } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRemainingValue } from "@/lib/couponTotals";
+import { realizedSavings } from "@/lib/couponSavings";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
@@ -19,7 +20,7 @@ export type KpiConfig = {
 
 export const KPI_DESCRIPTIONS: Record<KpiMetric, string> = {
   remaining: "סך הכסף שנשאר לך למימוש בכל הקופונים הפעילים שלך.",
-  savings: "כמה כסף חסכת בפועל (ההפרש בין שווי הקופונים למחיר ששילמת עליהם).",
+  savings: "כמה כסף חסכת בפועל: ההפרש בין השווי למחיר ששילמת, רק על מה שכבר מימשת. קופונים שקיבלת בחינם לא נספרים כחיסכון.",
   used: "סך כל הסכום שכבר מימשת וקנית איתו עד היום.",
   value: "השווי הכולל של כל הקופונים שנוספו לחשבון שלך במצטבר.",
 };
@@ -35,7 +36,7 @@ function metricValue(coupon: DecryptedCoupon, metric: KpiMetric): number {
     case "remaining":
       return Math.max(0, couponRemainingValue(coupon));
     case "savings":
-      return Math.max(0, (coupon.value || 0) - (coupon.cost || 0));
+      return realizedSavings(coupon);
     case "used":
       return coupon.used_value || 0;
     case "value":

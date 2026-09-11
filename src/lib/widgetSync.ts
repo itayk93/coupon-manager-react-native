@@ -1,6 +1,7 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
 import { baselineCelebrationTokens, pickCelebration, pickSixSevenCelebration } from "./celebrationTrigger";
+import { totalRealizedSavings } from "./couponSavings";
 import {
   celebrationEndsAt,
   isCelebrationFresh,
@@ -189,11 +190,8 @@ const shekels = (value: number) => `₪${Math.round(value).toLocaleString("en-US
 export function celebrationHeadline(kind: string, coupons: DecryptedCoupon[]): string {
   const spendable = coupons.filter(isSpendableCoupon);
   const walletValue = totalRemainingValue(coupons);
-  // What the wallet was worth versus what it cost to acquire.
-  const lifetimeSavings = coupons.reduce(
-    (sum, coupon) => sum + ((coupon.value ?? 0) - (coupon.cost ?? 0)),
-    0
-  );
+  // Same figure as the statistics screen: saved on what was actually spent.
+  const lifetimeSavings = totalRealizedSavings(coupons);
   const redeemed = coupons.filter((coupon) => coupon.status === "נוצל").length;
 
   switch (kind) {

@@ -32,6 +32,8 @@ import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRouteId } from "@/lib/couponId";
 import { useCouponSales } from "@/hooks/useCouponSales";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { useSavingsByMonth } from "@/hooks/useCouponUsage";
+import { totalGiftValueUsed, totalRealizedSavings } from "@/lib/couponSavings";
 
 export function StatisticsScreen() {
   const router = useRouter();
@@ -56,14 +58,11 @@ export function StatisticsScreen() {
     () => coupons.reduce((sum, c) => sum + (c.used_value || 0), 0),
     [coupons]
   );
-  const totalSavings = useMemo(
-    () =>
-      coupons.reduce(
-        (sum, c) => sum + Math.max(0, (c.value || 0) - (c.cost || 0)),
-        0
-      ),
-    [coupons]
-  );
+  // Saved = bought below face value, on the part actually spent. Coupons that
+  // cost nothing are money received, shown on their own (see couponSavings).
+  const totalSavings = useMemo(() => totalRealizedSavings(coupons), [coupons]);
+  const giftValue = useMemo(() => totalGiftValueUsed(coupons), [coupons]);
+  const { data: savingsMonths = {} } = useSavingsByMonth(coupons);
   const remainingValue = Math.max(0, totalValue - usedValue);
   const saleStats = useMemo(() => {
     const completed = sales.filter((sale) => sale.status === "completed");
@@ -95,7 +94,8 @@ export function StatisticsScreen() {
     return { active, fullyUsed, expired };
   }, [coupons]);
 
-  // "חיסכון חודשי" — the last six months of coupon usage, per the design.
+  // "חיסכון חודשי" — money saved in each of the last six months, dated by when
+  // it was spent rather than by when the coupon was added.
   const monthlyTrend = useMemo(() => {
     const now = new Date();
     const months = Array.from({ length: 6 }, (_, i) => {
@@ -107,16 +107,12 @@ export function StatisticsScreen() {
         value: 0,
       };
     });
-    coupons.forEach((c) => {
-      if (!c.date_added) return;
-      const d = new Date(c.date_added);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      const bucket = months.find((m) => m.key === key);
-      if (bucket) bucket.value += c.used_value || 0;
+    months.forEach((m) => {
+      m.value = savingsMonths[m.key] ?? 0;
     });
     const max = Math.max(1, ...months.map((m) => m.value));
     return months.map((m) => ({ ...m, pct: Math.round((m.value / max) * 100) }));
-  }, [coupons]);
+  }, [savingsMonths]);
 
   const savingsStory = useMemo(() => {
     const current = monthlyTrend.at(-1)?.value ?? 0;
@@ -217,6 +213,15 @@ export function StatisticsScreen() {
             </PressableScale>
           ))}
         </View>
+
+        {giftValue > 0 ? (
+          <View style={[styles.giftRow, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.giftLabel, { color: theme.textMuted }]}>
+              קיבלת במתנה · מקופונים שלא עלו לך כסף
+            </Text>
+            <IlsAmount value={giftValue} style={[styles.giftValue, { color: theme.text }]} maxFontSizeMultiplier={1.3} />
+          </View>
+        ) : null}
 
         {/* Monthly savings */}
         <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -553,6 +558,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 6,
   },
+  giftRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: radii.card,
+    borderWidth: 1,
+  },
+  giftLabel: { fontFamily: fonts.body, fontSize: 13, flexShrink: 1, textAlign: "right" },
+  giftValue: { fontFamily: fonts.display, fontSize: 17, fontWeight: "800" },
   sectionCard: {
     borderRadius: radii.cardLg,
     padding: 20,

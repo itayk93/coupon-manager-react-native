@@ -16,6 +16,12 @@ import { logActivity } from "@/lib/activityLog";
 import { notifyEvent } from "@/lib/notifyEvent";
 import { redemptionCelebration } from "@/lib/celebrationTrigger";
 import { rememberRedemption } from "@/lib/celebrationMemory";
+import {
+  savingsByMonth,
+  savingsRate,
+  type TransactionLedgerRow,
+  type UsageLedgerRow,
+} from "@/lib/couponSavings";
 
 /**
  * Puts the "coupon finished" scene on the widget until midnight (Israel).
@@ -169,6 +175,46 @@ export function useCouponUsageStats(coupons: DecryptedCoupon[] = []) {
         latestUsageByCoupon,
         latestUsageByCompany,
       };
+    },
+    enabled: !!user && coupons.length > 0,
+  });
+}
+
+const LEDGER_PAGE = 1000;
+
+/** Every row of a ledger table for these coupons, past PostgREST's 1000-row cap. */
+async function fetchLedger<T>(table: "coupon_usage" | "coupon_transaction", columns: string, ids: number[]): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += LEDGER_PAGE) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .in("coupon_id", ids)
+      .order("id")
+      .range(from, from + LEDGER_PAGE - 1);
+    if (error) throw error;
+    rows.push(...((data ?? []) as T[]));
+    if (!data || data.length < LEDGER_PAGE) return rows;
+  }
+}
+
+/** Savings per month by when the money was spent (see `savingsByMonth`). */
+export function useSavingsByMonth(coupons: DecryptedCoupon[] = []) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["savings_by_month", user?.id, coupons.map((c) => `${c.id}:${c.used_value}:${c.cost}`).join(",")],
+    queryFn: async (): Promise<Record<string, number>> => {
+      const ids = coupons.filter((c) => savingsRate(c) > 0 && (c.used_value ?? 0) > 0).map((c) => c.id);
+      if (ids.length === 0) return {};
+      const [usage, transactions] = await Promise.all([
+        fetchLedger<UsageLedgerRow>("coupon_usage", "id, coupon_id, timestamp, used_amount, details, action", ids),
+        fetchLedger<TransactionLedgerRow>(
+          "coupon_transaction",
+          "id, coupon_id, transaction_date, usage_amount, recharge_amount, location, source",
+          ids
+        ),
+      ]);
+      return savingsByMonth(coupons, usage, transactions);
     },
     enabled: !!user && coupons.length > 0,
   });
