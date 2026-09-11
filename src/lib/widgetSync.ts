@@ -219,7 +219,9 @@ export function celebrationHeadline(kind: string, coupons: DecryptedCoupon[]): s
     case "referral":
       return "חבר הצטרף בזכותך!";
     case "record":
-      return `שיא חדש: ${shekels(walletValue)} בארנק`;
+      // Two lines on purpose; "ש״ח" instead of "₪" because the sign mis-orders
+      // next to digits in the RTL widget.
+      return `שיא חדש!\n${Math.round(walletValue).toLocaleString("en-US")} ש״ח בארנק`;
     default:
       return `${redeemed} קופונים מומשו`;
   }

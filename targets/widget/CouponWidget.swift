@@ -643,7 +643,7 @@ struct CouponCelebrationSmallView: View {
     private var destinationURL: URL {
         let path: String
         switch kind {
-        case "redeemed", "rescue", "savings", "monthly", "record", "milestone": path = "statistics"
+        case "redeemed", "rescue", "savings", "monthly", "milestone": path = "statistics"
         case "referral": path = "referral-program"
         default: path = ""
         }

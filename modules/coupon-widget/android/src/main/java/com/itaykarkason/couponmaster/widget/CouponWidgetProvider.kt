@@ -112,7 +112,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
       setViewVisibility(R.id.mascot_company, View.GONE)
       // Money milestones open the statistics screen, where that number is broken down.
       val target = when (kind) {
-        "redeemed", "rescue", "savings", "monthly", "record", "milestone" -> "couponmaster:///statistics"
+        "redeemed", "rescue", "savings", "monthly", "milestone" -> "couponmaster:///statistics"
         "referral" -> "couponmaster:///referral-program"
         else -> "couponmaster:///"
       }
