@@ -49,6 +49,11 @@ export type WidgetPayload = {
    * presentation-only and can never disagree with the app.
    */
   celebrationText?: string | null;
+  /**
+   * ISO instant the celebration comes down. The widget checks it itself, so a
+   * scene still ends on time when the app is not opened again.
+   */
+  celebrationUntil?: string | null;
 };
 
 export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
@@ -64,6 +69,7 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
   expiringIds: [],
   celebration: null,
   celebrationText: null,
+  celebrationUntil: null,
 };
 
 type CouponWidgetNativeModule = {

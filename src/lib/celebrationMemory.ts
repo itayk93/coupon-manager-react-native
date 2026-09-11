@@ -19,6 +19,10 @@ type Stored = {
   /** ISO timestamp of the scene currently on the widget, so it can expire. */
   shownAt?: string;
   shownKind?: string;
+  /** A headline fixed when the scene went up (a redemption names its coupon). */
+  shownText?: string;
+  /** ISO instant the scene comes down. Absent = `shownAt` + `CELEBRATION_TTL_MS`. */
+  shownUntil?: string;
 };
 
 /** A celebration stays on the widget for a day, then normal service resumes. */
@@ -55,11 +59,38 @@ export function toCelebrationState(
   };
 }
 
-/** True while the scene written at `shownAt` is still inside its day. */
-export function isCelebrationFresh(stored: Stored, now = Date.now()): boolean {
-  if (!stored.shownAt || !stored.shownKind) return false;
+/** Headlines are one short widget line; anything longer is not ours. */
+const MAX_TEXT_CHARS = 80;
+
+/** When the stored scene comes down, or null when there is no scene. */
+export function celebrationEndsAt(stored: Stored): number | null {
+  if (!stored.shownAt || !stored.shownKind) return null;
+  const until = stored.shownUntil ? Date.parse(stored.shownUntil) : NaN;
+  if (Number.isFinite(until)) return until;
   const at = Date.parse(stored.shownAt);
-  return Number.isFinite(at) && now - at < CELEBRATION_TTL_MS;
+  return Number.isFinite(at) ? at + CELEBRATION_TTL_MS : null;
+}
+
+/** True while the stored scene is still up. */
+export function isCelebrationFresh(stored: Stored, now = Date.now()): boolean {
+  const end = celebrationEndsAt(stored);
+  return end !== null && now < end;
+}
+
+/**
+ * Puts a redemption scene up until `until`. It replaces whatever is showing:
+ * the user just did this, so it outranks a milestone reached on its own.
+ * No token is kept — every finished coupon deserves its own moment.
+ */
+export async function rememberRedemption(kind: string, text: string, until: Date): Promise<void> {
+  const stored = await loadCelebrationMemory();
+  await save({
+    ...stored,
+    shownAt: new Date().toISOString(),
+    shownKind: kind,
+    shownText: text.slice(0, MAX_TEXT_CHARS),
+    shownUntil: until.toISOString(),
+  });
 }
 
 /** Records that a scene went up, keeping the token list bounded. */

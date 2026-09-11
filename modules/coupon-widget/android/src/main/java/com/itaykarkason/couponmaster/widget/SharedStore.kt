@@ -56,6 +56,8 @@ object SharedStore {
         else root.optString("celebration", "").ifBlank { null },
         celebrationText = if (root.isNull("celebrationText")) null
         else root.optString("celebrationText", "").ifBlank { null },
+        celebrationUntil = if (root.isNull("celebrationUntil")) null
+        else root.optString("celebrationUntil", "").ifBlank { null },
       )
     } catch (e: Exception) {
       WidgetPayload.EMPTY
@@ -110,8 +112,31 @@ data class WidgetPayload(
   val celebration: String? = null,
   /** The celebration headline, already filled in with the user's own numbers. */
   val celebrationText: String? = null,
+  /** ISO instant the celebration comes down (a redemption ends at midnight, Israel time). */
+  val celebrationUntil: String? = null,
 ) {
+  /** The celebration to draw now, or null once it has ended. */
+  fun activeCelebration(nowMs: Long = System.currentTimeMillis()): String? {
+    val kind = celebration ?: return null
+    val end = celebrationUntil?.let(::parseIsoMillis) ?: return kind
+    return if (nowMs < end) kind else null
+  }
+
   companion object {
     val EMPTY = WidgetPayload(0, 0, 0.0, emptyList())
+
+    /** `Date.toISOString()` output. SimpleDateFormat, not java.time, so it runs below API 26. */
+    private fun parseIsoMillis(raw: String): Long? {
+      for (pattern in listOf("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'")) {
+        try {
+          val format = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
+          format.timeZone = java.util.TimeZone.getTimeZone("UTC")
+          return format.parse(raw)?.time
+        } catch (e: Exception) {
+          // try the next shape
+        }
+      }
+      return null
+    }
   }
 }

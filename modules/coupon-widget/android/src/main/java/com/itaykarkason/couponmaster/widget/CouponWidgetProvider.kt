@@ -65,7 +65,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
   }
 
   private fun smallViews(context: Context, payload: WidgetPayload): RemoteViews {
-    payload.celebration?.let { return celebrationViews(context, it, payload.celebrationText) }
+    payload.activeCelebration()?.let { return celebrationViews(context, it, payload.celebrationText) }
     val days = payload.urgentDaysRemaining
     return if (days != null && days in 0..7) {
       mascotViews(context, payload.expiringIds, days, payload.urgentCoupon)
@@ -78,6 +78,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
   private fun celebrationViews(context: Context, kind: String, text: String?): RemoteViews =
     RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
       val sceneRes = when (kind) {
+        "redeemed" -> R.drawable.celebration_c3
         "anniversary" -> R.drawable.celebration_c1
         "milestone" -> R.drawable.celebration_c2
         "savings" -> R.drawable.celebration_c3
@@ -90,6 +91,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
         else -> R.drawable.celebration_c1
       }
       val title = when (kind) {
+        "redeemed" -> "מימשת קופון!"
         "anniversary" -> "שנה איתנו!"
         "milestone" -> "אבן דרך חדשה!"
         "savings" -> "כמה שחסכת!"
@@ -110,7 +112,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
       setViewVisibility(R.id.mascot_company, View.GONE)
       // Money milestones open the statistics screen, where that number is broken down.
       val target = when (kind) {
-        "savings", "monthly", "record", "milestone" -> "couponmaster:///statistics"
+        "redeemed", "rescue", "savings", "monthly", "record", "milestone" -> "couponmaster:///statistics"
         "referral" -> "couponmaster:///referral-program"
         else -> "couponmaster:///"
       }

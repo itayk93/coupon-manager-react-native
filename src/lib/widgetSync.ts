@@ -2,6 +2,8 @@ import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
 import { pickCelebration } from "./celebrationTrigger";
 import {
+  CELEBRATION_TTL_MS,
+  celebrationEndsAt,
   isCelebrationFresh,
   loadCelebrationMemory,
   noteWalletValue,
@@ -103,6 +105,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     expiringIds,
     celebration: null,
     celebrationText: null,
+    celebrationUntil: null,
   };
 }
 
@@ -160,6 +163,7 @@ export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon
 
 /** Celebration scenes the admin debug switcher can force. */
 export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
+  { kind: "redeemed", label: "✅ קופון נוצל" },
   { kind: "anniversary", label: "🎂 יום שנה" },
   { kind: "milestone", label: "🏆 אבן דרך" },
   { kind: "savings", label: "💰 חיסכון מצטבר" },
@@ -191,6 +195,10 @@ export function celebrationHeadline(kind: string, coupons: DecryptedCoupon[]): s
   const redeemed = coupons.filter((coupon) => coupon.status === "נוצל").length;
 
   switch (kind) {
+    // Real redemptions carry their own headline (see `redemptionCelebration`);
+    // this only feeds the debug preview.
+    case "redeemed":
+      return `מימשת את ${spendable[0]?.company || "BuyMe"} · חסכת ₪100`;
     case "anniversary":
       return "שנה איתנו! 🎉";
     case "milestone":
@@ -249,15 +257,20 @@ async function celebrationFor(
   coupons: DecryptedCoupon[],
   memberSince: string | null | undefined,
   urgentDays: number | null
-): Promise<{ kind: string; text: string } | null> {
+): Promise<{ kind: string; text: string; until: string | null } | null> {
   if (urgentDays !== null && urgentDays <= 2) return null;
 
   const stored = await loadCelebrationMemory();
   const walletValue = totalRemainingValue(coupons);
 
-  // A scene stays up for its day rather than vanishing on the next sync.
+  // A scene stays up until it ends rather than vanishing on the next sync.
   if (isCelebrationFresh(stored) && stored.shownKind) {
-    return { kind: stored.shownKind, text: celebrationHeadline(stored.shownKind, coupons) };
+    const end = celebrationEndsAt(stored);
+    return {
+      kind: stored.shownKind,
+      text: stored.shownText || celebrationHeadline(stored.shownKind, coupons),
+      until: end === null ? null : new Date(end).toISOString(),
+    };
   }
 
   const pick = pickCelebration(coupons, toCelebrationState(stored, memberSince));
@@ -267,7 +280,11 @@ async function celebrationFor(
   }
 
   await rememberCelebration(stored, pick.kind, pick.token, walletValue);
-  return { kind: pick.kind, text: celebrationHeadline(pick.kind, coupons) };
+  return {
+    kind: pick.kind,
+    text: celebrationHeadline(pick.kind, coupons),
+    until: new Date(Date.now() + CELEBRATION_TTL_MS).toISOString(),
+  };
 }
 
 /**
@@ -297,16 +314,15 @@ export async function syncWidget(
   const base = buildWidgetPayload(coupons);
   const celebration = await celebrationFor(coupons, memberSince, base.urgentDaysRemaining ?? null);
 
+  // The expiry fields stay in: the widget drops the scene by itself at
+  // `celebrationUntil`, and must fall back to the right mascot without waiting
+  // for the app to be opened again.
   const payload: WidgetPayload = celebration
     ? {
         ...base,
         celebration: celebration.kind,
         celebrationText: celebration.text,
-        urgentCoupon: null,
-        urgentDaysRemaining: null,
-        expiringCount: 0,
-        expiringIds: [],
-        mascotTier: 1,
+        celebrationUntil: celebration.until,
       }
     : base;
 

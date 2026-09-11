@@ -9,6 +9,8 @@ import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "./
  */
 
 export type CelebrationKind =
+  | "redeemed"
+  | "rescue"
   | "anniversary"
   | "record"
   | "milestone"
@@ -141,4 +143,113 @@ export function pickCelebration(
   }
 
   return candidates.find((candidate) => !seen.has(candidate.token)) ?? null;
+}
+
+// ------------------------------------------------------------- redemption
+
+const ISRAEL_TZ = "Asia/Jerusalem";
+
+/** A coupon spent this close to its expiry was rescued, not just used. */
+export const RESCUE_WINDOW_DAYS = 3;
+
+/** Longest company name the small widget headline can carry before wrapping badly. */
+const MAX_COMPANY_CHARS = 18;
+
+/** Israel wall-clock date parts for an instant, or null when Intl cannot say. */
+function israelParts(now: Date): { y: number; m: number; d: number; offsetMs: number } | null {
+  try {
+    const parts: Record<string, string> = {};
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: ISRAEL_TZ,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(now)
+      .forEach((part) => {
+        parts[part.type] = part.value;
+      });
+    const y = Number(parts.year);
+    const m = Number(parts.month);
+    const d = Number(parts.day);
+    const wallAsUtc = Date.UTC(y, m - 1, d, Number(parts.hour) % 24, Number(parts.minute), Number(parts.second));
+    if (!Number.isFinite(wallAsUtc)) return null;
+    return { y, m, d, offsetMs: wallAsUtc - Math.floor(now.getTime() / 1000) * 1000 };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The next 00:00 in Israel. Israel changes clocks at 02:00, never between an
+ * afternoon and the following midnight, so today's offset holds until then.
+ */
+export function endOfIsraelDay(now: Date = new Date()): Date {
+  const parts = israelParts(now);
+  if (!parts) return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return new Date(Date.UTC(parts.y, parts.m - 1, parts.d + 1) - parts.offsetMs);
+}
+
+/** Whole days from today (Israel) to a yyyy-MM-dd expiry. Negative = already past. */
+function israelDaysUntil(expiration: string | null | undefined, now: Date): number | null {
+  const match = expiration?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const parts = israelParts(now);
+  const today = parts
+    ? Date.UTC(parts.y, parts.m - 1, parts.d)
+    : Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Math.round((end - today) / 86_400_000);
+}
+
+export type RedeemedCoupon = {
+  company?: string | null;
+  value?: number | null;
+  cost?: number | null;
+  expiration?: string | null;
+  is_one_time?: boolean | null;
+};
+
+export type RedemptionCelebration = {
+  kind: "redeemed" | "rescue";
+  text: string;
+  /** The scene comes down at this instant — the next midnight in Israel. */
+  until: Date;
+};
+
+const shekelsText = (value: number) => `₪${Math.round(value).toLocaleString("en-US")}`;
+
+/**
+ * The scene for a coupon that was just spent to the end.
+ *
+ * `rescuedAmount` is what this last usage took off the balance — the money
+ * that would have been lost had the coupon expired instead.
+ */
+export function redemptionCelebration(
+  coupon: RedeemedCoupon,
+  rescuedAmount: number,
+  now: Date = new Date()
+): RedemptionCelebration {
+  const rawName = (coupon.company || "").trim() || "הקופון";
+  const company = rawName.length > MAX_COMPANY_CHARS ? `${rawName.slice(0, MAX_COMPANY_CHARS - 1)}…` : rawName;
+  const until = endOfIsraelDay(now);
+
+  const days = israelDaysUntil(coupon.expiration, now);
+  if (days !== null && days >= 0 && days <= RESCUE_WINDOW_DAYS) {
+    const text =
+      coupon.is_one_time || !(rescuedAmount > 0)
+        ? `הצלת את ${company} רגע לפני שפג`
+        : `הצלת ${shekelsText(rescuedAmount)} רגע לפני שפג`;
+    return { kind: "rescue", text, until };
+  }
+
+  // Same number the "coupon finished" notification quotes, so the two agree.
+  const saved = Math.max(0, (coupon.value ?? 0) - (coupon.cost ?? 0));
+  const text =
+    coupon.is_one_time || saved <= 0 ? `מימשת את ${company}` : `מימשת את ${company} · חסכת ${shekelsText(saved)}`;
+  return { kind: "redeemed", text, until };
 }

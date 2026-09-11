@@ -482,8 +482,8 @@ export function QuickUsageModal({
         {isBusy ? (
           <View style={[styles.processingCard, { backgroundColor: theme.primaryMuted, borderColor: theme.primary }]}>
             <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.processingTitle, { color: theme.text }]}>ה־AI קורא את הקופון</Text>
-            <Text style={[styles.processingText, { color: theme.textMuted }]}>מזהים קוד, שימושים ומקומות…</Text>
+            <Text style={[styles.processingTitle, { color: theme.text }]}>ה־AI קורא את צילום המסך</Text>
+            <Text style={[styles.processingText, { color: theme.textMuted }]}>מזהים שימושים, סכומים ותאריכים…</Text>
           </View>
         ) : null}
 

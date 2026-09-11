@@ -52,6 +52,23 @@ struct WidgetPayload: Codable {
     let celebration: String?
     /// The celebration headline, already filled in with the user's own numbers.
     let celebrationText: String?
+    /// ISO instant the celebration comes down (a redemption ends at midnight,
+    /// Israel time). Checked here so the scene ends even if the app stays shut.
+    let celebrationUntil: String?
+
+    var celebrationEndDate: Date? {
+        guard let celebrationUntil else { return nil }
+        let precise = ISO8601DateFormatter()
+        precise.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return precise.date(from: celebrationUntil) ?? ISO8601DateFormatter().date(from: celebrationUntil)
+    }
+
+    /// The celebration to draw at `date`, or nil once it has ended.
+    func activeCelebration(at date: Date) -> String? {
+        guard let celebration else { return nil }
+        if let end = celebrationEndDate, date >= end { return nil }
+        return celebration
+    }
 
     static let empty = WidgetPayload(
         activeCouponsCount: 0,
@@ -64,7 +81,8 @@ struct WidgetPayload: Codable {
         expiringCount: 0,
         expiringIds: [],
         celebration: nil,
-        celebrationText: nil
+        celebrationText: nil,
+        celebrationUntil: nil
     )
 }
 

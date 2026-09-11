@@ -14,6 +14,31 @@ import {
 import { DecryptedCoupon } from "./useCoupons";
 import { logActivity } from "@/lib/activityLog";
 import { notifyEvent } from "@/lib/notifyEvent";
+import { redemptionCelebration } from "@/lib/celebrationTrigger";
+import { rememberRedemption } from "@/lib/celebrationMemory";
+
+/**
+ * Puts the "coupon finished" scene on the widget until midnight (Israel).
+ * Written before the coupon list refetches, so the widget sync that follows
+ * picks it up. Cosmetic: a failure here never fails the usage itself.
+ */
+async function celebrateRedemption(
+  queryClient: ReturnType<typeof useQueryClient>,
+  couponId: number,
+  rescuedAmount: number
+): Promise<void> {
+  try {
+    const coupon = queryClient
+      .getQueriesData<DecryptedCoupon[]>({ queryKey: ["coupons"] })
+      .flatMap(([, list]) => (Array.isArray(list) ? list : []))
+      .find((item) => item?.id === couponId);
+    if (!coupon) return;
+    const scene = redemptionCelebration(coupon, rescuedAmount);
+    await rememberRedemption(scene.kind, scene.text, scene.until);
+  } catch (error) {
+    console.warn("[widget] failed to record redemption scene", error);
+  }
+}
 
 export type ConsolidatedRow = {
   id: number | string;
@@ -338,14 +363,17 @@ export function useRecordUsage() {
 
       return { newUsed, fullyUsed };
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       logActivity("record_coupon_usage", {
         couponId: variables.couponId,
         metadata: { amount: variables.usedAmount, fully_used: data.fullyUsed },
       });
       // Spending the last of a coupon is the one moment in the app that is
       // purely good news. The server re-checks that it really is finished.
-      if (data.fullyUsed) notifyEvent("coupon_finished", { couponId: variables.couponId });
+      if (data.fullyUsed) {
+        notifyEvent("coupon_finished", { couponId: variables.couponId });
+        await celebrateRedemption(queryClient, variables.couponId, variables.usedAmount);
+      }
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
@@ -377,9 +405,13 @@ export function useRecordUsage() {
       const row = Array.isArray(data) ? data[0] : data;
       return { newUsed: Number(row?.new_used || 0), fullyUsed: Boolean(row?.fully_used), insertedCount: Number(row?.inserted_count || 0) };
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       logActivity("record_coupon_usage", { couponId: variables.couponId, metadata: { batch: true, count: data.insertedCount } });
-      if (data.fullyUsed) notifyEvent("coupon_finished", { couponId: variables.couponId });
+      if (data.fullyUsed) {
+        notifyEvent("coupon_finished", { couponId: variables.couponId });
+        const rescued = variables.usages.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        await celebrateRedemption(queryClient, variables.couponId, rescued);
+      }
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });

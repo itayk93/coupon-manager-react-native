@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { completedYears, lifetimeSavings, pickCelebration } from "./celebrationTrigger";
+import {
+  completedYears,
+  endOfIsraelDay,
+  lifetimeSavings,
+  pickCelebration,
+  redemptionCelebration,
+} from "./celebrationTrigger";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 
 function coupon(overrides: Partial<DecryptedCoupon> = {}): DecryptedCoupon {
@@ -102,5 +108,65 @@ describe("pickCelebration", () => {
     const wallet = [coupon({ value: 100, cost: 90, expiration: "2026-06-01" })];
     const pick = pickCelebration(wallet, { walletRecord: 99_999 }, MONTH_START);
     expect(pick?.kind).not.toBe("clean");
+  });
+});
+
+describe("endOfIsraelDay", () => {
+  it("ends at the next Israel midnight in summer time (UTC+3)", () => {
+    // 14:24 in Israel on 11 Sep 2026.
+    const now = new Date("2026-09-11T11:24:00Z");
+    expect(endOfIsraelDay(now).toISOString()).toBe("2026-09-11T21:00:00.000Z");
+  });
+
+  it("ends at the next Israel midnight in winter time (UTC+2)", () => {
+    const now = new Date("2026-12-01T08:00:00Z");
+    expect(endOfIsraelDay(now).toISOString()).toBe("2026-12-01T22:00:00.000Z");
+  });
+
+  it("uses Israel's date, not UTC's, just after local midnight", () => {
+    // 00:30 on 12 Sep in Israel is still 11 Sep in UTC.
+    const now = new Date("2026-09-11T21:30:00Z");
+    expect(endOfIsraelDay(now).toISOString()).toBe("2026-09-12T21:00:00.000Z");
+  });
+});
+
+describe("redemptionCelebration", () => {
+  const now = new Date("2026-09-11T11:24:00Z");
+
+  it("celebrates the saving on an ordinary redemption", () => {
+    const scene = redemptionCelebration(
+      { company: "BuyMe", value: 100, cost: 0, expiration: "2026-12-31" },
+      64,
+      now
+    );
+    expect(scene.kind).toBe("redeemed");
+    expect(scene.text).toBe("מימשת את BuyMe · חסכת ₪100");
+    expect(scene.until.toISOString()).toBe("2026-09-11T21:00:00.000Z");
+  });
+
+  it("is a rescue when used within three days of expiry", () => {
+    const scene = redemptionCelebration({ company: "BuyMe", value: 100, cost: 0, expiration: "2026-09-14" }, 64, now);
+    expect(scene.kind).toBe("rescue");
+    expect(scene.text).toBe("הצלת ₪64 רגע לפני שפג");
+  });
+
+  it("counts expiring today as a rescue, four days out as not", () => {
+    expect(redemptionCelebration({ company: "X", value: 50, expiration: "2026-09-11" }, 10, now).kind).toBe("rescue");
+    expect(redemptionCelebration({ company: "X", value: 50, expiration: "2026-09-15" }, 10, now).kind).toBe("redeemed");
+  });
+
+  it("names the coupon instead of an amount when there is none to quote", () => {
+    expect(redemptionCelebration({ company: "Wolt", value: 50, cost: 50 }, 50, now).text).toBe("מימשת את Wolt");
+    expect(redemptionCelebration({ company: "Wolt", is_one_time: true, value: 50 }, 50, now).text).toBe("מימשת את Wolt");
+    expect(
+      redemptionCelebration({ company: "Wolt", is_one_time: true, expiration: "2026-09-12" }, 0, now).text
+    ).toBe("הצלת את Wolt רגע לפני שפג");
+  });
+
+  it("shortens a long company name so the headline fits the small widget", () => {
+    const scene = redemptionCelebration({ company: "רשת חנויות גדולה מאוד בעלת שם ארוך", value: 10 }, 10, now);
+    const name = scene.text.replace("מימשת את ", "").split(" · ")[0];
+    expect(name.length).toBe(18);
+    expect(name.endsWith("…")).toBe(true);
   });
 });

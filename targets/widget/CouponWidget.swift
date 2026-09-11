@@ -120,9 +120,15 @@ struct CouponProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CouponEntry>) -> Void) {
         let now = Date()
-        let entry = CouponEntry(date: now, payload: SharedStore.read())
+        let payload = SharedStore.read()
+        var entries = [CouponEntry(date: now, payload: payload)]
+        // A celebration ending before the next refresh gets its own entry, so
+        // the scene comes down exactly at its end (midnight for a redemption).
+        if payload.celebration != nil, let end = payload.celebrationEndDate, end > now {
+            entries.append(CouponEntry(date: end, payload: payload))
+        }
         let next = Calendar.current.date(byAdding: .minute, value: refreshIntervalMinutes, to: now)!
-        completion(Timeline(entries: [entry], policy: .after(next)))
+        completion(Timeline(entries: entries, policy: .after(next)))
     }
 }
 
@@ -586,6 +592,7 @@ private func emptyState(text: String) -> some View {
 enum CelebrationScene {
     static func assetName(_ kind: String) -> String {
         switch kind {
+        case "redeemed": return "MascotCelebrationC3"
         case "anniversary": return "MascotCelebrationC1"
         case "milestone": return "MascotCelebrationC2"
         case "savings": return "MascotCelebrationC3"
@@ -601,6 +608,7 @@ enum CelebrationScene {
 
     static func headline(_ kind: String) -> String {
         switch kind {
+        case "redeemed": return "מימשת קופון!"
         case "anniversary": return "שנה איתנו!"
         case "milestone": return "אבן דרך חדשה!"
         case "savings": return "כמה שחסכת!"
@@ -635,7 +643,7 @@ struct CouponCelebrationSmallView: View {
     private var destinationURL: URL {
         let path: String
         switch kind {
-        case "savings", "monthly", "record", "milestone": path = "statistics"
+        case "redeemed", "rescue", "savings", "monthly", "record", "milestone": path = "statistics"
         case "referral": path = "referral-program"
         default: path = ""
         }
@@ -683,7 +691,7 @@ struct CouponWidgetEntryView: View {
             case .systemMedium: CouponMediumView(payload: entry.payload)
             case .systemLarge: CouponLargeView(payload: entry.payload)
             default:
-                if entry.payload.celebration != nil {
+                if entry.payload.activeCelebration(at: entry.date) != nil {
                     CouponCelebrationSmallView(payload: entry.payload)
                 } else {
                     CouponMascotSmallView(payload: entry.payload)
@@ -699,7 +707,7 @@ struct CouponMascotEntryView: View {
 
     var body: some View {
         Group {
-            if entry.payload.celebration != nil {
+            if entry.payload.activeCelebration(at: entry.date) != nil {
                 CouponCelebrationSmallView(payload: entry.payload)
             } else {
                 CouponMascotSmallView(payload: entry.payload)
