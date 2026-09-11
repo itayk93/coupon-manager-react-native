@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Sparkles, ChevronLeft, X } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
+import { SixSevenCelebration } from "@/components/dashboard/SixSevenCelebration";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { PushPrimer } from "@/components/layout/PushPrimer";
@@ -153,6 +154,7 @@ export function DashboardScreen() {
             once the first coupon is in, and stacking it above the expiry
             warning turned the top of a new account into a wall of notices. */}
         <OnboardingBanner />
+        {!isLoading && !isError && visibleCoupons.length === 67 ? <SixSevenCelebration /> : null}
         {showSavedCelebration ? (
           <TouchableOpacity
             activeOpacity={0.9}

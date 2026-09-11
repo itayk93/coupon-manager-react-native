@@ -29,10 +29,10 @@ describe("rememberRedemption", () => {
 
   it("keeps the scene up until its end, and not a moment after", async () => {
     const until = new Date(Date.now() + 60_000);
-    await rememberRedemption("redeemed", "מימשת את BuyMe · חסכת ₪100", until);
+    await rememberRedemption("redeemed", "מימשת את BuyMe\nחסכת 100 ש״ח", until);
     const stored = await loadCelebrationMemory();
     expect(stored.shownKind).toBe("redeemed");
-    expect(stored.shownText).toBe("מימשת את BuyMe · חסכת ₪100");
+    expect(stored.shownText).toBe("מימשת את BuyMe\nחסכת 100 ש״ח");
     expect(isCelebrationFresh(stored, until.getTime() - 1)).toBe(true);
     expect(isCelebrationFresh(stored, until.getTime())).toBe(false);
   });

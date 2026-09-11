@@ -13,7 +13,6 @@ import {
   Switch,
   Linking,
   Platform,
-  ActivityIndicator,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -34,7 +33,6 @@ import {
   Navigation,
   BadgeDollarSign,
   Store,
-  Sparkles,
   RefreshCw,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -77,6 +75,7 @@ import { useRecordManualSale } from "@/hooks/useCouponSales";
 import { useCouponMerchantDirectory } from "@/hooks/useCouponMerchantSearch";
 import { useAuth } from "@/contexts/AuthContext";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { MascotAnimation } from "@/components/ui/MascotAnimation";
 
 /**
  * Confirmation for deleting a history record. It unfolds under the row it
@@ -912,10 +911,7 @@ export function CouponDetailScreen() {
       >
         {merchantDirectory.isLoading || merchantDirectory.isFetching ? (
           <View style={styles.merchantDirectoryLoading} accessibilityLiveRegion="polite">
-            <View style={[styles.merchantDirectoryLoader, { backgroundColor: theme.primaryTint }]}>
-              <ActivityIndicator size="small" color={theme.primary} />
-              <Sparkles size={18} color={theme.primary} />
-            </View>
+            <MascotAnimation size={120} state="scanning" accessibilityLabel="מחפש בתי עסק" />
             <Text style={[styles.merchantDirectoryTitle, { color: theme.text }]}>בודק את רשימת בתי העסק...</Text>
             <Text style={[styles.merchantDirectorySubtitle, { color: theme.textMuted }]}>מחפש מקור רשמי ועדכני באינטרנט</Text>
           </View>
@@ -1245,15 +1241,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 16,
     gap: 10,
-  },
-  merchantDirectoryLoader: {
-    width: 72,
-    height: 48,
-    borderRadius: 24,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
   },
   merchantDirectoryTitle: {
     fontFamily: fonts.bodyBold,

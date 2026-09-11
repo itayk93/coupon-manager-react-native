@@ -51,18 +51,20 @@ private enum Brand {
 
 class ShareViewController: UIViewController {
   private let card = UIView()
-  private static let mascotFrames: [[UIImage]] = {
-    guard let atlas = UIImage(named: "MascotAtlas")?.cgImage else { return [] }
-    let cell = atlas.width / 4
-    return (0..<4).map { row in
-      (0..<4).compactMap { column in
-        let rect = CGRect(x: CGFloat(column * cell), y: CGFloat(row * cell),
+  private static let mascotFrames: [Int: [UIImage]] = {
+    var result: [Int: [UIImage]] = [:]
+    for (row, name) in [(0, "MascotScan"), (2, "MascotSuccess")] {
+      guard let atlas = UIImage(named: name)?.cgImage else { continue }
+      let cell = atlas.width / 6
+      result[row] = (0..<36).compactMap { index in
+        let rect = CGRect(x: CGFloat((index % 6) * cell), y: CGFloat((index / 6) * cell),
                           width: CGFloat(cell), height: CGFloat(cell))
         return atlas.cropping(to: rect).map { UIImage(cgImage: $0) }
       }
     }
+    return result
   }()
-  private let mascot = UIImageView(image: ShareViewController.mascotFrames.first?.first ?? UIImage(named: "Mascot"))
+  private let mascot = UIImageView(image: ShareViewController.mascotFrames[0]?.first ?? UIImage(named: "Mascot"))
   private var mascotRow = 0
   private let mascotWell = UIView()
   private let badge = UIImageView()
@@ -355,12 +357,11 @@ class ShareViewController: UIViewController {
     mascotRow = row
     mascot.stopAnimating()
     mascot.animationImages = nil
-    guard Self.mascotFrames.indices.contains(row), Self.mascotFrames[row].count == 4 else { return }
-    let frames = Self.mascotFrames[row]
+    guard let frames = Self.mascotFrames[row], frames.count == 36 else { return }
     mascot.image = frames[0]
     guard !reduceMotion else { return }
-    mascot.animationImages = [0, 1, 2, 3, 2, 1].map { frames[$0] }
-    mascot.animationDuration = 1.56
+    mascot.animationImages = frames
+    mascot.animationDuration = Double(frames.count) / 24.0
     mascot.animationRepeatCount = once ? 1 : 0
     mascot.startAnimating()
   }

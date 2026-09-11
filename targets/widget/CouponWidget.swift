@@ -592,6 +592,7 @@ private func emptyState(text: String) -> some View {
 enum CelebrationScene {
     static func assetName(_ kind: String) -> String {
         switch kind {
+        case "six-seven": return "MascotCelebration67"
         case "redeemed": return "MascotCelebrationC3"
         case "anniversary": return "MascotCelebrationC1"
         case "milestone": return "MascotCelebrationC2"
@@ -608,8 +609,9 @@ enum CelebrationScene {
 
     static func headline(_ kind: String) -> String {
         switch kind {
+        case "six-seven": return "67 קופונים!"
         case "redeemed": return "מימשת קופון!"
-        case "anniversary": return "שנה איתנו!"
+        case "anniversary": return "שנה ביחד! 🎉"
         case "milestone": return "אבן דרך חדשה!"
         case "savings": return "כמה שחסכת!"
         case "monthly": return "החיסכון החודשי שלך"
@@ -640,6 +642,8 @@ struct CouponCelebrationSmallView: View {
 
     /// "top\nbottom": the first line goes above the mascot, the rest below it.
     private var headlineParts: (top: String, bottom: String?) {
+        // The 67 scene keeps the mascot's face clear: its whole line goes below.
+        if kind == "six-seven" { return ("", headline) }
         let lines = headline.split(separator: "\n", maxSplits: 1).map {
             $0.trimmingCharacters(in: .whitespaces)
         }
@@ -672,12 +676,14 @@ struct CouponCelebrationSmallView: View {
 
             VStack(spacing: 2) {
                 AppLogoView(height: 12)
-                Text(headlineParts.top)
-                    .couponFont(16, .bold)
-                    .foregroundColor(.white)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.6)
+                if !headlineParts.top.isEmpty {
+                    Text(headlineParts.top)
+                        .couponFont(16, .bold)
+                        .foregroundColor(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.6)
+                }
                 Spacer(minLength: 0)
                 // A second headline line (e.g. the wallet total) sits under the
                 // mascot so the scene stays visible between the two.

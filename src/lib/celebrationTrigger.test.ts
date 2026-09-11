@@ -4,6 +4,7 @@ import {
   endOfIsraelDay,
   lifetimeSavings,
   pickCelebration,
+  pickSixSevenCelebration,
   redemptionCelebration,
 } from "./celebrationTrigger";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
@@ -40,6 +41,20 @@ describe("lifetimeSavings", () => {
 });
 
 describe("pickCelebration", () => {
+  it("celebrates exactly 67 spendable coupons ahead of a new wallet record", () => {
+    const wallet = Array.from({ length: 67 }, (_, id) => coupon({ id, value: 10, cost: 10 }));
+    expect(pickCelebration(wallet, { walletRecord: 0 }, MID_MONTH)).toEqual({ kind: "six-seven", token: "six-seven:67" });
+    expect(pickSixSevenCelebration(wallet.slice(1))).toBeNull();
+    expect(pickSixSevenCelebration([...wallet, coupon({ id: 68 })])).toBeNull();
+  });
+
+  it("does not replay 67 after it was celebrated or count fully spent coupons", () => {
+    const wallet = Array.from({ length: 67 }, (_, id) => coupon({ id }));
+    expect(pickSixSevenCelebration(wallet, { celebrated: ["six-seven:67"] })).toBeNull();
+    expect(pickSixSevenCelebration([...wallet.slice(1), coupon({ status: "נוצל" })])).toBeNull();
+    expect(pickSixSevenCelebration([...wallet, coupon({ status: "נוצל" })])?.kind).toBe("six-seven");
+  });
+
   it("returns nothing for an empty wallet", () => {
     expect(pickCelebration([], {}, MID_MONTH)).toBeNull();
   });
@@ -146,7 +161,7 @@ describe("redemptionCelebration", () => {
       now
     );
     expect(scene.kind).toBe("redeemed");
-    expect(scene.text).toBe("מימשת את BuyMe · חסכת ₪100");
+    expect(scene.text).toBe("מימשת את BuyMe\nחסכת 100 ש״ח");
     expect(scene.until.toISOString()).toBe("2026-09-11T21:00:00.000Z");
   });
 
@@ -171,7 +186,7 @@ describe("redemptionCelebration", () => {
 
   it("shortens a long company name so the headline fits the small widget", () => {
     const scene = redemptionCelebration({ company: "רשת חנויות גדולה מאוד בעלת שם ארוך", value: 10 }, 10, now);
-    const name = scene.text.replace("מימשת את ", "").split(" · ")[0];
+    const name = scene.text.replace("מימשת את ", "").split("\n")[0];
     expect(name.length).toBe(18);
     expect(name.endsWith("…")).toBe(true);
   });

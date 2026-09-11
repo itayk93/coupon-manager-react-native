@@ -9,6 +9,7 @@ import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "./
  */
 
 export type CelebrationKind =
+  | "six-seven"
   | "redeemed"
   | "rescue"
   | "anniversary"
@@ -35,6 +36,12 @@ export type CelebrationPick = {
 
 /** Coupon counts worth a scene. Passing 24 -> 25 is an event; 26 is not. */
 const COUNT_STEPS = [5, 10, 25, 50, 100, 250];
+
+/** Exact wallet count, matching the dashboard and widget balance rules. */
+export function pickSixSevenCelebration(coupons: DecryptedCoupon[], state: CelebrationState = {}): CelebrationPick | null {
+  if (coupons.filter(isSpendableCoupon).length !== 67 || state.celebrated?.includes("six-seven:67")) return null;
+  return { kind: "six-seven", token: "six-seven:67" };
+}
 /** Shekel savings worth a scene. */
 const SAVINGS_STEPS = [1000, 5000, 10_000, 25_000, 50_000, 100_000];
 
@@ -119,7 +126,8 @@ export function pickCelebration(
   const seen = new Set(state.celebrated ?? []);
   const spendable = coupons.filter(isSpendableCoupon);
 
-  const candidates: CelebrationPick[] = [];
+  const special = pickSixSevenCelebration(coupons, state);
+  const candidates: CelebrationPick[] = special ? [special] : [];
 
   const joined = parseDateOnly(state.memberSince);
   if (joined) {
@@ -265,6 +273,9 @@ export function redemptionCelebration(
   // Same number the "coupon finished" notification quotes, so the two agree.
   const saved = Math.max(0, (coupon.value ?? 0) - (coupon.cost ?? 0));
   const text =
-    coupon.is_one_time || saved <= 0 ? `מימשת את ${company}` : `מימשת את ${company} · חסכת ${shekelsText(saved)}`;
+    coupon.is_one_time || saved <= 0
+      ? `מימשת את ${company}`
+      : // Second line sits under the mascot; "ש״ח" because "₪" mis-orders in RTL.
+        `מימשת את ${company}\nחסכת ${Math.round(saved).toLocaleString("en-US")} ש״ח`;
   return { kind: "redeemed", text, until };
 }

@@ -1,6 +1,6 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
-import { baselineCelebrationTokens, pickCelebration } from "./celebrationTrigger";
+import { baselineCelebrationTokens, pickCelebration, pickSixSevenCelebration } from "./celebrationTrigger";
 import {
   celebrationEndsAt,
   isCelebrationFresh,
@@ -164,6 +164,7 @@ export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon
 
 /** Celebration scenes the admin debug switcher can force. */
 export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
+  { kind: "six-seven", label: "6–7 · 67 קופונים!" },
   { kind: "redeemed", label: "✅ קופון נוצל" },
   { kind: "anniversary", label: "🎂 יום שנה" },
   { kind: "milestone", label: "🏆 אבן דרך" },
@@ -196,12 +197,14 @@ export function celebrationHeadline(kind: string, coupons: DecryptedCoupon[]): s
   const redeemed = coupons.filter((coupon) => coupon.status === "נוצל").length;
 
   switch (kind) {
+    case "six-seven":
+      return "67 קופונים!";
     // Real redemptions carry their own headline (see `redemptionCelebration`);
     // this only feeds the debug preview.
     case "redeemed":
-      return `מימשת את ${spendable[0]?.company || "BuyMe"} · חסכת ₪100`;
+      return `מימשת את ${spendable[0]?.company || "BuyMe"}\nחסכת 100 ש״ח`;
     case "anniversary":
-      return "שנה איתנו! 🎉";
+      return "שנה ביחד! 🎉";
     case "milestone":
       return `${spendable.length} קופונים בארנק!`;
     case "savings":
@@ -265,6 +268,16 @@ async function celebrationFor(
 
   const stored = await loadCelebrationMemory();
   const walletValue = totalRemainingValue(coupons);
+
+  // The exact 67-count moment must not be swallowed by yesterday's record or
+  // a routine milestone. Urgent expiry and fresh redemption keep priority.
+  const special = pickSixSevenCelebration(coupons, toCelebrationState(stored, memberSince));
+  const redemptionFresh = isCelebrationFresh(stored) && (stored.shownKind === "redeemed" || stored.shownKind === "rescue");
+  if (special && !redemptionFresh) {
+    const until = nextLocalMidnight();
+    await rememberCelebration(stored, special.kind, special.token, walletValue, until);
+    return { kind: special.kind, text: "67 קופונים!", until: until.toISOString() };
+  }
 
   // A scene stays up until it ends rather than vanishing on the next sync.
   if (isCelebrationFresh(stored) && stored.shownKind) {

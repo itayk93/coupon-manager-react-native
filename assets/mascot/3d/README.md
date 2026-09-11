@@ -1,8 +1,10 @@
 # 3D mascot animation assets
 
-Status: integrated. `mascot-atlas.png` is the transparent 1280px production atlas.
-`preview.webp` plays the four actions side by side. The unprocessed source draft
-has a baked-in checkerboard and is not referenced by the application.
+Status: integrated. The four `*-smooth.png` production atlases each contain
+36 transparent 256px frames in a 6x6 grid. Playback is 24fps, a 1.5-second loop.
+`preview-smooth.webp` previews all actions on light and dark backgrounds.
+`mascot-atlas.png` preserves the approved original keyframes for regeneration.
+The opaque source draft and old preview are not referenced by the application.
 
 Reference: user-provided `original_app_mascot.png`.
 Generated using the built-in image generation tool on 2026-09-10.
@@ -24,9 +26,13 @@ The generated image contains four rows, each with four poses:
 4. Concern: expiry reminders.
 
 The locally prepared atlas has real alpha and individually aligned frame bounds.
-Playback uses four generated poses at 260ms per frame, forward and backward.
-Concern uses three poses to avoid a discontinuous fourth pose. This is a rendered
-3D-style frame animation, not a rigged 3D model or interpolated 24fps video.
+On 2026-09-11, bidirectional optical-flow interpolation generated intermediate
+frames from the approved artwork. Premultiplied-alpha warping preserves clean
+edges. No new character design or AI redraw was introduced in this smoothing pass.
+Greeting uses the three open-mouth poses; celebration uses the two closed-eye
+poses to avoid double eyes during interpolation. Concern omits the fourth pose.
+All four loops have 36 frames, including their return motion. These are rendered
+3D-style animations, not rigged 3D models.
 
 ## Integration targets
 
@@ -38,7 +44,7 @@ Concern uses three poses to avoid a discontinuous fourth pose. This is a rendere
 
 Widget artwork is unchanged by this replacement. React playback stops when the
 screen loses focus, the application backgrounds, or Reduce Motion is enabled.
-Both iOS extensions use the same atlas with native image animation and respond
+Both iOS extensions use the scan/success atlases with native image animation and respond
 to Reduce Motion changes. Their animations stop when dismissed.
 
 ## Generation prompt
@@ -56,4 +62,35 @@ The follow-up asked to remove the baked-in checkerboard and preserve every pose;
 it also returned an opaque image. The user explicitly approved local processing.
 `scripts/prepare-mascot-3d.py` removes border-connected neutral background,
 preserves enclosed facial highlights, cleans edges, aligns crops, and generates
-the app atlas, preview, and copies for the two native asset catalogs.
+the original keyframe atlas and preview. Run `scripts/interpolate-mascot-3d.py`
+afterward to generate the smooth atlases, intermediate-frame proof, animated
+preview, and native copies. Requires Pillow, numpy and opencv-python.
+
+React uses elapsed-time playback rather than counting delayed timer callbacks.
+It displays a static first frame until the selected atlas loads. Only the
+current action atlas is displayed; no per-frame image downloads are needed.
+
+## Six–seven Easter egg
+
+`six-seven-smooth.png` is a separate 36-frame, 24fps loop. The dashboard shows
+it at exactly 67 spendable coupons, independently of search/filter selection.
+The dismissible banner does not replace the normal loading/success animations.
+
+Reference motion: https://cmsmedia.org/1457/news/the-6-7-meme/ — open palms
+alternately rise and fall like balancing scales. On 2026-09-11 the image tool
+generated six fixed-camera poses from the user's supplied blue mascot artwork.
+Prompt constraints: three columns by two rows, frontal body, palms up, opposing
+arm movement, cheeky half-lidded smile, unchanged blue material/proportions,
+no magnifier, no text, chroma-green background.
+
+`scripts/prepare-six-seven.py` removes green and animates the neutral generated
+pose with a continuous opposing-arm deformation field. These intermediate
+frames are locally rendered, not separately AI-generated poses or a rigged 3D
+model. This avoids the doubled fingers produced by optical-flow interpolation.
+Source: `source/six-seven-keyframes.png`; preview: `six-seven-preview.webp`.
+
+The widget uses the user's exact `ChatGPT Image Sep 11, 2026, 06_55_56 PM.png`
+as `../celebration/C10-six-seven.png` and the iOS image-set copy. Android uses
+a resized WebP. The static widget headline is `67 קופונים!`, below the logo.
+The milestone is remembered once, remains visible until local midnight, and
+preserves the existing urgent-expiry and fresh-redemption priorities.

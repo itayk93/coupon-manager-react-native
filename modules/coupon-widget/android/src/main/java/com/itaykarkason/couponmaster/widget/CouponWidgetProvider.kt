@@ -83,6 +83,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
   private fun celebrationViews(context: Context, kind: String, text: String?): RemoteViews =
     RemoteViews(context.packageName, R.layout.coupon_widget_mascot).apply {
       val sceneRes = when (kind) {
+        "six-seven" -> R.drawable.celebration_67
         "redeemed" -> R.drawable.celebration_c3
         "anniversary" -> R.drawable.celebration_c1
         "milestone" -> R.drawable.celebration_c2
@@ -96,8 +97,9 @@ class CouponWidgetProvider : AppWidgetProvider() {
         else -> R.drawable.celebration_c1
       }
       val title = when (kind) {
+        "six-seven" -> "67 קופונים!"
         "redeemed" -> "מימשת קופון!"
-        "anniversary" -> "שנה איתנו!"
+        "anniversary" -> "שנה ביחד! 🎉"
         "milestone" -> "אבן דרך חדשה!"
         "savings" -> "כמה שחסכת!"
         "monthly" -> "החיסכון החודשי שלך"
@@ -110,12 +112,15 @@ class CouponWidgetProvider : AppWidgetProvider() {
       }
       setImageViewResource(R.id.mascot_image, sceneRes)
       setViewVisibility(R.id.mascot_today_logo, View.VISIBLE)
-      setViewVisibility(R.id.mascot_today_title, View.VISIBLE)
       // The app fills the headline in with real numbers; `title` is only a
       // fallback for a payload written by an older build.
       // "top\nbottom": the first line goes above the mascot, the rest below it.
-      val lines = (text?.takeIf { it.isNotBlank() } ?: title).split("\n", limit = 2).map { it.trim() }
+      // The 67 scene keeps the mascot's face clear: its whole line goes below.
+      val headline = text?.takeIf { it.isNotBlank() } ?: title
+      val lines = if (kind == "six-seven") listOf("", headline.trim())
+        else headline.split("\n", limit = 2).map { it.trim() }
       setTextViewText(R.id.mascot_today_title, lines[0])
+      setViewVisibility(R.id.mascot_today_title, if (lines[0].isEmpty()) View.GONE else View.VISIBLE)
       val bottom = lines.getOrNull(1)?.takeIf { it.isNotEmpty() }
       if (bottom != null) {
         val bold = SpannableString(bottom).apply {

@@ -89,4 +89,5 @@ multipass-*.json
 .ios-device
 
 # Raw AI generation input for the 3D mascot atlas; only the packed atlas ships.
-assets/mascot/3d/source/
+assets/mascot/3d/source/*
+!assets/mascot/3d/source/six-seven-keyframes.png
