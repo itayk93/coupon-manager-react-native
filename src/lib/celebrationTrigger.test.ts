@@ -71,8 +71,13 @@ describe("pickCelebration", () => {
   });
 
   it("celebrates a new wallet record", () => {
-    const pick = pickCelebration([coupon({ value: 5000, cost: 4000 })], {}, MID_MONTH);
+    const pick = pickCelebration([coupon({ value: 5000, cost: 4000 })], { walletRecord: 3000 }, MID_MONTH);
     expect(pick?.kind).toBe("record");
+  });
+
+  it("does not call the first wallet it ever sees a record", () => {
+    const pick = pickCelebration([coupon({ value: 5000, cost: 4000 })], {}, MID_MONTH);
+    expect(pick?.kind).not.toBe("record");
   });
 
   it("ignores a wallet that only crept up", () => {

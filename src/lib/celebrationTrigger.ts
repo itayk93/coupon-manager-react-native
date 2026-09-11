@@ -119,8 +119,10 @@ export function pickCelebration(
   }
 
   const wallet = totalRemainingValue(coupons);
-  const previousRecord = state.walletRecord ?? 0;
-  if (wallet > 0 && wallet >= previousRecord + RECORD_MARGIN) {
+  // No stored high yet (first run, reinstall) means no baseline to beat: the
+  // caller records the current wallet instead, so a record is a real record.
+  const previousRecord = state.walletRecord;
+  if (previousRecord != null && wallet > 0 && wallet >= previousRecord + RECORD_MARGIN) {
     // Bucketed so a wallet that keeps creeping up does not celebrate daily.
     candidates.push({ kind: "record", token: `record:${Math.floor(wallet / RECORD_MARGIN)}` });
   }
