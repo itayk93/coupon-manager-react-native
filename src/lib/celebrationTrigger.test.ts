@@ -80,12 +80,13 @@ describe("pickCelebration", () => {
     expect(pick?.kind).not.toBe("record");
   });
 
-  it("ignores a wallet that only crept up", () => {
-    const pick = pickCelebration(
-      [coupon({ value: 1000, cost: 1000 })],
-      { walletRecord: 900, celebrated: [] },
-      MID_MONTH
-    );
+  it("counts any new high as a record, however small the step", () => {
+    const pick = pickCelebration([coupon({ value: 1000, cost: 1000 })], { walletRecord: 999 }, MID_MONTH);
+    expect(pick).toEqual({ kind: "record", token: "record:1000" });
+  });
+
+  it("ignores a wallet that only matched its old high", () => {
+    const pick = pickCelebration([coupon({ value: 1000, cost: 1000 })], { walletRecord: 1000 }, MID_MONTH);
     expect(pick?.kind).not.toBe("record");
   });
 

@@ -38,9 +38,6 @@ const COUNT_STEPS = [5, 10, 25, 50, 100, 250];
 /** Shekel savings worth a scene. */
 const SAVINGS_STEPS = [1000, 5000, 10_000, 25_000, 50_000, 100_000];
 
-/** A wallet has to beat its old high by this much before it counts as a record. */
-const RECORD_MARGIN = 250;
-
 function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
@@ -121,10 +118,12 @@ export function pickCelebration(
   const wallet = totalRemainingValue(coupons);
   // No stored high yet (first run, reinstall) means no baseline to beat: the
   // caller records the current wallet instead, so a record is a real record.
+  // Any new high is a record. A scene holds the widget for a day, so this can
+  // fire at most once a day. Whole shekels, so float noise never counts.
   const previousRecord = state.walletRecord;
-  if (previousRecord != null && wallet > 0 && wallet >= previousRecord + RECORD_MARGIN) {
-    // Bucketed so a wallet that keeps creeping up does not celebrate daily.
-    candidates.push({ kind: "record", token: `record:${Math.floor(wallet / RECORD_MARGIN)}` });
+  const walletShekels = Math.round(wallet);
+  if (previousRecord != null && walletShekels > 0 && walletShekels > Math.round(previousRecord)) {
+    candidates.push({ kind: "record", token: `record:${walletShekels}` });
   }
 
   const countStep = reachedStep(spendable.length, COUNT_STEPS);
