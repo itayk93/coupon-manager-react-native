@@ -25,7 +25,7 @@ type Stored = {
   shownUntil?: string;
 };
 
-/** A celebration stays on the widget for a day, then normal service resumes. */
+/** Only for scenes stored before `shownUntil` existed; new ones end at local midnight. */
 export const CELEBRATION_TTL_MS = 24 * 60 * 60 * 1000;
 
 export async function loadCelebrationMemory(): Promise<Stored> {
@@ -93,12 +93,18 @@ export async function rememberRedemption(kind: string, text: string, until: Date
   });
 }
 
-/** Records that a scene went up, keeping the token list bounded. */
+/** The coming 00:00 on the device's own clock — a scene belongs to the day it went up. */
+export function nextLocalMidnight(now: Date = new Date()): Date {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+}
+
+/** Records that a scene went up (until local midnight), keeping the token list bounded. */
 export async function rememberCelebration(
   stored: Stored,
   kind: string,
   token: string,
-  walletValue: number
+  walletValue: number,
+  until: Date = nextLocalMidnight()
 ): Promise<void> {
   const celebrated = [...(stored.celebrated ?? []), token].slice(-MAX_TOKENS);
   await save({
@@ -106,6 +112,7 @@ export async function rememberCelebration(
     walletRecord: Math.max(stored.walletRecord ?? 0, walletValue),
     shownAt: new Date().toISOString(),
     shownKind: kind,
+    shownUntil: until.toISOString(),
   });
 }
 

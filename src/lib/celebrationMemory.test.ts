@@ -10,7 +10,7 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
   },
 }));
 
-const { isCelebrationFresh, loadCelebrationMemory, rememberCelebration, rememberRedemption } = await import(
+const { isCelebrationFresh, loadCelebrationMemory, nextLocalMidnight, rememberCelebration, rememberRedemption } = await import(
   "./celebrationMemory"
 );
 
@@ -45,6 +45,14 @@ describe("rememberRedemption", () => {
     await rememberCelebration(stored, "milestone", "milestone:10", 100);
     stored = await loadCelebrationMemory();
     expect(stored.shownText).toBeUndefined();
-    expect(stored.shownUntil).toBeUndefined();
+    expect(stored.shownUntil).toBe(nextLocalMidnight().toISOString());
+  });
+});
+
+describe("nextLocalMidnight", () => {
+  it("is the coming 00:00 on the device clock, not 24 hours on", () => {
+    const end = nextLocalMidnight(new Date(2026, 8, 11, 23, 30));
+    expect(end).toEqual(new Date(2026, 8, 12, 0, 0));
+    expect(nextLocalMidnight(new Date(2026, 8, 11, 0, 5))).toEqual(new Date(2026, 8, 12, 0, 0));
   });
 });

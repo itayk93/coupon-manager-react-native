@@ -2,10 +2,10 @@ import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
 import { pickCelebration } from "./celebrationTrigger";
 import {
-  CELEBRATION_TTL_MS,
   celebrationEndsAt,
   isCelebrationFresh,
   loadCelebrationMemory,
+  nextLocalMidnight,
   noteWalletValue,
   rememberCelebration,
   toCelebrationState,
@@ -281,11 +281,12 @@ async function celebrationFor(
     return null;
   }
 
-  await rememberCelebration(stored, pick.kind, pick.token, walletValue);
+  const until = nextLocalMidnight();
+  await rememberCelebration(stored, pick.kind, pick.token, walletValue, until);
   return {
     kind: pick.kind,
     text: celebrationHeadline(pick.kind, coupons),
-    until: new Date(Date.now() + CELEBRATION_TTL_MS).toISOString(),
+    until: until.toISOString(),
   };
 }
 
