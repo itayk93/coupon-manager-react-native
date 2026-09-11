@@ -122,4 +122,19 @@ export async function noteWalletValue(stored: Stored, walletValue: number): Prom
   await save({ ...stored, walletRecord: walletValue });
 }
 
+/**
+ * First sight of a wallet: take where it stands as the baseline — its value as
+ * the record to beat and the steps it already reached as done. Nothing shows.
+ */
+export async function seedCelebrationBaseline(
+  stored: Stored,
+  walletValue: number,
+  tokens: string[]
+): Promise<Stored> {
+  const celebrated = [...new Set([...(stored.celebrated ?? []), ...tokens])].slice(-MAX_TOKENS);
+  const next = { ...stored, celebrated, walletRecord: Math.max(stored.walletRecord ?? 0, walletValue) };
+  await save(next);
+  return next;
+}
+
 export type { Stored as CelebrationMemory };

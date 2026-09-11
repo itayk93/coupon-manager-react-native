@@ -10,9 +10,17 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
   },
 }));
 
-const { isCelebrationFresh, loadCelebrationMemory, nextLocalMidnight, rememberCelebration, rememberRedemption } = await import(
-  "./celebrationMemory"
-);
+const {
+  isCelebrationFresh,
+  loadCelebrationMemory,
+  nextLocalMidnight,
+  rememberCelebration,
+  rememberRedemption,
+  seedCelebrationBaseline,
+  toCelebrationState,
+} = await import("./celebrationMemory");
+const { baselineCelebrationTokens, pickCelebration } = await import("./celebrationTrigger");
+type DecryptedCoupon = import("@/hooks/useCoupons").DecryptedCoupon;
 
 const KEY = "widget_celebrations:v1";
 
@@ -46,6 +54,21 @@ describe("rememberRedemption", () => {
     stored = await loadCelebrationMemory();
     expect(stored.shownText).toBeUndefined();
     expect(stored.shownUntil).toBe(nextLocalMidnight().toISOString());
+  });
+});
+
+describe("seedCelebrationBaseline", () => {
+  beforeEach(() => store.clear());
+
+  it("takes a first-seen wallet as done, so a reinstall celebrates nothing old", async () => {
+    const wallet = Array.from({ length: 30 }, (_, i) => ({
+      id: i, company: "x", code: "1", value: 100, cost: 0, used_value: 0, status: "פעיל", expiration: null,
+    })) as unknown as DecryptedCoupon[];
+    const seeded = await seedCelebrationBaseline({}, 3000, baselineCelebrationTokens(wallet));
+    expect(seeded.walletRecord).toBe(3000);
+    expect(seeded.celebrated).toEqual(["milestone:25", "savings:1000"]);
+    expect(pickCelebration(wallet, toCelebrationState(seeded, null), new Date(2026, 5, 15))).toBeNull();
+    expect(await loadCelebrationMemory()).toEqual(seeded);
   });
 });
 

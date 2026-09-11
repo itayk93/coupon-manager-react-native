@@ -76,6 +76,20 @@ export function lifetimeSavings(coupons: DecryptedCoupon[]): number {
   return coupons.reduce((sum, coupon) => sum + ((coupon.value ?? 0) - (coupon.cost ?? 0)), 0);
 }
 
+/**
+ * Count and savings steps the wallet already stands on. Recorded silently the
+ * first time the widget sees a wallet (fresh install, cleared memory), so a
+ * step reached long ago is never celebrated as if it just happened.
+ */
+export function baselineCelebrationTokens(coupons: DecryptedCoupon[]): string[] {
+  const tokens: string[] = [];
+  const countStep = reachedStep(coupons.filter(isSpendableCoupon).length, COUNT_STEPS);
+  if (countStep) tokens.push(`milestone:${countStep}`);
+  const savingsStep = reachedStep(lifetimeSavings(coupons), SAVINGS_STEPS);
+  if (savingsStep) tokens.push(`savings:${savingsStep}`);
+  return tokens;
+}
+
 /** Spendable coupons that expired before today without being fully used. */
 function expiredThisMonth(coupons: DecryptedCoupon[], now: Date): number {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();

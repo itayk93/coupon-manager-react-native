@@ -1,6 +1,6 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
-import { pickCelebration } from "./celebrationTrigger";
+import { baselineCelebrationTokens, pickCelebration } from "./celebrationTrigger";
 import {
   celebrationEndsAt,
   isCelebrationFresh,
@@ -8,6 +8,7 @@ import {
   nextLocalMidnight,
   noteWalletValue,
   rememberCelebration,
+  seedCelebrationBaseline,
   toCelebrationState,
 } from "./celebrationMemory";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
@@ -275,14 +276,20 @@ async function celebrationFor(
     };
   }
 
-  const pick = pickCelebration(coupons, toCelebrationState(stored, memberSince));
+  // No record yet means this wallet was never seen here: take it as the baseline
+  // instead of celebrating steps it reached long ago.
+  const memory =
+    stored.walletRecord == null && walletValue > 0
+      ? await seedCelebrationBaseline(stored, walletValue, baselineCelebrationTokens(coupons))
+      : stored;
+  const pick = pickCelebration(coupons, toCelebrationState(memory, memberSince));
   if (!pick) {
-    await noteWalletValue(stored, walletValue);
+    await noteWalletValue(memory, walletValue);
     return null;
   }
 
   const until = nextLocalMidnight();
-  await rememberCelebration(stored, pick.kind, pick.token, walletValue, until);
+  await rememberCelebration(memory, pick.kind, pick.token, walletValue, until);
   return {
     kind: pick.kind,
     text: celebrationHeadline(pick.kind, coupons),
