@@ -691,7 +691,7 @@ struct CouponCelebrationSmallView: View {
                 }
             }
             .padding(.top, 9)
-            .padding(.bottom, 10)
+            .padding(.bottom, 3)
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .shadow(color: .black.opacity(0.75), radius: 3, x: 0, y: 1)
