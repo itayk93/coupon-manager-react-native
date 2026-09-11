@@ -11,7 +11,7 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Search, Plus, Trash2, Send } from "lucide-react-native";
+import { Search, Plus, Trash2, Send, Home } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,8 @@ type AdminTab =
   | "referrals"
   | "geo"
   | "newsletters"
-  | "widget";
+  | "widget"
+  | "homealt";
 
 const TAB_KEYS: AdminTab[] = [
   "users",
@@ -54,6 +55,7 @@ const TAB_KEYS: AdminTab[] = [
   "geo",
   "newsletters",
   "widget",
+  "homealt",
 ];
 
 export function AdminDashboardScreen() {
@@ -144,6 +146,7 @@ export function AdminDashboardScreen() {
                 { key: "geo", label: "גאוגרפיה" },
                 { key: "newsletters", label: "ניוזלטר" },
                 { key: "widget", label: "🐞 ווידג'ט" },
+                { key: "homealt", label: "🏠 בית (ניסוי)" },
               ] as const
             ).map((tab) => {
               const isCurrent = activeTab === tab.key;
@@ -194,6 +197,34 @@ export function AdminDashboardScreen() {
         {activeTab === "widget" ? (
           <ScrollView contentContainerStyle={styles.tabContent}>
             <WidgetDebugPanel />
+          </ScrollView>
+        ) : null}
+
+        {/* Tab 9: the alternative home screen. It is not on the tab bar and the
+            route itself turns non-admins away — this button is the only way in
+            while the layout is being tried out. */}
+        {activeTab === "homealt" ? (
+          <ScrollView contentContainerStyle={styles.tabContent}>
+            <View
+              style={[
+                styles.debugCard,
+                { backgroundColor: theme.card, borderColor: theme.cardBorder },
+              ]}
+            >
+              <Text style={[styles.debugTitle, { color: theme.text }]}>
+                מסך בית אלטרנטיבי
+              </Text>
+              <Text style={[styles.debugBody, { color: theme.textMuted }]}>
+                גרסה ניסיונית של עמוד הבית: הודעה מהמאסקוט, חיפוש, פילטרים מהירים ואז
+                הקופונים עצמם. עמוד הבית הרגיל לא משתנה, והמסך הזה נגיש מכאן בלבד.
+              </Text>
+              <Button
+                title="פתיחת המסך הניסיוני"
+                onPress={() => router.push("/home-alt")}
+                icon={<Home size={18} color="#ffffff" />}
+                style={{ marginTop: 12 }}
+              />
+            </View>
           </ScrollView>
         ) : null}
 
@@ -557,5 +588,25 @@ const styles = StyleSheet.create({
   msgDate: {
     fontSize: 11,
     marginTop: 4,
+  },
+  debugCard: {
+    padding: 16,
+    borderRadius: radii.cardLg,
+    borderWidth: 1,
+    alignItems: "flex-end",
+  },
+  debugTitle: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  debugBody: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
 });

@@ -56,6 +56,13 @@ import { formatIls } from "@/lib/formatIls";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
+const FILTER_STATUSES: FilterStatus[] = ["all", "active", "expiring", "used", "expired"];
+
+/** A status handed to us in the URL is only a status if it is one of ours. */
+function asFilterStatus(value: unknown): FilterStatus | null {
+  return FILTER_STATUSES.includes(value as FilterStatus) ? (value as FilterStatus) : null;
+}
+
 interface CouponSection {
   key: string;
   title: string;
@@ -67,6 +74,10 @@ export function CouponsListScreen() {
   const params = useLocalSearchParams<{
     initialFilterTag?: string;
     initialCompany?: string;
+    /** Text typed somewhere else — the home screen's search field — to open on. */
+    initialSearch?: string;
+    /** Status row to land on, e.g. the home screen's "expiring" quick filter. */
+    initialStatus?: string;
     /** Comma-separated coupon ids, sent by a notification that is about them. */
     ids?: string;
   }>();
@@ -102,17 +113,19 @@ export function CouponsListScreen() {
     if (next) setFocusIds(next);
   }, [params.ids]);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(params.initialSearch || "");
   const [merchantQuery, setMerchantQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(
     params.initialFilterTag || null
   );
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>(
+    asFilterStatus(params.initialStatus) || "all"
+  );
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   // Status + tag filter rows stay collapsed until the filter button is pressed,
   // unless we arrived here with a tag already applied.
   const [showStatusRow, setShowStatusRow] = useState(
-    Boolean(params.initialFilterTag)
+    Boolean(params.initialFilterTag || asFilterStatus(params.initialStatus))
   );
   const [companyFilterOpen, setCompanyFilterOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -121,6 +134,27 @@ export function CouponsListScreen() {
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const [isMerchantResultsOpen, setIsMerchantResultsOpen] = useState(false);
+
+  // The home screen hands this list a search term, a status or a tag to open
+  // on. It is a tab route, so it is usually already mounted and the initial
+  // state above never runs again — the params have to be applied here too.
+  // They are cleared straight after, so searching for the same word twice in a
+  // row still works.
+  useEffect(() => {
+    const nextStatus = asFilterStatus(params.initialStatus);
+    const hasSearch = params.initialSearch !== undefined;
+    const hasTag = Boolean(params.initialFilterTag);
+    if (!hasSearch && nextStatus === null && !hasTag) return;
+    if (hasSearch) setSearch(params.initialSearch || "");
+    if (nextStatus) setStatusFilter(nextStatus);
+    if (hasTag) setSelectedTag(params.initialFilterTag || null);
+    if (nextStatus || hasTag) setShowStatusRow(true);
+    router.setParams({
+      initialSearch: undefined,
+      initialStatus: undefined,
+      initialFilterTag: undefined,
+    });
+  }, [params.initialFilterTag, params.initialSearch, params.initialStatus, router]);
   const merchantSearch = useCouponMerchantSearch(merchantQuery);
   const merchantResultIds = useMemo(
     () => new Set([
