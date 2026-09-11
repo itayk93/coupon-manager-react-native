@@ -64,6 +64,39 @@ function safeSourceUrl(value: unknown, sources: string[]): string {
   return sources.includes(url) ? url : '';
 }
 
+function buymeBrandId(value: unknown): string | null {
+  return String(value || '').match(/^https:\/\/(?:www\.)?buyme\.co\.il\/brands\/(\d{1,12})(?:[/?#]|$)/)?.[1] ?? null;
+}
+
+type DirectoryMerchant = { name: string; reason: string; sourceUrl: string };
+
+/**
+ * BuyMe card pages render their store list client-side, so web search sees an
+ * empty shell. The page itself reads this JSON, which lists every store. The
+ * host is fixed and the id is digits only, so no caller-controlled URL is fetched.
+ */
+async function fetchBuymeDirectory(brandId: string): Promise<{ provider: string; merchants: DirectoryMerchant[] } | null> {
+  const pageUrl = `https://buyme.co.il/brands/${brandId}`;
+  const response = await fetch(`${pageUrl}/options`, {
+    headers: { accept: 'application/json', 'user-agent': 'Mozilla/5.0' },
+    redirect: 'error',
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!response?.ok) return null;
+  const data = await response.json().catch(() => null) as Record<string, unknown> | null;
+  const brands = Array.isArray(data?.brands) ? data.brands as Array<Record<string, unknown>> : [];
+  if (!brands.length) return null;
+  const supplier = (data?.supplier || {}) as Record<string, unknown>;
+  return {
+    provider: String(supplier.name || supplier.title || 'BuyMe'),
+    merchants: brands.map((brand) => ({
+      name: String(brand.title || brand.name || '').trim().slice(0, 100),
+      reason: String(brand.siteSlogan || '').trim().slice(0, 220),
+      sourceUrl: pageUrl,
+    })),
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeadersFor(req) });
   try {
@@ -111,6 +144,7 @@ Deno.serve(async (req) => {
         additionalProperties: false,
         properties: {
           provider: { type: 'string' },
+          directory_url: { type: 'string' },
           merchants: {
             type: 'array',
             items: {
@@ -125,7 +159,7 @@ Deno.serve(async (req) => {
             },
           },
         },
-        required: ['provider', 'merchants'],
+        required: ['provider', 'directory_url', 'merchants'],
       };
       const aiResponse = await safeFetch(OPENAI_URL, {
         method: 'POST',
@@ -138,7 +172,8 @@ Deno.serve(async (req) => {
           max_output_tokens: 6000,
           store: false,
           input: `מצא אילו חנויות ובתי עסק מכבדים כיום את הקופון הבא: ${JSON.stringify(coupon)}.
-השתמש רק בעמודים רשמיים ועדכניים של מנפיק הקופון. החזר רשימה שימושית של שמות החנויות שמופיעות במקור, בלי לנחש ובלי להוסיף חנויות שנמכרות כקופון נפרד. לכל חנות צרף URL מדויק של המקור הרשמי שמוכיח שהיא מכובדת. אם אין רשימה מאומתת, החזר merchants ריק.`,
+השתמש רק בעמודים רשמיים ועדכניים של מנפיק הקופון. החזר רשימה שימושית של שמות החנויות שמופיעות במקור, בלי לנחש ובלי להוסיף חנויות שנמכרות כקופון נפרד. לכל חנות צרף URL מדויק של המקור הרשמי שמוכיח שהיא מכובדת. אם אין רשימה מאומתת, החזר merchants ריק.
+ב-directory_url החזר את ה-URL של העמוד הרשמי שמרכז את רשימת בתי העסק של הכרטיס הספציפי הזה (למשל ב-BuyMe: https://buyme.co.il/brands/<מספר>), גם אם לא הצלחת לקרוא ממנו את הרשימה. אם אין — מחרוזת ריקה.`,
           text: { format: { type: 'json_schema', name: 'coupon_merchant_directory', strict: true, schema: directorySchema } },
           include: ['web_search_call.action.sources'],
         }),
@@ -150,35 +185,43 @@ Deno.serve(async (req) => {
       const payload = await aiResponse.json() as Record<string, unknown>;
       const parsed = JSON.parse(responseText(payload) || '{"provider":"","merchants":[]}');
       const sources = webSources(payload);
+      const rawMerchants = Array.isArray(parsed.merchants) ? parsed.merchants as Array<Record<string, unknown>> : [];
+      const brandId = buymeBrandId(parsed.directory_url)
+        ?? rawMerchants.map((merchant) => buymeBrandId(merchant.source_url)).find(Boolean)
+        ?? null;
+      const buyme = brandId ? await fetchBuymeDirectory(brandId) : null;
       const seen = new Set<string>();
-      const merchants = (Array.isArray(parsed.merchants) ? parsed.merchants : [])
-        .map((merchant: Record<string, unknown>) => ({
-          name: String(merchant.name || '').trim().slice(0, 100),
-          reason: String(merchant.reason || '').trim().slice(0, 220),
-          sourceUrl: safeSourceUrl(merchant.source_url, sources),
-        }))
-        .filter((merchant: { name: string; sourceUrl: string }) => {
+      const merchants = (buyme?.merchants ?? rawMerchants.map((merchant) => ({
+        name: String(merchant.name || '').trim().slice(0, 100),
+        reason: String(merchant.reason || '').trim().slice(0, 220),
+        sourceUrl: safeSourceUrl(merchant.source_url, sources),
+      })))
+        .filter((merchant) => {
           const key = normalizeQuery(merchant.name);
           if (!key || !merchant.sourceUrl || seen.has(key)) return false;
           seen.add(key);
           return true;
         })
-        .slice(0, 80);
+        .slice(0, 250);
       const result = {
         couponId,
-        provider: String(parsed.provider || coupon.company).trim().slice(0, 100),
+        provider: String(buyme?.provider || parsed.provider || coupon.company).trim().slice(0, 100),
         merchants,
-        sources,
+        sources: buyme ? [`https://buyme.co.il/brands/${brandId}`, ...sources] : sources,
         checkedAt: new Date().toISOString(),
         cached: false,
       };
-      await db.from('coupon_merchant_search_cache').upsert({
-        user_id: MAINTAINER_USER_ID,
-        normalized_query: query,
-        result,
-        expires_at: new Date(Date.now() + CACHE_TTL_MS).toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,normalized_query' });
+      // An empty answer is usually a search miss, not a fact; let the next open retry.
+      if (merchants.length) {
+        const { error: cacheError } = await db.from('coupon_merchant_search_cache').upsert({
+          user_id: MAINTAINER_USER_ID,
+          normalized_query: query,
+          result,
+          expires_at: new Date(Date.now() + CACHE_TTL_MS).toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,normalized_query' });
+        if (cacheError) console.error('[search-coupon-merchants] directory cache write:', cacheError.message);
+      }
       return jsonResponseFor(req, { data: result });
     }
 
