@@ -14,6 +14,11 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.StyleSpan
+import android.graphics.Typeface
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 
@@ -108,8 +113,20 @@ class CouponWidgetProvider : AppWidgetProvider() {
       setViewVisibility(R.id.mascot_today_title, View.VISIBLE)
       // The app fills the headline in with real numbers; `title` is only a
       // fallback for a payload written by an older build.
-      setTextViewText(R.id.mascot_today_title, text?.takeIf { it.isNotBlank() } ?: title)
-      setViewVisibility(R.id.mascot_company, View.GONE)
+      // "top\nbottom": the first line goes above the mascot, the rest below it.
+      val lines = (text?.takeIf { it.isNotBlank() } ?: title).split("\n", limit = 2).map { it.trim() }
+      setTextViewText(R.id.mascot_today_title, lines[0])
+      val bottom = lines.getOrNull(1)?.takeIf { it.isNotEmpty() }
+      if (bottom != null) {
+        val bold = SpannableString(bottom).apply {
+          setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        setTextViewText(R.id.mascot_company, bold)
+        setTextViewTextSize(R.id.mascot_company, TypedValue.COMPLEX_UNIT_SP, 17f)
+        setViewVisibility(R.id.mascot_company, View.VISIBLE)
+      } else {
+        setViewVisibility(R.id.mascot_company, View.GONE)
+      }
       // Money milestones open the statistics screen, where that number is broken down.
       val target = when (kind) {
         "redeemed", "rescue", "savings", "monthly", "milestone" -> "couponmaster:///statistics"

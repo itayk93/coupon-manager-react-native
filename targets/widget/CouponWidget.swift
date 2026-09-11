@@ -638,6 +638,15 @@ struct CouponCelebrationSmallView: View {
         return CelebrationScene.headline(kind)
     }
 
+    /// "top\nbottom": the first line goes above the mascot, the rest below it.
+    private var headlineParts: (top: String, bottom: String?) {
+        let lines = headline.split(separator: "\n", maxSplits: 1).map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+        let bottom = lines.count > 1 && !lines[1].isEmpty ? lines[1] : nil
+        return (lines.first ?? headline, bottom)
+    }
+
     /// Money milestones belong on the statistics screen — that is where the
     /// number the headline just quoted is broken down.
     private var destinationURL: URL {
@@ -663,15 +672,28 @@ struct CouponCelebrationSmallView: View {
 
             VStack(spacing: 2) {
                 AppLogoView(height: 12)
-                Text(headline)
+                Text(headlineParts.top)
                     .couponFont(16, .bold)
                     .foregroundColor(.white)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.6)
+                Spacer(minLength: 0)
+                // A second headline line (e.g. the wallet total) sits under the
+                // mascot so the scene stays visible between the two.
+                if let bottom = headlineParts.bottom {
+                    Text(bottom)
+                        .couponFont(16, .bold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.6)
+                }
             }
             .padding(.top, 9)
+            .padding(.bottom, 10)
             .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .shadow(color: .black.opacity(0.75), radius: 3, x: 0, y: 1)
         }
         .widgetURL(destinationURL)
