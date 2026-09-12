@@ -114,7 +114,7 @@ export function LoginScreen() {
           {/* Brand */}
           <View style={styles.brand}>
             <Image
-              source={require("../../../assets/brand-logo-premium.png")}
+              source={require("../../../assets/brand-logo-horizontal.png")}
               style={styles.brandMark}
               resizeMode="contain"
               accessibilityLabel="Coupon Master"
@@ -253,12 +253,23 @@ const styles = StyleSheet.create({
   },
   brand: {
     alignItems: "center",
-    gap: 10,
-    marginBottom: 28,
+    marginBottom: 24,
   },
+  /**
+   * The wordmark on one line, not the stacked square.
+   *
+   * The square mark is 1:1, so at 190pt wide it was also 190pt tall — a
+   * quarter of an iPhone's screen spent on the logo, which pushed the password
+   * field and the sign-in button below the fold. The horizontal mark says the
+   * same thing in 36pt.
+   *
+   * The width leads and `aspectRatio` follows it, so the mark shrinks on a
+   * narrow phone instead of overflowing: the asset is 1049x127.
+   */
   brandMark: {
-    width: 190,
-    height: 190,
+    width: "100%",
+    maxWidth: 300,
+    aspectRatio: 1049 / 127,
   },
   card: {
     width: "100%",
