@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/integrations/supabase/client";
+import { loginErrorMessage } from "@/lib/authErrors";
 
 export type LegacyUser = {
   id: number;
@@ -103,7 +104,9 @@ export async function signInLegacy(email: string, password: string): Promise<Leg
 
   if (error) {
     const detail = (error as any).context?.json ? await (error as any).context.json().catch(() => null) : null;
-    throw new Error(detail?.error ?? error.message ?? "ההתחברות נכשלה. נסה שוב.");
+    // A request that never completed is not a wrong password, and must not read
+    // like one — see `loginErrorMessage`.
+    throw new Error(loginErrorMessage(error, detail?.error));
   }
   if (data?.error) throw new Error(data.error);
   if (!data?.token_hash) throw new Error("ההתחברות נכשלה. נסה שוב.");

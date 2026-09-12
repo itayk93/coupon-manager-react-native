@@ -43,6 +43,18 @@ export function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<"google" | "apple" | null>(null);
+  /**
+   * Either sign-in path locks both buttons.
+   *
+   * On web `signInWithOAuth` navigates the whole page to the provider, and a
+   * navigation cancels whatever is still in flight. The password path can take
+   * a second or two — a legacy account is verified server-side against a
+   * million-iteration PBKDF2 hash — and tapping "המשך עם Google" inside that
+   * window killed the request mid-air. The server had already accepted the
+   * password and minted the session; the answer just never made it back, and
+   * the screen showed a transport error over correct credentials.
+   */
+  const busy = loading || socialLoading !== null;
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
@@ -169,7 +181,13 @@ export function LoginScreen() {
                 <Text style={[styles.link, { color: theme.primary }]}>שכחתי סיסמה</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity testID="login-submit" activeOpacity={0.85} onPress={handleLogin} disabled={loading}>
+              <TouchableOpacity
+                testID="login-submit"
+                activeOpacity={0.85}
+                onPress={handleLogin}
+                disabled={busy}
+                style={busy ? styles.busy : undefined}
+              >
                 <LinearGradient
                   colors={[palette.primary, palette.primaryDeep]}
                   start={{ x: 0, y: 0 }}
@@ -189,10 +207,11 @@ export function LoginScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => handleSocialLogin("google")}
-                disabled={socialLoading !== null}
+                disabled={busy}
                 style={[
                   styles.socialBtn,
                   { backgroundColor: theme.card, borderColor: theme.inputBorder },
+                  busy && styles.busy,
                 ]}
               >
                 <Text style={styles.googleIcon}>G</Text>
@@ -204,8 +223,8 @@ export function LoginScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => handleSocialLogin("apple")}
-                disabled={socialLoading !== null}
-                style={[styles.socialBtn, styles.appleBtn]}
+                disabled={busy}
+                style={[styles.socialBtn, styles.appleBtn, busy && styles.busy]}
               >
                 <AppleLogo />
                 <Text style={[styles.socialText, styles.appleText]}>
@@ -341,6 +360,9 @@ const styles = StyleSheet.create({
   dividerText: {
     fontFamily: fonts.body,
     fontSize: 12,
+  },
+  busy: {
+    opacity: 0.55,
   },
   socialBtn: {
     height: 48,
