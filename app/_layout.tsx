@@ -46,6 +46,7 @@ import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
 import { useLocalExpiryAlerts } from "@/hooks/useLocalExpiryAlerts";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
+import { useWebAppUpdate } from "@/hooks/useWebAppUpdate";
 import { usePendingOnboardingCoupon } from "@/hooks/usePendingOnboardingCoupon";
 import { ThemeProvider as AppThemeProvider, useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, DESKTOP_FRAME_WIDTH, DESKTOP_WEB_MIN_WIDTH } from "@/lib/theme";
@@ -157,6 +158,8 @@ function RootLayoutNav() {
   const { isReady: authReady } = useAuthGuard();
   useWidgetSync();
   useLocalExpiryAlerts();
+  // Web only: the installed PWA has no expo-updates to lean on.
+  useWebAppUpdate();
   usePendingOnboardingCoupon();
   useScreenTracking();
   const { width } = useWindowDimensions();
