@@ -13,8 +13,6 @@ import { ChevronLeft, Flame, Plus, ScanLine, Search } from "lucide-react-native"
 import { Kuponi } from "@/components/ui/Kuponi";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
-import { formatIls } from "@/lib/formatIls";
-import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { expiringSoon, homeHeroSummary, topCouponTags } from "@/lib/homeHero";
 import { EXPIRY_PERFORMANCE, expiryLevel } from "@/lib/expiryUrgency";
@@ -36,8 +34,10 @@ import { EXPIRY_PERFORMANCE, expiryLevel } from "@/lib/expiryUrgency";
  * everything is fine, his presence carries no information and stops being read.
  * Now his showing up is itself the message.
  *
- * The balance keeps a single quiet line under the search. It is worth knowing
- * and it is not worth a hero.
+ * The balance follows in `WalletSummaryCard`, below the companies. A first
+ * pass shrank it to a caption under the search, which is not less prominent,
+ * it is gone: people still check that number, and it only reads as worth
+ * checking if it is set like it.
  */
 
 /** Tags worth showing as chips before the row starts to read as a list filter. */
@@ -47,10 +47,9 @@ type CouponAccessHeroProps = {
   coupons: DecryptedCoupon[];
   /** Coupon id → tag names, straight from `useCouponTagsMap`. */
   tagsMap?: Record<number, string[]>;
-  isLoading?: boolean;
 };
 
-export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAccessHeroProps) {
+export function CouponAccessHero({ coupons, tagsMap = {} }: CouponAccessHeroProps) {
   const router = useRouter();
   const { theme } = useAppTheme();
   const [text, setText] = useState("");
@@ -64,10 +63,7 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
     () => topCouponTags(coupons, tagsMap).slice(0, CHIP_TAG_LIMIT),
     [coupons, tagsMap]
   );
-  const remaining = useMemo(() => totalRemainingValue(coupons), [coupons]);
-  const spendableCount = useMemo(() => coupons.filter(isSpendableCoupon).length, [coupons]);
 
-  const waiting = isLoading && coupons.length === 0;
   const kuponi = EXPIRY_PERFORMANCE[expiryLevel(summary.nearestDays)];
 
   const openSearch = (query: string) => {
@@ -110,16 +106,6 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
           <ScanLine size={16} color="#ffffff" />
         </TouchableOpacity>
       </View>
-
-      {/* One line, not a card. Worth knowing, not worth the top of the screen. */}
-      {waiting ? (
-        <Text style={[styles.balance, { color: theme.textMuted }]}>רגע, בודק מה יש בארנק…</Text>
-      ) : spendableCount > 0 ? (
-        <Text style={[styles.balance, { color: theme.textMuted }]} numberOfLines={1}>
-          <Text style={[styles.balanceValue, { color: theme.text }]}>{formatIls(remaining)}</Text>
-          {spendableCount === 1 ? " בקופון אחד" : ` ב-${spendableCount} קופונים`}
-        </Text>
-      ) : null}
 
       {/* He turns up only when money is about to disappear, so the fact that he
           is here at all is the message. On a calm wallet this renders nothing. */}
@@ -212,14 +198,6 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   scanBtn: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  balance: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    textAlign: "right",
-    writingDirection: "rtl",
-    marginTop: 8,
-  },
-  balanceValue: { fontFamily: fonts.display, fontSize: 15, fontWeight: "800" },
   urgentStrip: {
     flexDirection: "row-reverse",
     alignItems: "center",

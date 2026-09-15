@@ -12,8 +12,9 @@ import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
 import { CouponRail } from "@/components/dashboard/CouponRail";
-import { CompanyRail, type CompanyRailItem } from "@/components/dashboard/CompanyRail";
+import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
+import { WalletSummaryCard } from "@/components/dashboard/WalletSummaryCard";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
@@ -95,8 +96,8 @@ export function HomeAltScreen() {
    * company grid uses, so a shop is never near the top on one screen and
    * buried on the other.
    */
-  const companyRail = useMemo<CompanyRailItem[]>(() => {
-    const byKey = new Map<string, CompanyRailItem>();
+  const companyCards = useMemo(() => {
+    const byKey = new Map<string, { company: string; count: number }>();
     for (const coupon of visibleCoupons) {
       const key = companyKey(coupon.company);
       const existing = byKey.get(key);
@@ -205,11 +206,20 @@ export function HomeAltScreen() {
             search. */}
         <OnboardingBanner />
 
-        <CouponAccessHero coupons={coupons} tagsMap={tagsMap} isLoading={isLoading} />
+        <CouponAccessHero coupons={coupons} tagsMap={tagsMap} />
 
-        {/* The fast path, directly under the search. Someone opening this app
-            is usually at a till: they know the shop and need the barcode. */}
-        <CompanyRail items={companyRail} onSelect={setSheetCompany} />
+        {/* The fast path, as high as the screen allows. Someone opening this
+            app is usually at a till: they know the shop and need the barcode,
+            so naming the shop is the shortest route there. Same component and
+            same ordering as the dashboard, so a shop is never near the top on
+            one screen and buried on the other. */}
+        <CompanyCardsSlider
+          companyCards={companyCards}
+          selectedCompany={sheetCompany}
+          onSelectCompany={setSheetCompany}
+        />
+
+        <WalletSummaryCard coupons={coupons} isLoading={isLoading} />
 
         {isLoading && coupons.length === 0 ? (
           <View style={styles.skeletons}>
