@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, AppState, Image, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 
@@ -37,11 +37,19 @@ const ROW: Record<MascotState, number> = {
 };
 
 /** One resident atlas avoids image loading and decode churn between frames. */
-export function MascotAnimation({ size = 132, state = "calm", speed = 1, reduceMotion, accessibilityLabel }: {
+export function MascotAnimation({
+  size = 132, state = "calm", speed = 1, loop = true, onFinish, reduceMotion, accessibilityLabel,
+}: {
   size?: number;
   state?: MascotState;
   /** Playback multiplier. Above 1 the same loop reads as more agitated. */
   speed?: number;
+  /** False plays the sequence once and holds its last frame. For `relieved`,
+   *  which is a transition rather than a loop. */
+  loop?: boolean;
+  /** Called once the one-shot reaches its end, including when motion is
+   *  suppressed and the end is all the viewer ever sees. */
+  onFinish?: () => void;
   reduceMotion?: boolean;
   accessibilityLabel?: string;
 }) {
@@ -54,6 +62,8 @@ export function MascotAnimation({ size = 132, state = "calm", speed = 1, reduceM
   const [active, setActive] = useState(AppState.currentState === "active");
   const [loadedRow, setLoadedRow] = useState<number | null>(null);
   const [step, setStep] = useState(0);
+  const finish = useRef(onFinish);
+  useEffect(() => { finish.current = onFinish; }, [onFinish]);
   const row = ROW[state];
   const paused = systemReduced || reduceMotion === true || !active || !focused || loadedRow !== row;
 
@@ -74,15 +84,34 @@ export function MascotAnimation({ size = 132, state = "calm", speed = 1, reduceM
   const fps = FPS * (speed > 0 ? speed : 1);
   useEffect(() => {
     setStep(0);
-    if (paused) return;
+    if (paused) {
+      // A held one-shot still has to report that it is over, or a caller
+      // waiting to move on waits forever. Deferred so the caller never gets
+      // the callback during its own render.
+      if (!loop) {
+        const settle = setTimeout(() => finish.current?.(), 0);
+        return () => clearTimeout(settle);
+      }
+      return;
+    }
     const started = performance.now();
     // Follow elapsed time so a busy JS thread skips frames rather than slowing
     // the action or accumulating delayed callbacks.
-    const timer = setInterval(() => setStep(Math.floor((performance.now() - started) * fps / 1000) % FRAME_COUNT), 1000 / fps);
+    const timer = setInterval(() => {
+      const elapsed = Math.floor((performance.now() - started) * fps / 1000);
+      if (loop) { setStep(elapsed % FRAME_COUNT); return; }
+      if (elapsed < FRAME_COUNT - 1) { setStep(elapsed); return; }
+      setStep(FRAME_COUNT - 1);
+      clearInterval(timer);
+      finish.current?.();
+    }, 1000 / fps);
     return () => clearInterval(timer);
-  }, [paused, state, fps]);
+  }, [paused, state, fps, loop]);
 
-  const frame = paused ? 0 : step;
+  // A loop that cannot move rests on its opening pose. A one-shot rests on its
+  // closing one: someone who asked for no motion should still see the outcome,
+  // and for `relieved` the outcome is the whole point of playing it.
+  const frame = paused ? (loop ? 0 : FRAME_COUNT - 1) : step;
   const column = frame % GRID;
   const frameRow = Math.floor(frame / GRID);
   return (

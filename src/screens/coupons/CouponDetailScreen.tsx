@@ -984,6 +984,10 @@ export function CouponDetailScreen() {
           subtitle={usageScene.amount > 0 ? undefined : "היתרה בארנק כבר מעודכנת."}
           amount={usageScene.amount}
           amountCaption={usageScene.kind === "rescue" ? "הצלת" : "חסכת"}
+          // A rescue is the one moment he has something to let go of: he has
+          // been worried about this coupon's date, and it just stopped being a
+          // problem. Nothing else in the app plays this.
+          intro={usageScene.kind === "rescue" ? "relieved" : undefined}
           onDone={() => setUsageScene(null)}
         />
       ) : null}

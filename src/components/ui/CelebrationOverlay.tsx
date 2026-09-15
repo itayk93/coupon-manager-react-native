@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeOut, useReducedMotion, ZoomIn } from "react-native-reanimated";
 import { Confetti } from "@/components/onboarding/Celebration";
 import { IlsAmount } from "@/components/ui/IlsAmount";
-import { Kuponi } from "@/components/ui/Kuponi";
+import { Kuponi, type KuponiState } from "@/components/ui/Kuponi";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 
@@ -26,6 +26,7 @@ export function CelebrationOverlay({
   subtitle,
   amount = 0,
   amountCaption,
+  intro,
   onDone,
 }: {
   title: string;
@@ -34,17 +35,24 @@ export function CelebrationOverlay({
   amount?: number;
   /** The short line under the figure, e.g. "חסכת". */
   amountCaption?: string;
+  /** A one-shot Kuponi plays before he settles into cheering. `relieved` on a
+   *  rescue: he was worried about this coupon, and now he is not. */
+  intro?: KuponiState;
   onDone: () => void;
 }) {
   const { theme } = useAppTheme();
   const reduceMotion = useReducedMotion();
+  const [introDone, setIntroDone] = useState(false);
+  const playing: KuponiState = intro && !introDone ? intro : "cheering";
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    // Long enough to read the figure, short enough not to be in the way.
-    const timer = setTimeout(onDone, reduceMotion ? 650 : amount > 0 ? 2600 : 2100);
+    // Long enough to read the figure, short enough not to be in the way. An
+    // intro is a 1.5s sequence of its own and needs room before the beat.
+    const base = amount > 0 ? 2600 : 2100;
+    const timer = setTimeout(onDone, reduceMotion ? 650 : intro ? base + 1200 : base);
     return () => clearTimeout(timer);
-  }, [onDone, reduceMotion, amount]);
+  }, [onDone, reduceMotion, amount, intro]);
 
   return (
     <Animated.View
@@ -63,7 +71,12 @@ export function CelebrationOverlay({
         entering={reduceMotion ? FadeIn : ZoomIn.springify().damping(14)}
         style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
       >
-        <Kuponi state="cheering" size="large" />
+        <Kuponi
+          state={playing}
+          size="large"
+          loop={playing !== intro}
+          onFinish={() => setIntroDone(true)}
+        />
         {amount > 0 ? (
           <View style={styles.figure} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             {amountCaption ? (

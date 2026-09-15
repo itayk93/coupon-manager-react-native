@@ -25,18 +25,23 @@ export function KuponiScene({ state, reduceMotion, compact }: {
 
 /** Kuponi at rest in a layout. A number sizes him exactly, for the few places
  * that need to match a surrounding block rather than pick off the scale. */
-export function Kuponi({ state = "talking", reduceMotion, size = "medium", speed = 1, accessibilityLabel }: {
+export function Kuponi({
+  state = "talking", reduceMotion, size = "medium", speed = 1, loop = true, onFinish, accessibilityLabel,
+}: {
   state?: KuponiState;
   reduceMotion?: boolean;
   size?: "small" | "medium" | "large" | number;
   /** Playback multiplier — see `EXPIRY_PERFORMANCE` in `expiryUrgency.ts`. */
   speed?: number;
+  /** False plays once and holds the last frame, for `relieved`. */
+  loop?: boolean;
+  onFinish?: () => void;
   /** Set only where he carries meaning a screen reader would otherwise miss. */
   accessibilityLabel?: string;
 }) {
   const points = typeof size === "number" ? size : size === "small" ? 88 : size === "large" ? 176 : 132;
   return <MascotAnimation state={state} reduceMotion={reduceMotion} size={points} speed={speed}
-    accessibilityLabel={accessibilityLabel} />;
+    loop={loop} onFinish={onFinish} accessibilityLabel={accessibilityLabel} />;
 }
 
 export function KuponiFloating({
