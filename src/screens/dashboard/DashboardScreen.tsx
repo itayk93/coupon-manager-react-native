@@ -13,6 +13,7 @@ import { Sparkles, ChevronLeft, X } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { SixSevenCelebration } from "@/components/dashboard/SixSevenCelebration";
+import { CelebrationBanner } from "@/components/dashboard/CelebrationBanner";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { PushPrimer } from "@/components/layout/PushPrimer";
@@ -155,6 +156,10 @@ export function DashboardScreen() {
             warning turned the top of a new account into a wall of notices. */}
         <OnboardingBanner />
         {!isLoading && !isError && visibleCoupons.length === 67 ? <SixSevenCelebration /> : null}
+        {/* Milestones the widget has shown for a while. The banner draws
+            nothing unless a scene is actually running, and stands down for the
+            6-7 egg above, which animates the same joke better. */}
+        {!isLoading && !isError ? <CelebrationBanner /> : null}
         {showSavedCelebration ? (
           <TouchableOpacity
             activeOpacity={0.9}
