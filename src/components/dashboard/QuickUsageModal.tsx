@@ -44,7 +44,9 @@ type QuickUsageModalProps = {
   importId?: string | null;
   onImportCompleted?: () => void;
   onImportPaused?: () => void;
-  onUsageSaved?: () => void;
+  /** How much this usage took off the balance, so a caller can tell a partial
+   *  usage from one that finishes the coupon. */
+  onUsageSaved?: (usedAmount: number) => void;
 };
 
 export function QuickUsageModal({
@@ -247,7 +249,7 @@ export function QuickUsageModal({
     setError("");
     setAmountError("");
     setAiError("");
-    onUsageSaved?.();
+    onUsageSaved?.(numAmount);
     onClose();
   };
 
