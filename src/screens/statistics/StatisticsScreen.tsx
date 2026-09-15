@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -156,10 +157,15 @@ export function StatisticsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View
+        {/* The story card is the way into the milestone history: the numbers
+            below are where the wallet stands, and that page is how it got
+            here. */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/milestones")}
           style={[styles.mascotStory, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-          accessible
-          accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}`}
+          accessibilityRole="button"
+          accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}. מעבר לאבני הדרך`}
         >
           <Kuponi
             state={savingsStory.state}
@@ -168,8 +174,9 @@ export function StatisticsScreen() {
           <View style={styles.mascotStoryCopy}>
             <Text style={[styles.mascotStoryTitle, { color: theme.text }]}>{savingsStory.title}</Text>
             <Text style={[styles.mascotStoryText, { color: theme.textMuted }]}>{savingsStory.text}</Text>
+            <Text style={[styles.mascotStoryLink, { color: theme.primary }]}>אבני הדרך שלי</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* KPI Top 4-Grid */}
         <View style={styles.kpiGrid}>
@@ -514,6 +521,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     ...shadows.card,
   },
+  mascotStoryLink: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "right", writingDirection: "rtl", marginTop: 4 },
   mascotStoryCopy: { flex: 1, alignItems: "flex-end" },
   mascotStoryTitle: {
     fontFamily: fonts.bodyBold,

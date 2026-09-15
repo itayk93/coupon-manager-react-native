@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
 import { X } from "lucide-react-native";
 import { useCelebration } from "@/hooks/useCelebration";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -28,6 +29,7 @@ const SCENES: Record<string, ReturnType<typeof require>> = {
 const dismissed = new Set<string>();
 
 export function CelebrationBanner() {
+  const router = useRouter();
   const { theme } = useAppTheme();
   const scene = useCelebration();
   const [, forceRender] = useState(0);
@@ -41,7 +43,13 @@ export function CelebrationBanner() {
   if (dismissed.has(id)) return null;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={() => router.push("/milestones")}
+      accessibilityRole="button"
+      accessibilityLabel={`${scene.text}. מעבר לאבני הדרך`}
+      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+    >
       <Image source={source} style={styles.scene} accessible={false} resizeMode="cover" />
       <View style={styles.copy}>
         <Text accessibilityLiveRegion="polite" style={[styles.title, { color: theme.text }]}>
@@ -49,7 +57,7 @@ export function CelebrationBanner() {
         </Text>
       </View>
       <TouchableOpacity
-        onPress={() => { dismissed.add(id); forceRender((n) => n + 1); }}
+        onPress={(event) => { event.stopPropagation(); dismissed.add(id); forceRender((n) => n + 1); }}
         accessibilityRole="button"
         accessibilityLabel="סגירת החגיגה"
         hitSlop={8}
@@ -57,7 +65,7 @@ export function CelebrationBanner() {
       >
         <X size={18} color={theme.textMuted} />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 

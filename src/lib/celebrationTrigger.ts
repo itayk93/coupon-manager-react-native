@@ -36,7 +36,7 @@ export type CelebrationPick = {
 };
 
 /** Coupon counts worth a scene. Passing 24 -> 25 is an event; 26 is not. */
-const COUNT_STEPS = [5, 10, 25, 50, 100, 250];
+export const COUNT_STEPS = [5, 10, 25, 50, 100, 250];
 
 /** Exact wallet count, matching the dashboard and widget balance rules. */
 export function pickSixSevenCelebration(coupons: DecryptedCoupon[], state: CelebrationState = {}): CelebrationPick | null {
@@ -44,7 +44,7 @@ export function pickSixSevenCelebration(coupons: DecryptedCoupon[], state: Celeb
   return { kind: "six-seven", token: "six-seven:67" };
 }
 /** Shekel savings worth a scene. */
-const SAVINGS_STEPS = [1000, 5000, 10_000, 25_000, 50_000, 100_000];
+export const SAVINGS_STEPS = [1000, 5000, 10_000, 25_000, 50_000, 100_000];
 
 function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
