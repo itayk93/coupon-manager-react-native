@@ -1,6 +1,10 @@
 # 3D mascot animation assets
 
-Status: integrated. The four `*-smooth.webp` (lossless) production atlases each contain
+Status: integrated. Eight `*-smooth.webp` (lossless) production atlases: the four
+originals below, the 6-7 egg, and `worried` / `alarmed` / `relieved`, added later
+from two chroma-green keyframe sheets by `scripts/prepare-expiry-escalation.py`.
+`relieved` is the only one that is not a loop — it plays once and holds its last
+frame. Each atlas contains
 36 transparent 256px frames in a 6x6 grid. Playback is 24fps, a 1.5-second loop.
 `preview-smooth.webp` previews all actions on light and dark backgrounds.
 `mascot-atlas.png` preserves the approved original keyframes for regeneration.

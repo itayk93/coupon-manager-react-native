@@ -41,18 +41,17 @@
 
 | ימים | `expiryLevel` | `expiryEmphasis` | קופוני |
 |---|---|---|---|
-| מעל 7 | `none` | `static` | `calm`, קצב 1 |
-| 4–7 | `watch` | `static` | `concerned`, קצב 1 |
-| 2–3 | `worry` | `peek` | `concerned`, קצב 1.15 |
-| 0–1 | `alarm` | `breathing` | `concerned`, קצב 1.35 |
+| מעל 7 | `none` | `static` | `calm` |
+| 4–7 | `watch` | `static` | `concerned` |
+| 2–3 | `worry` | `peek` | `worried` |
+| 0–1 | `alarm` | `breathing` | `alarmed` |
 
-**הקצב נושא כאן משקל שלא היה אמור ליפול עליו.** יש באטלס אנימציית דאגה אחת,
-ולכן ההבדל בין "בעוד שלושה ימים" ל"היום" הוא אותו לופ מנוגן חזק יותר. זה
-הבדל אמיתי לעין, וזה לא ההבדל הנכון: תשע דרגות ההסלמה המצוירות קיימות רק
-ב־`assets/mascot/widget-originals/`, ולאטלס שבאפליקציה אין אף אחת מהן.
+שלושה פרצופים מצוירים, אחד לכל שלב. `speed` נשאר 1 בכל הדרגות — הוא נשא את
+ההסלמה לבדו בזמן שהארט היה חסר, ולהשאיר את שניהם היה מסלים פעמיים ונקרא
+כפאניקה. ה־prop נשאר כי הוא ה־fallback הישר אם מצב עתידי יגיע לפני הארט שלו.
 
-**כשהארט יגיע:** להוסיף את השורות ל־`MascotAnimation` ולשנות את `state`
-בטבלה `EXPIRY_PERFORMANCE`. שום קורא לא זז. זו הסיבה שהטבלה קיימת.
+יש טסט שנופל אם שתי דרגות יחלקו אותו לופ — זה היה הבאג המקורי: סולם שהקוד
+מבטיח והארט לא יודע להראות.
 
 ---
 
@@ -69,22 +68,27 @@
 
 ---
 
-## 4. חמשת המצבים
+## 4. המצבים
 
 `MascotState` נשא פעם 11 שמות שהתמפו לחמש שורות באטלס, כלומר `concerned`,
-`anxious`, `panic` ו־`emergency` היו **אותה אנימציה בדיוק** — הסלמה בת ארבע
-דרגות שהארט לא יודע לצייר. הטיפוס צומצם למה שקיים:
+`anxious`, `panic` ו־`emergency` היו **אותה אנימציה בדיוק**. הטיפוס צומצם למה
+שקיים, ואז הדרגות החסרות צוירו. היום כל שם הוא לופ משלו:
 
 ```ts
-export type MascotState = "calm" | "talking" | "scanning" | "cheering" | "concerned" | "six-seven";
+export type MascotState =
+  | "calm" | "talking" | "scanning" | "cheering"
+  | "concerned" | "worried" | "alarmed"
+  | "relieved" | "six-seven";
 ```
 
-עכשיו הקומפיילר הוא זה ששומר על הכלל. `thinking` ו־`success` הוסרו גם הם —
-הם היו שמות שניים ל־`scanning` ול־`cheering`.
+`thinking` ו־`success` לא חזרו — הם היו שמות שניים ל־`scanning` ול־`cheering`.
 
-תשע דרגות ההסלמה האמיתיות קיימות רק בסדרת הווידג'ט
-(`assets/mascot/widget-originals/MascotState1..9`). בתוך האפליקציה, עוצמת
-הדאגה נשלטת דרך `expiryEmphasis` — ראה §2 — ולא דרך שם מצב נוסף.
+**`relieved` הוא היוצא דופן:** רצף קדימה, לא לופ. הוא מנוגן פעם אחת ונעצר על
+הפריים האחרון (`loop={false}` ב־`MascotAnimation`). תחת Reduce Motion הוא נח
+על הפריים ה**אחרון** ולא הראשון, בניגוד לכל שאר המצבים — מי שביקש בלי תנועה
+עדיין צריך לראות את התוצאה, ובהקלה התוצאה היא כל העניין.
+
+הוא מנוגן במקום אחד בלבד: `CelebrationOverlay` כשהמימוש הוא `rescue`.
 
 `homeHero.ts` שומר טיפוס משלו (`HomeMascotState`, כולל `panic`) כאוצר מילים
 פנימי לקביעת הכותרת; `CouponAccessHero` ממפה אותו ל־`concerned`.

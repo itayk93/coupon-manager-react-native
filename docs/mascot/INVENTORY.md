@@ -27,6 +27,11 @@
 | `success-smooth.webp` | 2 | `cheering`, `success` | 🟢 |
 | `concern-smooth.webp` | 3 | `concerned`, `anxious`, `panic`, `emergency` | 🟢 |
 | `six-seven-smooth.webp` | 4 | `six-seven` | 🟢 |
+| `worried-smooth.webp` | 5 | `worried` — 2–3 ימים לתפוגה | 🟢 |
+| `alarmed-smooth.webp` | 6 | `alarmed` — היום או מחר | 🟢 |
+| `relieved-smooth.webp` | 7 | `relieved` — **רצף קדימה, לא לופ** | 🟢 |
+| `escalation-preview.webp` | — | תצוגת בדיקה ללופים | 🔵 |
+| `relief-preview.webp` | — | תצוגת בדיקה, מנוגנת פעם אחת | 🔵 |
 | `preview-smooth.webp` | — | תצוגת בדיקה, רקע בהיר וכהה | 🔵 |
 | `preview.webp` | — | טיוטה ישנה | ⚪ |
 | `mascot-atlas.png` | — | פריימי המפתח המאושרים, לשחזור | 🟢 |
@@ -35,8 +40,10 @@
 
 הצרכן היחיד: `src/components/ui/MascotAnimation.tsx`.
 
-> **פער מתועד:** שורה 3 משרתת ארבעה שמות מצב, כלומר `anxious`, `panic` ו־
-> `emergency` הם אותה אנימציה בדיוק. ראה `STATE-LAW.md` §4.
+מקורות: `source/escalation-keyframes.png` (3×2, שורה עליונה `worried`, תחתונה
+`alarmed`) ו־`source/relief-keyframes.png` (שישה תאים כרצף אחד קדימה). שניהם
+1536×1024, רקע כרומה ירוק, ב־allowlist של `.gitignore`.
+מיוצרים מחדש עם `scripts/prepare-expiry-escalation.py`.
 
 ---
 
@@ -140,6 +147,7 @@ C8 (`referral`) במצב זהה: הנייטיב מטפל, JS לא פולט. זה
 | `interpolate-mascot-3d.py` | אינטרפולציה דו־כיוונית ל־36 פריימים, מייצר את האטלסים החלקים, ההוכחה, התצוגה והעותקים הנייטיביים |
 | `prepare-six-seven.py` | מסיר ירוק כרומה, מייצר את לופ 6־7 בעיוות זרועות רציף |
 | `prepare-celebration-app.py` | מקטין את סצנות החגיגה ל־512px WebP עבור האפליקציה |
+| `prepare-expiry-escalation.py` | מייצר את `worried`, `alarmed` ו־`relieved` משתי יריעות הכרומה |
 
 ההרצה: `prepare-mascot-3d.py` ואז `interpolate-mascot-3d.py`.
 
