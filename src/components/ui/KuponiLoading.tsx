@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { Kuponi } from "@/components/ui/Kuponi";
+import { SpeechBubble } from "@/components/ui/SpeechBubble";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -32,9 +33,7 @@ export function KuponiLoading({
         size={compact ? "small" : "large"}
       />
       <View style={styles.copy}>
-        <Text style={[styles.title, compact && styles.compactTitle, { color: theme.text }]}>
-          {title}
-        </Text>
+        <SpeechBubble text={title} tail="up" style={styles.bubble} />
         {subtitle ? (
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
         ) : null}
@@ -54,8 +53,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   compact: { flex: 0, minHeight: 190, paddingVertical: 20, gap: 8 },
-  copy: { alignItems: "center", gap: 6, maxWidth: 320 },
-  title: { fontFamily: fonts.display, fontSize: 19, fontWeight: "800", textAlign: "center" },
-  compactTitle: { fontSize: 16 },
+  copy: { alignItems: "center", gap: 8, maxWidth: 320 },
+  bubble: { maxWidth: 300 },
   subtitle: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, textAlign: "center" },
 });

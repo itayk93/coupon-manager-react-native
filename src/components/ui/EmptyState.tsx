@@ -4,6 +4,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { Button } from "./button";
 import { Kuponi } from "@/components/ui/Kuponi";
+import { SpeechBubble } from "@/components/ui/SpeechBubble";
 
 type EmptyStateProps = {
   icon?: React.ReactNode;
@@ -39,16 +40,20 @@ export function EmptyState({
         style,
       ]}
     >
-      {visual ?? (
-        <Kuponi
-          state="thinking"
-          size={largeVisual ? "large" : "medium"}
-        />
-      )}
+      {/* An empty list is exactly when someone should explain, so the headline
+          is Kuponi's line rather than a label floating above a drawing. */}
+      <View style={styles.stage}>
+        {visual ?? (
+          <Kuponi
+            state="thinking"
+            size={largeVisual ? "large" : "medium"}
+          />
+        )}
+        <SpeechBubble text={title} tail="up" isHeading style={styles.bubble} />
+      </View>
 
       {icon ? <View style={[styles.iconBadge, { backgroundColor: theme.coralBg, borderColor: theme.coralBorder }]}>{icon}</View> : null}
 
-      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: theme.textMuted }]}>
         {subtitle}
       </Text>
@@ -85,12 +90,14 @@ const styles = StyleSheet.create({
     marginTop: -16,
     marginBottom: 8,
   },
-  title: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 17,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 6,
+  stage: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    gap: 10,
+    marginBottom: 10,
+  },
+  bubble: {
+    maxWidth: 300,
   },
   subtitle: {
     fontFamily: fonts.bodyBold,

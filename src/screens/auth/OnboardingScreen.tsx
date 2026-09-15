@@ -16,6 +16,10 @@ import { useCoupons } from "@/hooks/useCoupons";
 import { estimateAnnualSavings, saveOnboardingPrefs, type OnboardingGoal, type OnboardingVolume } from "@/lib/onboardingPrefs";
 import { Confetti, CountUp } from "@/components/onboarding/Celebration";
 import { KuponiScene, type KuponiState } from "@/components/ui/Kuponi";
+import { SpeechBubble } from "@/components/ui/SpeechBubble";
+
+/** He names himself once, on the first screen, and never again. */
+const KUPONI_INTRO = "אני קופוני. פוני, בשביל חברים.";
 import { formatIls } from "@/lib/formatIls";
 import { logActivity } from "@/lib/activityLog";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
@@ -82,6 +86,8 @@ export function OnboardingScreen() {
   const step = steps.indexOf(mode) + 1;
 
   const goalChoice = GOALS.find((item) => item.id === goal);
+  // The only screen where he introduces himself; see docs/mascot/VOICE.md §5.
+  const introducing = steps[0] === mode;
   const title = mode === "profile" ? "איך לקרוא לך?"
     : mode === "goal" ? "מה הכי מציק לך בקופונים?"
     : mode === "volume" ? "כמה קופונים עוברים דרכך?"
@@ -200,7 +206,10 @@ export function OnboardingScreen() {
         </Animated.View>
 
         {mode === "profile" ? <View style={styles.panel}>
-          <View style={styles.profileVisual}><KuponiScene state="talking" reduceMotion={reduceMotion} compact /></View>
+          <View style={styles.profileVisual}>
+            <KuponiScene state="talking" reduceMotion={reduceMotion} compact />
+            <SpeechBubble style={styles.speechBubble} reduceMotion={reduceMotion} text={KUPONI_INTRO} />
+          </View>
           <Field label="שם פרטי" value={firstName} onChangeText={setFirstName} placeholder="למשל נועה" />
           <Field label="שם משפחה" value={lastName} onChangeText={setLastName} placeholder="למשל כהן" />
           <PrimaryButton label="נעים להכיר, ממשיכים" onPress={saveProfile} disabled={profileLoading || !firstName.trim() || !lastName.trim()} loading={profileLoading} />
@@ -209,7 +218,7 @@ export function OnboardingScreen() {
         : mode === "goal" ? <View style={styles.panel}>
           <View style={styles.talkVisual}>
             <KuponiScene state={goal ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
-            <SpeechBubble reduceMotion={reduceMotion} text={goalChoice ? goalChoice.reply : "תגידו לי מה כואב, ואני אדע איפה להתחיל."} />
+            <SpeechBubble style={styles.speechBubble} reduceMotion={reduceMotion} text={goalChoice ? goalChoice.reply : introducing ? `${KUPONI_INTRO} תגידו לי מה כואב, ואני אדע איפה להתחיל.` : "תגידו לי מה כואב, ואני אדע איפה להתחיל."} />
           </View>
           {GOALS.map((option, index) => <ChoiceCard key={option.id} index={index} reduceMotion={reduceMotion} selected={goal === option.id} label={option.label} hint={option.hint} Icon={option.icon} onPress={() => chooseGoal(option.id)} />)}
         </View>
@@ -217,7 +226,7 @@ export function OnboardingScreen() {
         : mode === "volume" ? <View style={styles.panel}>
           <View style={styles.talkVisual}>
             <KuponiScene state={volume ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
-            <SpeechBubble reduceMotion={reduceMotion} text={volume ? "מצוין. בונה לך ארנק בדיוק בגודל הזה." : "אין תשובה נכונה. רק שאדע כמה מקום להכין."} />
+            <SpeechBubble style={styles.speechBubble} reduceMotion={reduceMotion} text={volume ? "מצוין. בונה לך ארנק בדיוק בגודל הזה." : "אין תשובה נכונה. רק שאדע כמה מקום להכין."} />
           </View>
           {VOLUMES.map((option, index) => <ChoiceCard key={option.id} index={index} reduceMotion={reduceMotion} selected={volume === option.id} label={option.label} hint={option.hint} onPress={() => chooseVolume(option.id)} />)}
         </View>
@@ -225,7 +234,7 @@ export function OnboardingScreen() {
         : mode === "describe" ? <Animated.View entering={reduceMotion ? undefined : FadeInDown.duration(260)} style={styles.panel}>
           <View style={styles.talkVisual}>
             <KuponiScene state={parseCoupon.isPending ? "scanning" : "talking"} reduceMotion={reduceMotion} />
-            <SpeechBubble reduceMotion={reduceMotion} text="איזו חברה, מה הקוד, כמה שילמתם וכמה הוא שווה. יש כמה? כתבו את כולם." />
+            <SpeechBubble style={styles.speechBubble} reduceMotion={reduceMotion} text="איזו חברה, מה הקוד, כמה שילמתם וכמה הוא שווה. יש כמה? כתבו את כולם." />
           </View>
           <TextInput multiline value={text} onChangeText={setText} placeholder={'למשל: יש לי קופון ל־Wolt, קוד WOLT123, שילמתי ₪ 70 והוא שווה ₪ 100'} placeholderTextColor={theme.textSubtle} style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]} accessibilityLabel="תיאור הקופונים" />
           <PrimaryButton label={parseCoupon.isPending ? "רגע, מסדרים את הקופונים..." : "למצוא את הקופונים שלי"} onPress={identify} disabled={!canIdentify || parseCoupon.isPending} loading={parseCoupon.isPending} />
@@ -269,12 +278,6 @@ function ProgressBar({ step, total, reduceMotion, trackColor }: { step: number; 
   </View>;
 }
 
-function SpeechBubble({ text, reduceMotion }: { text: string; reduceMotion: boolean }) {
-  return <Animated.View key={text} entering={reduceMotion ? undefined : FadeInDown.duration(240)} style={styles.speechBubble}>
-    <Text style={styles.speechText}>{text}</Text>
-  </Animated.View>;
-}
-
 function ChoiceCard({ label, hint, Icon, selected, onPress, index, reduceMotion }: { label: string; hint: string; Icon?: typeof AlarmClock; selected: boolean; onPress: () => void; index: number; reduceMotion: boolean }) {
   const scale = useSharedValue(1);
   useEffect(() => {
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
   progressFill: { height: "100%", borderRadius: 4, backgroundColor: palette.primary },
   title: { fontFamily: fonts.display, fontSize: 30, fontWeight: "800", textAlign: "center", writingDirection: "rtl", marginTop: 18 }, subtitle: { fontFamily: fonts.body, fontSize: 16, lineHeight: 24, textAlign: "center", writingDirection: "rtl", marginTop: 8, marginBottom: 22 },
   panel: { gap: 16, padding: 18, borderRadius: radii.card, backgroundColor: "#fff", borderWidth: 1, borderColor: "#DDE4EF" }, profileVisual: { height: 170, overflow: "hidden" }, talkVisual: { height: 250, position: "relative", overflow: "hidden", borderRadius: 12, backgroundColor: "#F7F9FC" }, successVisual: { height: 170, overflow: "hidden" },
-  speechBubble: { position: "absolute", top: 12, right: 12, maxWidth: "68%", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#fff", borderWidth: 1, borderColor: "#CFE0FF", boxShadow: "0px 0px 8px rgba(23, 32, 51, 0.08)", elevation: 2 }, speechText: { fontFamily: fonts.bodyBold, fontSize: 13, lineHeight: 19, color: "#263246", textAlign: "right", writingDirection: "rtl" },
+  speechBubble: { position: "absolute", top: 12, right: 12, maxWidth: "68%" },
   choiceCard: { minHeight: 72, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: "#DDE4EF", backgroundColor: "#FBFCFE", flexDirection: "row-reverse", alignItems: "center", gap: 12 },
   choiceCardSelected: { borderColor: palette.primary, backgroundColor: palette.primaryTint },
   choiceIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#EAF1FC" }, choiceIconSelected: { backgroundColor: palette.primary },
