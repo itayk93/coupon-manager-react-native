@@ -91,5 +91,9 @@ multipass-*.json
 .ios-device
 
 # Raw AI generation input for the 3D mascot atlas; only the packed atlas ships.
+# The keyframe sheets are the exception: without them the atlases cannot be
+# regenerated, and a mascot nobody can re-render is a mascot frozen forever.
 assets/mascot/3d/source/*
 !assets/mascot/3d/source/six-seven-keyframes.png
+!assets/mascot/3d/source/escalation-keyframes.png
+!assets/mascot/3d/source/relief-keyframes.png
