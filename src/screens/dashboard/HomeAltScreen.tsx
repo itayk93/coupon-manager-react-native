@@ -12,6 +12,8 @@ import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
 import { CouponRail } from "@/components/dashboard/CouponRail";
+import { CompanyRail, type CompanyRailItem } from "@/components/dashboard/CompanyRail";
+import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
@@ -61,6 +63,8 @@ export function HomeAltScreen() {
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   // Set when a tile is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
+  // Which company's coupons are open in the sheet — the screen's fast path.
+  const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const onboardingPending = useOnboardingPending();
 
   // Same ordering the dashboard uses: most recently used first, then most
@@ -85,6 +89,37 @@ export function HomeAltScreen() {
   }, [coupons, usageStats]);
 
   const expiring = useMemo(() => expiringSoon(coupons).slice(0, MAX_RAIL_TILES), [coupons]);
+
+  /**
+   * Companies, most recently used first — the same ordering the dashboard's
+   * company grid uses, so a shop is never near the top on one screen and
+   * buried on the other.
+   */
+  const companyRail = useMemo<CompanyRailItem[]>(() => {
+    const byKey = new Map<string, CompanyRailItem>();
+    for (const coupon of visibleCoupons) {
+      const key = companyKey(coupon.company);
+      const existing = byKey.get(key);
+      if (existing) existing.count += 1;
+      else byKey.set(key, { company: (coupon.company || "ללא חברה").trim(), count: 1 });
+    }
+    const latest = usageStats?.latestUsageByCompany || {};
+    const used = usageStats?.usageCountByCompany || {};
+    return [...byKey.values()].sort((a, b) =>
+      (latest[b.company] || 0) - (latest[a.company] || 0) ||
+      (used[b.company] || 0) - (used[a.company] || 0) ||
+      b.count - a.count ||
+      a.company.localeCompare(b.company, "he")
+    );
+  }, [visibleCoupons, usageStats]);
+
+  const sheetCoupons = useMemo(
+    () =>
+      sheetCompany
+        ? visibleCoupons.filter((coupon) => companyKey(coupon.company) === companyKey(sheetCompany))
+        : [],
+    [visibleCoupons, sheetCompany]
+  );
 
   /**
    * The second rail: what the user reaches for. Coupons they pinned to the
@@ -172,6 +207,10 @@ export function HomeAltScreen() {
 
         <CouponAccessHero coupons={coupons} tagsMap={tagsMap} isLoading={isLoading} />
 
+        {/* The fast path, directly under the search. Someone opening this app
+            is usually at a till: they know the shop and need the barcode. */}
+        <CompanyRail items={companyRail} onSelect={setSheetCompany} />
+
         {isLoading && coupons.length === 0 ? (
           <View style={styles.skeletons}>
             {[1, 2].map((item) => (
@@ -233,6 +272,12 @@ export function HomeAltScreen() {
             thing standing between the user and the search field. */}
         {onboardingPending ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
       </ScrollView>
+
+      <CompanySheet
+        company={sheetCompany}
+        coupons={sheetCoupons}
+        onClose={() => setSheetCompany(null)}
+      />
 
       <QuickUsageModal
         visible={isUsageOpen}
