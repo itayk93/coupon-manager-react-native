@@ -59,6 +59,8 @@ docs/
 docs/*
 !docs/APP_STORE_LAUNCH_CHECKLIST.md
 !docs/dynamic-type-scaling.md
+# Mascot character bible, voice and rollout plan — shared, not local notes.
+!docs/mascot/
 # Authenticated QA screenshots may contain coupon codes. Keep them local only.
 /docs/android-qa/
 .commandcode/
