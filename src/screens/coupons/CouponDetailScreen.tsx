@@ -1,5 +1,5 @@
 import { useNativeDriver } from "@/lib/animation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -34,6 +34,7 @@ import {
   BadgeDollarSign,
   Store,
   RefreshCw,
+  MoreHorizontal,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
@@ -168,6 +169,10 @@ export function CouponDetailScreen() {
   const [isQuickShareOpen, setIsQuickShareOpen] = useState(false);
   const [isSaleOpen, setIsSaleOpen] = useState(false);
   const [isMerchantDirectoryOpen, setIsMerchantDirectoryOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  // Every overflow action opens a sheet or a confirm dialog of its own, so
+  // the tap only parks the action here; it runs once this sheet is gone.
+  const pendingOverflowAction = useRef<(() => void) | null>(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [showUsageCelebration, setShowUsageCelebration] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
@@ -323,6 +328,49 @@ export function CouponDetailScreen() {
 
 
   const logo = getCompanyLogoSource(coupon.company);
+
+  // Sharing is what people come to this row for; everything else is rarer and
+  // heavier, and two of the three are one-way doors. They go behind "עוד" so
+  // the row is a single obvious action rather than four tiles of equal weight
+  // arguing with the "דיווח שימוש" button pinned to the bottom of the screen.
+  const canShare = !isSharedWithMe;
+  const overflowActions: {
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+    onPress: () => void;
+  }[] = [
+    ...(!isFullyUsed && coupon.is_one_time
+      ? [
+          {
+            key: "used",
+            label: "סמן כנוצל",
+            icon: <CheckCircle2 size={18} color={theme.text} />,
+            onPress: () => void handleMarkAsUsed(),
+          },
+        ]
+      : []),
+    ...(!isSharedWithMe
+      ? [
+          {
+            key: "sold",
+            label: "סמן כנמכר",
+            icon: <BadgeDollarSign size={18} color={theme.text} />,
+            onPress: () => setIsSaleOpen(true),
+          },
+        ]
+      : []),
+    ...(user?.id === 1
+      ? [
+          {
+            key: "merchants",
+            label: "איפה אפשר לממש?",
+            icon: <Store size={18} color={theme.text} />,
+            onPress: () => setIsMerchantDirectoryOpen(true),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -513,56 +561,37 @@ export function CouponDetailScreen() {
           </View>
         ) : null}
 
-        {/* Action Buttons Row */}
-        <View style={styles.actionsGrid}>
-          {user?.id === 1 ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsMerchantDirectoryOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel={`בדיקת החנויות שמכבדות את הקופון של ${coupon.company}`}
-              style={[styles.actionBtn, { backgroundColor: theme.primaryTint }]}
-            >
-              <Store size={18} color={theme.primary} />
-              <Text style={[styles.actionBtnText, { color: theme.primary }]}>איפה אפשר לממש?</Text>
-            </TouchableOpacity>
-          ) : null}
+        {/* Secondary actions. Only an owner can hand a coupon on — a coupon
+            shared with you is not yours to pass along, and the server refuses
+            it anyway. */}
+        {canShare || overflowActions.length > 0 ? (
+          <View style={styles.actionsGrid}>
+            {canShare ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setIsQuickShareOpen(true)}
+                accessibilityRole="button"
+                style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+              >
+                <Share2 size={18} color={theme.text} />
+                <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
+              </TouchableOpacity>
+            ) : null}
 
-          {!isFullyUsed && coupon.is_one_time ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleMarkAsUsed}
-              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <CheckCircle2 size={18} color={theme.text} />
-              <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנוצל</Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {/* Only an owner can hand a coupon on. A coupon shared with you is
-              not yours to pass along, and the server refuses it anyway. */}
-          {!isSharedWithMe ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsQuickShareOpen(true)}
-              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <Share2 size={18} color={theme.text} />
-              <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {!isSharedWithMe ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsSaleOpen(true)}
-              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <BadgeDollarSign size={18} color={theme.text} />
-              <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנמכר</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
+            {overflowActions.length > 0 ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setIsMoreOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="פעולות נוספות על הקופון"
+                style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+              >
+                <MoreHorizontal size={18} color={theme.text} />
+                <Text style={[styles.actionBtnText, { color: theme.text }]}>עוד</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* Redemption Link if available */}
         {coupon.buyme_coupon_url ||
@@ -976,6 +1005,38 @@ export function CouponDetailScreen() {
       </Modal>
 
       <Modal
+        visible={isMoreOpen}
+        onClose={() => setIsMoreOpen(false)}
+        onClosed={() => {
+          const run = pendingOverflowAction.current;
+          pendingOverflowAction.current = null;
+          run?.();
+        }}
+        title="פעולות נוספות"
+        subtitle={coupon.company}
+      >
+        <View style={styles.moreList}>
+          {overflowActions.map((action) => (
+            <TouchableOpacity
+              key={action.key}
+              activeOpacity={0.85}
+              onPress={() => {
+                pendingOverflowAction.current = action.onPress;
+                setIsMoreOpen(false);
+              }}
+              accessibilityRole="button"
+              style={[styles.moreRow, { backgroundColor: theme.surfaceAlt }]}
+            >
+              {action.icon}
+              <Text style={[styles.moreRowText, { color: theme.text }]}>
+                {action.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
+
+      <Modal
         visible={isSaleOpen}
         onClose={() => setIsSaleOpen(false)}
         title="סימון הקופון כנמכר"
@@ -1233,6 +1294,23 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: 13,
+    fontWeight: "700",
+  },
+  moreList: {
+    gap: 10,
+    paddingBottom: 4,
+  },
+  moreRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 52,
+    borderRadius: 14,
+  },
+  moreRowText: {
+    fontSize: 14.5,
     fontWeight: "700",
   },
   merchantDirectoryLoading: {

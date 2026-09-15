@@ -417,9 +417,12 @@ export function CouponsListScreen() {
             <SlidersHorizontal size={18} color={showStatusRow ? theme.primary : theme.text} />
           </TouchableOpacity>
 
+          {/* Lands on the scanner's camera mode. It used to push "/scanner"
+              exactly like the button beside it — two controls, one
+              destination, and a decision the reader did not need to make. */}
           <TouchableOpacity
-            onPress={() => router.push("/scanner")}
-            accessibilityLabel="סריקת קוד קופון"
+            onPress={() => router.push("/scanner?tab=camera")}
+            accessibilityLabel="סריקת קוד קופון במצלמה"
             style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
           >
             <QrCode size={18} color={theme.text} />

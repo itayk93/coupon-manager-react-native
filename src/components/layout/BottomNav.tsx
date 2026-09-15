@@ -2,9 +2,8 @@ import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, Home, Handshake, Share2, Ticket, User } from "lucide-react-native";
+import { Home, Plus, Share2, Ticket, User } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
-import { useInAppNotifications } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -20,26 +19,36 @@ type Item = {
    * offset under its label without this.
    */
   iconNudgeX?: number;
+  /**
+   * The one action the bar is built around. Drawn as a filled disc instead of
+   * an icon-and-label pair, so that of the five things down here exactly one
+   * is dressed to be pressed.
+   */
+  primary?: boolean;
 };
 
 // Declared right-to-left: דשבורד leads, as Hebrew expects.
 //
-// Statistics and "איפה קניתי" are reached from the account page rather than
-// from here: six bars left each label under ten points of type, and neither
-// screen is somewhere people go mid-task.
-function buildItems(isAdmin: boolean): Item[] {
+// Five slots, and the middle one is the add button rather than a destination.
+// Six destinations is over the point where a bar stops being scanned and
+// starts being read, and two of the six ("שיתופים" / "שותפים") differed by a
+// single letter at 9.5pt — the reader had to decode before choosing.
+//
+// What left: התראות is the bell on the wallet card, and שותפים, סטטיסטיקה and
+// "איפה קניתי" are all reached from חשבון. None of them is somewhere people go
+// mid-task.
+function buildItems(): Item[] {
   return [
     { label: "דשבורד", path: "/", Icon: Home, match: [] },
-    { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
+    { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons"] },
+    { label: "הוספת קופון", path: "/scanner", Icon: Plus, match: ["/scanner"], primary: true },
     { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"], iconNudgeX: 2.5 },
     {
-      label: "שותפים",
-      path: isAdmin ? "/admin?tab=referrals" : "/invite",
-      Icon: Handshake,
-      match: isAdmin ? ["/admin"] : ["/invite", "/referral-program"],
+      label: "חשבון",
+      path: "/settings",
+      Icon: User,
+      match: ["/settings", "/profile", "/admin", "/invite", "/referral-program"],
     },
-    { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
-    { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", ...(isAdmin ? [] : ["/admin"])] },
   ];
 }
 
@@ -63,10 +72,8 @@ export function BottomNav() {
   const segments = useSegments();
   const insets = useSafeAreaInsets();
   const { theme } = useAppTheme();
-  const { session, isAdmin } = useAuth();
-  const { data: notifications = [] } = useInAppNotifications();
-  const unread = notifications.filter((item) => !item.viewed).length;
-  const items = buildItems(isAdmin);
+  const { session } = useAuth();
+  const items = buildItems();
 
   if (!session || segments[0] === "(auth)") return null;
 
@@ -92,6 +99,30 @@ export function BottomNav() {
       ) : null}
       {items.map((item) => {
         const active = isActive(item, pathname);
+
+        if (item.primary) {
+          return (
+            <TouchableOpacity
+              key={item.path}
+              activeOpacity={0.85}
+              onPress={() => router.navigate(item.path)}
+              style={styles.item}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+              accessibilityState={{ selected: active }}
+            >
+              <View
+                style={[
+                  styles.primaryDisc,
+                  { backgroundColor: active ? theme.primaryDark : theme.primary },
+                ]}
+              >
+                <item.Icon color="#ffffff" size={26} strokeWidth={2.6} />
+              </View>
+            </TouchableOpacity>
+          );
+        }
+
         const color = active ? theme.primary : theme.textSubtle;
         return (
           <TouchableOpacity
@@ -105,13 +136,6 @@ export function BottomNav() {
           >
             <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
               <item.Icon color={color} size={20} strokeWidth={1.8} />
-              {item.path === "/notifications" && unread > 0 ? (
-                <View style={[styles.badge, { borderColor: theme.card }]}>
-                  <Text style={styles.badgeText} numberOfLines={1}>
-                    {unread >= 10 ? "10+" : unread}
-                  </Text>
-                </View>
-              ) : null}
             </View>
             <Text style={[styles.label, { color }]}>{item.label}</Text>
           </TouchableOpacity>
@@ -142,33 +166,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 3,
   },
-  // Counter sits on the bell's left, per the design. It is a pill rather than
-  // a circle so "10+" widens instead of spilling out of a fixed disc.
-  badge: {
-    position: "absolute",
-    top: -7,
-    left: -15,
-    minWidth: 17,
-    height: 17,
-    borderRadius: 8.5,
-    paddingHorizontal: 4,
-    backgroundColor: "#ef4444",
+  // Sits inside the bar rather than lifted above it: a disc hanging over the
+  // top edge needs the bar to not clip, which Android does not promise.
+  // Colour and shape carry the emphasis instead of geometry.
+  primaryDisc: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    // A ring in the bar's own color keeps the badge legible where it laps the
-    // bell's outline.
-    borderWidth: 1.5,
-  },
-  badgeText: {
-    color: "#FFFFFF",
-    fontFamily: fonts.bodyBold,
-    fontSize: 9,
-    fontWeight: "800",
-    // lineHeight matched to the pill and font padding off: the default Android
-    // padding pushes the digits below the center.
-    lineHeight: 11,
-    includeFontPadding: false,
-    textAlign: "center",
   },
   label: {
     fontFamily: fonts.bodyBold,

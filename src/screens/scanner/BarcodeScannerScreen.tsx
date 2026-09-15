@@ -13,7 +13,7 @@ import {
   Modal,
   Keyboard,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import {
@@ -52,8 +52,21 @@ export function BarcodeScannerScreen() {
   // not land before the next frame's callbacks — so the guard has to be a ref,
   // or one barcode produces a burst of toasts and navigations.
   const scannedRef = useRef(false);
-  const [activeTab, setActiveTab] = useState<"camera" | "ai">("ai");
+  // `?tab=camera` is the coupons-list QR shortcut landing straight on the
+  // scanner, so that button and the "add coupon" button next to it stop
+  // being two doors onto the same room.
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const [activeTab, setActiveTab] = useState<"camera" | "ai">(
+    tabParam === "camera" ? "camera" : "ai"
+  );
   const [aiText, setAiText] = useState("");
+
+  // `useState`'s initialiser only runs on mount, and `router.navigate` can hand
+  // this screen a new `tab` without remounting it. Without this, the QR
+  // shortcut would silently land on whichever mode the screen was left in.
+  useEffect(() => {
+    if (tabParam === "camera") setActiveTab("camera");
+  }, [tabParam]);
 
   // A paste lands as one big jump in the text. Close the keyboard so it stops
   // hiding the "extract" button — the user almost always pastes then taps it.
@@ -272,49 +285,56 @@ export function BarcodeScannerScreen() {
       />
 
       <View style={styles.container}>
-        {/* Top Mode Selector Tabs */}
+        {/* Mode selector. Both entries are modes of *this* screen and both
+            drive `activeTab`, so whichever one you are in is the one lit up.
+            The manual form is a different screen, so it is a link below rather
+            than a third thing wearing a tab's clothes. */}
         <View style={[styles.tabSelector, compactLayout && styles.tabSelectorCompact]}>
-          <TouchableOpacity
-            onPress={() => setActiveTab("ai")}
-            style={[
-              styles.tabBtn,
-              compactLayout && styles.tabBtnCompact,
-              {
-                backgroundColor:
-                  activeTab === "ai"
-                    ? theme.primary
-                    : theme.surfaceAlt,
-              },
-            ]}
-          >
-            <Sparkles
-              size={18}
-              color={activeTab === "ai" ? "#ffffff" : theme.textMuted}
-            />
-            <Text
-              style={[
-                styles.tabBtnText,
-                { color: activeTab === "ai" ? "#ffffff" : theme.textMuted },
-              ]}
-            >
-              טקסט או תמונה
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push("/coupons/add")}
-            style={[
-              styles.tabBtn,
-              compactLayout && styles.tabBtnCompact,
-              { backgroundColor: theme.surfaceAlt },
-            ]}
-          >
-            <PlusCircle size={18} color={theme.textMuted} />
-            <Text style={[styles.tabBtnText, { color: theme.textMuted }]}>
-              טופס ידני
-            </Text>
-          </TouchableOpacity>
+          {(
+            [
+              { key: "ai", label: "טקסט או תמונה", Icon: Sparkles },
+              { key: "camera", label: "סריקת קוד", Icon: QrCode },
+            ] as const
+          ).map((mode) => {
+            const current = activeTab === mode.key;
+            return (
+              <TouchableOpacity
+                key={mode.key}
+                onPress={() => setActiveTab(mode.key)}
+                accessibilityRole="tab"
+                accessibilityLabel={mode.label}
+                accessibilityState={{ selected: current }}
+                style={[
+                  styles.tabBtn,
+                  compactLayout && styles.tabBtnCompact,
+                  { backgroundColor: current ? theme.primary : theme.surfaceAlt },
+                ]}
+              >
+                <mode.Icon size={18} color={current ? "#ffffff" : theme.textMuted} />
+                <Text
+                  style={[
+                    styles.tabBtnText,
+                    { color: current ? "#ffffff" : theme.textMuted },
+                  ]}
+                >
+                  {mode.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+
+        <TouchableOpacity
+          onPress={() => router.push("/coupons/add")}
+          style={styles.manualLink}
+          accessibilityRole="button"
+          accessibilityLabel="מילוי הפרטים בטופס ידני"
+        >
+          <PlusCircle size={15} color={theme.textMuted} />
+          <Text style={[styles.manualLinkText, { color: theme.textMuted }]}>
+            מעדיף למלא לבד? טופס ידני
+          </Text>
+        </TouchableOpacity>
 
         {activeTab === "camera" ? (
           <View style={styles.cameraContainer}>
@@ -441,6 +461,8 @@ export function BarcodeScannerScreen() {
                 אפשר גם לצרף תמונה של השובר
               </Text>
 
+              {/* "סריקת קוד" used to sit here too, switching the very tab
+                  that now carries it. One control per thing. */}
               <View style={styles.imageBtnRow}>
                 <View style={{ flex: 1 }}>
                   <Button
@@ -452,18 +474,6 @@ export function BarcodeScannerScreen() {
                     onPress={() => handlePickImage("library")}
                     disabled={parseCoupon.isPending}
                     icon={<ImagePlus size={18} color={theme.primary} />}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="סריקת קוד"
-                    variant="outline"
-                    size={compactImageButtons ? "sm" : "md"}
-                    style={compactImageButtons ? styles.imageBtnCompact : undefined}
-                    textStyle={compactImageButtons ? styles.imageBtnTextCompact : undefined}
-                    onPress={() => setActiveTab("camera")}
-                    disabled={parseCoupon.isPending}
-                    icon={<QrCode size={18} color={theme.primary} />}
                   />
                 </View>
               </View>
@@ -786,6 +796,21 @@ const styles = StyleSheet.create({
   tabBtnText: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  manualLink: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginTop: -6,
+    marginBottom: 10,
+  },
+  manualLinkText: {
+    fontSize: 12.5,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   cameraContainer: {
     flex: 1,

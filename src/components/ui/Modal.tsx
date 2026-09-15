@@ -29,6 +29,13 @@ type ModalProps = {
   footer?: React.ReactNode;
   /** Tap the handle to stretch the sheet to nearly full height. */
   expandable?: boolean;
+  /**
+   * Fires once the exit animation has finished and the native modal is gone.
+   * Opening a second sheet or dialog straight out of `onClose` puts two native
+   * modals on screen at once, which iOS answers by showing neither — so
+   * anything that hands off to another sheet does it from here.
+   */
+  onClosed?: () => void;
 };
 
 /** Whether the sheet is currently stretched — lets bodies relax inner height caps. */
@@ -52,12 +59,19 @@ export function Modal({
   children,
   footer,
   expandable = false,
+  onClosed,
 }: ModalProps) {
   const { theme } = useAppTheme();
 
   // Stays mounted through the exit animation, otherwise the sheet would vanish
   // instantly instead of sliding out.
   const [mounted, setMounted] = React.useState(visible);
+  // Held in a ref so an inline callback cannot land in the animation effect's
+  // dependencies and restart the animation on every render.
+  const onClosedRef = React.useRef(onClosed);
+  React.useEffect(() => {
+    onClosedRef.current = onClosed;
+  });
   const [expanded, setExpanded] = React.useState(false);
   const progress = React.useRef(new Animated.Value(0)).current;
 
@@ -70,7 +84,10 @@ export function Modal({
       easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver,
     }).start(({ finished }) => {
-      if (finished && !visible) setMounted(false);
+      if (finished && !visible) {
+        setMounted(false);
+        onClosedRef.current?.();
+      }
     });
   }, [visible, progress]);
 

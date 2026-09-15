@@ -48,6 +48,9 @@ export function DashboardScreen() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const [showSavedCelebration, setShowSavedCelebration] = useState(params.saved === "1");
+  // Reported by the expiry banner, which is the only thing that knows
+  // whether its stored dismissal lets it render today.
+  const [expiringVisible, setExpiringVisible] = useState(false);
   const [savedCouponId] = useState(params.savedCouponId);
 
   React.useEffect(() => {
@@ -127,6 +130,7 @@ export function DashboardScreen() {
   }, [filteredCoupons]);
 
   const onboardingPending = useOnboardingPending();
+  const sixSevenMilestone = !isLoading && !isError && visibleCoupons.length === 67;
 
   const handleSelectCompany = (company: string) => {
     setSheetCompany(company);
@@ -150,11 +154,14 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* One banner at a time. The walkthrough prompt goes away by itself
-            once the first coupon is in, and stacking it above the expiry
-            warning turned the top of a new account into a wall of notices. */}
-        <OnboardingBanner />
-        {!isLoading && !isError && visibleCoupons.length === 67 ? <SixSevenCelebration /> : null}
+        {/* Exactly one of these renders. Order is by who asked for it and how
+            long it stays true: the save the user just made, then the
+            milestone, then the walkthrough, then an expiry they cannot undo.
+            The push nudge is last — it is the only one that will be just as
+            true tomorrow.
+
+            They used to stack, and three notices in a row pushed the wallet
+            card, the thing people open the app for, under the fold. */}
         {showSavedCelebration ? (
           <TouchableOpacity
             activeOpacity={0.9}
@@ -187,13 +194,20 @@ export function DashboardScreen() {
               <X size={18} color={theme.successText} />
             </TouchableOpacity>
           </TouchableOpacity>
-        ) : null}
-        {onboardingPending ? null : (
+        ) : sixSevenMilestone ? (
+          <SixSevenCelebration />
+        ) : onboardingPending ? (
+          <OnboardingBanner />
+        ) : (
           <>
-            <ExpiringCouponsBanner coupons={coupons} isLoading={isLoading} />
+            <ExpiringCouponsBanner
+              coupons={coupons}
+              isLoading={isLoading}
+              onVisibilityChange={setExpiringVisible}
+            />
             {/* Asked only once there is something in the wallet worth
                 protecting — see PushNudgeBanner. */}
-            <PushNudgeBanner hasCoupons={coupons.length > 0} />
+            {expiringVisible ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
           </>
         )}
 
