@@ -76,6 +76,11 @@
             {
               "scheme": "https",
               "host": "coupons.itaykarkason.com",
+              "pathPrefix": "/monthly-recap"
+            },
+            {
+              "scheme": "https",
+              "host": "coupons.itaykarkason.com",
               "pathPrefix": "/sharing"
             },
             {

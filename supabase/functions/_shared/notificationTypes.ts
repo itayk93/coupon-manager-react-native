@@ -136,7 +136,9 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
       return {
         title: 'החודש שלך במספרים',
         body: `ב${label} נחסכו ${money(payload.amount)}.${best}`,
-        link: '/statistics',
+        // The recap page, not the all-time KPI grid the statistics tab shows:
+        // this sentence is about one month and should land on that month.
+        link: '/monthly-recap',
       };
     }
     case 'idle_money': {

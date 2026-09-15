@@ -25,6 +25,10 @@ const SCENES: Record<string, ReturnType<typeof require>> = {
   record: require("../../../assets/mascot/celebration/app/C9-wallet-record.webp"),
 };
 
+/** Where a scene leads. A monthly recap has its own page; everything else is
+ *  a milestone, and the milestone history is where it belongs. */
+const DESTINATION: Record<string, string> = { monthly: "/monthly-recap" };
+
 /** Dismissals last the session; a scene only lives until local midnight anyway. */
 const dismissed = new Set<string>();
 
@@ -45,9 +49,9 @@ export function CelebrationBanner() {
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => router.push("/milestones")}
+      onPress={() => router.push(DESTINATION[scene.kind] ?? "/milestones")}
       accessibilityRole="button"
-      accessibilityLabel={`${scene.text}. מעבר לאבני הדרך`}
+      accessibilityLabel={`${scene.text}. מעבר לפירוט`}
       style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
     >
       <Image source={source} style={styles.scene} accessible={false} resizeMode="cover" />
