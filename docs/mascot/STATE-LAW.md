@@ -32,17 +32,27 @@
 | `talking` | הוא מציג עובדה על הארנק (יתרה, סיכום, הזמנה) | `homeHero`, `StatisticsScreen` | תגובה אחת בכניסה |
 | `scanning` | **המשתמש** יזם עבודה: סריקה, פענוח, חיפוש בית עסק | `parseCoupon.isPending`, חיפוש מרצ'נטים | כן, כל עוד העבודה רצה |
 | `cheering` | כסף נחסך, נוצל עד הסוף, או ניצל מתפוגה | `redemptionCelebration`, `pickCelebration` | פעם אחת, ואז נח |
-| `concerned` | תפוגה בטווח הסכנה | `expiringSoon`, `expiryEmphasis` | רק מתחת ל־48 שעות |
+| `concerned` | תפוגה בטווח הסכנה | `expiryLevel`, `EXPIRY_PERFORMANCE` | רק מתחת ל־48 שעות |
 
-### עוצמת התנועה במצב `concerned`
+### סולם ההסלמה
 
-`expiryUrgency.ts` כבר מגדיר את הסולם, והוא מחייב:
+הפנים והתנועה הם **הסלמה אחת**, לא שתיים שבמקרה מסתדרות. `expiryUrgency.ts`
+מחזיק את שתיהן, על אותם גבולות, ויש טסט שנופל אם הן מתפצלות.
 
-| ימים לתפוגה | דרגה | מה זז |
-|---|---|---|
-| מעל 3 | `static` | כלום. צבע ותאריך בלבד |
-| 2–3 | `peek` | קופוני נשען פנימה פעם אחת, הבזק אחד על הבאנר, ואז שקט |
-| 0–1 | `breathing` | לופ איטי. כאן הדדליין אמיתי והלופ מוצדק |
+| ימים | `expiryLevel` | `expiryEmphasis` | קופוני |
+|---|---|---|---|
+| מעל 7 | `none` | `static` | `calm`, קצב 1 |
+| 4–7 | `watch` | `static` | `concerned`, קצב 1 |
+| 2–3 | `worry` | `peek` | `concerned`, קצב 1.15 |
+| 0–1 | `alarm` | `breathing` | `concerned`, קצב 1.35 |
+
+**הקצב נושא כאן משקל שלא היה אמור ליפול עליו.** יש באטלס אנימציית דאגה אחת,
+ולכן ההבדל בין "בעוד שלושה ימים" ל"היום" הוא אותו לופ מנוגן חזק יותר. זה
+הבדל אמיתי לעין, וזה לא ההבדל הנכון: תשע דרגות ההסלמה המצוירות קיימות רק
+ב־`assets/mascot/widget-originals/`, ולאטלס שבאפליקציה אין אף אחת מהן.
+
+**כשהארט יגיע:** להוסיף את השורות ל־`MascotAnimation` ולשנות את `state`
+בטבלה `EXPIRY_PERFORMANCE`. שום קורא לא זז. זו הסיבה שהטבלה קיימת.
 
 ---
 
@@ -99,6 +109,10 @@ export type MascotState = "calm" | "talking" | "scanning" | "cheering" | "concer
 | `OnboardingScreen.tsx` | משתנה | תגובה לתשובות המשתמש |
 | `EmptyState.tsx` | `talking` | הוא מסביר מה חסר |
 | `KuponiLoading.tsx` | `calm` | ממתין יחד עם המשתמש |
+| `AtRiskScreen.tsx` | נגזר מ־`expiryLevel` | הקופון הדחוף ביותר בעמוד |
+| `MilestonesScreen.tsx` | `cheering` | אבני דרך שנחצו |
+| `MonthlyRecapScreen.tsx` | `cheering` / `concerned` | חודש נקי מול כסף שפג |
+| `CelebrationOverlay.tsx` | `cheering` | מכירה או מימוש שהושלמו |
 
 ### תוקנו
 
