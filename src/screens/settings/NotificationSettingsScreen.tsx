@@ -27,7 +27,7 @@ import {
   useUpdateNotificationPreferences,
 } from "@/hooks/useNotificationPreferences";
 import { usePwaNotifications } from "@/hooks/usePwaNotifications";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { useNativeNotifications } from "@/hooks/useNativeNotifications";
 import {
   NOTIFICATION_WINDOWS as WINDOW_OPTIONS,
@@ -185,7 +185,7 @@ export function NotificationSettingsScreen() {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ההתראות שלי" />
-        <MascotLoadingState title="טוען את ההתראות שלך" subtitle="מתאימים את ההעדפות לחשבון" />
+        <KuponiLoading title="טוען את ההתראות שלך" subtitle="מתאים את ההעדפות לחשבון" />
       </SafeAreaView>
     );
   }

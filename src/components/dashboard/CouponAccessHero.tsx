@@ -14,6 +14,7 @@ import { MascotAnimation, type MascotState } from "@/components/ui/MascotAnimati
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentWidth } from "@/hooks/useContentWidth";
 import { fonts, radii } from "@/lib/theme";
+import { EXPIRY_PERFORMANCE, expiryLevel } from "@/lib/expiryUrgency";
 import { formatIls } from "@/lib/formatIls";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
@@ -44,7 +45,7 @@ import {
 const MASCOT_ROW: Record<HomeMascotState, MascotState> = {
   happy: "talking",
   concerned: "concerned",
-  panic: "panic",
+  panic: "concerned",
   empty: "talking",
 };
 
@@ -90,12 +91,16 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
     router.push({ pathname: "/coupons", params: { initialSearch: trimmed } });
   };
 
-  const openExpiring = () =>
-    router.push({ pathname: "/coupons", params: { initialStatus: "expiring" } });
+  // The at-risk page orders by money on the line and says the total; a
+  // filtered coupons list is the same rows with none of that.
+  const openExpiring = () => router.push("/at-risk");
 
   const waiting = isLoading && coupons.length === 0;
   const empty = !waiting && summary.state === "empty";
   const mascotState: HomeMascotState = waiting ? "happy" : summary.state;
+  // He keeps the greeting loop while he is presenting the balance; only how
+  // hard he plays it tracks the deadline. See `EXPIRY_PERFORMANCE`.
+  const mascotSpeed = waiting ? 1 : EXPIRY_PERFORMANCE[expiryLevel(summary.nearestDays)].speed;
 
   return (
     <View style={styles.wrap}>
@@ -271,10 +276,11 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
         <MascotAnimation
           size={mascotSize}
           state={MASCOT_ROW[mascotState]}
+          speed={mascotSpeed}
           accessibilityLabel={
             waiting || empty
-              ? "קופי, המאסקוט של קופון מאסטר"
-              : `קופי מחזיק ${formatIls(remaining)}`
+              ? "קופוני"
+              : `קופוני מחזיק ${formatIls(remaining)}`
           }
         />
       </View>

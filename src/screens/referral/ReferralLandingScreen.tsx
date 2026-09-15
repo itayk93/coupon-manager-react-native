@@ -6,7 +6,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { referralCodeFromPath } from "@/lib/referral";
 import { claimPendingReferral, savePendingReferral } from "@/lib/referralClaim";
 import { fonts } from "@/lib/theme";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 
 /**
  * Where an invite link lands.
@@ -56,7 +56,7 @@ export function ReferralLandingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <MascotLoadingState title={message ?? "רק רגע, פותחים לך את קופון מאסטר"} subtitle="מכינים את ההזמנה שלך" />
+      <KuponiLoading title={message ?? "רק רגע, אני פותח לך"} subtitle="מכין את ההזמנה שלך" />
     </SafeAreaView>
   );
 }

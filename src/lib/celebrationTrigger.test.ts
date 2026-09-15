@@ -199,3 +199,35 @@ describe("redemptionCelebration", () => {
     expect(name.endsWith("…")).toBe(true);
   });
 });
+
+/**
+ * The widget has one text slot; the in-app moment has room for a large number
+ * and a line under it. Both come from here so they can never quote different
+ * figures for the same redemption.
+ */
+describe("redemptionCelebration amount and headline", () => {
+  const now = new Date("2026-09-11T11:24:00Z");
+
+  it("splits the saving out of the sentence", () => {
+    const scene = redemptionCelebration(
+      { company: "BuyMe", value: 100, cost: 80, expiration: "2026-12-31" },
+      64,
+      now
+    );
+    expect(scene.amount).toBe(20);
+    expect(scene.headline).toBe("מימשת את BuyMe");
+    expect(scene.headline).not.toContain("20");
+  });
+
+  it("splits the rescued amount out of the sentence", () => {
+    const scene = redemptionCelebration({ company: "BuyMe", value: 100, cost: 0, expiration: "2026-09-14" }, 64, now);
+    expect(scene.amount).toBe(64);
+    expect(scene.headline).toBe("הצלת את BuyMe רגע לפני שפג");
+  });
+
+  it("quotes nothing when there is no figure to quote", () => {
+    expect(redemptionCelebration({ company: "Wolt", value: 50, cost: 50 }, 50, now).amount).toBe(0);
+    expect(redemptionCelebration({ company: "Wolt", is_one_time: true, value: 50 }, 50, now).amount).toBe(0);
+    expect(redemptionCelebration({ company: "X", value: 50, expiration: "2026-09-11" }, 0, now).amount).toBe(0);
+  });
+});

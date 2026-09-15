@@ -25,10 +25,10 @@ import {
   nextWidgetOrder,
   widgetSelection,
 } from "@/lib/widgetSelection";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 
 function WidgetLoadingState() {
-  return <MascotLoadingState title="מכינים את הקופונים לווידג׳ט" subtitle="זה עשוי לקחת כמה רגעים" />;
+  return <KuponiLoading title="אני מכין את הקופונים לווידג׳ט" subtitle="זה עשוי לקחת כמה רגעים" />;
 }
 
 export function WidgetSettingsScreen() {

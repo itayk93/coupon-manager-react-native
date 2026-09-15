@@ -31,3 +31,52 @@ export function expiryEmphasis(days: number | null | undefined): ExpiryEmphasis 
   if (days <= PEEK_MAX_DAYS) return "peek";
   return "static";
 }
+
+/**
+ * How close the deadline is, as one name the whole app can agree on.
+ *
+ * The same four steps as `expiryEmphasis`, named for what they mean rather
+ * than for how loud they are, because the face and the motion have to move
+ * together: it is one escalation, not two that happen to line up.
+ */
+export type ExpiryLevel = "none" | "watch" | "worry" | "alarm";
+
+export function expiryLevel(days: number | null | undefined): ExpiryLevel {
+  if (typeof days !== "number" || Number.isNaN(days) || days > WATCH_MAX_DAYS) return "none";
+  if (days <= BREATHING_MAX_DAYS) return "alarm";
+  if (days <= PEEK_MAX_DAYS) return "worry";
+  return "watch";
+}
+
+/** Beyond this many days a coupon is not worth a worried face at all. */
+export const WATCH_MAX_DAYS = 7;
+
+/**
+ * What Kuponi does at each level.
+ *
+ * Three drawn faces, one per rung. `speed` briefly carried this escalation on
+ * its own — one worried loop played harder as the date closed — while the
+ * artwork was still missing. It is back to 1 everywhere now that the faces
+ * exist: keeping both would escalate twice and read as panic.
+ *
+ * The prop stays because it is the honest fallback if a future state ever
+ * ships before its artwork does.
+ */
+export const EXPIRY_PERFORMANCE: Record<
+  ExpiryLevel,
+  { state: "calm" | "concerned" | "worried" | "alarmed"; speed: number }
+> = {
+  none: { state: "calm", speed: 1 },
+  watch: { state: "concerned", speed: 1 },
+  worry: { state: "worried", speed: 1 },
+  alarm: { state: "alarmed", speed: 1 },
+};
+
+/** How long is left, in words. One phrasing everywhere, so two screens looking
+ *  at the same coupon can never word the same deadline differently. */
+export function daysPhrase(days: number): string {
+  if (days <= 0) return "פג היום";
+  if (days === 1) return "פג מחר";
+  if (days === 2) return "פג בעוד יומיים";
+  return `פג בעוד ${days} ימים`;
+}

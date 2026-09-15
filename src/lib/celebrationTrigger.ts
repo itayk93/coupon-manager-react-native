@@ -36,7 +36,7 @@ export type CelebrationPick = {
 };
 
 /** Coupon counts worth a scene. Passing 24 -> 25 is an event; 26 is not. */
-const COUNT_STEPS = [5, 10, 25, 50, 100, 250];
+export const COUNT_STEPS = [5, 10, 25, 50, 100, 250];
 
 /** Exact wallet count, matching the dashboard and widget balance rules. */
 export function pickSixSevenCelebration(coupons: DecryptedCoupon[], state: CelebrationState = {}): CelebrationPick | null {
@@ -44,7 +44,7 @@ export function pickSixSevenCelebration(coupons: DecryptedCoupon[], state: Celeb
   return { kind: "six-seven", token: "six-seven:67" };
 }
 /** Shekel savings worth a scene. */
-const SAVINGS_STEPS = [1000, 5000, 10_000, 25_000, 50_000, 100_000];
+export const SAVINGS_STEPS = [1000, 5000, 10_000, 25_000, 50_000, 100_000];
 
 function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -240,7 +240,13 @@ export type RedeemedCoupon = {
 
 export type RedemptionCelebration = {
   kind: "redeemed" | "rescue";
+  /** One line with the amount written into it, for the widget's single slot. */
   text: string;
+  /** The same moment with the amount taken out, for a layout that shows the
+   *  number separately and large. Never quotes a figure. */
+  headline: string;
+  /** The money this moment is about: rescued, or saved. 0 when there is none. */
+  amount: number;
   /** The scene comes down at this instant — the next midnight in Israel. */
   until: Date;
 };
@@ -264,20 +270,32 @@ export function redemptionCelebration(
 
   const days = israelDaysUntil(coupon.expiration, now);
   if (days !== null && days >= 0 && days <= RESCUE_WINDOW_DAYS) {
-    const text =
-      coupon.is_one_time || !(rescuedAmount > 0)
-        ? `הצלת את ${company} רגע לפני שפג`
-        : `הצלת ${shekelsText(rescuedAmount)} רגע לפני שפג`;
-    return { kind: "rescue", text, until };
+    const quotable = !coupon.is_one_time && rescuedAmount > 0;
+    const text = quotable
+      ? `הצלת ${shekelsText(rescuedAmount)} רגע לפני שפג`
+      : `הצלת את ${company} רגע לפני שפג`;
+    return {
+      kind: "rescue",
+      text,
+      headline: `הצלת את ${company} רגע לפני שפג`,
+      amount: quotable ? Math.round(rescuedAmount) : 0,
+      until,
+    };
   }
 
   // Same number the "coupon finished" notification quotes, so the two agree.
   // A gift saved nothing — it was received — so it gets no savings line.
   const saved = isGiftCoupon(coupon) ? 0 : Math.max(0, (coupon.value ?? 0) - (coupon.cost ?? 0));
-  const text =
-    coupon.is_one_time || saved <= 0
-      ? `מימשת את ${company}`
-      : // Second line sits under the mascot; "ש״ח" because "₪" mis-orders in RTL.
-        `מימשת את ${company}\nחסכת ${Math.round(saved).toLocaleString("en-US")} ש״ח`;
-  return { kind: "redeemed", text, until };
+  const quotable = !coupon.is_one_time && saved > 0;
+  const text = quotable
+    ? // Second line sits under the mascot; "ש״ח" because "₪" mis-orders in RTL.
+      `מימשת את ${company}\nחסכת ${Math.round(saved).toLocaleString("en-US")} ש״ח`
+    : `מימשת את ${company}`;
+  return {
+    kind: "redeemed",
+    text,
+    headline: `מימשת את ${company}`,
+    amount: quotable ? Math.round(saved) : 0,
+    until,
+  };
 }

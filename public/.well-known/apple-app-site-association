@@ -35,6 +35,10 @@
             "comment": "the savings screen"
           },
           {
+            "/": "/monthly-recap",
+            "comment": "the monthly savings recap a notification links to"
+          },
+          {
             "/": "/sharing",
             "comment": "the sharing screen"
           },

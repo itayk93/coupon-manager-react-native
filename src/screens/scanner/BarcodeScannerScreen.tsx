@@ -31,7 +31,7 @@ import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { useParseCoupon, ParsedCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { usePageTutorial } from "@/hooks/usePageTutorial";
@@ -497,15 +497,14 @@ export function BarcodeScannerScreen() {
                       },
                     ]}
                   >
-                    <CharacterSpotlight
-                      character="investigator"
+                    <Kuponi
                       state="scanning"
                       size="small"
                     />
                     <Text
                       style={[styles.characterLoadingText, { color: theme.textMuted }]}
                     >
-                      בודקים את החברה, הקוד והסכומים…
+                      בודק את החברה, הקוד והסכומים…
                     </Text>
                   </View>
                 </View>
@@ -532,11 +531,9 @@ export function BarcodeScannerScreen() {
             accessibilityViewIsModal
           >
             <View style={styles.tutorialMascot}>
-              <CharacterSpotlight
-                character="investigator"
+              <Kuponi
                 state="talking"
                 size="small"
-                tone="blue"
               />
             </View>
             <Text style={[styles.tutorialTitle, { color: theme.text }]}>קופון נכנס. הפרטים מסתדרים.</Text>

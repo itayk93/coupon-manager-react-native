@@ -29,9 +29,9 @@ import { expiringSoon } from "@/lib/homeHero";
 import { couponRouteId } from "@/lib/couponId";
 
 /**
- * An alternative home screen, reachable only from the admin panel while it is
- * being tried out. The tab bar still opens `DashboardScreen`; nothing here
- * changes what a regular user sees.
+ * The home screen built around Kuponi, offered in settings as "מסך הבית של
+ * קופוני". `DashboardScreen` stays the default; this is opt-in per device
+ * (`homeScreenPref.ts`) and reversible from the same switch.
  *
  * What it is testing: a home screen that answers "how much do I have, what is
  * about to expire, and what do I reach for" in one glance, and gets out of the

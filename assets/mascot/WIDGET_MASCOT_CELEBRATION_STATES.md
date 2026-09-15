@@ -10,10 +10,21 @@
 
 ## סטטוס מימוש
 
-התמונות האלה הן קלט לשלב הבא. הווידג'ט הנייטיבי **עדיין לא יודע להציג אותן** —
-צריך להוסיף ל־`WidgetPayload` שדות (`lifetimeSavings`, `redeemedCount`, `memberSinceDays`,
-`usageStreakWeeks`, `referralCount`, `walletRecord`) ולוגיקת בחירה ב־`CouponWidget.swift` /
-`CouponWidgetProvider.kt`. הבריף הזה מייצר את הנכסים כדי שהם יהיו מוכנים.
+**עודכן.** הפסקה הקודמת כאן אמרה שהווידג'ט הנייטיבי עדיין לא יודע להציג את
+הסצנות. זה כבר לא נכון, והעבודה נעשתה אחרי שהבריף נכתב. הצינור שלם מקצה לקצה:
+
+- בחירה: `src/lib/celebrationTrigger.ts` → `src/lib/widgetSync.ts:296`
+- iOS: `targets/widget/CouponWidget.swift:592-606`
+- Android: `modules/coupon-widget/.../CouponWidgetProvider.kt:83-87`
+
+מה שעדיין לא מחובר: `streak` (C5) ו־`referral` (C8) — הנייטיב מטפל בשניהם,
+אבל `CelebrationKind` לא פולט אותם. C5 לא ייכנס בכוונה (הוא מודד פתיחות
+אפליקציה, לא כסף). וכל הסצנות האלה הן **ווידג'ט בלבד** — משתמש שלא התקין
+ווידג'ט לא רואה אף אחת מהן.
+
+התמונות עצמן הופקו ומחוברות. ראה [`docs/mascot/INVENTORY.md`](../../docs/mascot/INVENTORY.md) §4
+למצב המדויק של כל סצנה, ו־[`docs/mascot/ROLLOUT.md`](../../docs/mascot/ROLLOUT.md) שלב 4
+לעבודה שנותרה.
 
 ---
 

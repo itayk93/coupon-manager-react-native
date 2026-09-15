@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -31,7 +32,7 @@ import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownM
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRouteId } from "@/lib/couponId";
 import { useCouponSales } from "@/hooks/useCouponSales";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { useSavingsByMonth } from "@/hooks/useCouponUsage";
 import { totalGiftValueUsed, totalRealizedSavings } from "@/lib/couponSavings";
 
@@ -122,22 +123,19 @@ export function StatisticsScreen() {
         state: "cheering" as const,
         title: "החיסכון החודשי עלה",
         text: `חסכת ${formatIls(current - previous)} יותר מהחודש הקודם.`,
-        tone: "success" as const,
       };
     }
     if (statusStats.expired > 0) {
       return {
-        state: "thinking" as const,
+        state: "concerned" as const,
         title: `${statusStats.expired} קופונים פגו`,
         text: "שווה לבדוק את הקופונים הפעילים לפני התאריך הבא.",
-        tone: "coral" as const,
       };
     }
     return {
       state: "talking" as const,
       title: "כל חיסכון מתחיל במימוש",
       text: "כאן יופיע הסיפור החודשי שלך ככל שישתמשו בקופונים.",
-      tone: "blue" as const,
     };
   }, [monthlyTrend, statusStats.expired]);
 
@@ -159,22 +157,26 @@ export function StatisticsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View
+        {/* The story card is the way into the milestone history: the numbers
+            below are where the wallet stands, and that page is how it got
+            here. */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/milestones")}
           style={[styles.mascotStory, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-          accessible
-          accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}`}
+          accessibilityRole="button"
+          accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}. מעבר לאבני הדרך`}
         >
-          <CharacterSpotlight
-            character="investigator"
+          <Kuponi
             state={savingsStory.state}
             size="small"
-            tone={savingsStory.tone}
           />
           <View style={styles.mascotStoryCopy}>
             <Text style={[styles.mascotStoryTitle, { color: theme.text }]}>{savingsStory.title}</Text>
             <Text style={[styles.mascotStoryText, { color: theme.textMuted }]}>{savingsStory.text}</Text>
+            <Text style={[styles.mascotStoryLink, { color: theme.primary }]}>אבני הדרך שלי</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* KPI Top 4-Grid */}
         <View style={styles.kpiGrid}>
@@ -519,6 +521,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     ...shadows.card,
   },
+  mascotStoryLink: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "right", writingDirection: "rtl", marginTop: 4 },
   mascotStoryCopy: { flex: 1, alignItems: "flex-end" },
   mascotStoryTitle: {
     fontFamily: fonts.bodyBold,

@@ -7,7 +7,7 @@ import { useCouponSales } from "@/hooks/useCouponSales";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
 import { fonts, radii, shadows } from "@/lib/theme";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
@@ -20,7 +20,7 @@ export function SoldCouponsScreen() {
   const { data: sales = [], isLoading } = useCouponSales();
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
-    {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="מרכזים את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
+    {isLoading ? <KuponiLoading title="טוען מכירות" subtitle="אוסף את כל מה שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
       {sales.length === 0 ? (
         <EmptyState
           title="עוד לא מכרת קופונים"

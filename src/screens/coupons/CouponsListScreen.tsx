@@ -841,7 +841,6 @@ export function CouponsListScreen() {
             isLoading ? (
               <View>{[1, 2, 3].map((item) => <CouponCardSkeleton key={item} />)}</View>
             ) : showMaintainerAutoUpdate && merchantQuery && currentSearchHasMerchantResults ? null : <EmptyState
-              mascot="investigator"
               largeVisual
               title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
               subtitle={
