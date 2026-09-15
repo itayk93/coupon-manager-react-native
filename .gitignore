@@ -90,6 +90,10 @@ multipass-*.json
 # configuration: another checkout has different hardware plugged in.
 .ios-device
 
+# Bytecode from the asset-preparation scripts. Running the documented
+# regeneration commands should not dirty the tree.
+__pycache__/
+
 # Raw AI generation input for the 3D mascot atlas; only the packed atlas ships.
 # The keyframe sheets are the exception: without them the atlases cannot be
 # regenerated, and a mascot nobody can re-render is a mascot frozen forever.
