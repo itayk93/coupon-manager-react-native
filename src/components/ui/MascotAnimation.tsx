@@ -27,9 +27,11 @@ const ROW: Record<MascotState, number> = {
 };
 
 /** One resident atlas avoids image loading and decode churn between frames. */
-export function MascotAnimation({ size = 132, state = "calm", reduceMotion, accessibilityLabel }: {
+export function MascotAnimation({ size = 132, state = "calm", speed = 1, reduceMotion, accessibilityLabel }: {
   size?: number;
   state?: MascotState;
+  /** Playback multiplier. Above 1 the same loop reads as more agitated. */
+  speed?: number;
   reduceMotion?: boolean;
   accessibilityLabel?: string;
 }) {
@@ -59,15 +61,16 @@ export function MascotAnimation({ size = 132, state = "calm", reduceMotion, acce
     return () => { alive = false; motion.remove(); app.remove(); };
   }, []);
 
+  const fps = FPS * (speed > 0 ? speed : 1);
   useEffect(() => {
     setStep(0);
     if (paused) return;
     const started = performance.now();
     // Follow elapsed time so a busy JS thread skips frames rather than slowing
     // the action or accumulating delayed callbacks.
-    const timer = setInterval(() => setStep(Math.floor((performance.now() - started) * FPS / 1000) % FRAME_COUNT), 1000 / FPS);
+    const timer = setInterval(() => setStep(Math.floor((performance.now() - started) * fps / 1000) % FRAME_COUNT), 1000 / fps);
     return () => clearInterval(timer);
-  }, [paused, state]);
+  }, [paused, state, fps]);
 
   const frame = paused ? 0 : step;
   const column = frame % GRID;

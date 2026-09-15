@@ -8,7 +8,7 @@ import { fonts, radii } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
-import { expiryEmphasis } from "@/lib/expiryUrgency";
+import { EXPIRY_PERFORMANCE, expiryEmphasis, expiryLevel } from "@/lib/expiryUrgency";
 import { fitFontSize } from "@/lib/fitText";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
 import { Kuponi } from "@/components/ui/Kuponi";
@@ -153,9 +153,8 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
   // How loud the banner is allowed to be. See `expiryUrgency.ts`: still above
   // three days, one pass at two or three, a slow breath inside 48 hours.
   const emphasis = expiryEmphasis(soonest.days);
-  // One worried animation exists, so there is one worried state. How hard it
-  // lands is `emphasis`'s job, not a second name for the same atlas row.
-  const mascotState = soonest.days <= 7 ? "concerned" : "calm";
+  // The face and the motion come from the same step of the same ladder.
+  const kuponi = EXPIRY_PERFORMANCE[expiryLevel(soonest.days)];
   const headlineFontSize = fitFontSize(headline.length, headlineWidth);
 
   return (
@@ -172,7 +171,8 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           the strip no height at all. */}
       <View style={styles.mascot} pointerEvents="none">
         <Kuponi
-          state={mascotState}
+          state={kuponi.state}
+          speed={kuponi.speed}
           size="small"
         />
       </View>
