@@ -23,9 +23,9 @@ import {
   XCircle,
   Zap,
 } from "lucide-react-native";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { useRouter } from "expo-router";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,7 +71,7 @@ export function ReferralProgramScreen() {
         {/* ── Hero ── */}
         <View style={styles.heroCard}>
           <View style={styles.heroGradient}>
-            <CharacterSpotlight state="talking" size="medium" />
+            <Kuponi state="talking" size="medium" />
             <Text style={styles.heroTitle}>הזמינו חברים.{"\n"}קבלו פרסים.</Text>
             <Text style={styles.heroTag}>תוכנית השותפים של קופון מאסטר</Text>
           </View>
@@ -127,7 +127,7 @@ export function ReferralProgramScreen() {
 
         {/* ── Status / Form ── */}
         {(loadingStatus || loadingApp) ? (
-          <MascotLoadingState compact title="בודקים את סטטוס התוכנית" subtitle="זה ייקח רגע" />
+          <KuponiLoading compact title="בודקים את סטטוס התוכנית" subtitle="זה ייקח רגע" />
         ) : isPartner ? (
           <StatusBanner
             bg="#dcfce7" border="#86efac" color="#16a34a"
@@ -158,7 +158,7 @@ export function ReferralProgramScreen() {
 
             <View style={styles.formSection}>
               <View style={styles.formTitleRow}>
-                <CharacterSpotlight state="cheering" size="small" />
+                <Kuponi state="cheering" size="small" />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 0 }]}>רוצים להצטרף?</Text>
                   <Text style={[styles.formSubtitle, { color: theme.textMuted }]}>מלאו את הפרטים ונחזור אליכם</Text>

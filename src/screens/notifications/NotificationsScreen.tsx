@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { Bell, AlertTriangle, CheckCheck, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { FloatingMascot } from "@/components/onboarding/CharacterRig";
+import { KuponiFloating } from "@/components/ui/Kuponi";
 import { useCoupons } from "@/hooks/useCoupons";
 import {
   useHideNotification,
@@ -274,7 +274,7 @@ export function NotificationsScreen() {
         )}
       </ScrollView>
 
-      {notifications.length > 0 ? <FloatingMascot /> : null}
+      {notifications.length > 0 ? <KuponiFloating /> : null}
     </SafeAreaView>
   );
 }

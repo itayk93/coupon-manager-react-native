@@ -31,7 +31,7 @@ import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownM
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRouteId } from "@/lib/couponId";
 import { useCouponSales } from "@/hooks/useCouponSales";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { useSavingsByMonth } from "@/hooks/useCouponUsage";
 import { totalGiftValueUsed, totalRealizedSavings } from "@/lib/couponSavings";
 
@@ -161,7 +161,7 @@ export function StatisticsScreen() {
           accessible
           accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}`}
         >
-          <CharacterSpotlight
+          <Kuponi
             state={savingsStory.state}
             size="small"
           />

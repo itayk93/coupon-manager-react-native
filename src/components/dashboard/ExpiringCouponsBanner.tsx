@@ -11,7 +11,7 @@ import { couponRouteId } from "@/lib/couponId";
 import { expiryEmphasis } from "@/lib/expiryUrgency";
 import { fitFontSize } from "@/lib/fitText";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 
 /**
  * A dismissible strip above the wallet card for coupons that expire within
@@ -178,7 +178,7 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           the banner's own overflow it has a ground to stand on, and it costs
           the strip no height at all. */}
       <View style={styles.mascot} pointerEvents="none">
-        <CharacterSpotlight
+        <Kuponi
           state={mascotState}
           size="small"
         />

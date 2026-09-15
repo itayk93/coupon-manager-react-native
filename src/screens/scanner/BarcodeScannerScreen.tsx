@@ -31,7 +31,7 @@ import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { useParseCoupon, ParsedCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { usePageTutorial } from "@/hooks/usePageTutorial";
@@ -497,7 +497,7 @@ export function BarcodeScannerScreen() {
                       },
                     ]}
                   >
-                    <CharacterSpotlight
+                    <Kuponi
                       state="scanning"
                       size="small"
                     />
@@ -531,7 +531,7 @@ export function BarcodeScannerScreen() {
             accessibilityViewIsModal
           >
             <View style={styles.tutorialMascot}>
-              <CharacterSpotlight
+              <Kuponi
                 state="talking"
                 size="small"
               />

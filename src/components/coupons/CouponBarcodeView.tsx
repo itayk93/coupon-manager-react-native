@@ -15,7 +15,7 @@ import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette } from "@/lib/theme";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 
 
 type CouponBarcodeViewProps = {
@@ -132,7 +132,7 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                 />
               </View>
               <View style={styles.scannerMascot} pointerEvents="none">
-                <CharacterSpotlight
+                <Kuponi
                   state="scanning"
                   size="small"
                 />

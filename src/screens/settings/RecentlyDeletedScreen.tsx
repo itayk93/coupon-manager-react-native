@@ -23,7 +23,7 @@ import { notify } from "@/lib/notify";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { couponRemainingValue } from "@/lib/couponTotals";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -67,7 +67,7 @@ export function RecentlyDeletedScreen() {
       <Header title="נמחקו לאחרונה" />
 
       {isLoading ? (
-        <MascotLoadingState title="טוען קופונים שנמחקו" subtitle="בודקים מה עדיין אפשר לשחזר" />
+        <KuponiLoading title="טוען קופונים שנמחקו" subtitle="בודקים מה עדיין אפשר לשחזר" />
       ) : coupons.length === 0 ? (
         <ScrollView contentContainerStyle={styles.content}>
           <EmptyState

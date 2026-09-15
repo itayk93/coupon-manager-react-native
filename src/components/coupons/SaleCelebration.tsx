@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeOut, useReducedMotion, ZoomIn } from "react-native-reanimated";
 import { Confetti } from "@/components/onboarding/Celebration";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 
@@ -40,7 +40,7 @@ export function SaleCelebration({ title = "מכרת קופון!", subtitle = "נ
         entering={reduceMotion ? FadeIn : ZoomIn.springify().damping(14)}
         style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
       >
-        <CharacterSpotlight state="cheering" size="large" />
+        <Kuponi state="cheering" size="large" />
         <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
       </Animated.View>

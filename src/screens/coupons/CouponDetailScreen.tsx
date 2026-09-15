@@ -74,7 +74,7 @@ import { SaleCelebration } from "@/components/coupons/SaleCelebration";
 import { useRecordManualSale } from "@/hooks/useCouponSales";
 import { useCouponMerchantDirectory } from "@/hooks/useCouponMerchantSearch";
 import { useAuth } from "@/contexts/AuthContext";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { MascotAnimation } from "@/components/ui/MascotAnimation";
 
 /**
@@ -454,7 +454,7 @@ export function CouponDetailScreen() {
             accessible
             accessibilityLabel="השימוש נשמר בהצלחה"
           >
-            <CharacterSpotlight
+            <Kuponi
               state="cheering"
               size="small"
             />

@@ -24,7 +24,7 @@ import {
   useClaimShareLink,
   useShareLinkPreview,
 } from "@/hooks/useShareLink";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 
 /**
  * Where a share link lands.
@@ -178,7 +178,7 @@ export function ClaimShareScreen() {
 }
 
 function Loading() {
-  return <MascotLoadingState title="מכינים את הקופון" subtitle="בודקים את הקישור ואת פרטי ההעברה" />;
+  return <KuponiLoading title="מכינים את הקופון" subtitle="בודקים את הקישור ואת פרטי ההעברה" />;
 }
 
 function Message({

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { Button } from "./button";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 
 type EmptyStateProps = {
   icon?: React.ReactNode;
@@ -40,7 +40,7 @@ export function EmptyState({
       ]}
     >
       {visual ?? (
-        <CharacterSpotlight
+        <Kuponi
           state="thinking"
           size={largeVisual ? "large" : "medium"}
         />

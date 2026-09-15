@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -12,8 +12,8 @@ type Props = {
 };
 
 /** Branded full-page loading feedback. Character motion already follows the
- * system Reduce Motion preference inside CharacterSpotlight. */
-export function MascotLoadingState({
+ * system Reduce Motion preference inside Kuponi. */
+export function KuponiLoading({
   title = "רק רגע, כבר מסדרים הכול",
   subtitle,
   compact = false,
@@ -27,7 +27,7 @@ export function MascotLoadingState({
       accessibilityLiveRegion="polite"
       style={[styles.container, compact && styles.compact, style]}
     >
-      <CharacterSpotlight
+      <Kuponi
         state="thinking"
         size={compact ? "small" : "large"}
       />

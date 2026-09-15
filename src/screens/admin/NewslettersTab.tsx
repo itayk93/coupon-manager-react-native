@@ -19,7 +19,7 @@ import { notify } from "@/lib/notify";
 import { Newsletter } from "@/integrations/supabase";
 import { useNewsletters, useUpsertNewsletter, useDeleteNewsletter } from "@/hooks/useAdminManagement";
 import { useNewsletterUpload } from "@/hooks/useNewsletterUpload";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 /**
@@ -84,7 +84,7 @@ export function NewslettersTab() {
       />
 
       {isLoading ? (
-        <MascotLoadingState compact title="טוען ניוזלטרים" />
+        <KuponiLoading compact title="טוען ניוזלטרים" />
       ) : data.length === 0 ? (
         <EmptyState title="עוד אין ניוזלטרים" subtitle="יוצרים את הניוזלטר הראשון ומתחילים לשלוח עדכונים." actionTitle="ניוזלטר חדש" onAction={() => setEditing({ title: "" })} />
       ) : (

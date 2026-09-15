@@ -32,8 +32,8 @@ import { notify } from "@/lib/notify";
 import { formatIls } from "@/lib/formatIls";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import type { SaleInput } from "@/hooks/useCouponSales";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
-import { MascotSprite } from "@/components/ui/MascotSprite";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
+import { Kuponi } from "@/components/ui/Kuponi";
 
 export function SharingScreen() {
   const router = useRouter();
@@ -193,7 +193,7 @@ export function SharingScreen() {
           }
         >
           {(activeTab === "shared_with_me" ? loadingWithMe : loadingMy) ? (
-            <MascotLoadingState title="טוען שיתופים" subtitle="אוספים את הקופונים וההזמנות שלך" />
+            <KuponiLoading title="טוען שיתופים" subtitle="אוספים את הקופונים וההזמנות שלך" />
           ) : activeTab === "shared_with_me" ? (
             sharedWithMe.length > 0 ? (
               sharedWithMe.map((item) => {
@@ -281,7 +281,8 @@ export function SharingScreen() {
             ) : (
               <EmptyState
                 visual={
-                  <MascotSprite
+                  <Kuponi
+                    size={160}
                     accessibilityLabel="המאסקוט מנופף ומזמין אותך להתחיל לשתף"
                   />
                 }

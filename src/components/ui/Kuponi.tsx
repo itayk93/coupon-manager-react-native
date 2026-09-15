@@ -2,27 +2,42 @@ import React, { useEffect, useRef } from "react";
 import { Animated as NativeAnimated, Dimensions, PanResponder, StyleSheet, View } from "react-native";
 import { MascotAnimation, type MascotState } from "@/components/ui/MascotAnimation";
 
-export type CharacterState = MascotState;
+/**
+ * Kuponi — the character, in the three shapes the app places him in.
+ *
+ * `MascotAnimation` is the atlas player underneath and knows nothing about who
+ * it is drawing; everything here is Kuponi specifically. Which state he is in
+ * is never this component's decision — see `docs/mascot/STATE-LAW.md`: it is a
+ * function of the user's money, derived in `src/lib/` (`homeHero.ts`,
+ * `expiryUrgency.ts`) and passed down.
+ */
+
+export type KuponiState = MascotState;
 const EDGE_GUARD = 28;
 
-export function CharacterScene({ state, reduceMotion, compact }: {
-  state: CharacterState; reduceMotion?: boolean; compact?: boolean;
+export function KuponiScene({ state, reduceMotion, compact }: {
+  state: KuponiState; reduceMotion?: boolean; compact?: boolean;
 }) {
   return <View style={styles.scene}>
     <MascotAnimation state={state} reduceMotion={reduceMotion} size={compact ? 144 : 192} />
   </View>;
 }
 
-export function CharacterSpotlight({ state = "talking", reduceMotion, size = "medium" }: {
-  state?: CharacterState;
+/** Kuponi at rest in a layout. A number sizes him exactly, for the few places
+ * that need to match a surrounding block rather than pick off the scale. */
+export function Kuponi({ state = "talking", reduceMotion, size = "medium", accessibilityLabel }: {
+  state?: KuponiState;
   reduceMotion?: boolean;
-  size?: "small" | "medium" | "large";
+  size?: "small" | "medium" | "large" | number;
+  /** Set only where he carries meaning a screen reader would otherwise miss. */
+  accessibilityLabel?: string;
 }) {
-  return <MascotAnimation state={state} reduceMotion={reduceMotion}
-    size={size === "small" ? 88 : size === "large" ? 176 : 132} />;
+  const points = typeof size === "number" ? size : size === "small" ? 88 : size === "large" ? 176 : 132;
+  return <MascotAnimation state={state} reduceMotion={reduceMotion} size={points}
+    accessibilityLabel={accessibilityLabel} />;
 }
 
-export function FloatingMascot({
+export function KuponiFloating({
   size = 88,
   initial,
   bottomInset = 8,

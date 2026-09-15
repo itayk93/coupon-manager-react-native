@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View }
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { GeoRange, GeoRow, useGeoAnalytics } from "@/hooks/useGeoAnalytics";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 /**
@@ -41,7 +41,7 @@ export function GeoAnalyticsTab() {
       </View>
 
       {isLoading ? (
-        <MascotLoadingState compact title="טוען נתוני מיקום" />
+        <KuponiLoading compact title="טוען נתוני מיקום" />
       ) : isError ? (
         <Text style={[styles.empty, { color: theme.textMuted }]}>שגיאה בטעינת הנתונים</Text>
       ) : data.length === 0 ? (

@@ -30,7 +30,7 @@ import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { couponRouteId } from "@/lib/couponId";
 
 export function DashboardScreen() {
@@ -168,7 +168,7 @@ export function DashboardScreen() {
             accessibilityLabel="הקופון נשמר בארנק. מעבר לקופון"
           >
             <View style={styles.successVisual}>
-              <CharacterSpotlight state="cheering" size="small" />
+              <Kuponi state="cheering" size="small" />
             </View>
             <View style={styles.successCopy}>
               <Text style={[styles.successTitle, { color: theme.successText }]}>הקופון נשמר בארנק</Text>

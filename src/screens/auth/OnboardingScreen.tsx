@@ -15,10 +15,10 @@ import { setOnboardingCompleted } from "@/lib/onboardingStatus";
 import { useCoupons } from "@/hooks/useCoupons";
 import { estimateAnnualSavings, saveOnboardingPrefs, type OnboardingGoal, type OnboardingVolume } from "@/lib/onboardingPrefs";
 import { Confetti, CountUp } from "@/components/onboarding/Celebration";
-import { CharacterScene, type CharacterState } from "@/components/onboarding/CharacterRig";
+import { KuponiScene, type KuponiState } from "@/components/ui/Kuponi";
 import { formatIls } from "@/lib/formatIls";
 import { logActivity } from "@/lib/activityLog";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { takePendingRoute } from "@/lib/pendingRoute";
 
 type Mode = "profile" | "goal" | "volume" | "describe" | "preview";
@@ -179,7 +179,7 @@ export function OnboardingScreen() {
 
   if (user && (walletLoading || hasWallet)) {
     return <SafeAreaView style={[styles.safe, styles.centered, { backgroundColor: theme.background }]}>
-      <MascotLoadingState title="מכינים את הארנק שלך" subtitle="בודקים את הקופונים שכבר שמרת" />
+      <KuponiLoading title="מכינים את הארנק שלך" subtitle="בודקים את הקופונים שכבר שמרת" />
     </SafeAreaView>;
   }
 
@@ -200,7 +200,7 @@ export function OnboardingScreen() {
         </Animated.View>
 
         {mode === "profile" ? <View style={styles.panel}>
-          <View style={styles.profileVisual}><CharacterScene state="talking" reduceMotion={reduceMotion} compact /></View>
+          <View style={styles.profileVisual}><KuponiScene state="talking" reduceMotion={reduceMotion} compact /></View>
           <Field label="שם פרטי" value={firstName} onChangeText={setFirstName} placeholder="למשל נועה" />
           <Field label="שם משפחה" value={lastName} onChangeText={setLastName} placeholder="למשל כהן" />
           <PrimaryButton label="נעים להכיר, ממשיכים" onPress={saveProfile} disabled={profileLoading || !firstName.trim() || !lastName.trim()} loading={profileLoading} />
@@ -208,7 +208,7 @@ export function OnboardingScreen() {
 
         : mode === "goal" ? <View style={styles.panel}>
           <View style={styles.talkVisual}>
-            <CharacterScene state={goal ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
+            <KuponiScene state={goal ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
             <SpeechBubble reduceMotion={reduceMotion} text={goalChoice ? goalChoice.reply : "תגידו לי מה כואב, ואני אדע איפה להתחיל."} />
           </View>
           {GOALS.map((option, index) => <ChoiceCard key={option.id} index={index} reduceMotion={reduceMotion} selected={goal === option.id} label={option.label} hint={option.hint} Icon={option.icon} onPress={() => chooseGoal(option.id)} />)}
@@ -216,7 +216,7 @@ export function OnboardingScreen() {
 
         : mode === "volume" ? <View style={styles.panel}>
           <View style={styles.talkVisual}>
-            <CharacterScene state={volume ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
+            <KuponiScene state={volume ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
             <SpeechBubble reduceMotion={reduceMotion} text={volume ? "מצוין. בונה לך ארנק בדיוק בגודל הזה." : "אין תשובה נכונה. רק שאדע כמה מקום להכין."} />
           </View>
           {VOLUMES.map((option, index) => <ChoiceCard key={option.id} index={index} reduceMotion={reduceMotion} selected={volume === option.id} label={option.label} hint={option.hint} onPress={() => chooseVolume(option.id)} />)}
@@ -224,7 +224,7 @@ export function OnboardingScreen() {
 
         : mode === "describe" ? <Animated.View entering={reduceMotion ? undefined : FadeInDown.duration(260)} style={styles.panel}>
           <View style={styles.talkVisual}>
-            <CharacterScene state={parseCoupon.isPending ? "scanning" : "talking"} reduceMotion={reduceMotion} />
+            <KuponiScene state={parseCoupon.isPending ? "scanning" : "talking"} reduceMotion={reduceMotion} />
             <SpeechBubble reduceMotion={reduceMotion} text="איזו חברה, מה הקוד, כמה שילמתם וכמה הוא שווה. יש כמה? כתבו את כולם." />
           </View>
           <TextInput multiline value={text} onChangeText={setText} placeholder={'למשל: יש לי קופון ל־Wolt, קוד WOLT123, שילמתי ₪ 70 והוא שווה ₪ 100'} placeholderTextColor={theme.textSubtle} style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]} accessibilityLabel="תיאור הקופונים" />
@@ -232,7 +232,7 @@ export function OnboardingScreen() {
         </Animated.View>
 
         : <View style={styles.panel}>
-          <View style={styles.successVisual}><CharacterScene state="success" reduceMotion={reduceMotion} compact /></View>
+          <View style={styles.successVisual}><KuponiScene state="success" reduceMotion={reduceMotion} compact /></View>
           {/* Overlaid on the whole panel rather than on the illustration: the
               illustration clips its overflow, and confetti that stops falling
               120pt in reads as a glitch. */}
