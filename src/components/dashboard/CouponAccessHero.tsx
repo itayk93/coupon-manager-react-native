@@ -91,8 +91,9 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
     router.push({ pathname: "/coupons", params: { initialSearch: trimmed } });
   };
 
-  const openExpiring = () =>
-    router.push({ pathname: "/coupons", params: { initialStatus: "expiring" } });
+  // The at-risk page orders by money on the line and says the total; a
+  // filtered coupons list is the same rows with none of that.
+  const openExpiring = () => router.push("/at-risk");
 
   const waiting = isLoading && coupons.length === 0;
   const empty = !waiting && summary.state === "empty";

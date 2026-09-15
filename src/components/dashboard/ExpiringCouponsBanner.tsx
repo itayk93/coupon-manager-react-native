@@ -8,7 +8,7 @@ import { fonts, radii } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
-import { EXPIRY_PERFORMANCE, expiryEmphasis, expiryLevel } from "@/lib/expiryUrgency";
+import { EXPIRY_PERFORMANCE, daysPhrase, expiryEmphasis, expiryLevel } from "@/lib/expiryUrgency";
 import { fitFontSize } from "@/lib/fitText";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
 import { Kuponi } from "@/components/ui/Kuponi";
@@ -56,13 +56,6 @@ function daysUntil(expiration: string): number | null {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
-}
-
-function daysPhrase(days: number): string {
-  if (days <= 0) return "פג היום";
-  if (days === 1) return "פג מחר";
-  if (days === 2) return "פג בעוד יומיים";
-  return `פג בעוד ${days} ימים`;
 }
 
 type Tone = { bg: string; border: string; text: string; icon: string };
@@ -242,10 +235,22 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           ))
         : null}
 
-      {expanded && expiring.length > MAX_LISTED ? (
-        <Text style={[styles.moreText, { color: tone.text }]}>
-          ועוד {expiring.length - MAX_LISTED} קופונים
-        </Text>
+      {/* Was a dead end: a line of text saying more coupons exist, with
+          nowhere to go and see them. */}
+      {expanded ? (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push("/at-risk")}
+          accessibilityRole="button"
+          style={styles.moreRow}
+        >
+          <ChevronLeft size={15} color={tone.text} />
+          <Text style={[styles.moreText, { color: tone.text }]}>
+            {expiring.length > MAX_LISTED
+              ? `ועוד ${expiring.length - MAX_LISTED} קופונים — לראות הכול`
+              : "לראות הכול, עם הסכומים"}
+          </Text>
+        </TouchableOpacity>
       ) : null}
     </View>
   );
@@ -347,6 +352,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12.5,
   },
+  moreRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "flex-start", gap: 5, paddingTop: 6 },
   moreText: {
     fontFamily: fonts.body,
     fontSize: 12.5,

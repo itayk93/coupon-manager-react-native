@@ -73,3 +73,12 @@ export const EXPIRY_PERFORMANCE: Record<
   worry: { state: "concerned", speed: 1.15 },
   alarm: { state: "concerned", speed: 1.35 },
 };
+
+/** How long is left, in words. One phrasing everywhere, so two screens looking
+ *  at the same coupon can never word the same deadline differently. */
+export function daysPhrase(days: number): string {
+  if (days <= 0) return "פג היום";
+  if (days === 1) return "פג מחר";
+  if (days === 2) return "פג בעוד יומיים";
+  return `פג בעוד ${days} ימים`;
+}
