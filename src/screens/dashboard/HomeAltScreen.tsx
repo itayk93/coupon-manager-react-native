@@ -14,7 +14,6 @@ import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
 import { CouponRail } from "@/components/dashboard/CouponRail";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
-import { WalletSummaryCard } from "@/components/dashboard/WalletSummaryCard";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
@@ -206,7 +205,7 @@ export function HomeAltScreen() {
             search. */}
         <OnboardingBanner />
 
-        <CouponAccessHero coupons={coupons} tagsMap={tagsMap} />
+        <CouponAccessHero coupons={coupons} tagsMap={tagsMap} isLoading={isLoading} />
 
         {/* The fast path, as high as the screen allows. Someone opening this
             app is usually at a till: they know the shop and need the barcode,
@@ -218,8 +217,6 @@ export function HomeAltScreen() {
           selectedCompany={sheetCompany}
           onSelectCompany={setSheetCompany}
         />
-
-        <WalletSummaryCard coupons={coupons} isLoading={isLoading} />
 
         {isLoading && coupons.length === 0 ? (
           <View style={styles.skeletons}>
