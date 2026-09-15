@@ -3,27 +3,37 @@ import { AccessibilityInfo, AppState, Image, StyleSheet, View } from "react-nati
 import { useFocusEffect } from "expo-router";
 
 /**
- * The five states Kuponi actually has, plus the 6-7 easter egg.
+ * Every state Kuponi has, and each one is a drawn loop rather than a label.
  *
- * There were eleven names for these five rows, so `concerned`, `anxious`,
- * `panic` and `emergency` were one animation wearing four labels and promising
- * a four-step escalation the atlas cannot draw. The nine real steps exist only
- * in the widget series (`assets/mascot/widget-originals/`). Loudness inside
- * `concerned` belongs to `expiryUrgency.ts`, not to a second name.
+ * There were once eleven names for five rows, so `concerned`, `anxious`,
+ * `panic` and `emergency` were one animation promising a four-step escalation
+ * the atlas could not draw. The type was cut back to what existed, and the
+ * missing steps have since been drawn: `worried` and `alarmed` are the two
+ * rungs above `concerned`, mapped in `EXPIRY_PERFORMANCE`.
+ *
+ * `relieved` is the odd one out — a forward sequence, not a loop. It plays
+ * once and holds its last frame; see the `loop` prop below.
  */
-export type MascotState = "calm" | "talking" | "scanning" | "cheering" | "concerned" | "six-seven";
+export type MascotState =
+  | "calm" | "talking" | "scanning" | "cheering"
+  | "concerned" | "worried" | "alarmed"
+  | "relieved" | "six-seven";
 const ATLASES = [
   require("../../../assets/mascot/3d/scan-smooth.webp"),
   require("../../../assets/mascot/3d/greeting-smooth.webp"),
   require("../../../assets/mascot/3d/success-smooth.webp"),
   require("../../../assets/mascot/3d/concern-smooth.webp"),
   require("../../../assets/mascot/3d/six-seven-smooth.webp"),
+  require("../../../assets/mascot/3d/worried-smooth.webp"),
+  require("../../../assets/mascot/3d/alarmed-smooth.webp"),
+  require("../../../assets/mascot/3d/relieved-smooth.webp"),
 ];
 const FRAME_COUNT = 36;
 const GRID = 6;
 const FPS = 24;
 const ROW: Record<MascotState, number> = {
   calm: 0, scanning: 0, talking: 1, cheering: 2, concerned: 3, "six-seven": 4,
+  worried: 5, alarmed: 6, relieved: 7,
 };
 
 /** One resident atlas avoids image loading and decode churn between frames. */

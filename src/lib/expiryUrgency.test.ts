@@ -58,9 +58,17 @@ describe("expiryLevel", () => {
     }
   });
 
-  it("only plays harder as the deadline gets closer", () => {
+  // Each rung is its own drawn loop. Two rungs sharing one would be the old
+  // bug back: a ladder the code promises and the artwork cannot show.
+  it("gives every rung a face of its own", () => {
     const order: ExpiryLevel[] = ["none", "watch", "worry", "alarm"];
-    const speeds = order.map((level) => EXPIRY_PERFORMANCE[level].speed);
-    expect(speeds).toEqual([...speeds].sort((a, b) => a - b));
+    const states = order.map((level) => EXPIRY_PERFORMANCE[level].state);
+    expect(new Set(states).size).toBe(order.length);
+  });
+
+  it("leaves playback speed alone now that the faces carry the escalation", () => {
+    for (const level of ["none", "watch", "worry", "alarm"] as ExpiryLevel[]) {
+      expect(EXPIRY_PERFORMANCE[level].speed).toBe(1);
+    }
   });
 });

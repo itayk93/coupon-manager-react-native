@@ -54,24 +54,22 @@ export const WATCH_MAX_DAYS = 7;
 /**
  * What Kuponi does at each level.
  *
- * `speed` is a playback multiplier, and it is carrying weight it should not
- * have to. There is one worried animation in the atlas, so today the
- * difference between "in three days" and "today" is the same loop played
- * harder. It is a real difference to look at, and it is not the right one:
- * the nine drawn escalation steps in `assets/mascot/widget-originals/` show
- * what this should be, and the in-app atlas has none of them.
+ * Three drawn faces, one per rung. `speed` briefly carried this escalation on
+ * its own — one worried loop played harder as the date closed — while the
+ * artwork was still missing. It is back to 1 everywhere now that the faces
+ * exist: keeping both would escalate twice and read as panic.
  *
- * When those keyframes exist, add the rows to `MascotAnimation` and change
- * `state` here. Nothing else has to move — that is why this table exists.
+ * The prop stays because it is the honest fallback if a future state ever
+ * ships before its artwork does.
  */
 export const EXPIRY_PERFORMANCE: Record<
   ExpiryLevel,
-  { state: "calm" | "concerned"; speed: number }
+  { state: "calm" | "concerned" | "worried" | "alarmed"; speed: number }
 > = {
   none: { state: "calm", speed: 1 },
   watch: { state: "concerned", speed: 1 },
-  worry: { state: "concerned", speed: 1.15 },
-  alarm: { state: "concerned", speed: 1.35 },
+  worry: { state: "worried", speed: 1 },
+  alarm: { state: "alarmed", speed: 1 },
 };
 
 /** How long is left, in words. One phrasing everywhere, so two screens looking
