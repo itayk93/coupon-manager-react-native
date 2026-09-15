@@ -15,6 +15,8 @@ cannot silently replace production artwork. Never commit smoke-test outputs.
 The stand-in validates the pipeline, not the missing expressions or their motion.
 Optical flow cannot resolve occlusion or changing eye/mouth topology reliably;
 review intermediate frames on both backgrounds before shipping real artwork.
+See `interpolate` for why frames warp a single keyframe instead of dissolving
+between two.
 """
 import argparse
 from pathlib import Path
@@ -87,6 +89,13 @@ def image(data):
     return Image.fromarray(np.uint8(np.clip(np.concatenate([rgb, alpha], axis=2) * 255, 0, 255)))
 
 
+def ease(t):
+    """Smoothstep. Frames cluster near the keyframes and cross the middle
+    quickly, which is both how a body actually moves and where the warp is
+    least trustworthy."""
+    return t * t * (3 - 2 * t)
+
+
 def interpolate(keys, loop):
     sequence = [0, 1, 2, 1, 0] if loop else list(range(6))
     # Loops omit the duplicate closing pose; the player supplies it on wrap.
@@ -104,9 +113,20 @@ def interpolate(keys, loop):
         forward = estimator.calc(ga, gb, None)
         backward = estimator.calc(gb, ga, None)
         for step in range(steps):
-            t = step / steps
-            frames.append(keys[start].copy() if step == 0 else
-                          image(warp(a, forward, t) * (1 - t) + warp(b, backward, 1 - t) * t))
+            t = ease(step / steps)
+            if step == 0:
+                frames.append(keys[start].copy())
+                continue
+            # Warp whichever keyframe is nearer, all the way — never blend the
+            # two. Cross-dissolving them put the free arm in both places at
+            # once: on a smooth untextured body the flow has almost nothing to
+            # lock onto, so it cannot agree where that arm went, and the
+            # disagreement showed as a translucent second arm in every
+            # mid-segment frame. One warped source cannot contradict itself.
+            # The cost is a step at the halfway point about 2.5x an ordinary
+            # one, which at 24fps reads as the motion moving quickest through
+            # its middle rather than as a glitch.
+            frames.append(image(warp(a, forward, t) if t < 0.5 else warp(b, backward, 1 - t)))
     if not loop:
         frames.append(keys[-1].copy())
     assert len(frames) == COUNT
