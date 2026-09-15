@@ -168,7 +168,7 @@ export function DashboardScreen() {
             accessibilityLabel="הקופון נשמר בארנק. מעבר לקופון"
           >
             <View style={styles.successVisual}>
-              <CharacterSpotlight character="helper" state="cheering" size="small" tone="success" />
+              <CharacterSpotlight state="cheering" size="small" />
             </View>
             <View style={styles.successCopy}>
               <Text style={[styles.successTitle, { color: theme.successText }]}>הקופון נשמר בארנק</Text>
@@ -282,7 +282,6 @@ export function DashboardScreen() {
           ))
         ) : visibleCoupons.length === 0 ? (
           <EmptyState
-            mascot="investigator"
             icon={<Sparkles size={32} color={theme.primary} />}
             title="הארנק מחכה לקופון הראשון"
             subtitle="מוסיפים קופון ומתחילים לשמור על כל שקל."

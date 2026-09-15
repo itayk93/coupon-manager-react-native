@@ -498,7 +498,6 @@ export function BarcodeScannerScreen() {
                     ]}
                   >
                     <CharacterSpotlight
-                      character="investigator"
                       state="scanning"
                       size="small"
                     />
@@ -533,10 +532,8 @@ export function BarcodeScannerScreen() {
           >
             <View style={styles.tutorialMascot}>
               <CharacterSpotlight
-                character="investigator"
                 state="talking"
                 size="small"
-                tone="blue"
               />
             </View>
             <Text style={[styles.tutorialTitle, { color: theme.text }]}>קופון נכנס. הפרטים מסתדרים.</Text>

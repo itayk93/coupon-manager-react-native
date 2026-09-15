@@ -40,7 +40,7 @@ export function SaleCelebration({ title = "מכרת קופון!", subtitle = "נ
         entering={reduceMotion ? FadeIn : ZoomIn.springify().damping(14)}
         style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
       >
-        <CharacterSpotlight character="helper" state="cheering" size="large" tone="success" />
+        <CharacterSpotlight state="cheering" size="large" />
         <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
       </Animated.View>

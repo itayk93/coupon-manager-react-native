@@ -5,7 +5,6 @@ import { MascotAnimation, type MascotState } from "@/components/ui/MascotAnimati
 export type CharacterState = MascotState;
 const EDGE_GUARD = 28;
 
-/** Public props stay compatible; every role now uses the original blue mascot. */
 export function CharacterScene({ state, reduceMotion, compact }: {
   state: CharacterState; reduceMotion?: boolean; compact?: boolean;
 }) {
@@ -15,11 +14,9 @@ export function CharacterScene({ state, reduceMotion, compact }: {
 }
 
 export function CharacterSpotlight({ state = "talking", reduceMotion, size = "medium" }: {
-  character: "investigator" | "helper";
   state?: CharacterState;
   reduceMotion?: boolean;
   size?: "small" | "medium" | "large";
-  tone?: "mint" | "blue" | "success" | "coral" | "none";
 }) {
   return <MascotAnimation state={state} reduceMotion={reduceMotion}
     size={size === "small" ? 88 : size === "large" ? 176 : 132} />;
@@ -32,7 +29,6 @@ export function FloatingMascot({
   leftInset = EDGE_GUARD,
   reduceMotion,
 }: {
-  character?: "investigator" | "helper";
   /** Rendered height in points; the rig scales to fit it. */
   size?: number;
   /** Starting offset from the resting spot, in points. */

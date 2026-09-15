@@ -77,10 +77,8 @@ export function InviteScreen() {
             accessibilityLabel="המאסקוט מזמין חברים לקבל קופון"
           >
             <CharacterSpotlight
-              character="investigator"
               state="talking"
               size="medium"
-              tone="blue"
             />
           </View>
           <Text style={[styles.label, { color: theme.textMuted }]}>הקוד שלך</Text>

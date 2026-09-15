@@ -455,10 +455,8 @@ export function CouponDetailScreen() {
             accessibilityLabel="השימוש נשמר בהצלחה"
           >
             <CharacterSpotlight
-              character="investigator"
               state="cheering"
               size="small"
-              tone="success"
             />
             <View style={styles.usageCelebrationCopy}>
               <Text style={[styles.usageCelebrationTitle, { color: theme.successText }]}>השימוש נשמר</Text>

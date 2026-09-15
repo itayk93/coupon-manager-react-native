@@ -13,7 +13,6 @@ type EmptyStateProps = {
   onAction?: () => void;
   style?: ViewStyle;
   largeVisual?: boolean;
-  mascot?: "helper" | "investigator";
   visual?: React.ReactNode;
 };
 
@@ -25,7 +24,6 @@ export function EmptyState({
   onAction,
   style,
   largeVisual = false,
-  mascot = "helper",
   visual,
 }: EmptyStateProps) {
   const { theme } = useAppTheme();
@@ -43,10 +41,8 @@ export function EmptyState({
     >
       {visual ?? (
         <CharacterSpotlight
-          character={mascot}
           state="thinking"
           size={largeVisual ? "large" : "medium"}
-          tone="coral"
         />
       )}
 
@@ -88,13 +84,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: -16,
     marginBottom: 8,
-  },
-  visualStage: {
-    width: 112,
-    height: 132,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 12,
   },
   title: {
     fontFamily: fonts.bodyBold,

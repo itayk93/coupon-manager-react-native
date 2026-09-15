@@ -122,7 +122,6 @@ export function StatisticsScreen() {
         state: "cheering" as const,
         title: "החיסכון החודשי עלה",
         text: `חסכת ${formatIls(current - previous)} יותר מהחודש הקודם.`,
-        tone: "success" as const,
       };
     }
     if (statusStats.expired > 0) {
@@ -130,14 +129,12 @@ export function StatisticsScreen() {
         state: "thinking" as const,
         title: `${statusStats.expired} קופונים פגו`,
         text: "שווה לבדוק את הקופונים הפעילים לפני התאריך הבא.",
-        tone: "coral" as const,
       };
     }
     return {
       state: "talking" as const,
       title: "כל חיסכון מתחיל במימוש",
       text: "כאן יופיע הסיפור החודשי שלך ככל שישתמשו בקופונים.",
-      tone: "blue" as const,
     };
   }, [monthlyTrend, statusStats.expired]);
 
@@ -165,10 +162,8 @@ export function StatisticsScreen() {
           accessibilityLabel={`${savingsStory.title}. ${savingsStory.text}`}
         >
           <CharacterSpotlight
-            character="investigator"
             state={savingsStory.state}
             size="small"
-            tone={savingsStory.tone}
           />
           <View style={styles.mascotStoryCopy}>
             <Text style={[styles.mascotStoryTitle, { color: theme.text }]}>{savingsStory.title}</Text>

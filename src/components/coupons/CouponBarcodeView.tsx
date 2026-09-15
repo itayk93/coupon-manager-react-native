@@ -133,10 +133,8 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
               </View>
               <View style={styles.scannerMascot} pointerEvents="none">
                 <CharacterSpotlight
-                  character="investigator"
                   state="scanning"
                   size="small"
-                  tone="none"
                 />
               </View>
             </View>

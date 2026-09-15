@@ -28,10 +28,8 @@ export function MascotLoadingState({
       style={[styles.container, compact && styles.compact, style]}
     >
       <CharacterSpotlight
-        character="helper"
         state="thinking"
         size={compact ? "small" : "large"}
-        tone="mint"
       />
       <View style={styles.copy}>
         <Text style={[styles.title, compact && styles.compactTitle, { color: theme.text }]}>

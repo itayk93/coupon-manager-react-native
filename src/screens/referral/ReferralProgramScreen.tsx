@@ -71,7 +71,7 @@ export function ReferralProgramScreen() {
         {/* ── Hero ── */}
         <View style={styles.heroCard}>
           <View style={styles.heroGradient}>
-            <CharacterSpotlight character="investigator" state="talking" size="medium" tone="none" />
+            <CharacterSpotlight state="talking" size="medium" />
             <Text style={styles.heroTitle}>הזמינו חברים.{"\n"}קבלו פרסים.</Text>
             <Text style={styles.heroTag}>תוכנית השותפים של קופון מאסטר</Text>
           </View>
@@ -158,7 +158,7 @@ export function ReferralProgramScreen() {
 
             <View style={styles.formSection}>
               <View style={styles.formTitleRow}>
-                <CharacterSpotlight character="helper" state="cheering" size="small" tone="mint" />
+                <CharacterSpotlight state="cheering" size="small" />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 0 }]}>רוצים להצטרף?</Text>
                   <Text style={[styles.formSubtitle, { color: theme.textMuted }]}>מלאו את הפרטים ונחזור אליכם</Text>

@@ -274,7 +274,7 @@ export function NotificationsScreen() {
         )}
       </ScrollView>
 
-      {notifications.length > 0 ? <FloatingMascot character="investigator" /> : null}
+      {notifications.length > 0 ? <FloatingMascot /> : null}
     </SafeAreaView>
   );
 }

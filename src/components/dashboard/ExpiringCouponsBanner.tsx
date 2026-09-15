@@ -179,10 +179,8 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
           the strip no height at all. */}
       <View style={styles.mascot} pointerEvents="none">
         <CharacterSpotlight
-          character="investigator"
           state={mascotState}
           size="small"
-          tone="none"
         />
       </View>
       {/* Equal slots at both ends, and the line centred between them.

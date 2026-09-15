@@ -351,7 +351,6 @@ export function SharingScreen() {
             })
           ) : (
             <EmptyState
-              mascot="helper"
               largeVisual
               title="עוד לא שיתפת קופונים"
               subtitle="יש קופון שווה? שולחים לחברים ולמשפחה בקליק."
