@@ -153,16 +153,9 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
   // How loud the banner is allowed to be. See `expiryUrgency.ts`: still above
   // three days, one pass at two or three, a slow breath inside 48 hours.
   const emphasis = expiryEmphasis(soonest.days);
-  const mascotState =
-    soonest.days <= 0
-      ? "emergency"
-      : soonest.days === 1
-        ? "panic"
-        : soonest.days <= 4
-          ? "anxious"
-          : soonest.days <= 7
-            ? "concerned"
-            : "calm";
+  // One worried animation exists, so there is one worried state. How hard it
+  // lands is `emphasis`'s job, not a second name for the same atlas row.
+  const mascotState = soonest.days <= 7 ? "concerned" : "calm";
   const headlineFontSize = fitFontSize(headline.length, headlineWidth);
 
   return (

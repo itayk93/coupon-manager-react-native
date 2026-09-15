@@ -126,7 +126,7 @@ export function StatisticsScreen() {
     }
     if (statusStats.expired > 0) {
       return {
-        state: "thinking" as const,
+        state: "concerned" as const,
         title: `${statusStats.expired} קופונים פגו`,
         text: "שווה לבדוק את הקופונים הפעילים לפני התאריך הבא.",
       };

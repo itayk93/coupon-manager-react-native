@@ -15,7 +15,6 @@ import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, palette } from "@/lib/theme";
-import { Kuponi } from "@/components/ui/Kuponi";
 
 
 type CouponBarcodeViewProps = {
@@ -129,12 +128,6 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                   size={230}
                   color="#000000"
                   backgroundColor="#ffffff"
-                />
-              </View>
-              <View style={styles.scannerMascot} pointerEvents="none">
-                <Kuponi
-                  state="scanning"
-                  size="small"
                 />
               </View>
             </View>
@@ -287,13 +280,6 @@ const styles = StyleSheet.create({
     position: "relative",
     paddingBottom: 20,
     paddingLeft: 24,
-  },
-  scannerMascot: {
-    position: "absolute",
-    left: -24,
-    bottom: -8,
-    width: 88,
-    height: 88,
   },
   noCodeBox: {
     height: 200,

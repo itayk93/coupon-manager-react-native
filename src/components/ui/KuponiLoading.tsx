@@ -12,8 +12,11 @@ type Props = {
   style?: ViewStyle;
 };
 
-/** Branded full-page loading feedback. Character motion already follows the
- * system Reduce Motion preference inside Kuponi. */
+/** Branded full-page loading feedback.
+ *
+ * Kuponi is `calm` here, not `thinking`: nothing about the user's money has
+ * changed, a request is simply in flight. He waits alongside the user rather
+ * than performing work. See `docs/mascot/STATE-LAW.md`. */
 export function KuponiLoading({
   title = "רגע, אני מסדר הכול",
   subtitle,
@@ -29,7 +32,7 @@ export function KuponiLoading({
       style={[styles.container, compact && styles.compact, style]}
     >
       <Kuponi
-        state="thinking"
+        state="calm"
         size={compact ? "small" : "large"}
       />
       <View style={styles.copy}>

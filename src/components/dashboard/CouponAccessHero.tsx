@@ -44,7 +44,7 @@ import {
 const MASCOT_ROW: Record<HomeMascotState, MascotState> = {
   happy: "talking",
   concerned: "concerned",
-  panic: "panic",
+  panic: "concerned",
   empty: "talking",
 };
 

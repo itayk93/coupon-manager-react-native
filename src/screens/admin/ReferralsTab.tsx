@@ -14,7 +14,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { ChevronRight, Copy, Plus, RefreshCw, Search, Share2 } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
-import { KuponiLoading } from "@/components/ui/KuponiLoading";
+import { AdminLoading } from "@/components/admin/AdminLoading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -164,7 +164,7 @@ function ApplicationsList() {
 
   if (isLoading) {
     return (
-      <KuponiLoading compact title="טוען נתוני הפניות" />
+      <AdminLoading label="טוען נתוני הפניות" />
     );
   }
 
@@ -277,7 +277,7 @@ function PartnerList({ onOpen }: { onOpen: (id: number) => void }) {
 
   if (isLoading) {
     return (
-      <KuponiLoading compact title="טוען שותפים" />
+      <AdminLoading label="טוען שותפים" />
     );
   }
 

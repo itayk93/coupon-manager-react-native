@@ -45,7 +45,7 @@ export function EmptyState({
       <View style={styles.stage}>
         {visual ?? (
           <Kuponi
-            state="thinking"
+            state="talking"
             size={largeVisual ? "large" : "medium"}
           />
         )}

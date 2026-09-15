@@ -158,7 +158,7 @@ export function ReferralProgramScreen() {
 
             <View style={styles.formSection}>
               <View style={styles.formTitleRow}>
-                <Kuponi state="cheering" size="small" />
+                <Kuponi state="talking" size="small" />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 0 }]}>רוצים להצטרף?</Text>
                   <Text style={[styles.formSubtitle, { color: theme.textMuted }]}>מלאו את הפרטים ונחזור אליכם</Text>

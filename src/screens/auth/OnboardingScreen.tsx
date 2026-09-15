@@ -217,7 +217,7 @@ export function OnboardingScreen() {
 
         : mode === "goal" ? <View style={styles.panel}>
           <View style={styles.talkVisual}>
-            <KuponiScene state={goal ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
+            <KuponiScene state={goal ? "cheering" : "talking"} reduceMotion={reduceMotion} />
             <SpeechBubble style={styles.speechBubble} reduceMotion={reduceMotion} text={goalChoice ? goalChoice.reply : introducing ? `${KUPONI_INTRO} תגידו לי מה כואב, ואני אדע איפה להתחיל.` : "תגידו לי מה כואב, ואני אדע איפה להתחיל."} />
           </View>
           {GOALS.map((option, index) => <ChoiceCard key={option.id} index={index} reduceMotion={reduceMotion} selected={goal === option.id} label={option.label} hint={option.hint} Icon={option.icon} onPress={() => chooseGoal(option.id)} />)}
@@ -225,7 +225,7 @@ export function OnboardingScreen() {
 
         : mode === "volume" ? <View style={styles.panel}>
           <View style={styles.talkVisual}>
-            <KuponiScene state={volume ? "cheering" : "thinking"} reduceMotion={reduceMotion} />
+            <KuponiScene state={volume ? "cheering" : "talking"} reduceMotion={reduceMotion} />
             <SpeechBubble style={styles.speechBubble} reduceMotion={reduceMotion} text={volume ? "מצוין. בונה לך ארנק בדיוק בגודל הזה." : "אין תשובה נכונה. רק שאדע כמה מקום להכין."} />
           </View>
           {VOLUMES.map((option, index) => <ChoiceCard key={option.id} index={index} reduceMotion={reduceMotion} selected={volume === option.id} label={option.label} hint={option.hint} onPress={() => chooseVolume(option.id)} />)}
@@ -241,7 +241,7 @@ export function OnboardingScreen() {
         </Animated.View>
 
         : <View style={styles.panel}>
-          <View style={styles.successVisual}><KuponiScene state="success" reduceMotion={reduceMotion} compact /></View>
+          <View style={styles.successVisual}><KuponiScene state="cheering" reduceMotion={reduceMotion} compact /></View>
           {/* Overlaid on the whole panel rather than on the illustration: the
               illustration clips its overflow, and confetti that stops falling
               120pt in reads as a glitch. */}

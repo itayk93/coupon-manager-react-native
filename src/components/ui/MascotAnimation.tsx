@@ -2,7 +2,16 @@ import React, { useCallback, useEffect, useState } from "react";
 import { AccessibilityInfo, AppState, Image, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 
-export type MascotState = "talking" | "thinking" | "cheering" | "scanning" | "success" | "calm" | "concerned" | "anxious" | "panic" | "emergency" | "six-seven";
+/**
+ * The five states Kuponi actually has, plus the 6-7 easter egg.
+ *
+ * There were eleven names for these five rows, so `concerned`, `anxious`,
+ * `panic` and `emergency` were one animation wearing four labels and promising
+ * a four-step escalation the atlas cannot draw. The nine real steps exist only
+ * in the widget series (`assets/mascot/widget-originals/`). Loudness inside
+ * `concerned` belongs to `expiryUrgency.ts`, not to a second name.
+ */
+export type MascotState = "calm" | "talking" | "scanning" | "cheering" | "concerned" | "six-seven";
 const ATLASES = [
   require("../../../assets/mascot/3d/scan-smooth.webp"),
   require("../../../assets/mascot/3d/greeting-smooth.webp"),
@@ -14,9 +23,7 @@ const FRAME_COUNT = 36;
 const GRID = 6;
 const FPS = 24;
 const ROW: Record<MascotState, number> = {
-  scanning: 0, thinking: 0, calm: 0, talking: 1, cheering: 2, success: 2,
-  concerned: 3, anxious: 3, panic: 3, emergency: 3,
-  "six-seven": 4,
+  calm: 0, scanning: 0, talking: 1, cheering: 2, concerned: 3, "six-seven": 4,
 };
 
 /** One resident atlas avoids image loading and decode churn between frames. */
