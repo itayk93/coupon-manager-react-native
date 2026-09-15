@@ -14,7 +14,7 @@ type Props = {
 /** Branded full-page loading feedback. Character motion already follows the
  * system Reduce Motion preference inside Kuponi. */
 export function KuponiLoading({
-  title = "רק רגע, כבר מסדרים הכול",
+  title = "רגע, אני מסדר הכול",
   subtitle,
   compact = false,
   style,

@@ -67,7 +67,7 @@ export function RecentlyDeletedScreen() {
       <Header title="נמחקו לאחרונה" />
 
       {isLoading ? (
-        <KuponiLoading title="טוען קופונים שנמחקו" subtitle="בודקים מה עדיין אפשר לשחזר" />
+        <KuponiLoading title="טוען קופונים שנמחקו" subtitle="בודק מה עדיין אפשר לשחזר" />
       ) : coupons.length === 0 ? (
         <ScrollView contentContainerStyle={styles.content}>
           <EmptyState

@@ -127,7 +127,7 @@ export function ReferralProgramScreen() {
 
         {/* ── Status / Form ── */}
         {(loadingStatus || loadingApp) ? (
-          <KuponiLoading compact title="בודקים את סטטוס התוכנית" subtitle="זה ייקח רגע" />
+          <KuponiLoading compact title="בודק את סטטוס התוכנית" subtitle="זה ייקח רגע" />
         ) : isPartner ? (
           <StatusBanner
             bg="#dcfce7" border="#86efac" color="#16a34a"

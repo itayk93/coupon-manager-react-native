@@ -197,6 +197,6 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         link: '/notification-settings',
       };
     default:
-      return { title: 'קופון מאסטר', body: 'יש עדכון חדש בארנק שלך.', link: '/notifications' };
+      return { title: 'קופוני', body: 'יש עדכון חדש בארנק שלך.', link: '/notifications' };
   }
 }

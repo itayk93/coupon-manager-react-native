@@ -56,7 +56,7 @@ export function ReferralLandingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <KuponiLoading title={message ?? "רק רגע, פותחים לך את קופון מאסטר"} subtitle="מכינים את ההזמנה שלך" />
+      <KuponiLoading title={message ?? "רק רגע, אני פותח לך"} subtitle="מכין את ההזמנה שלך" />
     </SafeAreaView>
   );
 }

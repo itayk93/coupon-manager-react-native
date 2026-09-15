@@ -139,7 +139,7 @@ export function UnsubscribeScreen() {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ניהול התראות" />
-        <KuponiLoading title="טוען את הגדרות הדיוור" subtitle="בודקים את ההעדפות השמורות שלך" />
+        <KuponiLoading title="טוען את הגדרות הדיוור" subtitle="בודק את ההעדפות השמורות שלך" />
       </SafeAreaView>
     );
   }

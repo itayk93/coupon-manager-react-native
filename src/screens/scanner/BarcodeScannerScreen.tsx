@@ -504,7 +504,7 @@ export function BarcodeScannerScreen() {
                     <Text
                       style={[styles.characterLoadingText, { color: theme.textMuted }]}
                     >
-                      בודקים את החברה, הקוד והסכומים…
+                      בודק את החברה, הקוד והסכומים…
                     </Text>
                   </View>
                 </View>

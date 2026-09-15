@@ -38,7 +38,7 @@ export function InviteScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="הזמנת חברים" />
-        <KuponiLoading title="טוען את תוכנית ההזמנות" subtitle="בודקים את הקישור וההתקדמות שלך" />
+        <KuponiLoading title="טוען את תוכנית ההזמנות" subtitle="בודק את הקישור וההתקדמות שלך" />
       </SafeAreaView>
     );
   }
@@ -74,7 +74,7 @@ export function InviteScreen() {
           <View
             style={styles.mascotInvite}
             accessible
-            accessibilityLabel="המאסקוט מזמין חברים לקבל קופון"
+            accessibilityLabel="קופוני מזמין חברים לקבל קופון"
           >
             <Kuponi
               state="talking"

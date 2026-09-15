@@ -178,7 +178,7 @@ export function ClaimShareScreen() {
 }
 
 function Loading() {
-  return <KuponiLoading title="מכינים את הקופון" subtitle="בודקים את הקישור ואת פרטי ההעברה" />;
+  return <KuponiLoading title="אני מכין את הקופון" subtitle="בודק את הקישור ואת פרטי ההעברה" />;
 }
 
 function Message({

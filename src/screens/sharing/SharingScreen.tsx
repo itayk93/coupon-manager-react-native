@@ -193,7 +193,7 @@ export function SharingScreen() {
           }
         >
           {(activeTab === "shared_with_me" ? loadingWithMe : loadingMy) ? (
-            <KuponiLoading title="טוען שיתופים" subtitle="אוספים את הקופונים וההזמנות שלך" />
+            <KuponiLoading title="טוען שיתופים" subtitle="אוסף את הקופונים וההזמנות שלך" />
           ) : activeTab === "shared_with_me" ? (
             sharedWithMe.length > 0 ? (
               sharedWithMe.map((item) => {
@@ -283,7 +283,7 @@ export function SharingScreen() {
                 visual={
                   <Kuponi
                     size={160}
-                    accessibilityLabel="המאסקוט מנופף ומזמין אותך להתחיל לשתף"
+                    accessibilityLabel="קופוני מנופף ומזמין אותך להתחיל לשתף"
                   />
                 }
                 largeVisual

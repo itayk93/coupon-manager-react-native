@@ -28,7 +28,7 @@ import {
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
 
 function WidgetLoadingState() {
-  return <KuponiLoading title="מכינים את הקופונים לווידג׳ט" subtitle="זה עשוי לקחת כמה רגעים" />;
+  return <KuponiLoading title="אני מכין את הקופונים לווידג׳ט" subtitle="זה עשוי לקחת כמה רגעים" />;
 }
 
 export function WidgetSettingsScreen() {

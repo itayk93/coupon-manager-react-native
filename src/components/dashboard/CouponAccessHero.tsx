@@ -273,7 +273,7 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
           state={MASCOT_ROW[mascotState]}
           accessibilityLabel={
             waiting || empty
-              ? "קופי, המאסקוט של קופון מאסטר"
+              ? "קופוני"
               : `קופי מחזיק ${formatIls(remaining)}`
           }
         />

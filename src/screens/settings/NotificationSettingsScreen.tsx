@@ -185,7 +185,7 @@ export function NotificationSettingsScreen() {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ההתראות שלי" />
-        <KuponiLoading title="טוען את ההתראות שלך" subtitle="מתאימים את ההעדפות לחשבון" />
+        <KuponiLoading title="טוען את ההתראות שלך" subtitle="מתאים את ההעדפות לחשבון" />
       </SafeAreaView>
     );
   }

@@ -85,12 +85,12 @@ export function OnboardingScreen() {
   const title = mode === "profile" ? "איך לקרוא לך?"
     : mode === "goal" ? "מה הכי מציק לך בקופונים?"
     : mode === "volume" ? "כמה קופונים עוברים דרכך?"
-    : mode === "describe" ? "ספרו לנו על הקופון"
+    : mode === "describe" ? "ספרו לי על הקופון"
     : coupons.length > 1 ? "מצאנו את הקופונים" : "מצאנו את הקופון";
   const subtitle = mode === "profile" ? "שם פרטי ומשפחה, כדי שנכיר"
     : mode === "goal" ? "בוחרים אחד, ואני אתפור את הארנק סביבו"
     : mode === "volume" ? "רק כדי לדעת כמה עבודה מחכה לי"
-    : mode === "describe" ? "כותבים חופשי. אנחנו כבר נסדר את הפרטים"
+    : mode === "describe" ? "כותבים חופשי. אני כבר אסדר את הפרטים"
     : "בדיקה קטנה לפני שמכניסים לארנק";
 
   const canIdentify = text.trim().length >= 12;
@@ -179,7 +179,7 @@ export function OnboardingScreen() {
 
   if (user && (walletLoading || hasWallet)) {
     return <SafeAreaView style={[styles.safe, styles.centered, { backgroundColor: theme.background }]}>
-      <KuponiLoading title="מכינים את הארנק שלך" subtitle="בודקים את הקופונים שכבר שמרת" />
+      <KuponiLoading title="אני מכין את הארנק שלך" subtitle="בודק מה כבר שמרת" />
     </SafeAreaView>;
   }
 
