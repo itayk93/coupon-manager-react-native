@@ -28,8 +28,9 @@ SRC = ROOT / "assets" / "mascot" / "celebration"
 OUT = SRC / "app"
 
 # C5 (usage streak) is deliberately not shipped: it measures app opens rather
-# than money. See docs/mascot/INVENTORY.md section 4.
-SKIP = {"C5-usage-streak", "C4-monthly-recap-alt"}
+# than money. See docs/mascot/INVENTORY.md section 4. C10 is not shipped either
+# — SixSevenCelebration animates that moment, and a still frame is worse.
+SKIP = {"C5-usage-streak", "C4-monthly-recap-alt", "C10-six-seven"}
 
 
 def main() -> None:

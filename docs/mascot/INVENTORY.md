@@ -79,6 +79,12 @@
 `MascotCelebration67`, ו־`drawable-nodpi/celebration_c1..c9.webp` +
 `celebration_67.webp`.
 
+**עותקים לאפליקציה:** `assets/mascot/celebration/app/*.webp` — שמונה סצנות
+ב־512px, 210K בסך הכול, שמהן `CelebrationBanner` מצייר. המקור הוא 19MB
+ב־1254px: בסדר כמשאב ווידג'ט מקומפל לכל פלטפורמה, בלתי אפשרי ב־JS bundle.
+מיוצרים מחדש עם `scripts/prepare-celebration-app.py`. לא נכנסים: C5, C10,
+וה־alt של C4.
+
 ### C5 — ארט מת, ובכוונה
 
 `CouponWidget.swift:601` ו־`CouponWidgetProvider.kt` שניהם מטפלים ב־
@@ -133,6 +139,7 @@ C8 (`referral`) במצב זהה: הנייטיב מטפל, JS לא פולט. זה
 | `prepare-mascot-3d.py` | מסיר רקע ניטרלי, שומר נצנוצי פנים, מיישר חיתוכים, מייצר את אטלס פריימי המפתח |
 | `interpolate-mascot-3d.py` | אינטרפולציה דו־כיוונית ל־36 פריימים, מייצר את האטלסים החלקים, ההוכחה, התצוגה והעותקים הנייטיביים |
 | `prepare-six-seven.py` | מסיר ירוק כרומה, מייצר את לופ 6־7 בעיוות זרועות רציף |
+| `prepare-celebration-app.py` | מקטין את סצנות החגיגה ל־512px WebP עבור האפליקציה |
 
 ההרצה: `prepare-mascot-3d.py` ואז `interpolate-mascot-3d.py`.
 
@@ -150,7 +157,8 @@ C8 (`referral`) במצב זהה: הנייטיב מטפל, JS לא פולט. זה
 | `CELEBRATION_REDO_BRIEF.md` | תיקון סצנות החגיגה | הופק |
 | `WIDGET_MASCOT_CELEBRATION_STATES.md` | C1–C10 | הופק. **הערת הסטטוס שבתוכו מיושנת** — ראה למטה |
 
-> ⚠️ `WIDGET_MASCOT_CELEBRATION_STATES.md` כותב "הווידג'ט הנייטיבי עדיין לא
-> יודע להציג אותן". זה **כבר לא נכון**: `CouponWidget.swift:592-606`,
-> `CouponWidgetProvider.kt:83-87` ו־`widgetSync.ts:296` מחברים את הצינור
-> מקצה לקצה. העבודה נעשתה אחרי שהבריף נכתב.
+> ⚠️ `WIDGET_MASCOT_CELEBRATION_STATES.md` כתב "הווידג'ט הנייטיבי עדיין לא
+> יודע להציג אותן". זה לא היה נכון כבר כשקראנו אותו, והערת הסטטוס שם תוקנה.
+> הצינור מחובר מקצה לקצה דרך `CouponWidget.swift:592-606` ו־
+> `CouponWidgetProvider.kt:83-87`. ההחלטה עצמה עברה מאז מ־`widgetSync.ts`
+> ל־`src/lib/celebrationScene.ts`, כדי שגם האפליקציה תוכל לצייר אותה.

@@ -59,91 +59,81 @@
 
 ---
 
-## 4. כינויים היסטוריים
+## 4. חמשת המצבים
 
-`MascotAnimation.tsx` חושף 11 שמות מצב, אבל האטלס מכיל 5 שורות בלבד:
+`MascotState` נשא פעם 11 שמות שהתמפו לחמש שורות באטלס, כלומר `concerned`,
+`anxious`, `panic` ו־`emergency` היו **אותה אנימציה בדיוק** — הסלמה בת ארבע
+דרגות שהארט לא יודע לצייר. הטיפוס צומצם למה שקיים:
 
-```
-scanning: 0, thinking: 0, calm: 0,
-talking: 1,
-cheering: 2, success: 2,
-concerned: 3, anxious: 3, panic: 3, emergency: 3,
-"six-seven": 4
+```ts
+export type MascotState = "calm" | "talking" | "scanning" | "cheering" | "concerned" | "six-seven";
 ```
 
-**מה שזה אומר בפועל:** `concerned`, `anxious`, `panic` ו־`emergency` הם
-**אותה אנימציה בדיוק**. ארבעה שמות, התנהגות אחת.
+עכשיו הקומפיילר הוא זה ששומר על הכלל. `thinking` ו־`success` הוסרו גם הם —
+הם היו שמות שניים ל־`scanning` ול־`cheering`.
 
-זו לא באג — זה פער מתועד. סדרת התפוגה של הווידג'ט
-(`widget-originals/MascotState1..9`) מכילה תשע דרגות הסלמה אמיתיות; האטלס
-שבתוך האפליקציה מכיל אחת. עד שיופק אטלס הסלמה, **אין להשתמש בשמות
-`anxious` / `panic` / `emergency` בקוד חדש** — הם מבטיחים למתחזק הבא דירוג
-שלא קיים. משתמשים ב־`concerned`, ומווסתים את העוצמה דרך `expiryEmphasis`.
+תשע דרגות ההסלמה האמיתיות קיימות רק בסדרת הווידג'ט
+(`assets/mascot/widget-originals/MascotState1..9`). בתוך האפליקציה, עוצמת
+הדאגה נשלטת דרך `expiryEmphasis` — ראה §2 — ולא דרך שם מצב נוסף.
 
-אותו דבר ל־`thinking` (זהה ל־`scanning`) ו־`success` (זהה ל־`cheering`).
-
-**חמשת השמות הקנוניים:** `calm`, `talking`, `scanning`, `cheering`, `concerned`.
-ועוד אחד מיוחד: `six-seven`, ביצת פסחא שמופעלת ב־67 קופונים בדיוק.
+`homeHero.ts` שומר טיפוס משלו (`HomeMascotState`, כולל `panic`) כאוצר מילים
+פנימי לקביעת הכותרת; `CouponAccessHero` ממפה אותו ל־`concerned`.
 
 ---
 
-## 5. ביקורת — אתרי הקריאה הקיימים
-
-29 קבצים מרנדרים את קופוני. הסיווג לפי החוק:
+## 5. ביקורת — אתרי הקריאה
 
 ### ✅ תואמים — המצב נגזר מכסף
 
 | מקום | מצב | הטריגר |
 |---|---|---|
-| `CouponAccessHero.tsx:271` | נגזר מ־`homeHeroSummary` | תפוגות + יתרות |
-| `ExpiringCouponsBanner.tsx:181` | נגזר מ־`expiryEmphasis` | ימים לתפוגה |
-| `StatisticsScreen.tsx:167` | נגזר מ־`savingsStory` | מגמת חיסכון חודשית |
-| `CouponDetailScreen.tsx:457` | `cheering` | שימוש נשמר — יתרה השתנתה |
-| `CouponDetailScreen.tsx:914` | `scanning` | חיפוש בתי עסק שהמשתמש יזם |
-| `DashboardScreen.tsx:171` | `cheering` | קופון נשמר בארנק |
-| `SaleCelebration.tsx:43` | `cheering` | מכירה הושלמה |
-| `SixSevenCelebration.tsx:14` | `six-seven` | 67 קופונים |
-| `BarcodeScannerScreen.tsx:500` | `scanning` | פענוח שהמשתמש יזם |
-| `OnboardingScreen.tsx` (5 מקומות) | משתנה | תגובה לתשובות המשתמש |
+| `CouponAccessHero.tsx` | נגזר מ־`homeHeroSummary` | תפוגות + יתרות |
+| `ExpiringCouponsBanner.tsx` | `concerned` / `calm`, עוצמה מ־`expiryEmphasis` | ימים לתפוגה |
+| `StatisticsScreen.tsx` | נגזר מ־`savingsStory` | מגמת חיסכון, קופונים שפגו |
+| `CouponDetailScreen.tsx` | `cheering` / `scanning` | שימוש נשמר · חיפוש שהמשתמש יזם |
+| `DashboardScreen.tsx` | `cheering` | קופון נשמר בארנק |
+| `CelebrationBanner.tsx` | סצנה מ־`currentCelebration` | אבן דרך כספית |
+| `SaleCelebration.tsx` | `cheering` | מכירה הושלמה |
+| `SixSevenCelebration.tsx` | `six-seven` | 67 קופונים |
+| `BarcodeScannerScreen.tsx` | `scanning` / `talking` | פענוח שהמשתמש יזם |
+| `OnboardingScreen.tsx` | משתנה | תגובה לתשובות המשתמש |
+| `EmptyState.tsx` | `talking` | הוא מסביר מה חסר |
+| `KuponiLoading.tsx` | `calm` | ממתין יחד עם המשתמש |
 
-### ❌ הפרות — המצב נגזר מה־UI
+### תוקנו
 
-| מקום | המצב היום | הבעיה | התיקון |
+| מקום | היה | הפך ל־ | למה |
 |---|---|---|---|
-| `MascotLoadingState.tsx:32` | `thinking` | קופוני "חושב" כי בקשת רשת באוויר. זה ה־UI, לא הכסף | `calm`. הוא מחכה יחד עם המשתמש, לא עובד |
-| `EmptyState.tsx:47` | `thinking` | רשימה ריקה היא לא מחשבה | `talking` — הוא מסביר מה חסר |
-| `CouponBarcodeView.tsx:137` | `scanning` | **הקופאי** סורק את הברקוד, לא קופוני. אין פה עבודה שלו | להסיר. בזמן שמראים ברקוד לקופאי, אין מקום לדמות שזזה |
-| `ReferralProgramScreen.tsx:161` | `cheering` | הוא מריע לכותרת של טופס. שום דבר לא הורווח | `talking` |
-| `NewslettersTab.tsx:87` | `thinking` | מסך אדמין. אין פה כסף של משתמש בכלל | spinner רגיל. קופוני לא שייך למסכי אדמין |
-| `GeoAnalyticsTab.tsx:44` | `thinking` | כנ"ל | spinner רגיל |
-| `ReferralsTab.tsx:167,280` | `thinking` | כנ"ל | spinner רגיל |
+| `KuponiLoading` | `thinking` | `calm` | בקשת רשת באוויר היא לא עבודה שלו |
+| `EmptyState` | `thinking` | `talking` | רשימה ריקה היא לא מחשבה |
+| `CouponBarcodeView` | `scanning` | **הוסר** | הקופאי סורק, לא קופוני |
+| `ReferralProgramScreen` | `cheering` | `talking` | הריע לכותרת של טופס |
+| `StatisticsScreen` | `thinking` | `concerned` | קופונים שפגו הם כסף שאבד |
+| `OnboardingScreen` ×2 | `thinking` | `talking` | המתנה לתשובה היא לא עבודה |
+| `OnboardingScreen` | `success` | `cheering` | שם שני לאותה שורה |
+| `ExpiringCouponsBanner` | סולם בן 4 שמות | `concerned` | ארבעה שמות, אנימציה אחת |
+| 4 טאבים באדמין | `KuponiLoading` | `AdminLoading` | אין שם כסף של משתמש |
 
-### ⚠️ API מת
+### החלטה שסוטה מהתוכנית המקורית
 
-`CharacterSpotlight` מצהיר בטיפוס על שני props שהמימוש **לא מקבל בכלל**:
+התוכנית אמרה "קופוני לא שייך למסכי אדמין" והסיקה שצריך להוציא אותו משם
+לגמרי. בפועל הוצאו רק **מצבי הטעינה** — הם אלה שהבהבו בכל פתיחת טאב ושחקו
+את הדמות. `EmptyState` באדמין נשאר איתו: הסבר של רשימה ריקה הוא `talking`,
+והוא מחזיק גם את מי שקורא מסך אדמין. ההפרה הייתה בהנפשה שנגרמת מבקשת רשת,
+לא בנוכחות.
 
-```ts
-export function CharacterSpotlight({ state = "talking", reduceMotion, size = "medium" }: {
-  character: "investigator" | "helper";   // ← נדרש בטיפוס, לא בשימוש
-  tone?: "mint" | "blue" | "success" | "coral" | "none";  // ← לא בשימוש
-})
-```
+### ⚠️ API מת — נמחק
 
-`character` מועבר ב־13 אתרי קריאה (9 פעמים `"investigator"`, 4 פעמים
-`"helper"`), ו־`tone` בשמונה — **ולאף אחד מהם אין שום השפעה**. זו שארית משתי
-דמויות שהתאחדו לאחת, והקוד מודה בזה בעצמו:
-
-> `/** Public props stay compatible; every role now uses the original blue mascot. */`
-
-אותו חוב ב־`FloatingMascot` (prop `character`) וב־`EmptyState`
-(prop `mascot?: "helper" | "investigator"`, שכל תפקידו להזין את ה־prop המת).
-
-נמחק בשלב 1. ראה [`ROLLOUT.md`](ROLLOUT.md).
+`Kuponi` (לשעבר `CharacterSpotlight`) דרש בטיפוס `character` וקיבל `tone`,
+והמימוש לא קרא אף אחד מהם. הם הועברו מ־11 ומ־10 קבצים בהתאמה, ללא כל
+השפעה. נמחקו יחד עם ה־prop `mascot` של `EmptyState`, שכל תפקידו היה להזין
+את ה־prop המת.
 
 ---
 
 ## 6. איך לבדוק שהחוק נשמר
 
+- הטיפוס אוכף את הרשימה: שם מצב שלא קיים לא יעבור קומפילציה.
 - `grep -rn 'state="' src --include="*.tsx"` — כל ערך קבוע (literal) הוא חשוד.
   מצב שנקבע מראש בקוד לא יכול להיגזר מדאטה, אלא אם ההקשר עצמו הוא אירוע כספי
   (למשל `cheering` בתוך כרטיס "השימוש נשמר").
