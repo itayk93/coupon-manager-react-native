@@ -57,29 +57,28 @@ import { fonts } from "@/lib/theme";
  * cashier, and the usage report that takes the coupon off this page for good.
  */
 
-/** What `size="large"` resolves to in `Kuponi`, named because the lift needs it. */
-const MASCOT_SIZE = 176;
-
 /**
- * The transparent headroom each sprite carries above his head, as a fraction of
- * its box — and it is not one number, because this screen shows two different
- * pieces of artwork.
+ * The two pieces of artwork this screen alternates between, each with the box
+ * it is drawn in and the transparent headroom that box carries above his head.
  *
- * `legacy` is the 36-frame urgency atlas: 40–43px above the head in a 256px
- * cell, a 1.2-point spread, which is why a single constant ever worked.
- * `story` is `priority-pick`: 33–35px in a 160px cell. Measured independently
- * of the handover's own figures and they agree exactly.
+ * Neither number transfers. `legacy` is the 36-frame urgency atlas: a 256px
+ * cell with 40–43px of space above the head, and the character filling most of
+ * the rest. `story` is `priority-pick`, whose frames are cropped tight to the
+ * art, so almost none of its box is padding — which is also why it is shown at
+ * 149pt rather than 176. The smaller box holds the *same* character at the
+ * same size on screen; it just is not carrying 45% emptiness any more.
  *
- * The camera framing is deliberate in both — it is cut for a character who
- * bobs — but laid out naively that space becomes 28 or 37pt of nothing between
- * the bubble's tail and the head it is pointing at, and a tail that stops short
- * of its speaker is what makes a balloon read as floating text.
+ * Both headroom figures are the minimum across every frame, measured off the
+ * shipped atlases rather than taken from a spec.
  *
- * The two differ by nine points, so a lift calibrated for one drops the other.
- * Deriving the lift per sprite is also what makes the swap invisible: both
- * land the *head* in the same place, so only the box moves.
+ * Deriving the lift per sprite is what makes the swap invisible: each lands the
+ * *head* in the same place, so when the story starts and ends only the box
+ * moves.
  */
-const HEADROOM = { legacy: 0.16, story: 0.2125 };
+const SPRITE = {
+  legacy: { size: 176, headroom: 0.16 },
+  story: { size: 149, headroom: 0.1121 },
+} as const;
 
 /** How much clear air to leave between the bubble's edge and the top of his
  *  head. The tail is 11pt on the diagonal and hangs about 6 of them below the
@@ -88,7 +87,8 @@ const HEADROOM = { legacy: 0.16, story: 0.2125 };
 const HEAD_GAP = 10;
 
 /** Pulling him up by his own headroom is what puts the tail on his head. */
-const lift = (headroom: number) => HEAD_GAP - Math.round(MASCOT_SIZE * headroom);
+const lift = (sprite: { size: number; headroom: number }) =>
+  HEAD_GAP - Math.round(sprite.size * sprite.headroom);
 
 /**
  * The window `priority-pick` is for. Today and tomorrow keep `alarmed`: a
@@ -200,12 +200,12 @@ export function AtRiskScreen() {
                 unmounting it. Swapping the component is what actually gives
                 the memory back. The lift travels with the artwork, so his head
                 stays under the tail across the swap and only the box moves. */}
-            <View style={{ marginTop: lift(showStory ? HEADROOM.story : HEADROOM.legacy) }}>
+            <View style={{ marginTop: lift(showStory ? SPRITE.story : SPRITE.legacy) }}>
               {showStory ? (
                 <KuponiStory
                   story="priority-pick"
                   replayKey={storyKey}
-                  size={MASCOT_SIZE}
+                  size={SPRITE.story.size}
                   // The usage modal covers him; a story playing to nobody
                   // behind it burns the one showing it is allowed.
                   enabled={usageCoupon === null}
@@ -217,7 +217,7 @@ export function AtRiskScreen() {
                 <Kuponi
                   state={speaking ? "talking" : kuponi.state}
                   speed={kuponi.speed}
-                  size={MASCOT_SIZE}
+                  size={SPRITE.legacy.size}
                 />
               )}
             </View>

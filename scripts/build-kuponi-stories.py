@@ -14,7 +14,10 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'assets/mascot/stories'
-SIZE, CELL, FPS, COLS = 256, 160, 20, 16
+SIZE, FPS, COLS = 256, 20, 16
+# Breathing room around the tightest box that holds every frame, so a rounded
+# edge is never clipped and the resample has neighbours to read.
+MARGIN = 4
 STORIES = {'wallet-review': 12, 'merchant-match': 12, 'priority-pick': 10, 'clean-month': 14}
 yy, xx = np.mgrid[:SIZE, :SIZE].astype(np.float32)
 
@@ -93,11 +96,36 @@ for name, seconds in STORIES.items():
             a,b,f,back=cached[k]
             frame=rgba(warp(a,f,u)*(1-u)+warp(b,back,1-u)*u)
         frames.append(frame)
+    # Crop the dead space before tiling. `prepare` centres a 232px character on
+    # a 256px canvas and the motion never fills it: the tightest box holding
+    # every frame of a story is around 45% smaller than the cell it was stored
+    # in, so nearly half of every atlas was transparent padding — paid for in
+    # decoded bytes and, worse, in resolution, because the cell was then
+    # resampled down to a fixed 160px and the character kept only the fraction
+    # of those pixels it actually occupied.
+    #
+    # Cropping to the union box and letting the box *be* the cell means the
+    # frames are tiled at the resolution they were rendered at, with no
+    # resample at all. Same pixels, none of them spent on emptiness.
+    box=[SIZE,SIZE,0,0]
+    for frame in frames:
+        bounds=frame.getchannel('A').getbbox()
+        if not bounds: continue
+        box=[min(box[0],bounds[0]),min(box[1],bounds[1]),max(box[2],bounds[2]),max(box[3],bounds[3])]
+    # Square, because the player's viewport is square and its frame offsets are
+    # one number. Centred on the content so the character does not shift.
+    side=min(SIZE,max(box[2]-box[0],box[3]-box[1])+MARGIN*2)
+    left=min(max(0,(box[0]+box[2]-side)//2),SIZE-side)
+    top=min(max(0,(box[1]+box[3]-side)//2),SIZE-side)
+    frames=[frame.crop((left,top,left+side,top+side)) for frame in frames]
+    CELL=side
     rows=math.ceil(count/COLS)
     atlas=Image.new('RGBA',(COLS*CELL,rows*CELL))
     for i,frame in enumerate(frames):
-        atlas.alpha_composite(frame.resize((CELL,CELL),Image.Resampling.LANCZOS),((i%COLS)*CELL,(i//COLS)*CELL))
+        atlas.alpha_composite(frame,((i%COLS)*CELL,(i//COLS)*CELL))
     atlas.save(OUT/f'{name}-atlas.webp',lossless=True,method=4)
+    # Poster and preview share the crop, or Reduce Motion would frame him
+    # differently from the animation it stands in for.
     frames[-1].save(OUT/f'{name}-poster.png')
     frames[0].save(OUT/f'{name}.webp',save_all=True,append_images=frames[1:],duration=50,loop=1,quality=88,method=4,minimize_size=True)
     all_frames[name]=frames
@@ -109,18 +137,23 @@ for name, seconds in STORIES.items():
 proof=Image.new('RGB',(SIZE*6,SIZE*4),'#f2f5fb')
 for row,(name,frames) in enumerate(all_frames.items()):
     for col,ratio in enumerate([0,.18,.38,.58,.78,.97]):
-        frame=frames[round((len(frames)-1)*ratio)]
+        frame=frames[round((len(frames)-1)*ratio)].resize((SIZE,SIZE),Image.Resampling.LANCZOS)
         if col%2: proof.paste('#152035',(col*SIZE,row*SIZE,(col+1)*SIZE,(row+1)*SIZE))
         proof.paste(frame,(col*SIZE,row*SIZE),frame)
 proof.save(OUT/'motion-proof.jpg',quality=93)
 # Video proof is a real 14-second timeline; shorter stories hold their endings.
+import shutil
 import subprocess
+if not shutil.which('ffmpeg'):
+    # The mp4 is a review artifact, not something the app loads. Regenerating
+    # the atlases must not fail for want of it.
+    raise SystemExit('atlases written; skipping the mp4 proof, ffmpeg not installed')
 p=subprocess.Popen(['ffmpeg','-y','-loglevel','error','-f','rawvideo','-pix_fmt','rgb24','-s','1024x512','-r',str(FPS),'-i','-','-an','-c:v','libx264','-crf','19','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'kuponi-four-stories.mp4')],stdin=subprocess.PIPE)
 for i in range(14*FPS):
     canvas=Image.new('RGB',(1024,512),'#f2f5fb')
     canvas.paste('#152035',(0,256,1024,512))
     for j,frames in enumerate(all_frames.values()):
-        frame=frames[min(i,len(frames)-1)]
+        frame=frames[min(i,len(frames)-1)].resize((SIZE,SIZE),Image.Resampling.LANCZOS)
         canvas.paste(frame,(j*SIZE,0),frame)
         canvas.paste(frame,(j*SIZE,SIZE),frame)
     p.stdin.write(canvas.tobytes())
