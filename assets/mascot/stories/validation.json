@@ -1,0 +1,27 @@
+{
+  "referenceBranch": "claude/kuponi-integration",
+  "referenceCommit": "2763ba64bed92b34da0beb1347c3440c081bb89e",
+  "nativeAtlasFrames": {
+    "wallet-review": 240,
+    "merchant-match": 240,
+    "priority-pick": 200,
+    "clean-month": 280
+  },
+  "verified": [
+    "RGBA alpha and expected atlas dimensions",
+    "Nonempty content in every atlas frame",
+    "Animated WebP durations: 12000,12000,10000,14000 ms",
+    "MP4 duration: 14 seconds",
+    "Visual sampled frames on light and dark backgrounds",
+    "TypeScript syntax emit succeeds",
+    "All native art references exist",
+    "Standalone preview JavaScript parses"
+  ],
+  "limitations": [
+    "React Native component not run in iOS or Android",
+    "Browser runtime verification unavailable: local browser executable missing",
+    "Optical-flow in-betweens may show minor face or hand warping"
+  ],
+  "screenIntegration": "Not applied",
+  "remotePush": "Not performed"
+}

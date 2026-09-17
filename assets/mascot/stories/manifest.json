@@ -1,0 +1,50 @@
+{
+  "wallet-review": {
+    "durationMs": 12000,
+    "fps": 20,
+    "frameCount": 240,
+    "columns": 16,
+    "rows": 15,
+    "cellSize": 160,
+    "loop": false,
+    "atlas": "wallet-review-atlas.webp",
+    "preview": "wallet-review.webp",
+    "poster": "wallet-review-poster.png"
+  },
+  "merchant-match": {
+    "durationMs": 12000,
+    "fps": 20,
+    "frameCount": 240,
+    "columns": 16,
+    "rows": 15,
+    "cellSize": 160,
+    "loop": false,
+    "atlas": "merchant-match-atlas.webp",
+    "preview": "merchant-match.webp",
+    "poster": "merchant-match-poster.png"
+  },
+  "priority-pick": {
+    "durationMs": 10000,
+    "fps": 20,
+    "frameCount": 200,
+    "columns": 16,
+    "rows": 13,
+    "cellSize": 160,
+    "loop": false,
+    "atlas": "priority-pick-atlas.webp",
+    "preview": "priority-pick.webp",
+    "poster": "priority-pick-poster.png"
+  },
+  "clean-month": {
+    "durationMs": 14000,
+    "fps": 20,
+    "frameCount": 280,
+    "columns": 16,
+    "rows": 18,
+    "cellSize": 160,
+    "loop": false,
+    "atlas": "clean-month-atlas.webp",
+    "preview": "clean-month.webp",
+    "poster": "clean-month-poster.png"
+  }
+}
