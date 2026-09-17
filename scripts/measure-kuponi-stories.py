@@ -44,6 +44,6 @@ for row, (name, meta) in enumerate(manifest.items()):
         proof.paste(im,(col*256,row*256),im)
     results[name]=entry
     print(name,json.dumps({k:v for k,v in entry.items() if k!='frames'}),flush=True)
-report={'method':{'alphaThreshold':32,'bodyRule':'largest connected component with B-R >= 35, B-G >= 15, B >= 80; alpha >= 32','units':'pixels in delivered 160px atlas cells; belowFeet = 159 - last body row','caveat':'Blue-body silhouette estimate; excludes detached props. Alpha bounds include all props. Not a mouth/rig anchor. Optical-flow edges and highlights can shift the estimate.'},'atlases':results}
+report={'method':{'alphaThreshold':32,'bodyRule':'largest connected component with B-R >= 35, B-G >= 15, B >= 80; alpha >= 32','units':'pixels in each atlas cellSize; belowFeet = cellSize - 1 - last body row','caveat':'Blue-body silhouette estimate; excludes detached props. Alpha bounds include all props. Not a mouth/rig anchor. Optical-flow edges and highlights can shift the estimate.'},'atlases':results}
 (folder/'frame-measurements.json').write_text(json.dumps(report,indent=2)+'\n')
 proof.save(folder/'framing-extremes.jpg',quality=93)

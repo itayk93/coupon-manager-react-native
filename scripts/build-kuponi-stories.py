@@ -8,6 +8,7 @@ not independently rendered 3D frames. Original sources remain untouched.
 from pathlib import Path
 import json
 import math
+import argparse
 import cv2
 import numpy as np
 from PIL import Image
@@ -19,6 +20,9 @@ SIZE, FPS, COLS = 256, 20, 16
 # edge is never clipped and the resample has neighbours to read.
 MARGIN = 4
 STORIES = {'wallet-review': 12, 'merchant-match': 12, 'priority-pick': 10, 'clean-month': 14}
+parser = argparse.ArgumentParser()
+parser.add_argument('--story', choices=STORIES, help='Rebuild only this story; leave aggregate previews untouched')
+args = parser.parse_args()
 yy, xx = np.mgrid[:SIZE, :SIZE].astype(np.float32)
 
 def rgba(data):
@@ -65,8 +69,11 @@ def prepare(source):
         keys.append(canvas)
     return keys
 
-all_frames, manifest = {}, {}
+all_frames = {}
+manifest = json.loads((OUT/'manifest.json').read_text()) if args.story else {}
 for name, seconds in STORIES.items():
+    if args.story and name != args.story:
+        continue
     keys = prepare(OUT/'source'/f'{name}.png')
     # The blink poses would need a face rig to interpolate without double eyes.
     # Skip those individual keys; retain all four narrative beats.
@@ -118,21 +125,23 @@ for name, seconds in STORIES.items():
     left=min(max(0,(box[0]+box[2]-side)//2),SIZE-side)
     top=min(max(0,(box[1]+box[3]-side)//2),SIZE-side)
     frames=[frame.crop((left,top,left+side,top+side)) for frame in frames]
-    CELL=side
+    cell=side
     rows=math.ceil(count/COLS)
-    atlas=Image.new('RGBA',(COLS*CELL,rows*CELL))
+    atlas=Image.new('RGBA',(COLS*cell,rows*cell))
     for i,frame in enumerate(frames):
-        atlas.alpha_composite(frame,((i%COLS)*CELL,(i//COLS)*CELL))
+        atlas.alpha_composite(frame,((i%COLS)*cell,(i//COLS)*cell))
     atlas.save(OUT/f'{name}-atlas.webp',lossless=True,method=4)
     # Poster and preview share the crop, or Reduce Motion would frame him
     # differently from the animation it stands in for.
     frames[-1].save(OUT/f'{name}-poster.png')
     frames[0].save(OUT/f'{name}.webp',save_all=True,append_images=frames[1:],duration=50,loop=1,quality=88,method=4,minimize_size=True)
     all_frames[name]=frames
-    manifest[name]={'durationMs':seconds*1000,'fps':FPS,'frameCount':count,'columns':COLS,'rows':rows,'cellSize':CELL,'loop':False,'atlas':f'{name}-atlas.webp','preview':f'{name}.webp','poster':f'{name}-poster.png'}
+    manifest[name]={'durationMs':seconds*1000,'fps':FPS,'frameCount':count,'columns':COLS,'rows':rows,'cellSize':cell,'loop':False,'atlas':f'{name}-atlas.webp','preview':f'{name}.webp','poster':f'{name}-poster.png'}
     print(name, json.dumps(manifest[name]),flush=True)
 
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+if args.story:
+    raise SystemExit(0)
 # Review all four stories on light AND dark backgrounds.
 proof=Image.new('RGB',(SIZE*6,SIZE*4),'#f2f5fb')
 for row,(name,frames) in enumerate(all_frames.items()):

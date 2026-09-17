@@ -2,7 +2,7 @@
   "method": {
     "alphaThreshold": 32,
     "bodyRule": "largest connected component with B-R >= 35, B-G >= 15, B >= 80; alpha >= 32",
-    "units": "pixels in delivered 160px atlas cells; belowFeet = 159 - last body row",
+    "units": "pixels in each atlas cellSize; belowFeet = cellSize - 1 - last body row",
     "caveat": "Blue-body silhouette estimate; excludes detached props. Alpha bounds include all props. Not a mouth/rig anchor. Optical-flow edges and highlights can shift the estimate."
   },
   "atlases": {
