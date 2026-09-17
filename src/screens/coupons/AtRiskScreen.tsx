@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Header } from "@/components/ui/Header";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { SpeechBubble } from "@/components/ui/SpeechBubble";
+import { KuponiStory } from "@/components/ui/KuponiStory";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { CouponCard } from "@/components/coupons/CouponCard";
@@ -41,8 +42,15 @@ import { fonts } from "@/lib/theme";
  * character with a tail pointing up at their feet is the shape of a caption
  * under a photograph, and it reads as one no matter what the character is
  * doing. The lettering rule is that the tail should point at the speaker's
- * mouth and close most of the distance to it, which is what `MASCOT_LIFT`
- * below is for.
+ * mouth and close most of the distance to it, which is what `lift` below is
+ * for — one per piece of artwork, since the two sprites this screen alternates
+ * between are framed differently.
+ *
+ * After the line is out he plays `priority-pick`: ten seconds of him weighing
+ * the coupons and settling on one, from `assets/mascot/stories/`. It runs once
+ * per most-urgent coupon and only in the 2–14 day window; today and tomorrow
+ * keep the `alarmed` loop, which is the right register for money that goes
+ * tonight.
  *
  * Under him is the coupon itself — `CouponCard`, the card from the coupons
  * list — because every route out of this screen is on it: the code to hand the
@@ -53,15 +61,25 @@ import { fonts } from "@/lib/theme";
 const MASCOT_SIZE = 176;
 
 /**
- * The transparent headroom every frame carries above his head, as a fraction of
- * the sprite box. Measured across all 36 frames of all eight atlases: 40–43px
- * of empty space above the head in a 256px cell, against 14px below the feet.
- * The camera is framed for a character who bobs, so the space is deliberate —
- * but laid out naively it becomes 28pt of nothing between the bubble's tail and
- * the head the tail is pointing at, and a tail that stops short of its speaker
- * is the thing that makes a balloon read as floating text.
+ * The transparent headroom each sprite carries above his head, as a fraction of
+ * its box — and it is not one number, because this screen shows two different
+ * pieces of artwork.
+ *
+ * `legacy` is the 36-frame urgency atlas: 40–43px above the head in a 256px
+ * cell, a 1.2-point spread, which is why a single constant ever worked.
+ * `story` is `priority-pick`: 33–35px in a 160px cell. Measured independently
+ * of the handover's own figures and they agree exactly.
+ *
+ * The camera framing is deliberate in both — it is cut for a character who
+ * bobs — but laid out naively that space becomes 28 or 37pt of nothing between
+ * the bubble's tail and the head it is pointing at, and a tail that stops short
+ * of its speaker is what makes a balloon read as floating text.
+ *
+ * The two differ by nine points, so a lift calibrated for one drops the other.
+ * Deriving the lift per sprite is also what makes the swap invisible: both
+ * land the *head* in the same place, so only the box moves.
  */
-const MASCOT_HEADROOM = 0.16;
+const HEADROOM = { legacy: 0.16, story: 0.2125 };
 
 /** How much clear air to leave between the bubble's edge and the top of his
  *  head. The tail is 11pt on the diagonal and hangs about 6 of them below the
@@ -70,7 +88,16 @@ const MASCOT_HEADROOM = 0.16;
 const HEAD_GAP = 10;
 
 /** Pulling him up by his own headroom is what puts the tail on his head. */
-const MASCOT_LIFT = HEAD_GAP - Math.round(MASCOT_SIZE * MASCOT_HEADROOM);
+const lift = (headroom: number) => HEAD_GAP - Math.round(MASCOT_SIZE * headroom);
+
+/**
+ * The window `priority-pick` is for. Today and tomorrow keep `alarmed`: a
+ * ten-second story about weighing your options is the wrong register for money
+ * that disappears tonight, and `STATE-LAW.md`'s escalation already owns that
+ * rung.
+ */
+const STORY_MIN_DAYS = 2;
+const STORY_MAX_DAYS = 14;
 
 const SECTIONS: { level: ExpiryLevel; title: string }[] = [
   { level: "alarm", title: "היום ומחר" },
@@ -121,6 +148,29 @@ export function AtRiskScreen() {
   const [spokenLine, setSpokenLine] = useState<string | null>(null);
   const speaking = spokenLine !== line;
 
+  /**
+   * `priority-pick` — him weighing the coupons and settling on one — plays once
+   * per most-urgent coupon, *after* the bubble has finished its line.
+   *
+   * The two are deliberately sequential rather than simultaneous. Both own the
+   * character for a stretch of time, and two timers racing for one `state` is
+   * how a mascot ends up twitching between poses. The bubble's `onSpoken` is
+   * also not a stand-in for the story being over — it says the sentence
+   * arrived, nothing more — so the story keeps its own completion.
+   */
+  const urgent = atRisk[0];
+  const storyKey = urgent ? `${urgent.coupon.id}:${urgent.days}` : null;
+  const [storyPlayed, setStoryPlayed] = useState<string | null>(null);
+  const [storyBroken, setStoryBroken] = useState(false);
+  const showStory =
+    !speaking &&
+    !storyBroken &&
+    storyKey !== null &&
+    storyPlayed !== storyKey &&
+    worst !== null &&
+    worst >= STORY_MIN_DAYS &&
+    worst <= STORY_MAX_DAYS;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <Header title="מה בסכנה" showBack onBack={() => router.back()} />
@@ -145,12 +195,31 @@ export function AtRiskScreen() {
               text={line}
               style={styles.bubble}
             />
-            <View style={styles.mascot}>
-              <Kuponi
-                state={speaking ? "talking" : kuponi.state}
-                speed={kuponi.speed}
-                size={MASCOT_SIZE}
-              />
+            {/* One sprite at a time, never both: each atlas is tens of
+                megabytes once decoded, and `enabled` pauses a player without
+                unmounting it. Swapping the component is what actually gives
+                the memory back. The lift travels with the artwork, so his head
+                stays under the tail across the swap and only the box moves. */}
+            <View style={{ marginTop: lift(showStory ? HEADROOM.story : HEADROOM.legacy) }}>
+              {showStory ? (
+                <KuponiStory
+                  story="priority-pick"
+                  replayKey={storyKey}
+                  size={MASCOT_SIZE}
+                  // The usage modal covers him; a story playing to nobody
+                  // behind it burns the one showing it is allowed.
+                  enabled={usageCoupon === null}
+                  onFinish={() => setStoryPlayed(storyKey)}
+                  onError={() => setStoryBroken(true)}
+                  accessibilityLabel="קופוני בוחן איזה קופון כדאי לנצל קודם"
+                />
+              ) : (
+                <Kuponi
+                  state={speaking ? "talking" : kuponi.state}
+                  speed={kuponi.speed}
+                  size={MASCOT_SIZE}
+                />
+              )}
             </View>
           </View>
 
@@ -186,11 +255,10 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   // `CouponCard` carries its own bottom margin, so the page spaces itself and
   // only the hero needs a gap of its own. No `gap` here: the space between the
-  // bubble and the character is `MASCOT_LIFT`, which has to be able to go
-  // negative to cancel the sprite's headroom.
+  // bubble and the character is the sprite's own lift, which has to be able to
+  // go negative to cancel its headroom.
   hero: { alignItems: "center", marginBottom: 20 },
   bubble: { maxWidth: 300 },
-  mascot: { marginTop: MASCOT_LIFT },
   sectionTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
