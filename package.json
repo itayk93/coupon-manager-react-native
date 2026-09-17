@@ -102,7 +102,7 @@
     "babel-preset-expo": "~57.0.7",
     "patch-package": "^8.0.1",
     "pg": "^8.23.0",
-    "typescript": "~6.0.3",
+    "typescript": "~7.0.2",
     "vitest": "^4.1.9"
   },
   "overrides": {
