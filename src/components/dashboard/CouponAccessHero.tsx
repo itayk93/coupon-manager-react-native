@@ -38,8 +38,8 @@ import { homeHeroSummary, type HomeMascotState } from "@/lib/homeHero";
  *
  * Everything here together stays around 250pt so the first coupon card is on
  * screen without scrolling. The character comes from the existing
- * `MascotAnimation` atlas — no new art — standing in a box that ends where the
- * bubble does, so he is beside the balance rather than down on the search
+ * `MascotAnimation` atlas — no new art — centred in a box the height of the
+ * bubble, so he is level with the balance rather than down on the search
  * field.
  */
 
@@ -55,8 +55,8 @@ const MASCOT_ROW: Record<HomeMascotState, MascotState> = {
  * Height the bubble row reserves before it is measured, and the floor it never
  * goes below. The real height is measured, because the bubble grows: a wallet
  * with something expiring adds an urgent line, and a long company name wraps
- * it to two. It is also the mascot's box, so whatever the bubble grew to, his
- * feet stay level with its bottom edge instead of hanging in the air.
+ * it to two. It is also the mascot's box, so whatever the bubble grew to, he
+ * stays centred against it instead of hanging in the air.
  */
 const TOP_ROW_HEIGHT = 132;
 /** Gap between the bubble row and the search field. */
@@ -72,9 +72,9 @@ export function CouponAccessHero({ coupons, isLoading }: CouponAccessHeroProps) 
   const { theme } = useAppTheme();
   const width = useContentWidth();
   const [text, setText] = useState("");
-  // The measured height of the bubble row, which is also the mascot's box: his
-  // feet stay on the bubble's bottom edge whatever the bubble grew to, so the
-  // two keep a shared bottom edge.
+  // The measured height of the bubble row, which is also the mascot's box: he
+  // is centred in it, so however tall the bubble grew, he stays level with its
+  // middle.
   const [topRowHeight, setTopRowHeight] = useState(TOP_ROW_HEIGHT);
 
   // Narrow phones give the bubble the room instead of the character; tablets do
@@ -226,11 +226,11 @@ export function CouponAccessHero({ coupons, isLoading }: CouponAccessHeroProps) 
         </TouchableOpacity>
       </View>
 
-      {/* Painted last so it sits over the empty slot, and bottom-aligned inside
-          a box as tall as the bubble row: his feet land on the bubble's bottom
-          edge. He used to hang 20pt lower, leaning onto the search field, which
-          beside a bubble taller than he is read as him sliding down the screen
-          rather than standing next to the balance. */}
+      {/* Painted last so it sits over the empty slot, and centred inside a box
+          as tall as the bubble row, so he lines up with the middle of the
+          bubble rather than with its foot. He started out 20pt below it,
+          leaning onto the search field, which read as him sliding off the
+          bottom of the screen rather than presenting the balance. */}
       <View
         style={[styles.mascotLayer, { width: mascotSize, height: topRowHeight }]}
         pointerEvents="none"
@@ -372,9 +372,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   /**
-   * The character's box is the bubble row, and he is aligned to the *bottom*
-   * of it, so his feet stay on the bubble's bottom edge however tall the
-   * bubble happens to be.
+   * The character's box is the bubble row, and he is centred in it, so his
+   * middle sits level with the bubble's middle however tall the bubble
+   * happens to be. He was aligned to the bottom of the box before, which on
+   * a bubble taller than he is left him sitting low beside it with his head
+   * below the balance he is meant to be presenting. Centred, he also lands
+   * nearer the bubble's tail, which is pinned to the top of the bubble.
+   *
+   * The rise is the bubble's own doing: a calm wallet's bubble is barely
+   * taller than he is and he hardly moves, while one carrying the balance,
+   * the caption and an urgent line lifts him by half the difference.
    */
   mascotLayer: {
     position: "absolute",
@@ -382,6 +389,6 @@ const styles = StyleSheet.create({
     right: 0,
     overflow: "hidden",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "center",
   },
 });
