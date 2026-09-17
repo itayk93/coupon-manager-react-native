@@ -29,6 +29,7 @@ import { useContentWidth } from "@/hooks/useContentWidth";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
 import { Kuponi } from "@/components/ui/Kuponi";
@@ -74,31 +75,13 @@ export function DashboardScreen() {
     });
   }, [coupons, usageStats]);
 
-  const companyCards = useMemo(() => {
-    const map = visibleCoupons.reduce<Record<string, { company: string; count: number }>>(
-      (acc, coupon) => {
-        const key = companyKey(coupon.company);
-        const company = (coupon.company || "ללא חברה").trim();
-        acc[key] = acc[key] || { company, count: 0 };
-        acc[key].count += 1;
-        return acc;
-      },
-      {}
-    );
-
-    const companyUsage = usageStats?.usageCountByCompany || {};
-    const companyLatest = usageStats?.latestUsageByCompany || {};
-
-    return Object.values(map).sort((a, b) => {
-      const latestDiff = (companyLatest[b.company] || 0) - (companyLatest[a.company] || 0);
-      if (latestDiff !== 0) return latestDiff;
-
-      const usageDiff = (companyUsage[b.company] || 0) - (companyUsage[a.company] || 0);
-      if (usageDiff !== 0) return usageDiff;
-
-      return b.count - a.count || a.company.localeCompare(b.company, "he");
-    });
-  }, [visibleCoupons, usageStats]);
+  // The ordering lives in `companyCards`, where the Kuponi home screen and the
+  // companies screen read it too: three copies of this comparator is how a shop
+  // ends up near the top on one screen and buried on another.
+  const cards = useMemo(
+    () => companyCards(visibleCoupons, usageStats),
+    [visibleCoupons, usageStats]
+  );
 
 
   const filteredCoupons = useMemo(() => {
@@ -211,7 +194,7 @@ export function DashboardScreen() {
 
         {/* Company Cards Slider */}
         <CompanyCardsSlider
-          companyCards={companyCards}
+          companyCards={cards}
           selectedCompany={selectedCompany}
           onSelectCompany={handleSelectCompany}
         />

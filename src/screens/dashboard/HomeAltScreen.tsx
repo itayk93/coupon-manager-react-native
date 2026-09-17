@@ -25,6 +25,7 @@ import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
 import { expiringSoon } from "@/lib/homeHero";
@@ -98,28 +99,13 @@ export function HomeAltScreen() {
     [coupons]
   );
 
-  /**
-   * Companies, most recently used first — the same ordering the dashboard's
-   * company grid uses, so a shop is never near the top on one screen and
-   * buried on the other.
-   */
-  const companyCards = useMemo(() => {
-    const byKey = new Map<string, { company: string; count: number }>();
-    for (const coupon of visibleCoupons) {
-      const key = companyKey(coupon.company);
-      const existing = byKey.get(key);
-      if (existing) existing.count += 1;
-      else byKey.set(key, { company: (coupon.company || "ללא חברה").trim(), count: 1 });
-    }
-    const latest = usageStats?.latestUsageByCompany || {};
-    const used = usageStats?.usageCountByCompany || {};
-    return [...byKey.values()].sort((a, b) =>
-      (latest[b.company] || 0) - (latest[a.company] || 0) ||
-      (used[b.company] || 0) - (used[a.company] || 0) ||
-      b.count - a.count ||
-      a.company.localeCompare(b.company, "he")
-    );
-  }, [visibleCoupons, usageStats]);
+  // Companies, most recently used first. The ordering is imported rather than
+  // re-derived here — see `companyCards` — so a shop is never near the top on
+  // one screen and buried on another.
+  const cards = useMemo(
+    () => companyCards(visibleCoupons, usageStats),
+    [visibleCoupons, usageStats]
+  );
 
   const sheetCoupons = useMemo(
     () =>
@@ -146,10 +132,9 @@ export function HomeAltScreen() {
     return picked;
   }, [expiring, visibleCoupons]);
 
-  const companyCount = useMemo(
-    () => new Set(visibleCoupons.map((coupon) => companyKey(coupon.company))).size,
-    [visibleCoupons]
-  );
+  // Counted off the same grid the tile now opens, so the number on it and the
+  // number of tiles on the companies screen cannot disagree.
+  const companyCount = cards.length;
 
   const openCoupon = (coupon: DecryptedCoupon) =>
     router.push(`/coupons/${couponRouteId(coupon)}`);
@@ -221,7 +206,7 @@ export function HomeAltScreen() {
             same ordering as the dashboard, so a shop is never near the top on
             one screen and buried on the other. */}
         <CompanyCardsSlider
-          companyCards={companyCards}
+          companyCards={cards}
           selectedCompany={sheetCompany}
           onSelectCompany={setSheetCompany}
         />
@@ -253,9 +238,17 @@ export function HomeAltScreen() {
 
         {visibleCoupons.length > 0 ? (
           <>
+            {/* Each tile names the filter it wants, including the one that
+                wants none of them. The list is a tab route, so it is usually
+                still mounted with whatever filter the last tile set: two of
+                these used to travel with no params at all, which the list
+                reads as "nothing to apply" — so after "פגים בקרוב" the other
+                two landed on a list still filtered to what is expiring. */}
             <View style={styles.statsRow}>
-              {stat(String(visibleCoupons.length), "קופונים פעילים", () => router.navigate("/coupons"))}
-              {stat(String(companyCount), "חברות", () => router.navigate("/coupons"))}
+              {stat(String(visibleCoupons.length), "קופונים פעילים", () =>
+                router.navigate({ pathname: "/coupons", params: { initialStatus: "active" } })
+              )}
+              {stat(String(companyCount), "חברות", () => router.push("/companies"))}
               {stat(String(expiringSoon(coupons).length), "פגים בקרוב", () =>
                 router.push({ pathname: "/coupons", params: { initialStatus: "expiring" } })
               )}
