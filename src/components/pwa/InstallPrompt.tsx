@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { Download, Share, Sparkles, TriangleAlert, X } from "lucide-react-native";
+import { ChevronDown, Download, Share, TriangleAlert, X } from "lucide-react-native";
+import { useSegments } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { isFemaleUser } from "@/lib/gender";
@@ -22,10 +23,24 @@ import {
  * a phone browser, not the native app, not a desktop, not an already-installed
  * window.
  *
- * Android gets a real button when the browser offers one. iOS gets pictures of
- * the taps, because Apple has no install API and the share sheet is the only
- * way in. Which browser the person is in decides the wording — see
+ * Android gets a real button when the browser offers one. iOS gets the taps
+ * written out, because Apple has no install API and the share sheet is the
+ * only way in. Which browser the person is in decides the wording — see
  * `installTarget.ts` for why that is the axis that matters.
+ *
+ * It is a strip above the tab bar, not the covering sheet it used to be. Two
+ * things pushed it there. Install promotion is advice, and a scrim over the
+ * whole screen makes advice into a toll gate — the guidance on promoting
+ * installation is a banner or a button the person can take or leave, never a
+ * modal, and to ask again only when something changed in their relationship
+ * with the app. Signing in *is* that change, which is the second thing: this
+ * now waits for a session, so nobody is asked to keep an app they have not
+ * decided to use yet.
+ *
+ * Collapsed it is one line. The iOS steps are three taps nobody needs in front
+ * of them until they have said yes, so they live behind the button and the
+ * strip grows only once asked. Rendered in the layout's own column rather than
+ * floating over it, so it can never sit on top of the tab bar or a coupon.
  */
 
 type BeforeInstallPromptEvent = Event & {
@@ -38,12 +53,20 @@ const APPEAR_DELAY_MS = 2500;
 
 export function InstallPrompt() {
   const { theme } = useAppTheme();
-  const { user } = useAuth();
+  const { session, user } = useAuth();
+  const segments = useSegments();
   const [target, setTarget] = useState<InstallTarget | null>(null);
   const [visible, setVisible] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
 
+  // Signed in, and past the screens where signing in happens. The same gate
+  // the tab bar uses, for the same reason: until this is true there is no
+  // "your wallet" to keep on a home screen.
+  const signedIn = Boolean(session) && segments[0] !== "(auth)";
+
   useEffect(() => {
+    if (!signedIn) return;
     if (Platform.OS !== "web" || typeof window === "undefined") return;
 
     const standalone =
@@ -85,9 +108,9 @@ export function InstallPrompt() {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [signedIn]);
 
-  if (!visible || !target) return null;
+  if (!signedIn || !visible || !target) return null;
 
   const guide = installGuide(target, isFemaleUser(user?.gender));
 
@@ -107,160 +130,145 @@ export function InstallPrompt() {
     }
   };
 
-  return (
-    <View style={styles.overlay} pointerEvents="box-none">
-      <Pressable style={styles.scrim} onPress={dismiss} accessibilityLabel="סגירה" />
-      <View style={[styles.sheet, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="אחר כך"
-          onPress={dismiss}
-          style={[styles.close, { backgroundColor: theme.surfaceAlt }]}
-        >
-          <X size={18} color={theme.textMuted} />
-        </Pressable>
+  const canInstall = Boolean(deferred) && !guide.blocker;
+  // Nothing to expand into when the browser will do it itself, and nothing
+  // worth expanding into when it cannot install at all.
+  const canExpand = !canInstall && !guide.blocker && guide.steps.length > 0;
 
-        <View style={[styles.iconWrap, { backgroundColor: theme.primaryTint }]}>
-          <Image
-            source={{ uri: "/pwa-192x192.png" }}
-            style={styles.icon}
-            resizeMode="contain"
-            accessibilityLabel="קופון מאסטר"
-          />
+  return (
+    <View
+      style={[styles.bar, { backgroundColor: theme.card, borderTopColor: theme.cardBorder }]}
+      accessibilityRole={Platform.OS === "web" ? undefined : "alert"}
+    >
+      <View style={styles.row}>
+        <Image
+          source={{ uri: "/pwa-192x192.png" }}
+          style={[styles.icon, { backgroundColor: theme.primaryTint }]}
+          resizeMode="contain"
+          accessibilityLabel="קופון מאסטר"
+        />
+
+        <View style={styles.copy}>
+          <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
+            {guide.blocker ? guide.headline : "קופון מאסטר על מסך הבית"}
+          </Text>
+          <Text style={[styles.sub, { color: theme.textMuted }]} numberOfLines={2}>
+            {guide.blocker ?? "נפתח מיד, בלי סרגל הכתובת"}
+          </Text>
         </View>
 
-        <Text style={[styles.headline, { color: theme.text }]}>{guide.headline}</Text>
-
-        {guide.blocker ? (
-          <View style={[styles.blocker, { backgroundColor: theme.warningBg }]}>
-            <TriangleAlert size={16} color={theme.warningText} />
-            <Text style={[styles.blockerText, { color: theme.warningText }]}>{guide.blocker}</Text>
-          </View>
-        ) : (
-          <Text style={[styles.pitch, { color: theme.textSecondary }]}>
-            נפתח מיד ממסך הבית, בלי סרגל הכתובת, ועובד גם כשאין קליטה.
-          </Text>
-        )}
-
-        {deferred && !guide.blocker ? (
+        {canInstall ? (
           <Pressable
             accessibilityRole="button"
             onPress={install}
             style={[styles.cta, { backgroundColor: theme.primary }]}
           >
-            <Download size={18} color="#ffffff" />
+            <Download size={15} color="#ffffff" />
             <Text style={styles.ctaText}>{guide.action}</Text>
           </Pressable>
-        ) : (
-          <View style={styles.steps}>
-            {guide.steps.map((step, index) => (
-              <View key={step} style={styles.step}>
-                <View style={[styles.stepNumber, { backgroundColor: theme.primaryTint }]}>
-                  <Text style={[styles.stepNumberText, { color: theme.primary }]}>{index + 1}</Text>
-                </View>
-                <Text style={[styles.stepText, { color: theme.text }]}>{step}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {target.platform === "ios" && !guide.blocker ? (
-          <View style={styles.hint}>
-            <Share size={14} color={theme.textMuted} />
-            <Text style={[styles.hintText, { color: theme.textMuted }]}>
-              כפתור השיתוף נמצא בתחתית המסך בספארי
-            </Text>
-          </View>
+        ) : canExpand ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded }}
+            accessibilityLabel={expanded ? "סגירת ההסבר" : "איך מוסיפים"}
+            onPress={() => setExpanded((open) => !open)}
+            style={[styles.cta, { backgroundColor: theme.primary }]}
+          >
+            <Text style={styles.ctaText}>{expanded ? "סגור" : "איך?"}</Text>
+            {expanded ? <ChevronDown size={15} color="#ffffff" /> : null}
+          </Pressable>
         ) : null}
 
-        {!guide.blocker && !deferred ? (
-          <View style={styles.hint}>
-            <Sparkles size={14} color={theme.textMuted} />
-            <Text style={[styles.hintText, { color: theme.textMuted }]}>לוקח פחות מחצי דקה</Text>
-          </View>
-        ) : null}
-
-        <Pressable accessibilityRole="button" onPress={dismiss} style={styles.later}>
-          <Text style={[styles.laterText, { color: theme.textMuted }]}>אחר כך</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="אחר כך"
+          onPress={dismiss}
+          hitSlop={8}
+          style={styles.close}
+        >
+          <X size={16} color={theme.textSubtle} />
         </Pressable>
       </View>
+
+      {/* Only once asked. Three taps in front of someone who has not said yes
+          is the bulk that made the old sheet cover the screen. */}
+      {expanded && canExpand ? (
+        <View style={styles.steps}>
+          {guide.steps.map((step, index) => (
+            <View key={step} style={styles.step}>
+              <View style={[styles.stepNumber, { backgroundColor: theme.primaryTint }]}>
+                <Text style={[styles.stepNumberText, { color: theme.primary }]}>{index + 1}</Text>
+              </View>
+              <Text style={[styles.stepText, { color: theme.text }]}>{step}</Text>
+            </View>
+          ))}
+          {target.platform === "ios" ? (
+            <View style={styles.hint}>
+              <Share size={13} color={theme.textMuted} />
+              <Text style={[styles.hintText, { color: theme.textMuted }]}>
+                כפתור השיתוף נמצא בתחתית המסך בספארי
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    justifyContent: "flex-end",
-    zIndex: 9999,
+  // In the layout's column, directly above the tab bar: a strip that shortens
+  // the screen by its own height instead of covering what is on it.
+  bar: {
+    borderTopWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  scrim: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: "rgba(15,23,42,0.45)",
+  row: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
+  icon: { width: 34, height: 34, borderRadius: 9 },
+  copy: { flex: 1, alignItems: "flex-end" },
+  title: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13.5,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
-  sheet: {
-    borderTopLeftRadius: radii.sheet,
-    borderTopRightRadius: radii.sheet,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingHorizontal: 22,
-    paddingTop: 26,
-    paddingBottom: 26,
-    gap: 12,
-    alignItems: "center",
+  sub: {
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+    lineHeight: 15,
+    marginTop: 1,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
-  close: { position: "absolute", top: 14, left: 14, padding: 8, borderRadius: radii.pill },
-  iconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  icon: { width: 56, height: 56 },
-  headline: {
-    fontFamily: fonts.display,
-    fontSize: 19,
-    textAlign: "center",
-    lineHeight: 27,
-  },
-  pitch: { fontFamily: fonts.body, fontSize: 14, textAlign: "center", lineHeight: 21 },
-  blocker: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "stretch",
-    borderRadius: radii.lg,
-    padding: 12,
-  },
-  blockerText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, textAlign: "right" },
-  steps: { alignSelf: "stretch", gap: 10, marginTop: 4 },
-  step: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
-  stepNumber: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  stepNumberText: { fontFamily: fonts.bodyBold, fontSize: 13 },
-  stepText: { flex: 1, fontFamily: fonts.body, fontSize: 14, textAlign: "right", lineHeight: 20 },
   cta: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    alignSelf: "stretch",
+    gap: 5,
     borderRadius: radii.pill,
-    paddingVertical: 14,
-    marginTop: 4,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
   },
-  ctaText: { fontFamily: fonts.bodyBold, fontSize: 15, color: "#ffffff" },
-  hint: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
-  hintText: { fontFamily: fonts.body, fontSize: 12 },
-  later: { paddingVertical: 8, paddingHorizontal: 16 },
-  laterText: { fontFamily: fonts.bodyMedium, fontSize: 14 },
+  ctaText: { fontFamily: fonts.bodyBold, fontSize: 13, color: "#ffffff" },
+  close: { padding: 4 },
+  steps: { gap: 8, paddingTop: 10, paddingBottom: 2, paddingHorizontal: 2 },
+  step: { flexDirection: "row-reverse", alignItems: "center", gap: 9 },
+  stepNumber: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepNumberText: { fontFamily: fonts.bodyBold, fontSize: 12 },
+  stepText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  hint: { flexDirection: "row-reverse", alignItems: "center", gap: 6, paddingTop: 2 },
+  hintText: { fontFamily: fonts.body, fontSize: 11.5 },
 });
