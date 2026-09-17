@@ -1,15 +1,14 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Keyboard,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Flame, Plus, ScanLine, Search } from "lucide-react-native";
+import { ChevronLeft, Flame, ScanLine, Search } from "lucide-react-native";
 import { MascotAnimation, type MascotState } from "@/components/ui/MascotAnimation";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentWidth } from "@/hooks/useContentWidth";
@@ -18,22 +17,24 @@ import { EXPIRY_PERFORMANCE, expiryLevel } from "@/lib/expiryUrgency";
 import { formatIls } from "@/lib/formatIls";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
-import {
-  expiringSoon,
-  homeHeroSummary,
-  topCouponTags,
-  type HomeMascotState,
-} from "@/lib/homeHero";
+import { homeHeroSummary, type HomeMascotState } from "@/lib/homeHero";
 
 /**
  * The top of the home screen: the mascot holding up what is left in the wallet,
- * the search field, and a row of things to do.
+ * and the search field under him.
  *
  * The balance is the mascot's line, not a card of its own further down. It is
  * the one number a person opens this app already wondering about, and putting
  * it in the speech bubble is what makes the character useful rather than
  * decorative — he is holding your money, and then telling you which of it is
  * about to expire.
+ *
+ * A row of chips used to sit under the field — add a coupon, what is expiring,
+ * the user's own tags. Adding a coupon is the screen's one standing action and
+ * now has the button in the bottom corner, where a thumb reaches it from
+ * anywhere on the page; the other two were a second way to somewhere the
+ * bubble and the stat tiles already go. A row of shortcuts under a search
+ * field reads as the top of a list screen either way.
  *
  * Everything here together stays around 250pt so the first coupon card is on
  * screen without scrolling. The character comes from the existing
@@ -63,12 +64,10 @@ const SEARCH_GAP = 10;
 
 type CouponAccessHeroProps = {
   coupons: DecryptedCoupon[];
-  /** Coupon id → tag names, straight from `useCouponTagsMap`. */
-  tagsMap?: Record<number, string[]>;
   isLoading?: boolean;
 };
 
-export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAccessHeroProps) {
+export function CouponAccessHero({ coupons, isLoading }: CouponAccessHeroProps) {
   const router = useRouter();
   const { theme } = useAppTheme();
   const width = useContentWidth();
@@ -77,17 +76,11 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
   // feet stay on the bubble's bottom edge whatever the bubble grew to, so the
   // two keep a shared bottom edge.
   const [topRowHeight, setTopRowHeight] = useState(TOP_ROW_HEIGHT);
-  // `row-reverse` puts the first chip on the right, but the ScrollView still
-  // opens at content offset 0 — the left edge, which is the *end* of the row.
-  // `scrollToEnd` on the first layout puts the beginning of the row in view.
-  const chips = useRef<ScrollView>(null);
 
   // Narrow phones give the bubble the room instead of the character; tablets do
   // not get a giant mascot, they get the same one with more text beside it.
   const mascotSize = width < 360 ? 104 : width >= 768 ? 132 : 122;
   const summary = useMemo(() => homeHeroSummary(coupons), [coupons]);
-  const expiring = useMemo(() => expiringSoon(coupons), [coupons]);
-  const tagChips = useMemo(() => topCouponTags(coupons, tagsMap), [coupons, tagsMap]);
   const remaining = useMemo(() => totalRemainingValue(coupons), [coupons]);
   const spendableCount = useMemo(() => coupons.filter(isSpendableCoupon).length, [coupons]);
 
@@ -232,56 +225,6 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
           <ScanLine size={16} color="#ffffff" />
         </TouchableOpacity>
       </View>
-
-      {/* Things to do, not only ways to filter — a row of filters alone reads as
-          the top of a list screen. */}
-      <ScrollView
-        ref={chips}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => chips.current?.scrollToEnd({ animated: false })}
-        contentContainerStyle={styles.chipsRow}
-        style={styles.chipsScroll}
-      >
-        <TouchableOpacity
-          onPress={() => router.push("/coupons/add")}
-          style={[styles.chip, { backgroundColor: theme.primaryTint, borderColor: theme.primaryMuted }]}
-          accessibilityRole="button"
-        >
-          <Plus size={13} color={theme.primary} />
-          <Text style={[styles.chipText, { color: theme.primary }]}>הוספת קופון</Text>
-        </TouchableOpacity>
-
-        {expiring.length > 0 ? (
-          <TouchableOpacity
-            onPress={openExpiring}
-            style={[styles.chip, { backgroundColor: theme.dangerBg, borderColor: theme.dangerBorder }]}
-            accessibilityRole="button"
-            accessibilityLabel={`קופונים קרובים לפקיעה, ${expiring.length}`}
-          >
-            <Flame size={13} color={theme.danger} />
-            <Text style={[styles.chipText, { color: theme.dangerText }]}>
-              קרוב לפקיעה ({expiring.length})
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Only tags the user actually put on their own coupons. Guessing a
-            category from a company name is wrong often enough to be worse than
-            showing nothing. */}
-        {tagChips.map((tag) => (
-          <TouchableOpacity
-            key={tag}
-            onPress={() => router.push({ pathname: "/coupons", params: { initialFilterTag: tag } })}
-            style={[styles.chip, { backgroundColor: theme.surfaceAlt, borderColor: theme.cardBorder }]}
-            accessibilityRole="button"
-            accessibilityLabel={`סינון לפי התגית ${tag}`}
-          >
-            <Text style={[styles.chipText, { color: theme.textSecondary }]}>#{tag}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
 
       {/* Painted last so it sits over the empty slot, and bottom-aligned inside
           a box as tall as the bubble row: his feet land on the bubble's bottom
@@ -428,36 +371,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chipsScroll: {
-    marginHorizontal: -4,
-    marginTop: 10,
-  },
-  chipsRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-  chip: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 5,
-    minHeight: 32,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
-    fontWeight: "700",
-    writingDirection: "rtl",
-  },
   /**
-   * The character's box starts at the top of the bubble row and ends a little
-   * way into the search field. He is aligned to the *bottom* of it, so he
-   * leans on the field however tall the bubble happens to be, and the box
-   * crops anything that would spill further down the screen.
+   * The character's box is the bubble row, and he is aligned to the *bottom*
+   * of it, so his feet stay on the bubble's bottom edge however tall the
+   * bubble happens to be.
    */
   mascotLayer: {
     position: "absolute",

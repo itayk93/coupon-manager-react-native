@@ -18,6 +18,7 @@ import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
+import { AddCouponFab, FAB_CLEARANCE } from "@/components/ui/AddCouponFab";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -198,7 +199,7 @@ export function HomeAltScreen() {
             search. */}
         <OnboardingBanner />
 
-        <CouponAccessHero coupons={coupons} tagsMap={tagsMap} isLoading={isLoading} />
+        <CouponAccessHero coupons={coupons} isLoading={isLoading} />
 
         {/* The fast path, as high as the screen allows. Someone opening this
             app is usually at a till: they know the shop and need the barcode,
@@ -283,6 +284,11 @@ export function HomeAltScreen() {
         {onboardingPending ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
       </ScrollView>
 
+      {/* Outside the ScrollView so it stays put while the page moves under it:
+          adding a coupon is the one thing this screen is for that is not about
+          a coupon already in the wallet. */}
+      <AddCouponFab />
+
       <CompanySheet
         company={sheetCompany}
         coupons={sheetCoupons}
@@ -312,7 +318,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 32,
+    // Enough that the last thing on the page can be scrolled clear of the
+    // button rather than ending underneath it.
+    paddingBottom: FAB_CLEARANCE + 16,
   },
   debugBar: {
     flexDirection: "row-reverse",
