@@ -67,8 +67,8 @@ const MASCOT_SIZE = 176;
  *
  * `legacy` is the 36-frame urgency atlas: 40–43px above the head in a 256px
  * cell, a 1.2-point spread, which is why a single constant ever worked.
- * `story` is `priority-pick`: 33–35px in a 160px cell. Measured independently
- * of the handover's own figures and they agree exactly.
+ * `story` is `priority-pick`: 52–57px in a 256px cell after the
+ * full-resolution rebuild. Its midpoint still rounds to the same 37pt lift.
  *
  * The camera framing is deliberate in both — it is cut for a character who
  * bobs — but laid out naively that space becomes 28 or 37pt of nothing between

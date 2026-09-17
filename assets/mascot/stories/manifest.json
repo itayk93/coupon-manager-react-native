@@ -29,7 +29,7 @@
     "frameCount": 200,
     "columns": 16,
     "rows": 13,
-    "cellSize": 160,
+    "cellSize": 256,
     "loop": false,
     "atlas": "priority-pick-atlas.webp",
     "preview": "priority-pick.webp",
