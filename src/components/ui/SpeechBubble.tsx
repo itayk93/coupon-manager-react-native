@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useReduceMotionSetting } from "@/hooks/useReduceMotion";
 import { speechDuration, spokenSoFar } from "@/lib/speechPacing";
 import { fonts } from "@/lib/theme";
@@ -12,10 +12,13 @@ import { fonts } from "@/lib/theme";
  * see `docs/mascot/STATE-LAW.md`. A screen that is merely busy gets a spinner,
  * not a bubble.
  *
- * Positioning belongs to the caller: the onboarding floats one over an
- * illustration, everywhere else stacks one under him with a tail pointing up.
- * The look itself never varies, so he sounds like the same character on every
- * screen.
+ * Positioning belongs to the caller, but the tail is the part that decides
+ * whether this reads as speech at all. Comics put the balloon above or beside
+ * the speaker and point the tail down at their mouth; a balloon sitting under
+ * a character with a tail pointing up at their feet is the shape of a caption,
+ * which is what a label under a photograph is. `down` is the one to reach for
+ * where he is saying the line. The look itself never varies, so he sounds like
+ * the same character on every screen.
  *
  * `speak` is the other half of that: the line arrives a word at a time while
  * the character above plays his talking loop, and `onSpoken` tells the caller
@@ -38,8 +41,8 @@ export function SpeechBubble({
   text: string;
   /** Overrides the system setting; omit to follow it. */
   reduceMotion?: boolean;
-  /** `up` points the bubble at a character sitting above it. */
-  tail?: "up" | "none";
+  /** Which way the tail points: `down` at a character below, `up` at one above. */
+  tail?: "up" | "down" | "none";
   /** True where the line is also the block's heading, as in an empty state. */
   isHeading?: boolean;
   /** True where a character above is saying this, rather than it being a label. */
@@ -98,10 +101,16 @@ export function SpeechBubble({
     // Keyed on the text so a new line animates in rather than swapping silently.
     <Animated.View
       key={text}
-      entering={still ? undefined : FadeInDown.duration(240)}
+      // The line arrives from the direction he is in: rising off a character
+      // below, settling down from one above. A bubble that drifts towards its
+      // own speaker reads as a card being dealt onto the screen.
+      entering={
+        still ? undefined : (tail === "down" ? FadeInUp : FadeInDown).duration(240)
+      }
       style={[styles.bubble, style]}
     >
       {tail === "up" ? <View style={styles.tail} /> : null}
+      {tail === "down" ? <View style={styles.tailDown} /> : null}
       {speak ? (
         <View>
           {/* The finished line, invisible, holding the bubble at its final size:
@@ -162,6 +171,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderStartWidth: 1,
+    borderColor: BORDER,
+    transform: [{ rotate: "45deg" }],
+  },
+  // The same square at the other end, stroked on its two *lower* edges. Under
+  // the 45° rotation the bottom and end edges are the ones facing down.
+  tailDown: {
+    position: "absolute",
+    bottom: -6,
+    alignSelf: "center",
+    width: 11,
+    height: 11,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderEndWidth: 1,
     borderColor: BORDER,
     transform: [{ rotate: "45deg" }],
   },

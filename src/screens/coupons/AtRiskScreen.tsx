@@ -36,10 +36,41 @@ import { fonts } from "@/lib/theme";
  * `docs/mascot/STATE-LAW.md`'s "one reaction on entry" for `talking`, and the
  * resting state is still derived from `expiryLevel` and nothing else.
  *
+ * The bubble is *above* him, with the tail pointing down at his head. That is
+ * the comic-book arrangement and it is not decoration: a balloon under a
+ * character with a tail pointing up at their feet is the shape of a caption
+ * under a photograph, and it reads as one no matter what the character is
+ * doing. The lettering rule is that the tail should point at the speaker's
+ * mouth and close most of the distance to it, which is what `MASCOT_LIFT`
+ * below is for.
+ *
  * Under him is the coupon itself — `CouponCard`, the card from the coupons
  * list — because every route out of this screen is on it: the code to hand the
  * cashier, and the usage report that takes the coupon off this page for good.
  */
+
+/** What `size="large"` resolves to in `Kuponi`, named because the lift needs it. */
+const MASCOT_SIZE = 176;
+
+/**
+ * The transparent headroom every frame carries above his head, as a fraction of
+ * the sprite box. Measured across all 36 frames of all eight atlases: 40–43px
+ * of empty space above the head in a 256px cell, against 14px below the feet.
+ * The camera is framed for a character who bobs, so the space is deliberate —
+ * but laid out naively it becomes 28pt of nothing between the bubble's tail and
+ * the head the tail is pointing at, and a tail that stops short of its speaker
+ * is the thing that makes a balloon read as floating text.
+ */
+const MASCOT_HEADROOM = 0.16;
+
+/** How much clear air to leave between the bubble's edge and the top of his
+ *  head. The tail is 11pt on the diagonal and hangs about 6 of them below the
+ *  bubble, so at this gap it closes a little over half the distance — which is
+ *  the lettering convention for where a tail should end. */
+const HEAD_GAP = 10;
+
+/** Pulling him up by his own headroom is what puts the tail on his head. */
+const MASCOT_LIFT = HEAD_GAP - Math.round(MASCOT_SIZE * MASCOT_HEADROOM);
 
 const SECTIONS: { level: ExpiryLevel; title: string }[] = [
   { level: "alarm", title: "היום ומחר" },
@@ -106,19 +137,21 @@ export function AtRiskScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.hero}>
-            <Kuponi
-              state={speaking ? "talking" : kuponi.state}
-              speed={kuponi.speed}
-              size="large"
-            />
             <SpeechBubble
-              tail="up"
+              tail="down"
               isHeading
               speak
               onSpoken={() => setSpokenLine(line)}
               text={line}
               style={styles.bubble}
             />
+            <View style={styles.mascot}>
+              <Kuponi
+                state={speaking ? "talking" : kuponi.state}
+                speed={kuponi.speed}
+                size={MASCOT_SIZE}
+              />
+            </View>
           </View>
 
           {grouped.map((section) => (
@@ -152,9 +185,12 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   // `CouponCard` carries its own bottom margin, so the page spaces itself and
-  // only the hero needs a gap of its own.
-  hero: { alignItems: "center", gap: 10, marginBottom: 20 },
+  // only the hero needs a gap of its own. No `gap` here: the space between the
+  // bubble and the character is `MASCOT_LIFT`, which has to be able to go
+  // negative to cancel the sprite's headroom.
+  hero: { alignItems: "center", marginBottom: 20 },
   bubble: { maxWidth: 300 },
+  mascot: { marginTop: MASCOT_LIFT },
   sectionTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
