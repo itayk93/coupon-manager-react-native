@@ -1,22 +1,22 @@
-import React, { useMemo } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { SpeechBubble } from "@/components/ui/SpeechBubble";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
-import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
-import { useCoupons } from "@/hooks/useCoupons";
+import { CouponCard } from "@/components/coupons/CouponCard";
+import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
+import { useCoupons, type DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { expiringSoon } from "@/lib/homeHero";
-import { EXPIRY_PERFORMANCE, daysPhrase, expiryLevel, type ExpiryLevel } from "@/lib/expiryUrgency";
+import { EXPIRY_PERFORMANCE, expiryLevel, type ExpiryLevel } from "@/lib/expiryUrgency";
 import { couponRemainingValue } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
-import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { formatIls } from "@/lib/formatIls";
-import { fonts, radii } from "@/lib/theme";
+import { fonts } from "@/lib/theme";
 
 /**
  * Everything about to expire, most urgent first, with the money on the line.
@@ -30,19 +30,38 @@ import { fonts, radii } from "@/lib/theme";
  * open first.
  *
  * Kuponi says the total at risk and nothing else. It is the one number that
- * makes the rest of the page worth reading.
+ * makes the rest of the page worth reading, and he says it rather than
+ * captioning it: the talking loop runs for exactly as long as the line takes
+ * to arrive, then he drops back to the face the deadline gives him. That is
+ * `docs/mascot/STATE-LAW.md`'s "one reaction on entry" for `talking`, and the
+ * resting state is still derived from `expiryLevel` and nothing else.
+ *
+ * Under him is the coupon itself — `CouponCard`, the card from the coupons
+ * list — because every route out of this screen is on it: the code to hand the
+ * cashier, and the usage report that takes the coupon off this page for good.
  */
 
-const SECTIONS: { level: Exclude<ExpiryLevel, "none">; title: string }[] = [
+const SECTIONS: { level: ExpiryLevel; title: string }[] = [
   { level: "alarm", title: "היום ומחר" },
   { level: "worry", title: "בימים הקרובים" },
   { level: "watch", title: "בשבוע הקרוב" },
+  // The page's window and the face's escalation do not end in the same place:
+  // `expiringSoon` reaches `HOME_HERO_WINDOW_DAYS` (14) while `expiryLevel`
+  // tops out at `WATCH_MAX_DAYS` (7) and calls everything past it `none`. That
+  // is right for the face — a coupon eleven days out has not earned a worried
+  // one — but those coupons are still money with a date on it, and they were
+  // being counted in Kuponi's total and then listed nowhere. A wallet whose
+  // nearest expiry was nine days away got "₪55 on the line across 2 coupons"
+  // above an empty page.
+  { level: "none", title: "בשבועיים הקרובים" },
 ];
 
 export function AtRiskScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading } = useCoupons();
+  const { data: tagsMap = {} } = useCouponTagsMap();
+  const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
 
   const atRisk = useMemo(() => expiringSoon(coupons), [coupons]);
   const totalAtRisk = useMemo(
@@ -62,6 +81,15 @@ export function AtRiskScreen() {
   const worst = atRisk[0]?.days ?? null;
   const kuponi = EXPIRY_PERFORMANCE[expiryLevel(worst)];
 
+  const line =
+    atRisk.length === 1
+      ? `${formatIls(totalAtRisk)} על הכף בקופון אחד`
+      : `${formatIls(totalAtRisk)} על הכף ב-${atRisk.length} קופונים`;
+  // He is talking until he has finished saying *this* line, so a refresh that
+  // changes the number is said again rather than appearing behind his back.
+  const [spokenLine, setSpokenLine] = useState<string | null>(null);
+  const speaking = spokenLine !== line;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <Header title="מה בסכנה" showBack onBack={() => router.back()} />
@@ -78,72 +106,60 @@ export function AtRiskScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.hero}>
-            <Kuponi state={kuponi.state} speed={kuponi.speed} size="large" />
+            <Kuponi
+              state={speaking ? "talking" : kuponi.state}
+              speed={kuponi.speed}
+              size="large"
+            />
             <SpeechBubble
               tail="up"
               isHeading
-              text={
-                atRisk.length === 1
-                  ? `${formatIls(totalAtRisk)} על הכף בקופון אחד`
-                  : `${formatIls(totalAtRisk)} על הכף ב-${atRisk.length} קופונים`
-              }
+              speak
+              onSpoken={() => setSpokenLine(line)}
+              text={line}
               style={styles.bubble}
             />
           </View>
 
           {grouped.map((section) => (
-            <View key={section.level} style={styles.section}>
+            <View key={section.level}>
               <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>{section.title}</Text>
-              {section.entries.map(({ coupon, days }) => (
-                <TouchableOpacity
+              {section.entries.map(({ coupon }) => (
+                <CouponCard
                   key={coupon.id}
-                  activeOpacity={0.85}
+                  coupon={coupon}
+                  tags={tagsMap[coupon.id] || []}
                   onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${coupon.company}, ${daysPhrase(days)}, נשארו ${formatIls(couponRemainingValue(coupon))}`}
-                  style={[styles.row, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-                >
-                  <ShimmerLogo source={getCompanyLogoSource(coupon.company)} size={40} style={styles.logo} />
-                  <View style={styles.rowCopy}>
-                    <Text numberOfLines={1} style={[styles.company, { color: theme.text }]}>
-                      {coupon.company}
-                    </Text>
-                    <Text style={[styles.deadline, { color: days <= 1 ? theme.dangerText : theme.textMuted }]}>
-                      {daysPhrase(days)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.amount, { color: theme.text }]}>
-                    {formatIls(couponRemainingValue(coupon))}
-                  </Text>
-                  <ChevronLeft size={18} color={theme.textSubtle} />
-                </TouchableOpacity>
+                  onReportUsage={() => setUsageCoupon(coupon)}
+                />
               ))}
             </View>
           ))}
         </ScrollView>
       )}
+
+      <QuickUsageModal
+        visible={usageCoupon !== null}
+        onClose={() => setUsageCoupon(null)}
+        coupons={coupons}
+        preselectedCoupon={usageCoupon}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40, gap: 18 },
-  hero: { alignItems: "center", gap: 10 },
+  content: { padding: 16, paddingBottom: 40 },
+  // `CouponCard` carries its own bottom margin, so the page spaces itself and
+  // only the hero needs a gap of its own.
+  hero: { alignItems: "center", gap: 10, marginBottom: 20 },
   bubble: { maxWidth: 300 },
-  section: { gap: 8 },
-  sectionTitle: { fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "right", writingDirection: "rtl" },
-  row: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: radii.card,
-    borderWidth: 1,
+  sectionTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    textAlign: "right",
+    writingDirection: "rtl",
+    marginBottom: 8,
   },
-  logo: { borderRadius: 10 },
-  rowCopy: { flex: 1, alignItems: "flex-end" },
-  company: { fontFamily: fonts.bodyBold, fontSize: 15, textAlign: "right", writingDirection: "rtl" },
-  deadline: { fontFamily: fonts.body, fontSize: 13, textAlign: "right", writingDirection: "rtl", marginTop: 2 },
-  amount: { fontFamily: fonts.display, fontSize: 16, fontWeight: "800", writingDirection: "ltr" },
 });

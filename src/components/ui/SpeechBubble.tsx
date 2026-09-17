@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { useReduceMotionSetting } from "@/hooks/useReduceMotion";
+import { speechDuration, spokenSoFar } from "@/lib/speechPacing";
 import { fonts } from "@/lib/theme";
 
 /**
@@ -15,12 +16,23 @@ import { fonts } from "@/lib/theme";
  * illustration, everywhere else stacks one under him with a tail pointing up.
  * The look itself never varies, so he sounds like the same character on every
  * screen.
+ *
+ * `speak` is the other half of that: the line arrives a word at a time while
+ * the character above plays his talking loop, and `onSpoken` tells the caller
+ * when to put him back to rest. It is the pattern behind every character that
+ * reads as speaking rather than captioned — an idle state and a speaking
+ * state, with the length of the speech deciding when the second one ends,
+ * which is exactly what Duolingo's rig does with a `isSpeaking` flag and a
+ * duration taken from the audio. We have no audio and no mouth shapes to sync
+ * to, so the words themselves are the timing: see `speechPacing.ts`.
  */
 export function SpeechBubble({
   text,
   reduceMotion,
   tail = "none",
   isHeading = false,
+  speak = false,
+  onSpoken,
   style,
 }: {
   text: string;
@@ -30,10 +42,58 @@ export function SpeechBubble({
   tail?: "up" | "none";
   /** True where the line is also the block's heading, as in an empty state. */
   isHeading?: boolean;
+  /** True where a character above is saying this, rather than it being a label. */
+  speak?: boolean;
+  /** Fired once the last word is out, so the caller can stop his talking loop. */
+  onSpoken?: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
-  const systemReduced = useReduceMotion();
-  const still = reduceMotion ?? systemReduced;
+  const system = useReduceMotionSetting();
+  const still = reduceMotion ?? system.reduced;
+  // The reveal is a one-shot, so it waits for a real answer rather than acting
+  // on the "assume reduced" placeholder and finishing before it hears back. A
+  // prop is an answer in itself.
+  const settled = reduceMotion !== undefined || system.known;
+
+  const [progress, setProgress] = useState(1);
+  const spoken = useRef(onSpoken);
+  useEffect(() => { spoken.current = onSpoken; }, [onSpoken]);
+
+  useEffect(() => {
+    if (!speak) return;
+    if (!settled) {
+      setProgress(0);
+      return;
+    }
+    if (still) {
+      // Asked for no motion: the whole line at once, and he is done saying it
+      // before he ever started, so he never sits in the talking loop.
+      setProgress(1);
+      spoken.current?.();
+      return;
+    }
+
+    setProgress(0);
+    const started = performance.now();
+    const duration = speechDuration(text);
+    // Follow elapsed time rather than counting ticks, the way `MascotAnimation`
+    // does, so a busy thread drops words rather than stretching the line out
+    // past the loop that is supposed to be saying it.
+    const timer = setInterval(() => {
+      const value = (performance.now() - started) / duration;
+      if (value < 1) {
+        setProgress(value);
+        return;
+      }
+      clearInterval(timer);
+      setProgress(1);
+      spoken.current?.();
+    }, 1000 / 30);
+    return () => clearInterval(timer);
+  }, [speak, settled, still, text]);
+
+  const said = speak && progress < 1 ? spokenSoFar(text, progress) : text;
+
   return (
     // Keyed on the text so a new line animates in rather than swapping silently.
     <Animated.View
@@ -42,12 +102,36 @@ export function SpeechBubble({
       style={[styles.bubble, style]}
     >
       {tail === "up" ? <View style={styles.tail} /> : null}
-      <Text
-        accessibilityRole={isHeading ? "header" : undefined}
-        style={styles.text}
-      >
-        {text}
-      </Text>
+      {speak ? (
+        <View>
+          {/* The finished line, invisible, holding the bubble at its final size:
+              a bubble that grows a word at a time shoves the character above it
+              around while he is mid-sentence. */}
+          <Text
+            style={[styles.text, styles.ghost]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {text}
+          </Text>
+          {/* The label is always the whole line: someone listening to the screen
+              should not have to wait out an animation to hear the end of it. */}
+          <Text
+            accessibilityRole={isHeading ? "header" : undefined}
+            accessibilityLabel={text}
+            style={[styles.text, styles.said]}
+          >
+            {said}
+          </Text>
+        </View>
+      ) : (
+        <Text
+          accessibilityRole={isHeading ? "header" : undefined}
+          style={styles.text}
+        >
+          {text}
+        </Text>
+      )}
     </Animated.View>
   );
 }
@@ -88,5 +172,16 @@ const styles = StyleSheet.create({
     color: "#263246",
     textAlign: "right",
     writingDirection: "rtl",
+  },
+  ghost: {
+    opacity: 0,
+  },
+  // `left`/`right` rather than `start`/`end`: these are not flipped by RTL, so
+  // the overlay is the ghost's full width whichever way the layout runs.
+  said: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
   },
 });
