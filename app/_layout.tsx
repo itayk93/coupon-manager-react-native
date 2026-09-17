@@ -235,13 +235,16 @@ function RootLayoutNav() {
                 contentStyle: { backgroundColor: theme.background },
               }}
             />
+            {/* Above the tab bar and inside the column: the install strip takes
+                its own height off the screen rather than floating over what is
+                on it. */}
+            <InstallPrompt />
             <BottomNav />
           </SafeAreaView>
           <BiometricGate />
           <SharedScreenshotUsage />
           <ConfirmHost />
           <ToastHost />
-          <InstallPrompt />
 
           {launchVisible ? (
             <BrandLaunchAnimation
