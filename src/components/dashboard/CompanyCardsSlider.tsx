@@ -18,6 +18,11 @@ type CompanyCardsSliderProps = {
   companyCards: CompanyCardItem[];
   selectedCompany: string | null;
   onSelectCompany: (company: string) => void;
+  /**
+   * True where the grid is the whole screen rather than a section of one, so
+   * every company is out and there is nothing to expand.
+   */
+  showAll?: boolean;
 };
 
 /**
@@ -28,6 +33,7 @@ export function CompanyCardsSlider({
   companyCards,
   selectedCompany,
   onSelectCompany,
+  showAll = false,
 }: CompanyCardsSliderProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
@@ -35,6 +41,7 @@ export function CompanyCardsSlider({
   const isTablet = width >= 768;
   const collapsedCount = isTablet ? 10 : 6;
   const [isExpanded, setIsExpanded] = useState(false);
+  const expanded = showAll || isExpanded;
 
   const isFemale = isFemaleUser(user?.gender);
   const showAllLabel = isFemale ? "הציגי הכול" : "הצג הכול";
@@ -45,14 +52,14 @@ export function CompanyCardsSlider({
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
-        {companyCards.length > collapsedCount ? (
+        {!showAll && companyCards.length > collapsedCount ? (
           <TouchableOpacity
             onPress={() => setIsExpanded((current) => !current)}
             accessibilityRole="button"
             accessibilityState={{ expanded: isExpanded }}
           >
             <Text style={[styles.showAll, { color: theme.textMuted }]}>
-              {isExpanded ? showLessLabel : showAllLabel}
+              {expanded ? showLessLabel : showAllLabel}
             </Text>
           </TouchableOpacity>
         ) : <View />}
@@ -62,7 +69,7 @@ export function CompanyCardsSlider({
       </View>
 
       <View style={styles.grid}>
-        {(isExpanded ? companyCards : companyCards.slice(0, collapsedCount)).map((item) => {
+        {(expanded ? companyCards : companyCards.slice(0, collapsedCount)).map((item) => {
           const isSelected = selectedCompany === item.company;
           const logoUri = getCompanyLogoSource(item.company);
 

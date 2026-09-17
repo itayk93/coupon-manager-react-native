@@ -1,17 +1,6 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
-import { baselineCelebrationTokens, pickCelebration, pickSixSevenCelebration } from "./celebrationTrigger";
-import { totalRealizedSavings } from "./couponSavings";
-import {
-  celebrationEndsAt,
-  isCelebrationFresh,
-  loadCelebrationMemory,
-  nextLocalMidnight,
-  noteWalletValue,
-  rememberCelebration,
-  seedCelebrationBaseline,
-  toCelebrationState,
-} from "./celebrationMemory";
+import { celebrationHeadline, currentCelebration } from "./celebrationScene";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { prepareWidgetLogos } from "@/lib/widgetLogos";
 import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
@@ -178,57 +167,6 @@ export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
   { kind: "record", label: "⛰️ שיא ארנק" },
 ];
 
-const shekels = (value: number) => `₪${Math.round(value).toLocaleString("en-US")}`;
-
-/**
- * The concrete sentence a celebration scene shows.
- *
- * A scene title has to name the achievement — "אבן דרך חדשה" tells the user
- * nothing, "25 קופונים בארנק" does. The numbers come from the wallet the widget
- * already has, so the headline can never disagree with the app.
- */
-export function celebrationHeadline(kind: string, coupons: DecryptedCoupon[]): string {
-  const spendable = coupons.filter(isSpendableCoupon);
-  const walletValue = totalRemainingValue(coupons);
-  // Same figure as the statistics screen: saved on what was actually spent.
-  const lifetimeSavings = totalRealizedSavings(coupons);
-  const redeemed = coupons.filter((coupon) => coupon.status === "נוצל").length;
-
-  switch (kind) {
-    case "six-seven":
-      return "67 קופונים!";
-    // Real redemptions carry their own headline (see `redemptionCelebration`);
-    // this only feeds the debug preview.
-    case "redeemed":
-      return `מימשת את ${spendable[0]?.company || "BuyMe"}\nחסכת 100 ש״ח`;
-    case "anniversary":
-      return "שנה ביחד! 🎉";
-    case "milestone":
-      return `${spendable.length} קופונים בארנק!`;
-    case "savings":
-      return `חסכת ${shekels(lifetimeSavings)} עד היום`;
-    // TODO: monthly/streak have no field of their own yet — these read off the
-    // wallet so the scene is at least testable, and get real numbers when the
-    // triggers land.
-    case "monthly":
-      return `החודש חסכת ${shekels(lifetimeSavings / 12)}`;
-    case "streak":
-      return "3 שבועות ברצף של חיסכון";
-    case "rescue":
-      return `מימשת ${shekels(walletValue / Math.max(spendable.length, 1))} יום לפני שפג`;
-    case "clean":
-      return "0 קופונים פגו החודש";
-    case "referral":
-      return "חבר הצטרף בזכותך!";
-    case "record":
-      // Two lines on purpose; "ש״ח" instead of "₪" because the sign mis-orders
-      // next to digits in the RTL widget.
-      return `שיא חדש!\n${Math.round(walletValue).toLocaleString("en-US")} ש״ח בארנק`;
-    default:
-      return `${redeemed} קופונים מומשו`;
-  }
-}
-
 /** DEBUG (admin only). Forces a celebration scene onto the small widget. */
 export function previewWidgetCelebration(kind: string, coupons: DecryptedCoupon[]): void {
   const base = buildWidgetPayload(coupons);
@@ -248,64 +186,6 @@ export function previewWidgetCelebration(kind: string, coupons: DecryptedCoupon[
 export function applyWidgetDebugToken(token: string, coupons: DecryptedCoupon[]): void {
   if (/^\d+$/.test(token)) previewWidgetState(Number(token), coupons);
   else previewWidgetCelebration(token, coupons);
-}
-
-/**
- * A milestone worth showing, or null.
- *
- * A coupon about to expire always wins: nudging the user to spend before they
- * lose money matters more than a pat on the back, and showing both at once is
- * not an option on a small widget.
- */
-async function celebrationFor(
-  coupons: DecryptedCoupon[],
-  memberSince: string | null | undefined,
-  urgentDays: number | null
-): Promise<{ kind: string; text: string; until: string | null } | null> {
-  if (urgentDays !== null && urgentDays <= 2) return null;
-
-  const stored = await loadCelebrationMemory();
-  const walletValue = totalRemainingValue(coupons);
-
-  // The exact 67-count moment must not be swallowed by yesterday's record or
-  // a routine milestone. Urgent expiry and fresh redemption keep priority.
-  const special = pickSixSevenCelebration(coupons, toCelebrationState(stored, memberSince));
-  const redemptionFresh = isCelebrationFresh(stored) && (stored.shownKind === "redeemed" || stored.shownKind === "rescue");
-  if (special && !redemptionFresh) {
-    const until = nextLocalMidnight();
-    await rememberCelebration(stored, special.kind, special.token, walletValue, until);
-    return { kind: special.kind, text: "67 קופונים!", until: until.toISOString() };
-  }
-
-  // A scene stays up until it ends rather than vanishing on the next sync.
-  if (isCelebrationFresh(stored) && stored.shownKind) {
-    const end = celebrationEndsAt(stored);
-    return {
-      kind: stored.shownKind,
-      text: stored.shownText || celebrationHeadline(stored.shownKind, coupons),
-      until: end === null ? null : new Date(end).toISOString(),
-    };
-  }
-
-  // No record yet means this wallet was never seen here: take it as the baseline
-  // instead of celebrating steps it reached long ago.
-  const memory =
-    stored.walletRecord == null && walletValue > 0
-      ? await seedCelebrationBaseline(stored, walletValue, baselineCelebrationTokens(coupons))
-      : stored;
-  const pick = pickCelebration(coupons, toCelebrationState(memory, memberSince));
-  if (!pick) {
-    await noteWalletValue(memory, walletValue);
-    return null;
-  }
-
-  const until = nextLocalMidnight();
-  await rememberCelebration(memory, pick.kind, pick.token, walletValue, until);
-  return {
-    kind: pick.kind,
-    text: celebrationHeadline(pick.kind, coupons),
-    until: until.toISOString(),
-  };
 }
 
 /**
@@ -333,7 +213,7 @@ export async function syncWidget(
   }
 
   const base = buildWidgetPayload(coupons);
-  const celebration = await celebrationFor(coupons, memberSince, base.urgentDaysRemaining ?? null);
+  const celebration = await currentCelebration(coupons, memberSince, base.urgentDaysRemaining ?? null);
 
   // The expiry fields stay in: the widget drops the scene by itself at
   // `celebrationUntil`, and must fall back to the right mascot without waiting

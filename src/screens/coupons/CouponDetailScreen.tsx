@@ -72,10 +72,12 @@ import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import { SaleCelebration } from "@/components/coupons/SaleCelebration";
+import { CelebrationOverlay } from "@/components/ui/CelebrationOverlay";
+import { redemptionCelebration, type RedemptionCelebration } from "@/lib/celebrationTrigger";
 import { useRecordManualSale } from "@/hooks/useCouponSales";
 import { useCouponMerchantDirectory } from "@/hooks/useCouponMerchantSearch";
 import { useAuth } from "@/contexts/AuthContext";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { MascotAnimation } from "@/components/ui/MascotAnimation";
 
 /**
@@ -174,7 +176,7 @@ export function CouponDetailScreen() {
   // the tap only parks the action here; it runs once this sheet is gone.
   const pendingOverflowAction = useRef<(() => void) | null>(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
-  const [showUsageCelebration, setShowUsageCelebration] = useState(false);
+  const [usageScene, setUsageScene] = useState<RedemptionCelebration | null>(null);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedMapLocation, setSelectedMapLocation] = useState<{
@@ -215,12 +217,6 @@ export function CouponDetailScreen() {
     }, 350);
     return () => clearTimeout(timer);
   }, [highlightUsage, history.length]);
-
-  useEffect(() => {
-    if (!showUsageCelebration) return;
-    const timer = setTimeout(() => setShowUsageCelebration(false), 2200);
-    return () => clearTimeout(timer);
-  }, [showUsageCelebration]);
 
   if (isLoading || !coupon) {
     return (
@@ -291,7 +287,9 @@ export function CouponDetailScreen() {
             usedAmount: remaining,
             details: "סימון יתרת הקופון כנוצלה",
           });
-          setShowUsageCelebration(true);
+          // `remaining` is what this last usage took off the balance, which is
+          // exactly the money that would have been lost had the coupon expired.
+          setUsageScene(redemptionCelebration(coupon, remaining));
           return;
         }
 
@@ -301,7 +299,7 @@ export function CouponDetailScreen() {
           id: coupon.id,
           updates: { status: "נוצל" },
         });
-        setShowUsageCelebration(true);
+        setUsageScene(redemptionCelebration(coupon, 0));
       },
       "סמן כנוצל"
     );
@@ -494,26 +492,6 @@ export function CouponDetailScreen() {
 
         {/* Barcode & QR Code Presentation Box */}
         <CouponBarcodeView coupon={coupon} />
-
-        {showUsageCelebration ? (
-          <View
-            style={[styles.usageCelebration, { backgroundColor: theme.successBg }]}
-            accessibilityLiveRegion="polite"
-            accessible
-            accessibilityLabel="השימוש נשמר בהצלחה"
-          >
-            <CharacterSpotlight
-              character="investigator"
-              state="cheering"
-              size="small"
-              tone="success"
-            />
-            <View style={styles.usageCelebrationCopy}>
-              <Text style={[styles.usageCelebrationTitle, { color: theme.successText }]}>השימוש נשמר</Text>
-              <Text style={[styles.usageCelebrationText, { color: theme.successText }]}>היתרה בארנק כבר מעודכנת.</Text>
-            </View>
-          </View>
-        ) : null}
 
         {coupon.expiration ? (
           <View
@@ -919,7 +897,11 @@ export function CouponDetailScreen() {
         onClose={() => setIsUsageOpen(false)}
         coupons={[coupon]}
         preselectedCoupon={coupon}
-        onUsageSaved={() => setShowUsageCelebration(true)}
+        // A partial usage gets no overlay: the wallet balance counting down
+        // is the feedback, and confetti for logging ₪20 of ₪200 wears out fast.
+        onUsageSaved={(used) => {
+          if (used >= remaining) setUsageScene(redemptionCelebration(coupon, used));
+        }}
       />
 
       <QuickShareSheet
@@ -1054,6 +1036,22 @@ export function CouponDetailScreen() {
       </Modal>
 
       {isCelebrating ? <SaleCelebration onDone={() => router.replace("/coupons")} /> : null}
+      {/* The biggest money event in the app, so it gets the biggest moment:
+          the figure counts up over a confetti burst rather than a small card
+          appearing halfway down a page the user has already scrolled past. */}
+      {usageScene ? (
+        <CelebrationOverlay
+          title={usageScene.headline}
+          subtitle={usageScene.amount > 0 ? undefined : "היתרה בארנק כבר מעודכנת."}
+          amount={usageScene.amount}
+          amountCaption={usageScene.kind === "rescue" ? "הצלת" : "חסכת"}
+          // A rescue is the one moment he has something to let go of: he has
+          // been worried about this coupon's date, and it just stopped being a
+          // problem. Nothing else in the app plays this.
+          intro={usageScene.kind === "rescue" ? "relieved" : undefined}
+          onDone={() => setUsageScene(null)}
+        />
+      ) : null}
 
       <Modal
         visible={selectedMapLocation !== null}
@@ -1236,29 +1234,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 2,
     marginBottom: 12,
-  },
-  usageCelebration: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  usageCelebrationCopy: { flex: 1, alignItems: "flex-end" },
-  usageCelebrationTitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    fontWeight: "800",
-    textAlign: "right",
-  },
-  usageCelebrationText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: "right",
-    marginTop: 2,
   },
   expirationLabel: {
     fontSize: 14,

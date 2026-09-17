@@ -8,10 +8,10 @@ import { fonts, radii } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/couponId";
-import { expiryEmphasis } from "@/lib/expiryUrgency";
+import { EXPIRY_PERFORMANCE, daysPhrase, expiryEmphasis, expiryLevel } from "@/lib/expiryUrgency";
 import { fitFontSize } from "@/lib/fitText";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 
 /**
  * A dismissible strip above the wallet card for coupons that expire within
@@ -56,13 +56,6 @@ function daysUntil(expiration: string): number | null {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
-}
-
-function daysPhrase(days: number): string {
-  if (days <= 0) return "פג היום";
-  if (days === 1) return "פג מחר";
-  if (days === 2) return "פג בעוד יומיים";
-  return `פג בעוד ${days} ימים`;
 }
 
 type Tone = { bg: string; border: string; text: string; icon: string };
@@ -180,16 +173,8 @@ export function ExpiringCouponsBanner({
   // How loud the banner is allowed to be. See `expiryUrgency.ts`: still above
   // three days, one pass at two or three, a slow breath inside 48 hours.
   const emphasis = expiryEmphasis(soonest.days);
-  const mascotState =
-    soonest.days <= 0
-      ? "emergency"
-      : soonest.days === 1
-        ? "panic"
-        : soonest.days <= 4
-          ? "anxious"
-          : soonest.days <= 7
-            ? "concerned"
-            : "calm";
+  // The face and the motion come from the same step of the same ladder.
+  const kuponi = EXPIRY_PERFORMANCE[expiryLevel(soonest.days)];
   const headlineFontSize = fitFontSize(headline.length, headlineWidth);
 
   return (
@@ -205,11 +190,10 @@ export function ExpiringCouponsBanner({
           the banner's own overflow it has a ground to stand on, and it costs
           the strip no height at all. */}
       <View style={styles.mascot} pointerEvents="none">
-        <CharacterSpotlight
-          character="investigator"
-          state={mascotState}
+        <Kuponi
+          state={kuponi.state}
+          speed={kuponi.speed}
           size="small"
-          tone="none"
         />
       </View>
       {/* Equal slots at both ends, and the line centred between them.
@@ -278,10 +262,22 @@ export function ExpiringCouponsBanner({
           ))
         : null}
 
-      {expanded && expiring.length > MAX_LISTED ? (
-        <Text style={[styles.moreText, { color: tone.text }]}>
-          ועוד {expiring.length - MAX_LISTED} קופונים
-        </Text>
+      {/* Was a dead end: a line of text saying more coupons exist, with
+          nowhere to go and see them. */}
+      {expanded ? (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push("/at-risk")}
+          accessibilityRole="button"
+          style={styles.moreRow}
+        >
+          <ChevronLeft size={15} color={tone.text} />
+          <Text style={[styles.moreText, { color: tone.text }]}>
+            {expiring.length > MAX_LISTED
+              ? `ועוד ${expiring.length - MAX_LISTED} קופונים — לראות הכול`
+              : "לראות הכול, עם הסכומים"}
+          </Text>
+        </TouchableOpacity>
       ) : null}
     </View>
   );
@@ -383,6 +379,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12.5,
   },
+  moreRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "flex-start", gap: 5, paddingTop: 6 },
   moreText: {
     fontFamily: fonts.body,
     fontSize: 12.5,

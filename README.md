@@ -18,6 +18,7 @@ Backed by Supabase (Postgres + Auth + Edge Functions).
 - Home-screen widgets on iOS and Android (`modules/coupon-widget`, `targets/`)
 - Biometric lock, push and email notifications
 - Referral chains behind an admin-only dashboard (`supabase/migrations/*_referral_*.sql`)
+- Kuponi, the app's mascot, across screens and widgets (see `docs/mascot/`)
 
 ## Screenshot
 

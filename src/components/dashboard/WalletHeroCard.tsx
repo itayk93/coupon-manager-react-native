@@ -116,6 +116,7 @@ export function WalletHeroCard({
             ) : (
               <IlsAmount
                 value={remainingValue}
+                animate
                 style={[styles.balanceValue, { color: theme.text }]}
                 currencyStyle={styles.balanceCurrency}
               />

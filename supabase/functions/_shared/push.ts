@@ -5,8 +5,8 @@ import { rtlText } from './rtlText.ts';
 
 const DEFAULT_SUBJECT = 'mailto:push@couponmaster.app';
 const DEFAULT_PAYLOAD = {
-  title: 'קופון מאסטר',
-  body: 'יש עדכון חדש במערכת.',
+  title: 'קופוני',
+  body: 'יש עדכון חדש בארנק שלך.',
   dir: 'rtl',
   url: '/notifications',
   icon: '/pwa-192x192.png',

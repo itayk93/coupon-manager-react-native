@@ -11,11 +11,14 @@ import {
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
-import { CouponRail } from "@/components/dashboard/CouponRail";
+import { CouponSection } from "@/components/dashboard/CouponSection";
+import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
+import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
+import { AddCouponFab, FAB_CLEARANCE } from "@/components/ui/AddCouponFab";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -23,34 +26,40 @@ import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
 import { expiringSoon } from "@/lib/homeHero";
 import { couponRouteId } from "@/lib/couponId";
 
 /**
- * An alternative home screen, reachable only from the admin panel while it is
- * being tried out. The tab bar still opens `DashboardScreen`; nothing here
- * changes what a regular user sees.
+ * The home screen built around Kuponi, offered in settings as "מסך הבית של
+ * קופוני". `DashboardScreen` stays the default; this is opt-in per device
+ * (`homeScreenPref.ts`) and reversible from the same switch.
  *
  * What it is testing: a home screen that answers "how much do I have, what is
  * about to expire, and what do I reach for" in one glance, and gets out of the
  * way. The mascot holds the balance, the search field is the primary action,
- * and the coupons sit in short horizontal rails of small tiles.
+ * and the coupons sit below in two short sections, a card per row.
  *
- * The rails matter. The first version of this screen stacked `CouponCard`s down
- * the page, which is precisely the coupons list — the same component, the same
- * full-width rhythm — so the home screen had nothing of its own to offer.
- * `CouponMiniTile` shows what you need to pick a coupon and lets the next one
- * peek in from the side, which is a shape the list screen never takes.
+ * The sections are short on purpose. An earlier version drew them as small
+ * tiles in horizontal rails, which gave the screen a shape of its own but cost
+ * the card's code, progress bar, copy button and usage button — most of what
+ * you open a coupon for. So the card here is `CouponCard`, the one the coupons
+ * list and the dashboard render, and what keeps this screen from being the list
+ * is the shortlist: `MAX_SECTION_CARDS` a section, not the whole wallet.
  *
  * `ExpiringCouponsBanner` is deliberately absent: the hero already says how
  * many coupons are close, from the same `homeHero` numbers. The banner is
  * untouched and still used by the current dashboard.
  */
 
-/** Tiles per rail. A rail is a shortlist, not a listing. */
-const MAX_RAIL_TILES = 8;
+/**
+ * Cards per section. A full-width card is taller than the tile it replaced, and
+ * a home screen you have to scroll to read is the coupons list with extra
+ * steps — the link at the foot of the screen is what the rest is for.
+ */
+const MAX_SECTION_CARDS = 4;
 
 export function HomeAltScreen() {
   const router = useRouter();
@@ -59,8 +68,10 @@ export function HomeAltScreen() {
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const [isUsageOpen, setIsUsageOpen] = useState(false);
-  // Set when a tile is held: the usage modal opens on that coupon.
+  // Set when a card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
+  // Which company's coupons are open in the sheet — the screen's fast path.
+  const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const onboardingPending = useOnboardingPending();
 
   // Same ordering the dashboard uses: most recently used first, then most
@@ -84,29 +95,47 @@ export function HomeAltScreen() {
     });
   }, [coupons, usageStats]);
 
-  const expiring = useMemo(() => expiringSoon(coupons).slice(0, MAX_RAIL_TILES), [coupons]);
+  const expiring = useMemo(
+    () => expiringSoon(coupons).slice(0, MAX_SECTION_CARDS).map((entry) => entry.coupon),
+    [coupons]
+  );
+
+  // Companies, most recently used first. The ordering is imported rather than
+  // re-derived here — see `companyCards` — so a shop is never near the top on
+  // one screen and buried on another.
+  const cards = useMemo(
+    () => companyCards(visibleCoupons, usageStats),
+    [visibleCoupons, usageStats]
+  );
+
+  const sheetCoupons = useMemo(
+    () =>
+      sheetCompany
+        ? visibleCoupons.filter((coupon) => companyKey(coupon.company) === companyKey(sheetCompany))
+        : [],
+    [visibleCoupons, sheetCompany]
+  );
 
   /**
-   * The second rail: what the user reaches for. Coupons they pinned to the
+   * The second section: what the user reaches for. Coupons they pinned to the
    * widget come first, then the recently used ones, skipping anything the
-   * expiring rail is already showing.
+   * expiring section is already showing.
    */
   const favourites = useMemo(() => {
-    const shown = new Set(expiring.map((entry) => entry.coupon.id));
+    const shown = new Set(expiring.map((coupon) => coupon.id));
     const picked: DecryptedCoupon[] = [];
     for (const coupon of [...widgetSelection(visibleCoupons), ...visibleCoupons]) {
       if (shown.has(coupon.id)) continue;
       shown.add(coupon.id);
       picked.push(coupon);
-      if (picked.length === MAX_RAIL_TILES) break;
+      if (picked.length === MAX_SECTION_CARDS) break;
     }
     return picked;
   }, [expiring, visibleCoupons]);
 
-  const companyCount = useMemo(
-    () => new Set(visibleCoupons.map((coupon) => companyKey(coupon.company))).size,
-    [visibleCoupons]
-  );
+  // Counted off the same grid the tile now opens, so the number on it and the
+  // number of tiles on the companies screen cannot disagree.
+  const companyCount = cards.length;
 
   const openCoupon = (coupon: DecryptedCoupon) =>
     router.push(`/coupons/${couponRouteId(coupon)}`);
@@ -170,7 +199,18 @@ export function HomeAltScreen() {
             search. */}
         <OnboardingBanner />
 
-        <CouponAccessHero coupons={coupons} tagsMap={tagsMap} isLoading={isLoading} />
+        <CouponAccessHero coupons={coupons} isLoading={isLoading} />
+
+        {/* The fast path, as high as the screen allows. Someone opening this
+            app is usually at a till: they know the shop and need the barcode,
+            so naming the shop is the shortest route there. Same component and
+            same ordering as the dashboard, so a shop is never near the top on
+            one screen and buried on the other. */}
+        <CompanyCardsSlider
+          companyCards={cards}
+          selectedCompany={sheetCompany}
+          onSelectCompany={setSheetCompany}
+        />
 
         {isLoading && coupons.length === 0 ? (
           <View style={styles.skeletons}>
@@ -180,16 +220,18 @@ export function HomeAltScreen() {
           </View>
         ) : null}
 
-        <CouponRail
+        <CouponSection
           title="כדאי להשתמש בקרוב"
-          items={expiring}
+          coupons={expiring}
+          tagsMap={tagsMap}
           keyPrefix="expiring"
           onOpen={openCoupon}
           onReportUsage={reportUsage}
         />
-        <CouponRail
+        <CouponSection
           title="בשימוש לאחרונה"
-          items={favourites.map((coupon) => ({ coupon }))}
+          coupons={favourites}
+          tagsMap={tagsMap}
           keyPrefix="favourite"
           onOpen={openCoupon}
           onReportUsage={reportUsage}
@@ -197,9 +239,17 @@ export function HomeAltScreen() {
 
         {visibleCoupons.length > 0 ? (
           <>
+            {/* Each tile names the filter it wants, including the one that
+                wants none of them. The list is a tab route, so it is usually
+                still mounted with whatever filter the last tile set: two of
+                these used to travel with no params at all, which the list
+                reads as "nothing to apply" — so after "פגים בקרוב" the other
+                two landed on a list still filtered to what is expiring. */}
             <View style={styles.statsRow}>
-              {stat(String(visibleCoupons.length), "קופונים פעילים", () => router.navigate("/coupons"))}
-              {stat(String(companyCount), "חברות", () => router.navigate("/coupons"))}
+              {stat(String(visibleCoupons.length), "קופונים פעילים", () =>
+                router.navigate({ pathname: "/coupons", params: { initialStatus: "active" } })
+              )}
+              {stat(String(companyCount), "חברות", () => router.push("/companies"))}
               {stat(String(expiringSoon(coupons).length), "פגים בקרוב", () =>
                 router.push({ pathname: "/coupons", params: { initialStatus: "expiring" } })
               )}
@@ -234,6 +284,17 @@ export function HomeAltScreen() {
         {onboardingPending ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
       </ScrollView>
 
+      {/* Outside the ScrollView so it stays put while the page moves under it:
+          adding a coupon is the one thing this screen is for that is not about
+          a coupon already in the wallet. */}
+      <AddCouponFab />
+
+      <CompanySheet
+        company={sheetCompany}
+        coupons={sheetCoupons}
+        onClose={() => setSheetCompany(null)}
+      />
+
       <QuickUsageModal
         visible={isUsageOpen}
         onClose={() => {
@@ -257,7 +318,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 32,
+    // Enough that the last thing on the page can be scrolled clear of the
+    // button rather than ending underneath it.
+    paddingBottom: FAB_CLEARANCE + 16,
   },
   debugBar: {
     flexDirection: "row-reverse",

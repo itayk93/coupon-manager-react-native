@@ -17,8 +17,8 @@ import { useMyReferralStatus } from "@/hooks/useReferral";
 import { referralShareMessage, referralUrl } from "@/lib/referral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
+import { Kuponi } from "@/components/ui/Kuponi";
 
 const APP_BASE_URL = "https://coupons.itaykarkason.com";
 
@@ -38,7 +38,7 @@ export function InviteScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="הזמנת חברים" />
-        <MascotLoadingState title="טוען את תוכנית ההזמנות" subtitle="בודקים את הקישור וההתקדמות שלך" />
+        <KuponiLoading title="טוען את תוכנית ההזמנות" subtitle="בודק את הקישור וההתקדמות שלך" />
       </SafeAreaView>
     );
   }
@@ -74,13 +74,11 @@ export function InviteScreen() {
           <View
             style={styles.mascotInvite}
             accessible
-            accessibilityLabel="המאסקוט מזמין חברים לקבל קופון"
+            accessibilityLabel="קופוני מזמין חברים לקבל קופון"
           >
-            <CharacterSpotlight
-              character="investigator"
+            <Kuponi
               state="talking"
               size="medium"
-              tone="blue"
             />
           </View>
           <Text style={[styles.label, { color: theme.textMuted }]}>הקוד שלך</Text>

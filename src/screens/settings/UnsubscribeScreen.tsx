@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Mail, Megaphone, CircleCheck, TriangleAlert } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
-import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
+import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,7 +139,7 @@ export function UnsubscribeScreen() {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ניהול התראות" />
-        <MascotLoadingState title="טוען את הגדרות הדיוור" subtitle="בודקים את ההעדפות השמורות שלך" />
+        <KuponiLoading title="טוען את הגדרות הדיוור" subtitle="בודק את ההעדפות השמורות שלך" />
       </SafeAreaView>
     );
   }

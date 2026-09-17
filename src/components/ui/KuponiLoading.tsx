@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
+import { SpeechBubble } from "@/components/ui/SpeechBubble";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -11,10 +12,13 @@ type Props = {
   style?: ViewStyle;
 };
 
-/** Branded full-page loading feedback. Character motion already follows the
- * system Reduce Motion preference inside CharacterSpotlight. */
-export function MascotLoadingState({
-  title = "רק רגע, כבר מסדרים הכול",
+/** Branded full-page loading feedback.
+ *
+ * Kuponi is `calm` here, not `thinking`: nothing about the user's money has
+ * changed, a request is simply in flight. He waits alongside the user rather
+ * than performing work. See `docs/mascot/STATE-LAW.md`. */
+export function KuponiLoading({
+  title = "רגע, אני מסדר הכול",
   subtitle,
   compact = false,
   style,
@@ -27,16 +31,12 @@ export function MascotLoadingState({
       accessibilityLiveRegion="polite"
       style={[styles.container, compact && styles.compact, style]}
     >
-      <CharacterSpotlight
-        character="helper"
-        state="thinking"
+      <Kuponi
+        state="calm"
         size={compact ? "small" : "large"}
-        tone="mint"
       />
       <View style={styles.copy}>
-        <Text style={[styles.title, compact && styles.compactTitle, { color: theme.text }]}>
-          {title}
-        </Text>
+        <SpeechBubble text={title} tail="up" style={styles.bubble} />
         {subtitle ? (
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
         ) : null}
@@ -56,8 +56,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   compact: { flex: 0, minHeight: 190, paddingVertical: 20, gap: 8 },
-  copy: { alignItems: "center", gap: 6, maxWidth: 320 },
-  title: { fontFamily: fonts.display, fontSize: 19, fontWeight: "800", textAlign: "center" },
-  compactTitle: { fontSize: 16 },
+  copy: { alignItems: "center", gap: 8, maxWidth: 320 },
+  bubble: { maxWidth: 300 },
   subtitle: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, textAlign: "center" },
 });

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { Button } from "./button";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
+import { SpeechBubble } from "@/components/ui/SpeechBubble";
 
 type EmptyStateProps = {
   icon?: React.ReactNode;
@@ -13,7 +14,6 @@ type EmptyStateProps = {
   onAction?: () => void;
   style?: ViewStyle;
   largeVisual?: boolean;
-  mascot?: "helper" | "investigator";
   visual?: React.ReactNode;
 };
 
@@ -25,7 +25,6 @@ export function EmptyState({
   onAction,
   style,
   largeVisual = false,
-  mascot = "helper",
   visual,
 }: EmptyStateProps) {
   const { theme } = useAppTheme();
@@ -41,18 +40,20 @@ export function EmptyState({
         style,
       ]}
     >
-      {visual ?? (
-        <CharacterSpotlight
-          character={mascot}
-          state="thinking"
-          size={largeVisual ? "large" : "medium"}
-          tone="coral"
-        />
-      )}
+      {/* An empty list is exactly when someone should explain, so the headline
+          is Kuponi's line rather than a label floating above a drawing. */}
+      <View style={styles.stage}>
+        {visual ?? (
+          <Kuponi
+            state="talking"
+            size={largeVisual ? "large" : "medium"}
+          />
+        )}
+        <SpeechBubble text={title} tail="up" isHeading style={styles.bubble} />
+      </View>
 
       {icon ? <View style={[styles.iconBadge, { backgroundColor: theme.coralBg, borderColor: theme.coralBorder }]}>{icon}</View> : null}
 
-      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: theme.textMuted }]}>
         {subtitle}
       </Text>
@@ -89,19 +90,14 @@ const styles = StyleSheet.create({
     marginTop: -16,
     marginBottom: 8,
   },
-  visualStage: {
-    width: 112,
-    height: 132,
+  stage: {
     alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 12,
+    alignSelf: "stretch",
+    gap: 10,
+    marginBottom: 10,
   },
-  title: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 17,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 6,
+  bubble: {
+    maxWidth: 300,
   },
   subtitle: {
     fontFamily: fonts.bodyBold,

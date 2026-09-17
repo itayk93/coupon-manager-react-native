@@ -13,6 +13,8 @@ import { Sparkles, ChevronLeft, X } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
 import { ExpiringCouponsBanner } from "@/components/dashboard/ExpiringCouponsBanner";
 import { SixSevenCelebration } from "@/components/dashboard/SixSevenCelebration";
+import { CelebrationBanner } from "@/components/dashboard/CelebrationBanner";
+import { useCelebration } from "@/hooks/useCelebration";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { PushPrimer } from "@/components/layout/PushPrimer";
@@ -28,9 +30,10 @@ import { useContentWidth } from "@/hooks/useContentWidth";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
-import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
+import { Kuponi } from "@/components/ui/Kuponi";
 import { couponRouteId } from "@/lib/couponId";
 
 export function DashboardScreen() {
@@ -76,31 +79,13 @@ export function DashboardScreen() {
     });
   }, [coupons, usageStats]);
 
-  const companyCards = useMemo(() => {
-    const map = visibleCoupons.reduce<Record<string, { company: string; count: number }>>(
-      (acc, coupon) => {
-        const key = companyKey(coupon.company);
-        const company = (coupon.company || "ללא חברה").trim();
-        acc[key] = acc[key] || { company, count: 0 };
-        acc[key].count += 1;
-        return acc;
-      },
-      {}
-    );
-
-    const companyUsage = usageStats?.usageCountByCompany || {};
-    const companyLatest = usageStats?.latestUsageByCompany || {};
-
-    return Object.values(map).sort((a, b) => {
-      const latestDiff = (companyLatest[b.company] || 0) - (companyLatest[a.company] || 0);
-      if (latestDiff !== 0) return latestDiff;
-
-      const usageDiff = (companyUsage[b.company] || 0) - (companyUsage[a.company] || 0);
-      if (usageDiff !== 0) return usageDiff;
-
-      return b.count - a.count || a.company.localeCompare(b.company, "he");
-    });
-  }, [visibleCoupons, usageStats]);
+  // The ordering lives in `companyCards`, where the Kuponi home screen and the
+  // companies screen read it too: three copies of this comparator is how a shop
+  // ends up near the top on one screen and buried on another.
+  const cards = useMemo(
+    () => companyCards(visibleCoupons, usageStats),
+    [visibleCoupons, usageStats]
+  );
 
 
   const filteredCoupons = useMemo(() => {
@@ -131,6 +116,13 @@ export function DashboardScreen() {
 
   const onboardingPending = useOnboardingPending();
   const sixSevenMilestone = !isLoading && !isError && visibleCoupons.length === 67;
+  // `CelebrationBanner` decides for itself whether it has a scene to draw, and
+  // a chain that renders exactly one notice has to know that before it picks —
+  // the same problem the expiry banner solves by reporting its own visibility.
+  // Read from the hook the banner reads, so the two cannot disagree.
+  const celebrationScene = useCelebration();
+  const hasCelebration =
+    !isLoading && !isError && Boolean(celebrationScene) && celebrationScene?.kind !== "six-seven";
 
   const handleSelectCompany = (company: string) => {
     setSheetCompany(company);
@@ -161,7 +153,12 @@ export function DashboardScreen() {
             true tomorrow.
 
             They used to stack, and three notices in a row pushed the wallet
-            card, the thing people open the app for, under the fold. */}
+            card, the thing people open the app for, under the fold.
+
+            `CelebrationBanner` is a milestone too, so it sits with the 6-7 egg
+            rather than above the chain where it used to render — the egg wins
+            the slot when both are true, which is the same call the banner
+            makes for itself. */}
         {showSavedCelebration ? (
           <TouchableOpacity
             activeOpacity={0.9}
@@ -175,7 +172,7 @@ export function DashboardScreen() {
             accessibilityLabel="הקופון נשמר בארנק. מעבר לקופון"
           >
             <View style={styles.successVisual}>
-              <CharacterSpotlight character="helper" state="cheering" size="small" tone="success" />
+              <Kuponi state="cheering" size="small" />
             </View>
             <View style={styles.successCopy}>
               <Text style={[styles.successTitle, { color: theme.successText }]}>הקופון נשמר בארנק</Text>
@@ -196,6 +193,8 @@ export function DashboardScreen() {
           </TouchableOpacity>
         ) : sixSevenMilestone ? (
           <SixSevenCelebration />
+        ) : hasCelebration ? (
+          <CelebrationBanner />
         ) : onboardingPending ? (
           <OnboardingBanner />
         ) : (
@@ -220,7 +219,7 @@ export function DashboardScreen() {
 
         {/* Company Cards Slider */}
         <CompanyCardsSlider
-          companyCards={companyCards}
+          companyCards={cards}
           selectedCompany={selectedCompany}
           onSelectCompany={handleSelectCompany}
         />
@@ -296,7 +295,6 @@ export function DashboardScreen() {
           ))
         ) : visibleCoupons.length === 0 ? (
           <EmptyState
-            mascot="investigator"
             icon={<Sparkles size={32} color={theme.primary} />}
             title="הארנק מחכה לקופון הראשון"
             subtitle="מוסיפים קופון ומתחילים לשמור על כל שקל."
