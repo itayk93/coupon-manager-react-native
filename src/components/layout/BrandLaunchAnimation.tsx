@@ -58,7 +58,7 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
   return (
     <Animated.View style={[styles.overlay, { opacity }]} accessibilityViewIsModal>
       <Animated.Image
-        source={require("../../../assets/brand-logo-premium.png")}
+        source={require("../../../assets/brand-logo-kuponi.png")}
         accessibilityLabel="Coupon Master"
         resizeMode="contain"
         onLoad={() => setImageReady(true)}

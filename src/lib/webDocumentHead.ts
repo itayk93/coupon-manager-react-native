@@ -27,7 +27,7 @@ const VIEWPORT =
   "width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover";
 
 const META: Array<[string, string]> = [
-  ["theme-color", "#6366F1"],
+  ["theme-color", "#1f6fd1"],
   ["apple-mobile-web-app-capable", "yes"],
   ["apple-mobile-web-app-status-bar-style", "default"],
   ["apple-mobile-web-app-title", "קופון מאסטר"],
@@ -35,8 +35,9 @@ const META: Array<[string, string]> = [
 ];
 
 const LINKS: Array<Record<string, string>> = [
+  { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png?v=kuponi-face-1" },
   { rel: "manifest", href: "/manifest.json" },
-  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=kuponi-face-1" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "stylesheet",

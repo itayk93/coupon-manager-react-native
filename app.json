@@ -31,7 +31,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#faf9f6"
+        "backgroundColor": "#e8f2fd"
       },
       "package": "com.itaykarkason.couponmaster",
       "permissions": [
@@ -124,7 +124,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/brand-logo-premium.png",
+          "image": "./assets/brand-logo-kuponi.png",
           "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#faf9f6"

@@ -126,7 +126,7 @@ export function LoginScreen() {
           {/* Brand */}
           <View style={styles.brand}>
             <Image
-              source={require("../../../assets/brand-logo-inline.png")}
+              source={require("../../../assets/brand-logo-kuponi.png")}
               style={styles.brandMark}
               resizeMode="contain"
               accessibilityLabel="Coupon Master"
@@ -274,22 +274,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  /**
-   * The same 3D wordmark, on one line.
-   *
-   * The stacked mark is square, so at 190pt wide it was also 190pt tall — a
-   * quarter of an iPhone's screen — and the password field and the sign-in
-   * button started below the fold. `scripts/prepare-brand-logo-inline.py`
-   * rearranges that exact artwork into a strip; nothing was redrawn.
-   *
-   * Width leads and `aspectRatio` follows, so the mark shrinks on a narrow
-   * phone rather than overflowing. The asset is 1200x154.
-   */
-  brandMark: {
-    width: "100%",
-    maxWidth: 300,
-    aspectRatio: 1200 / 154,
-  },
+  // Compact face mark keeps the login form within reach on small screens.
+  brandMark: { width: 80, height: 80 },
   card: {
     width: "100%",
     maxWidth: 420,

@@ -7,40 +7,30 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0F172A",
-  "theme_color": "#6366F1",
+  "background_color": "#faf9f6",
+  "theme_color": "#1f6fd1",
   "dir": "rtl",
   "lang": "he",
   "icons": [
     {
-      "src": "/favicon-16x16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/apple-touch-icon.png",
+      "src": "/apple-touch-icon.png?v=kuponi-face-1",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/pwa-192x192.png",
+      "src": "/pwa-192x192.png?v=kuponi-face-1",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "/pwa-512x512.png?v=kuponi-face-1",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pwa-maskable-512x512.png",
+      "src": "/pwa-maskable-512x512.png?v=kuponi-face-1",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
