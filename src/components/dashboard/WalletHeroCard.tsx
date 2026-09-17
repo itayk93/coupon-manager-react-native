@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
+  Bell,
   WalletCards,
   CirclePlus,
   QrCode,
@@ -14,6 +15,7 @@ import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import { formatIls } from "@/lib/formatIls";
 import { IlsAmount } from "@/components/ui/IlsAmount";
 import { useContentWidth } from "@/hooks/useContentWidth";
+import { useInAppNotifications } from "@/hooks/useInAppNotifications";
 
 type WalletHeroCardProps = {
   coupons: DecryptedCoupon[];
@@ -31,6 +33,8 @@ export function WalletHeroCard({
   const router = useRouter();
   const width = useContentWidth();
   const isTablet = width >= 768;
+  const { data: notifications = [] } = useInAppNotifications();
+  const unread = notifications.filter((item) => !item.viewed).length;
 
   const visibleCoupons = coupons.filter(isSpendableCoupon);
   const totalValue = visibleCoupons.reduce((sum, c) => sum + (c.value || 0), 0);
@@ -57,6 +61,33 @@ export function WalletHeroCard({
             <Text style={[styles.eyebrowText, { color: theme.textMuted }]}>הארנק שלך</Text>
             <WalletCards size={15} color={theme.textMuted} />
           </View>
+
+          {/* The only way into the notification inbox now that the bar is five
+              slots wide. Neutral like the eyebrow; only the unread dot is
+              allowed to be loud. */}
+          <TouchableOpacity
+            onPress={() => router.push("/notifications")}
+            style={[styles.bellButton, { backgroundColor: theme.surfaceAlt }]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              unread > 0 ? `התראות, ${unread} שלא נקראו` : "התראות"
+            }
+          >
+            <Bell size={17} color={theme.textMuted} />
+            {unread > 0 ? (
+              <View
+                style={[
+                  styles.bellBadge,
+                  { backgroundColor: theme.danger, borderColor: theme.card },
+                ]}
+              >
+                <Text style={styles.bellBadgeText} numberOfLines={1}>
+                  {unread >= 10 ? "10+" : unread}
+                </Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
         </View>
 
         <View style={isTablet ? styles.tabletSummaryRow : undefined}>
@@ -134,6 +165,34 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 4,
+  },
+  bellButton: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bellBadge: {
+    position: "absolute",
+    top: -2,
+    left: -4,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+  },
+  bellBadgeText: {
+    color: "#FFFFFF",
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    fontWeight: "800",
+    lineHeight: 11,
+    includeFontPadding: false,
+    textAlign: "center",
   },
   eyebrowBadge: {
     flexDirection: "row-reverse",

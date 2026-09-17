@@ -74,9 +74,20 @@ function toneFor(days: number, theme: ReturnType<typeof useAppTheme>["theme"]): 
 type ExpiringCouponsBannerProps = {
   coupons: DecryptedCoupon[];
   isLoading?: boolean;
+  /**
+   * Reports whether this banner is actually on screen. Whether it shows
+   * depends on stored dismissal state that only this component reads, so the
+   * dashboard cannot work it out on its own — and it needs to know, because
+   * the push nudge below waits its turn rather than stacking underneath.
+   */
+  onVisibilityChange?: (visible: boolean) => void;
 };
 
-export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBannerProps) {
+export function ExpiringCouponsBanner({
+  coupons,
+  isLoading,
+  onVisibilityChange,
+}: ExpiringCouponsBannerProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
   const [dismissal, setDismissal] = useState<Dismissal | null>(null);
@@ -129,12 +140,28 @@ export function ExpiringCouponsBanner({ coupons, isLoading }: ExpiringCouponsBan
     });
   }, [expiring]);
 
-  if (isLoading || !dismissalLoaded || expiring.length === 0) return null;
-
   const soonest = expiring[0];
   const dismissedToday = dismissal?.date === localToday();
-  const escalated = dismissedToday && soonest.days <= URGENT_DAYS && soonest.days < (dismissal?.minDays ?? Infinity);
-  if (dismissedToday && !escalated) return null;
+  const escalated =
+    dismissedToday &&
+    soonest !== undefined &&
+    soonest.days <= URGENT_DAYS &&
+    soonest.days < (dismissal?.minDays ?? Infinity);
+  // Worked out before the early return so the hook below it always runs.
+  const visible =
+    !isLoading &&
+    dismissalLoaded &&
+    expiring.length > 0 &&
+    !(dismissedToday && !escalated);
+
+  useEffect(() => {
+    onVisibilityChange?.(visible);
+    // Dismissing the banner, or navigating away from it, has to put the
+    // dashboard back to believing nothing is here.
+    return () => onVisibilityChange?.(false);
+  }, [visible, onVisibilityChange]);
+
+  if (!visible) return null;
 
   const tone = toneFor(soonest.days, theme);
   const others = expiring.length - 1;
