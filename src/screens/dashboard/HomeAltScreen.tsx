@@ -11,7 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
-import { CouponRail } from "@/components/dashboard/CouponRail";
+import { CouponSection } from "@/components/dashboard/CouponSection";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
 import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
@@ -38,21 +38,26 @@ import { couponRouteId } from "@/lib/couponId";
  * What it is testing: a home screen that answers "how much do I have, what is
  * about to expire, and what do I reach for" in one glance, and gets out of the
  * way. The mascot holds the balance, the search field is the primary action,
- * and the coupons sit in short horizontal rails of small tiles.
+ * and the coupons sit below in two short sections, a card per row.
  *
- * The rails matter. The first version of this screen stacked `CouponCard`s down
- * the page, which is precisely the coupons list — the same component, the same
- * full-width rhythm — so the home screen had nothing of its own to offer.
- * `CouponMiniTile` shows what you need to pick a coupon and lets the next one
- * peek in from the side, which is a shape the list screen never takes.
+ * The sections are short on purpose. An earlier version drew them as small
+ * tiles in horizontal rails, which gave the screen a shape of its own but cost
+ * the card's code, progress bar, copy button and usage button — most of what
+ * you open a coupon for. So the card here is `CouponCard`, the one the coupons
+ * list and the dashboard render, and what keeps this screen from being the list
+ * is the shortlist: `MAX_SECTION_CARDS` a section, not the whole wallet.
  *
  * `ExpiringCouponsBanner` is deliberately absent: the hero already says how
  * many coupons are close, from the same `homeHero` numbers. The banner is
  * untouched and still used by the current dashboard.
  */
 
-/** Tiles per rail. A rail is a shortlist, not a listing. */
-const MAX_RAIL_TILES = 8;
+/**
+ * Cards per section. A full-width card is taller than the tile it replaced, and
+ * a home screen you have to scroll to read is the coupons list with extra
+ * steps — the link at the foot of the screen is what the rest is for.
+ */
+const MAX_SECTION_CARDS = 4;
 
 export function HomeAltScreen() {
   const router = useRouter();
@@ -61,7 +66,7 @@ export function HomeAltScreen() {
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const [isUsageOpen, setIsUsageOpen] = useState(false);
-  // Set when a tile is held: the usage modal opens on that coupon.
+  // Set when a card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   // Which company's coupons are open in the sheet — the screen's fast path.
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
@@ -88,7 +93,10 @@ export function HomeAltScreen() {
     });
   }, [coupons, usageStats]);
 
-  const expiring = useMemo(() => expiringSoon(coupons).slice(0, MAX_RAIL_TILES), [coupons]);
+  const expiring = useMemo(
+    () => expiringSoon(coupons).slice(0, MAX_SECTION_CARDS).map((entry) => entry.coupon),
+    [coupons]
+  );
 
   /**
    * Companies, most recently used first — the same ordering the dashboard's
@@ -122,18 +130,18 @@ export function HomeAltScreen() {
   );
 
   /**
-   * The second rail: what the user reaches for. Coupons they pinned to the
+   * The second section: what the user reaches for. Coupons they pinned to the
    * widget come first, then the recently used ones, skipping anything the
-   * expiring rail is already showing.
+   * expiring section is already showing.
    */
   const favourites = useMemo(() => {
-    const shown = new Set(expiring.map((entry) => entry.coupon.id));
+    const shown = new Set(expiring.map((coupon) => coupon.id));
     const picked: DecryptedCoupon[] = [];
     for (const coupon of [...widgetSelection(visibleCoupons), ...visibleCoupons]) {
       if (shown.has(coupon.id)) continue;
       shown.add(coupon.id);
       picked.push(coupon);
-      if (picked.length === MAX_RAIL_TILES) break;
+      if (picked.length === MAX_SECTION_CARDS) break;
     }
     return picked;
   }, [expiring, visibleCoupons]);
@@ -226,16 +234,18 @@ export function HomeAltScreen() {
           </View>
         ) : null}
 
-        <CouponRail
+        <CouponSection
           title="כדאי להשתמש בקרוב"
-          items={expiring}
+          coupons={expiring}
+          tagsMap={tagsMap}
           keyPrefix="expiring"
           onOpen={openCoupon}
           onReportUsage={reportUsage}
         />
-        <CouponRail
+        <CouponSection
           title="בשימוש לאחרונה"
-          items={favourites.map((coupon) => ({ coupon }))}
+          coupons={favourites}
+          tagsMap={tagsMap}
           keyPrefix="favourite"
           onOpen={openCoupon}
           onReportUsage={reportUsage}

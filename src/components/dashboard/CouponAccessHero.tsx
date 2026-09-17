@@ -79,7 +79,8 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
   // bubble grew to, and the two keep a shared bottom edge.
   const [topRowHeight, setTopRowHeight] = useState(TOP_ROW_HEIGHT);
   // `row-reverse` puts the first chip on the right, but the ScrollView still
-  // opens at the left edge — which is the end of the row. See `CouponRail`.
+  // opens at content offset 0 — the left edge, which is the *end* of the row.
+  // `scrollToEnd` on the first layout puts the beginning of the row in view.
   const chips = useRef<ScrollView>(null);
 
   // Narrow phones give the bubble the room instead of the character; tablets do
