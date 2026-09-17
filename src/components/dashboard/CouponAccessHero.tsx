@@ -35,10 +35,11 @@ import {
  * decorative — he is holding your money, and then telling you which of it is
  * about to expire.
  *
- * Everything here together stays around 250pt so the first coupon rail is on
+ * Everything here together stays around 250pt so the first coupon card is on
  * screen without scrolling. The character comes from the existing
- * `MascotAnimation` atlas — no new art — cropped at the search field so only
- * the head and hands clear it.
+ * `MascotAnimation` atlas — no new art — standing in a box that ends where the
+ * bubble does, so he is beside the balance rather than down on the search
+ * field.
  */
 
 /** The four home states, mapped onto the atlas rows that already exist. */
@@ -53,14 +54,12 @@ const MASCOT_ROW: Record<HomeMascotState, MascotState> = {
  * Height the bubble row reserves before it is measured, and the floor it never
  * goes below. The real height is measured, because the bubble grows: a wallet
  * with something expiring adds an urgent line, and a long company name wraps
- * it to two. Pinning the mascot's box to this constant left it hanging in the
- * air above a search field that had moved down without it.
+ * it to two. It is also the mascot's box, so whatever the bubble grew to, his
+ * feet stay level with its bottom edge instead of hanging in the air.
  */
 const TOP_ROW_HEIGHT = 132;
 /** Gap between the bubble row and the search field. */
 const SEARCH_GAP = 10;
-/** How far the mascot is allowed to lean onto the search field. */
-const BAR_OVERLAP = 10;
 
 type CouponAccessHeroProps = {
   coupons: DecryptedCoupon[];
@@ -74,9 +73,9 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
   const { theme } = useAppTheme();
   const width = useContentWidth();
   const [text, setText] = useState("");
-  // The measured height of the bubble row. The mascot's crop box tracks it so
-  // his feet always land `BAR_OVERLAP` into the search field, whatever the
-  // bubble grew to, and the two keep a shared bottom edge.
+  // The measured height of the bubble row, which is also the mascot's box: his
+  // feet stay on the bubble's bottom edge whatever the bubble grew to, so the
+  // two keep a shared bottom edge.
   const [topRowHeight, setTopRowHeight] = useState(TOP_ROW_HEIGHT);
   // `row-reverse` puts the first chip on the right, but the ScrollView still
   // opens at content offset 0 — the left edge, which is the *end* of the row.
@@ -124,8 +123,9 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
           setTopRowHeight((current) => (current === measured ? current : measured));
         }}
       >
-        {/* Empty slot: the character itself is painted by the layer below, so it
-            can spill over the search field without being clipped by this row. */}
+        {/* Empty slot: it holds the character's width open in the row, while the
+            character himself is painted by the absolutely positioned layer
+            below, whose own height is what decides how high he stands. */}
         <View style={{ width: mascotSize }} pointerEvents="none" />
 
         <View
@@ -283,13 +283,13 @@ export function CouponAccessHero({ coupons, tagsMap = {}, isLoading }: CouponAcc
         ))}
       </ScrollView>
 
-      {/* Painted last so it can lean on the field, and cropped by its own box so
-          only the part above the crop line shows. */}
+      {/* Painted last so it sits over the empty slot, and bottom-aligned inside
+          a box as tall as the bubble row: his feet land on the bubble's bottom
+          edge. He used to hang 20pt lower, leaning onto the search field, which
+          beside a bubble taller than he is read as him sliding down the screen
+          rather than standing next to the balance. */}
       <View
-        style={[
-          styles.mascotLayer,
-          { width: mascotSize, height: topRowHeight + SEARCH_GAP + BAR_OVERLAP },
-        ]}
+        style={[styles.mascotLayer, { width: mascotSize, height: topRowHeight }]}
         pointerEvents="none"
       >
         <MascotAnimation

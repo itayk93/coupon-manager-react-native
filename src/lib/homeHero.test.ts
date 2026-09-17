@@ -121,7 +121,7 @@ describe("homeHeroSummary", () => {
   it("only nudges for the second week", () => {
     const summary = homeHeroSummary([coupon({ expiration: inDays(12) })], NOW);
     expect(summary.state).toBe("happy");
-    expect(summary.message).toBe("יש משהו שכדאי לשים עליו עין 👀");
+    expect(summary.message).toBe("כדאי לשים עין 👀");
     expect(summary.linksToExpiring).toBe(true);
   });
 

@@ -131,7 +131,7 @@ export function homeHeroSummary(
   if (expiring.length > 0) {
     return {
       state,
-      message: "יש משהו שכדאי לשים עליו עין 👀",
+      message: "כדאי לשים עין 👀",
       nearestDays,
       urgentCount: expiring.length,
       linksToExpiring: true,
