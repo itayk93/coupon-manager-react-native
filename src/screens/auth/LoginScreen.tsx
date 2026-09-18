@@ -301,8 +301,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  // Horizontal Hebrew wordmark keeps the form within reach on small screens.
-  brandMark: { width: 280, maxWidth: "100%", height: 64 },
+  /**
+   * The file is 1200x240, so `contain` inside a 280x64 box drew it at
+   * 280x56 and letterboxed 4pt of nothing above and below. Matching the
+   * box to the artwork gives 8pt back without moving a single pixel of it.
+   */
+  brandMark: { width: 280, maxWidth: "100%", height: 56 },
   card: {
     width: "100%",
     maxWidth: 420,
