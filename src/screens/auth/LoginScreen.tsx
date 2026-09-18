@@ -9,6 +9,7 @@ import {
   ScrollView,
   SafeAreaView,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -36,6 +37,14 @@ function AppleLogo() {
 
 export function LoginScreen() {
   const router = useRouter();
+  const { height: windowHeight } = useWindowDimensions();
+  /**
+   * A 390x844 iPhone 16e or a 360x780 Galaxy S24 leaves about 725pt once the
+   * browser's own bars are out, and the block is ~732 tall with the roomy
+   * padding below. Eight pixels of scroll is enough to hide the terms line,
+   * so the shortest screens trade the breathing room for the fit.
+   */
+  const shortScreen = windowHeight < 760;
   const { theme } = useAppTheme();
   const { setLegacySession } = useAuth();
 
@@ -119,7 +128,10 @@ export function LoginScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            shortScreen && styles.scrollContentShort,
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -275,7 +287,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingTop: 20,
+    // Deeper than the top on purpose. The block is centred, so the extra
+    // padding lifts everything a little, and the terms line — the last thing
+    // on the page — stops sitting on the browser's own bottom bar.
+    paddingBottom: 32,
+  },
+  scrollContentShort: {
+    paddingTop: 12,
+    paddingBottom: 20,
   },
   brand: {
     alignItems: "center",
@@ -399,6 +419,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 12,
   },
 });
