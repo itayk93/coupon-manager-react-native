@@ -75,6 +75,6 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
 
 const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFill, zIndex: 1000, elevation: 1000,
-    alignItems: "center", justifyContent: "center", backgroundColor: "#faf9f6" },
+    alignItems: "center", justifyContent: "center", backgroundColor: "#e8f2fd" },
   loader: { position: "absolute", bottom: 96, alignSelf: "center" },
 });
