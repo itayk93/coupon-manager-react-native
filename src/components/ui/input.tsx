@@ -57,15 +57,10 @@ export function Input({
           },
         ]}
       >
-        {/*
-          * The row is reversed, so this first child lands on the right — where
-          * Hebrew starts reading and where a field's own icon belongs. The eye
-          * comes last and lands on the left, because revealing a password is
-          * an action on the field, not a label for it. Before this the eye
-          * stood in the icon's place and the icon was dropped on the floor:
-          * every password field asked for a lock and got none.
-          */}
-        {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
+        {/* Reversed row: a field's own icon lands on the right, where Hebrew
+            begins; the eye is last and lands on the left, as an action on the
+            field rather than a label for it. */}
+        {icon}
 
         <TextInput
           {...rest}
@@ -125,6 +120,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row-reverse",
     alignItems: "center",
+    // Spaces whichever of the icon and the eye are present, from whichever
+    // side the reversed row puts them on.
+    gap: 6,
     overflow: "hidden",
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -140,12 +138,6 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     padding: 4,
-    marginRight: 6,
-  },
-  // Sits at the right edge of a reversed row, so the breathing room the text
-  // needs is on its left.
-  iconContainer: {
-    marginLeft: 6,
   },
   errorText: {
     fontSize: 12,
