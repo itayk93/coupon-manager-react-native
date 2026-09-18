@@ -263,6 +263,15 @@ export function LoginScreen() {
   );
 }
 
+/**
+ * assets/brand-logo-inline.png is 1200x154. The asset is generated — see
+ * scripts/prepare-brand-logo-inline.py — so the ratio is named rather than
+ * multiplied out, and a re-export that changed the canvas only has to be
+ * corrected here instead of in a height nobody would think to re-derive.
+ */
+const BRAND_MARK_ASPECT = 1200 / 154;
+const BRAND_MARK_WIDTH = 300;
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -299,22 +308,23 @@ const styles = StyleSheet.create({
    * button started below the fold. `scripts/prepare-brand-logo-inline.py`
    * rearranges that exact artwork into a strip; nothing was redrawn.
    *
-   * Width leads and the height follows it, so the mark shrinks on a narrow
-   * phone rather than overflowing. The asset is 1200x154, so 300pt wide is
-   * 39 tall.
+   * Width leads and the height follows from the artwork's own proportions, so
+   * the mark shrinks on a narrow phone rather than overflowing.
    *
-   * That height used to be left to `aspectRatio`, which React Native Web
-   * drops on the floor here — the computed style comes back `auto`. With no
-   * height to go on the box fell back to the asset's own 154px, and drew a
-   * 39pt strip in the middle of it with 57 points of nothing above and below.
-   * 115pt of a phone screen went to a box that rendered as air, which is what
-   * pushed the terms line off the fold on every screen shorter than an
-   * iPhone 16 Plus.
+   * The height has to be stated. It used to be left to `aspectRatio`, and the
+   * reason that failed is not the obvious one: React Native Web does emit the
+   * rule — `aspect-ratio: 7.79221 / 1` is there in the sheet — but its Image
+   * also writes the asset's intrinsic height inline on the wrapper, and CSS
+   * drops `aspect-ratio` the moment width and height are both definite. So the
+   * box took the asset's own 154px, drew a 39pt strip in the middle of it, and
+   * left 57 points of nothing above and below. 115pt of a phone screen went to
+   * a box that rendered as air, which is what pushed the terms line off the
+   * fold on every screen shorter than an iPhone 16 Plus.
    */
   brandMark: {
     width: "100%",
-    maxWidth: 300,
-    height: 39,
+    maxWidth: BRAND_MARK_WIDTH,
+    height: BRAND_MARK_WIDTH / BRAND_MARK_ASPECT,
   },
   card: {
     width: "100%",
