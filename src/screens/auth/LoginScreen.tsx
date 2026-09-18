@@ -58,7 +58,7 @@ export function LoginScreen() {
    * On web `signInWithOAuth` navigates the whole page to the provider, and a
    * navigation cancels whatever is still in flight. The password path can take
    * a second or two — a legacy account is verified server-side against a
-   * million-iteration PBKDF2 hash — and tapping "המשך עם Google" inside that
+   * million-iteration PBKDF2 hash — and tapping the Google button inside that
    * window killed the request mid-air. The server had already accepted the
    * password and minted the session; the answer just never made it back, and
    * the screen showed a transport error over correct credentials.
@@ -216,33 +216,36 @@ export function LoginScreen() {
                 <View style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
               </View>
 
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => handleSocialLogin("google")}
-                disabled={busy}
-                style={[
-                  styles.socialBtn,
-                  { backgroundColor: theme.card, borderColor: theme.inputBorder },
-                  busy && styles.busy,
-                ]}
-              >
-                <Text style={styles.googleIcon}>G</Text>
-                <Text style={[styles.socialText, { color: theme.label }]}>
-                  {socialLoading === "google" ? "מתחבר..." : "המשך עם Google"}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.socialRow}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => handleSocialLogin("google")}
+                  disabled={busy}
+                  style={[
+                    styles.socialBtn,
+                    styles.socialHalf,
+                    { backgroundColor: theme.card, borderColor: theme.inputBorder },
+                    busy && styles.busy,
+                  ]}
+                >
+                  <Text style={styles.googleIcon}>G</Text>
+                  <Text style={[styles.socialText, { color: theme.label }]}>
+                    {socialLoading === "google" ? "מתחבר..." : "Google"}
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => handleSocialLogin("apple")}
-                disabled={busy}
-                style={[styles.socialBtn, styles.appleBtn, busy && styles.busy]}
-              >
-                <AppleLogo />
-                <Text style={[styles.socialText, styles.appleText]}>
-                  {socialLoading === "apple" ? "מתחבר..." : "המשך עם Apple"}
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => handleSocialLogin("apple")}
+                  disabled={busy}
+                  style={[styles.socialBtn, styles.socialHalf, styles.appleBtn, busy && styles.busy]}
+                >
+                  <AppleLogo />
+                  <Text style={[styles.socialText, styles.appleText]}>
+                    {socialLoading === "apple" ? "מתחבר..." : "Apple"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.footerRow}>
@@ -380,6 +383,14 @@ const styles = StyleSheet.create({
   },
   busy: {
     opacity: 0.55,
+  },
+  socialRow: {
+    flexDirection: "row-reverse",
+    gap: 10,
+  },
+  socialHalf: {
+    flex: 1,
+    marginBottom: 0,
   },
   socialBtn: {
     height: 48,
