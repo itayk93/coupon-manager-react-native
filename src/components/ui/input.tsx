@@ -57,20 +57,15 @@ export function Input({
           },
         ]}
       >
-        {isPassword ? (
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeButton}
-          >
-            {showPassword ? (
-              <EyeOff size={18} color={theme.textMuted} />
-            ) : (
-              <Eye size={18} color={theme.textMuted} />
-            )}
-          </TouchableOpacity>
-        ) : icon ? (
-          <View style={styles.iconContainer}>{icon}</View>
-        ) : null}
+        {/*
+          * The row is reversed, so this first child lands on the right — where
+          * Hebrew starts reading and where a field's own icon belongs. The eye
+          * comes last and lands on the left, because revealing a password is
+          * an action on the field, not a label for it. Before this the eye
+          * stood in the icon's place and the icon was dropped on the floor:
+          * every password field asked for a lock and got none.
+          */}
+        {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
 
         <TextInput
           {...rest}
@@ -88,6 +83,21 @@ export function Input({
             style,
           ]}
         />
+
+        {isPassword ? (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeButton}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? "הסתרת הסיסמה" : "הצגת הסיסמה"}
+          >
+            {showPassword ? (
+              <EyeOff size={18} color={theme.textMuted} />
+            ) : (
+              <Eye size={18} color={theme.textMuted} />
+            )}
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {error ? (
@@ -113,7 +123,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   inputWrapper: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     overflow: "hidden",
     borderRadius: radii.lg,
@@ -132,8 +142,10 @@ const styles = StyleSheet.create({
     padding: 4,
     marginRight: 6,
   },
+  // Sits at the right edge of a reversed row, so the breathing room the text
+  // needs is on its left.
   iconContainer: {
-    marginRight: 6,
+    marginLeft: 6,
   },
   errorText: {
     fontSize: 12,
