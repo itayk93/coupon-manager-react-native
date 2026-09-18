@@ -207,7 +207,6 @@ export function LoginScreen() {
                   disabled={busy}
                   style={[
                     styles.socialBtn,
-                    styles.socialHalf,
                     { backgroundColor: theme.card, borderColor: theme.inputBorder },
                     busy && styles.busy,
                   ]}
@@ -222,7 +221,7 @@ export function LoginScreen() {
                   activeOpacity={0.85}
                   onPress={() => handleSocialLogin("apple")}
                   disabled={busy}
-                  style={[styles.socialBtn, styles.socialHalf, styles.appleBtn, busy && styles.busy]}
+                  style={[styles.socialBtn, styles.appleBtn, busy && styles.busy]}
                 >
                   <AppleLogo />
                   <Text style={[styles.socialText, styles.appleText]}>
@@ -258,6 +257,18 @@ export function LoginScreen() {
   );
 }
 
+/**
+ * The share of a screen's leftover space dealt above the block rather than
+ * below it.
+ *
+ * The eye reads the centre of a screen as higher than the geometry says it is,
+ * so a block sitting at an exact 50% looks like it has sunk. Dealing 42 above
+ * and the rest below lands it near 46%, which is what "centred" actually looks
+ * like. On a screen with nothing left over both spacers collapse and the
+ * number stops mattering.
+ */
+const OPTICAL_TOP_SHARE = 42;
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -268,9 +279,12 @@ const styles = StyleSheet.create({
   /**
    * The whole screen has to clear the fold on a phone, because the terms and
    * privacy links live under the card and a link you have to scroll to find is
-   * a link most people never read. On an iPhone 16 Pro in Safari — 874pt of
-   * screen, around 750 of it usable once the browser's own bars are out — the
-   * old 32pt padding put the total at roughly 780 and pushed those links off.
+   * a link most people never read.
+   *
+   * The spacers below do the centring; the deeper padding at the bottom is
+   * what is left holding those links off the browser's own bar in the one case
+   * the spacers cannot help — content taller than the screen, where both
+   * collapse to zero.
    */
   scrollContent: {
     flexGrow: 1,
@@ -278,15 +292,8 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 32,
   },
-  /**
-   * Whatever is left over after the block is dealt out 42:58 instead of down
-   * the middle. The eye reads the centre of a screen as higher than the
-   * geometry says it is, so a block sitting at an exact 50% looks like it has
-   * sunk; landing it near 46% is what "centred" actually looks like. On a
-   * short screen there is nothing left to deal out and both spacers vanish.
-   */
-  spacerTop: { flexGrow: 42 },
-  spacerBottom: { flexGrow: 58 },
+  spacerTop: { flexGrow: OPTICAL_TOP_SHARE },
+  spacerBottom: { flexGrow: 100 - OPTICAL_TOP_SHARE },
   brand: {
     alignItems: "center",
     marginBottom: 10,
@@ -369,11 +376,8 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     gap: 10,
   },
-  socialHalf: {
-    flex: 1,
-    marginBottom: 0,
-  },
   socialBtn: {
+    flex: 1,
     height: 48,
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -381,7 +385,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row-reverse",
     gap: 10,
-    marginBottom: 10,
   },
   socialText: {
     fontFamily: fonts.bodyBold,
