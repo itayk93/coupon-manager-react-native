@@ -34,7 +34,6 @@ export('assets/icon.png',1024)
 export('assets/adaptive-icon.png',1024,'adaptive')
 export('assets/favicon.png',64,'transparent')
 export('assets/brand-logo-kuponi.png',512,'transparent')
-export('public/logo.png',512,'transparent')
 export('public/logo-icon.png',512,'transparent')
 for filename, n in [('favicon.svg',64), ('logo-icon.svg',512)]:
     buffer=BytesIO()
@@ -64,3 +63,7 @@ for p in list((ROOT/'ios').glob('**/SplashScreenLogo.imageset/*.png')) + list((R
     out.save(temp)
     temp.replace(p)
 print('Exported Expo, native, PWA and transparent favicon assets')
+
+# Wordmarks own public/logo.png and native splash artwork.
+import runpy
+runpy.run_path(str(ROOT / "scripts/build-kuponi-wordmarks.py"), run_name="__main__")

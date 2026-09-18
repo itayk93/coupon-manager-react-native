@@ -29,11 +29,11 @@ export function ContentHeader() {
         style={styles.brand}
       >
         <Image
-          source={require("../../../public/logo-icon.png")}
+          source={require("../../../assets/branding/kuponi-wordmark/color-horizontal.png")}
+          accessibilityLabel="קופון מאסטר"
           style={styles.mark}
           resizeMode="contain"
         />
-        <Text style={[styles.brandText, { color: theme.text }]}>קופון מאסטר</Text>
       </TouchableOpacity>
 
       <View style={styles.nav}>
@@ -74,16 +74,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  mark: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-  },
-  brandText: {
-    fontFamily: fonts.display,
-    fontSize: 17,
-    fontWeight: "800",
-  },
+  mark: { width: 180, height: 38 },
   nav: {
     flexDirection: "row-reverse",
     alignItems: "center",

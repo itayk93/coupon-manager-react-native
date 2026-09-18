@@ -170,30 +170,16 @@ private struct AppLogoView: View {
     var height: CGFloat = 15
 
     var body: some View {
-        if let uiImage = UIImage(named: "CouponLogoWidget") ?? UIImage(named: "CouponLogo") {
+        if let uiImage = UIImage(named: "KuponiWordmarkWhite") {
             Image(uiImage: uiImage)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(height: height)
+                .frame(height: max(height, 20))
                 .accessibilityHidden(true)
         } else {
-            HStack(spacing: 4.5) {
-                Text("COUPON")
-                    .couponFont(11.5, .extraBold)
-                    .foregroundColor(.white)
-                    .tracking(1.0)
-
-                Image(systemName: "ticket.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundColor(WidgetStyle.primaryLight)
-                    .rotationEffect(.degrees(-15))
-
-                Text("MASTER")
-                    .couponFont(11.5, .extraBold)
-                    .foregroundColor(WidgetStyle.primaryLight)
-                    .tracking(1.0)
-            }
-            .environment(\.layoutDirection, .leftToRight)
+            Text("קופון מאסטר")
+                .couponFont(11.5, .extraBold)
+                .foregroundColor(.white)
         }
     }
 }

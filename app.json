@@ -124,7 +124,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/brand-logo-kuponi.png",
+          "image": "./assets/branding/kuponi-wordmark/color-stacked.png",
           "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#e8f2fd"

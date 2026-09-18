@@ -126,10 +126,10 @@ export function LoginScreen() {
           {/* Brand */}
           <View style={styles.brand}>
             <Image
-              source={require("../../../assets/brand-logo-kuponi.png")}
+              source={require("../../../assets/branding/kuponi-wordmark/color-horizontal.png")}
               style={styles.brandMark}
               resizeMode="contain"
-              accessibilityLabel="Coupon Master"
+              accessibilityLabel="קופון מאסטר"
             />
           </View>
 
@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  // Compact face mark keeps the login form within reach on small screens.
-  brandMark: { width: 80, height: 80 },
+  // Horizontal Hebrew wordmark keeps the form within reach on small screens.
+  brandMark: { width: 280, maxWidth: "100%", height: 64 },
   card: {
     width: "100%",
     maxWidth: 420,

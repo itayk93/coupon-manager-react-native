@@ -87,11 +87,11 @@ export function ForgotPasswordScreen() {
         >
           <View style={styles.brand}>
             <Image
-              source={require("../../../public/logo-icon.png")}
+              source={require("../../../assets/branding/kuponi-wordmark/color-horizontal.png")}
+              accessibilityLabel="קופון מאסטר"
               style={styles.brandMark}
               resizeMode="contain"
             />
-            <Text style={[styles.brandName, { color: theme.text }]}>קופון מאסטר</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -171,21 +171,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   brand: { alignItems: "center", gap: 10, marginBottom: 28 },
-  brandMark: {
-    width: 52,
-    height: 52,
-    borderRadius: radii.card,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0px 8px 20px rgba(31, 111, 209, 0.28)",
-    elevation: 6,
-  },
-  brandName: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.2,
-  },
+  brandMark: { width: 280, maxWidth: "100%", height: 64 },
   card: {
     width: "100%",
     maxWidth: 420,

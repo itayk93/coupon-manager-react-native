@@ -18,9 +18,10 @@
         android:paddingHorizontal="4dp">
 
         <ImageView
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/widget_logo"
+            android:layout_width="100dp"
+            android:layout_height="24dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/kuponi_wordmark_white"
             android:contentDescription="@string/coupon_widget_description" />
 
         <LinearLayout
