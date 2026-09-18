@@ -284,13 +284,22 @@ const styles = StyleSheet.create({
    * button started below the fold. `scripts/prepare-brand-logo-inline.py`
    * rearranges that exact artwork into a strip; nothing was redrawn.
    *
-   * Width leads and `aspectRatio` follows, so the mark shrinks on a narrow
-   * phone rather than overflowing. The asset is 1200x154.
+   * Width leads and the height follows it, so the mark shrinks on a narrow
+   * phone rather than overflowing. The asset is 1200x154, so 300pt wide is
+   * 39 tall.
+   *
+   * That height used to be left to `aspectRatio`, which React Native Web
+   * drops on the floor here — the computed style comes back `auto`. With no
+   * height to go on the box fell back to the asset's own 154px, and drew a
+   * 39pt strip in the middle of it with 57 points of nothing above and below.
+   * 115pt of a phone screen went to a box that rendered as air, which is what
+   * pushed the terms line off the fold on every screen shorter than an
+   * iPhone 16 Plus.
    */
   brandMark: {
     width: "100%",
     maxWidth: 300,
-    aspectRatio: 1200 / 154,
+    height: 39,
   },
   card: {
     width: "100%",
