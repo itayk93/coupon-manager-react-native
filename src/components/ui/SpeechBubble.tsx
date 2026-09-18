@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import Svg, { Path } from "react-native-svg";
 import { useReduceMotionSetting } from "@/hooks/useReduceMotion";
 import { speechDuration, spokenSoFar } from "@/lib/speechPacing";
 import { fonts } from "@/lib/theme";
@@ -19,6 +20,14 @@ import { fonts } from "@/lib/theme";
  * which is what a label under a photograph is. `down` is the one to reach for
  * where he is saying the line. The look itself never varies, so he sounds like
  * the same character on every screen.
+ *
+ * The balloon is drawn the way comic lettering draws one: paper, a heavy ink
+ * outline, a generous corner radius, and a tapered spike for a tail. It used
+ * to be a hairline blue rounded rectangle with a small rotated square hanging
+ * off it, which is the shape of a tooltip — a UI affordance pointing at a
+ * control — and a tooltip is a thing the interface says, not a thing a
+ * character says. The ink is the same navy the lettering is set in, so the
+ * outline reads as drawn rather than as a border.
  *
  * `speak` is the other half of that: the line arrives a word at a time while
  * the character above plays his talking loop, and `onSpoken` tells the caller
@@ -109,8 +118,7 @@ export function SpeechBubble({
       }
       style={[styles.bubble, style]}
     >
-      {tail === "up" ? <View style={styles.tail} /> : null}
-      {tail === "down" ? <View style={styles.tailDown} /> : null}
+      {tail === "none" ? null : <Tail direction={tail} />}
       {speak ? (
         <View>
           {/* The finished line, invisible, holding the bubble at its final size:
@@ -145,54 +153,139 @@ export function SpeechBubble({
   );
 }
 
-/** The blue-tinted border is the bubble's signature; it reads as his. */
-const BORDER = "#CFE0FF";
+/** The ink everything is drawn in — outline and lettering both, which is what
+ *  makes the balloon read as one drawing rather than a bordered box. */
+const INK = "#1F2A3C";
+const PAPER = "#fff";
+const STROKE = 2;
+
+/** The spike, and the transparent margin the SVG needs so neither the stroke —
+ *  centred on the path, so half of it lies outside — nor the paper that reaches
+ *  back into the balloon is clipped by its own viewport. */
+const TAIL = { width: 24, height: 16, pad: 3 };
+const TAIL_BOX = { width: TAIL.width + TAIL.pad * 2, height: TAIL.height + TAIL.pad * 2 };
+
+/**
+ * How far the tip hangs past the balloon's edge.
+ *
+ * Exported because the caller is the one placing the character, and the gap it
+ * leaves him is only right relative to this: see `HEAD_GAP` in `AtRiskScreen`.
+ * A tail is supposed to close most of the distance to the speaker, and "most"
+ * is not a number anyone can keep in sync by hand.
+ */
+export const SPEECH_TAIL_DROP = TAIL.height - STROKE / 2;
+
+/**
+ * The gap to leave between the balloon and the character it is pointing at.
+ *
+ * The tail spends `SPEECH_TAIL_DROP` of it and the last few points stay empty:
+ * a tail is meant to reach for the speaker's mouth and stop short of it, and
+ * one that lands *on* the drawing reads as a skewer. Every caller with a tail
+ * owes the character this much room, so it is one number here rather than a 10
+ * copied into five stylesheets — which is what it was, and why growing the
+ * spike would otherwise have put it through four characters at once.
+ */
+export const SPEECH_TAIL_CLEARANCE = SPEECH_TAIL_DROP + 5;
+
+/**
+ * Where the tail's base sits: on the centre line of the balloon's own outline,
+ * so a 2pt stroke leaving the spike and a 2pt border arriving along the balloon
+ * are the same 2pt of ink and meet without a step.
+ *
+ * An absolutely positioned child is placed from its parent's *padding* box, on
+ * the inside of the border — so this has to carry the half-border itself. The
+ * first attempt left it out, and the tail hung two points high: its outline
+ * started inside the paper, with a notch of ink showing on either side of it.
+ */
+const TAIL_OFFSET = TAIL.height + TAIL.pad + STROKE / 2;
+
+/**
+ * The tail, as a drawing rather than a rotated square.
+ *
+ * The sides are pulled slightly concave, which is the whole difference between
+ * a spike a letterer would draw and a triangle a CSS border produces: the
+ * taper gives the eye a direction to follow down to the speaker.
+ *
+ * It is a path because the shape needs a stroke on its two slanted edges and
+ * none at all across its base — the base sits inside the balloon, where the
+ * outline has to stop so the two read as one shape. Filling the closed
+ * polygon first is what erases the balloon's own outline behind it; the open
+ * path stroked on top then carries the outline out to the tip and back.
+ */
+function Tail({ direction }: { direction: "up" | "down" }) {
+  const { width, height, pad } = TAIL;
+  const down = direction === "down";
+  // The base lies against the balloon, the tip points away from it, so `up` is
+  // the same spike flipped and both directions taper identically.
+  const baseY = down ? pad : pad + height;
+  const tipY = down ? pad + height : pad;
+  const [left, right, tipX] = [pad, pad + width, pad + width / 2];
+  // Shallow control points: the sides stay full most of the way down and only
+  // give at the end. Pulling them harder produced an arrowhead — a thin V that
+  // points rather than a spike that tapers.
+  const bendY = baseY + (tipY - baseY) * 0.45;
+  const bend = width * 0.13;
+  // Down one side to the tip and back up the other, from base corner to base
+  // corner. Both paths below are this plus a different way in and out of it.
+  const sides =
+    `Q ${right - bend} ${bendY} ${tipX} ${tipY} Q ${left + bend} ${bendY} ${left} ${baseY}`;
+  const edges = `M ${right} ${baseY} ${sides}`;
+  // The paper reaches a full stroke back past the base, into the balloon, so it
+  // takes out the whole width of the border behind the tail's mouth. Stopping
+  // at the base would leave the outline's far half ruled across the opening.
+  const paperY = down ? baseY - STROKE : baseY + STROKE;
+  const paper = `M ${left} ${paperY} L ${right} ${paperY} L ${right} ${baseY} ${sides} Z`;
+
+  return (
+    <Svg
+      width={TAIL_BOX.width}
+      height={TAIL_BOX.height}
+      viewBox={`0 0 ${TAIL_BOX.width} ${TAIL_BOX.height}`}
+      style={down ? styles.tailDown : styles.tailUp}
+    >
+      <Path d={paper} fill={PAPER} />
+      <Path
+        d={edges}
+        fill="none"
+        stroke={INK}
+        strokeWidth={STROKE}
+        // Butt caps rather than round: a round cap at the base would bulge a
+        // point of ink into the balloon's paper, just inside the outline.
+        strokeLinecap="butt"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
 const styles = StyleSheet.create({
   bubble: {
     maxWidth: "100%",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: BORDER,
-    boxShadow: "0px 0px 8px rgba(23, 32, 51, 0.08)",
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: PAPER,
+    borderWidth: STROKE,
+    borderColor: INK,
+    // Offset down and barely blurred: a printed drop shadow, not a glow.
+    boxShadow: "0px 2px 6px rgba(23, 32, 51, 0.10)",
     elevation: 2,
   },
-  // A rotated square with only its two upper edges stroked: the bubble's own
-  // background covers the rest, so the tail reads as part of the same shape.
-  tail: {
+  tailUp: {
     position: "absolute",
-    top: -6,
+    top: -TAIL_OFFSET,
     alignSelf: "center",
-    width: 11,
-    height: 11,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderStartWidth: 1,
-    borderColor: BORDER,
-    transform: [{ rotate: "45deg" }],
   },
-  // The same square at the other end, stroked on its two *lower* edges. Under
-  // the 45° rotation the bottom and end edges are the ones facing down.
   tailDown: {
     position: "absolute",
-    bottom: -6,
+    bottom: -TAIL_OFFSET,
     alignSelf: "center",
-    width: 11,
-    height: 11,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderEndWidth: 1,
-    borderColor: BORDER,
-    transform: [{ rotate: "45deg" }],
   },
   text: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     lineHeight: 19,
-    color: "#263246",
+    color: INK,
     textAlign: "right",
     writingDirection: "rtl",
   },

@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Kuponi } from "@/components/ui/Kuponi";
-import { SpeechBubble } from "@/components/ui/SpeechBubble";
+import { SpeechBubble, SPEECH_TAIL_CLEARANCE } from "@/components/ui/SpeechBubble";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { IlsAmount } from "@/components/ui/IlsAmount";
 import { useCoupons } from "@/hooks/useCoupons";
@@ -118,7 +118,7 @@ export function MonthlyRecapScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
-  hero: { alignItems: "center", gap: 10 },
+  hero: { alignItems: "center", gap: SPEECH_TAIL_CLEARANCE },
   bubble: { maxWidth: 300 },
   figure: { alignItems: "center", gap: 2, paddingVertical: 20, borderRadius: radii.card, borderWidth: 1 },
   figureLabel: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "center", writingDirection: "rtl" },

@@ -3,8 +3,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Header } from "@/components/ui/Header";
 import { Kuponi } from "@/components/ui/Kuponi";
-import { SpeechBubble } from "@/components/ui/SpeechBubble";
-import { KuponiStory } from "@/components/ui/KuponiStory";
+import { SpeechBubble, SPEECH_TAIL_CLEARANCE, SPEECH_TAIL_DROP } from "@/components/ui/SpeechBubble";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { CouponCard } from "@/components/coupons/CouponCard";
@@ -20,7 +19,7 @@ import { formatIls } from "@/lib/formatIls";
 import { fonts } from "@/lib/theme";
 
 /**
- * Everything about to expire, most urgent first, with the money on the line.
+ * Everything about to expire, most urgent first, and what it is worth.
  *
  * This is the screen the whole character exists for. The product's real
  * failure mode is a silent one — a coupon expires and the money is simply
@@ -30,27 +29,29 @@ import { fonts } from "@/lib/theme";
  * coupon worth ₪200 expiring on the same day as one worth ₪20 is the one to
  * open first.
  *
- * Kuponi says the total at risk and nothing else. It is the one number that
- * makes the rest of the page worth reading, and he says it rather than
- * captioning it: the talking loop runs for exactly as long as the line takes
- * to arrive, then he drops back to the face the deadline gives him. That is
- * `docs/mascot/STATE-LAW.md`'s "one reaction on entry" for `talking`, and the
- * resting state is still derived from `expiryLevel` and nothing else.
+ * Kuponi says how much is about to expire and nothing else. It is the one
+ * number that makes the rest of the page worth reading, and he says it rather
+ * than captioning it: the talking loop runs for exactly as long as the line
+ * takes to arrive, then he drops back to the face the deadline gives him. That
+ * is `docs/mascot/STATE-LAW.md`'s "one reaction on entry" for `talking`, and
+ * the resting state is still derived from `expiryLevel` and nothing else.
  *
- * The bubble is *above* him, with the tail pointing down at his head. That is
+ * One piece of artwork, start to finish. He used to hand over to `priority-pick`
+ * — ten seconds of him weighing the coupons — once the line was out, which
+ * meant the screen swapped sprites in front of the user: two atlases, two box
+ * sizes, two framings of the same character, and a cut between them that no
+ * amount of matching the head position hides, because the drawing itself
+ * changes. Two animations in one hero is one more than the hero is saying. The
+ * story player is still there for a screen that wants a story of its own; this
+ * one wants him to say his line and hold the expression the date earns.
+ *
+ * The balloon is *above* him, with the tail pointing down at his head. That is
  * the comic-book arrangement and it is not decoration: a balloon under a
  * character with a tail pointing up at their feet is the shape of a caption
  * under a photograph, and it reads as one no matter what the character is
  * doing. The lettering rule is that the tail should point at the speaker's
- * mouth and close most of the distance to it, which is what `lift` below is
- * for — one per piece of artwork, since the two sprites this screen alternates
- * between are framed differently.
- *
- * After the line is out he plays `priority-pick`: ten seconds of him weighing
- * the coupons and settling on one, from `assets/mascot/stories/`. It runs once
- * per most-urgent coupon and only in the 2–14 day window; today and tomorrow
- * keep the `alarmed` loop, which is the right register for money that goes
- * tonight.
+ * mouth and close most of the distance to it, which is what `HEAD_GAP` and
+ * `LIFT` below are for.
  *
  * Under him is the coupon itself — `CouponCard`, the card from the coupons
  * list — because every route out of this screen is on it: the code to hand the
@@ -58,46 +59,24 @@ import { fonts } from "@/lib/theme";
  */
 
 /**
- * The two pieces of artwork this screen alternates between, each with the box
- * it is drawn in and the transparent headroom that box carries above his head.
+ * The artwork he is drawn from: the 36-frame urgency atlas, a 256px cell
+ * carrying 40–43px of transparent space above his head, drawn here at 176pt.
  *
- * Neither number transfers. `legacy` is the 36-frame urgency atlas: a 256px
- * cell with 40–43px of space above the head, and the character filling most of
- * the rest. `story` is `priority-pick`, whose frames are cropped tight to the
- * art, so almost none of its box is padding — which is also why it is shown at
- * 149pt rather than 176. The smaller box holds the *same* character at the
- * same size on screen; it just is not carrying 45% emptiness any more.
- *
- * Both headroom figures are the minimum across every frame, measured off the
- * shipped atlases rather than taken from a spec.
- *
- * Deriving the lift per sprite is what makes the swap invisible: each lands the
- * *head* in the same place, so when the story starts and ends only the box
- * moves.
+ * The headroom is the minimum across every frame, measured off the shipped
+ * atlas rather than taken from a spec, and it describes this atlas only.
  */
-const SPRITE = {
-  legacy: { size: 176, headroom: 0.16 },
-  story: { size: 149, headroom: 0.1121 },
-} as const;
-
-/** How much clear air to leave between the bubble's edge and the top of his
- *  head. The tail is 11pt on the diagonal and hangs about 6 of them below the
- *  bubble, so at this gap it closes a little over half the distance — which is
- *  the lettering convention for where a tail should end. */
-const HEAD_GAP = 10;
-
-/** Pulling him up by his own headroom is what puts the tail on his head. */
-const lift = (sprite: { size: number; headroom: number }) =>
-  HEAD_GAP - Math.round(sprite.size * sprite.headroom);
+const SPRITE = { size: 176, headroom: 0.16 };
 
 /**
- * The window `priority-pick` is for. Today and tomorrow keep `alarmed`: a
- * ten-second story about weighing your options is the wrong register for money
- * that disappears tonight, and `STATE-LAW.md`'s escalation already owns that
- * rung.
+ * How much clear air to leave between the balloon's edge and the top of his
+ * head: the balloon's own clearance, since what the tail is reaching for here
+ * is the top of his head rather than the bottom of a box. The spike closes
+ * `SPEECH_TAIL_DROP` of it and stops, a little short of him.
  */
-const STORY_MIN_DAYS = 2;
-const STORY_MAX_DAYS = 14;
+const HEAD_GAP = SPEECH_TAIL_CLEARANCE;
+
+/** Pulling him up by his own headroom is what puts the tail on his head. */
+const LIFT = HEAD_GAP - Math.round(SPRITE.size * SPRITE.headroom);
 
 const SECTIONS: { level: ExpiryLevel; title: string }[] = [
   { level: "alarm", title: "היום ומחר" },
@@ -109,8 +88,8 @@ const SECTIONS: { level: ExpiryLevel; title: string }[] = [
   // is right for the face — a coupon eleven days out has not earned a worried
   // one — but those coupons are still money with a date on it, and they were
   // being counted in Kuponi's total and then listed nowhere. A wallet whose
-  // nearest expiry was nine days away got "₪55 on the line across 2 coupons"
-  // above an empty page.
+  // nearest expiry was nine days away got "₪55 about to expire across 2
+  // coupons" above an empty page.
   { level: "none", title: "בשבועיים הקרובים" },
 ];
 
@@ -139,37 +118,18 @@ export function AtRiskScreen() {
   const worst = atRisk[0]?.days ?? null;
   const kuponi = EXPIRY_PERFORMANCE[expiryLevel(worst)];
 
+  // What is happening, in the words it happens in. "Money on the line" is a
+  // gambling figure — it is what you stand to lose on a bet you chose to make
+  // — and nobody chose this. The coupons are expiring; that is the whole fact,
+  // and `VOICE.md`'s tone table already says it that way ("יש ₪340 שפגים מחר").
   const line =
     atRisk.length === 1
-      ? `${formatIls(totalAtRisk)} על הכף בקופון אחד`
-      : `${formatIls(totalAtRisk)} על הכף ב-${atRisk.length} קופונים`;
+      ? `${formatIls(totalAtRisk)} עומדים לפוג בקופון אחד`
+      : `${formatIls(totalAtRisk)} עומדים לפוג ב-${atRisk.length} קופונים`;
   // He is talking until he has finished saying *this* line, so a refresh that
   // changes the number is said again rather than appearing behind his back.
   const [spokenLine, setSpokenLine] = useState<string | null>(null);
   const speaking = spokenLine !== line;
-
-  /**
-   * `priority-pick` — him weighing the coupons and settling on one — plays once
-   * per most-urgent coupon, *after* the bubble has finished its line.
-   *
-   * The two are deliberately sequential rather than simultaneous. Both own the
-   * character for a stretch of time, and two timers racing for one `state` is
-   * how a mascot ends up twitching between poses. The bubble's `onSpoken` is
-   * also not a stand-in for the story being over — it says the sentence
-   * arrived, nothing more — so the story keeps its own completion.
-   */
-  const urgent = atRisk[0];
-  const storyKey = urgent ? `${urgent.coupon.id}:${urgent.days}` : null;
-  const [storyPlayed, setStoryPlayed] = useState<string | null>(null);
-  const [storyBroken, setStoryBroken] = useState(false);
-  const showStory =
-    !speaking &&
-    !storyBroken &&
-    storyKey !== null &&
-    storyPlayed !== storyKey &&
-    worst !== null &&
-    worst >= STORY_MIN_DAYS &&
-    worst <= STORY_MAX_DAYS;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -195,31 +155,12 @@ export function AtRiskScreen() {
               text={line}
               style={styles.bubble}
             />
-            {/* One sprite at a time, never both: each atlas is tens of
-                megabytes once decoded, and `enabled` pauses a player without
-                unmounting it. Swapping the component is what actually gives
-                the memory back. The lift travels with the artwork, so his head
-                stays under the tail across the swap and only the box moves. */}
-            <View style={{ marginTop: lift(showStory ? SPRITE.story : SPRITE.legacy) }}>
-              {showStory ? (
-                <KuponiStory
-                  story="priority-pick"
-                  replayKey={storyKey}
-                  size={SPRITE.story.size}
-                  // The usage modal covers him; a story playing to nobody
-                  // behind it burns the one showing it is allowed.
-                  enabled={usageCoupon === null}
-                  onFinish={() => setStoryPlayed(storyKey)}
-                  onError={() => setStoryBroken(true)}
-                  accessibilityLabel="קופוני בוחן איזה קופון כדאי לנצל קודם"
-                />
-              ) : (
-                <Kuponi
-                  state={speaking ? "talking" : kuponi.state}
-                  speed={kuponi.speed}
-                  size={SPRITE.legacy.size}
-                />
-              )}
+            <View style={styles.mascot}>
+              <Kuponi
+                state={speaking ? "talking" : kuponi.state}
+                speed={kuponi.speed}
+                size={SPRITE.size}
+              />
             </View>
           </View>
 
@@ -255,9 +196,10 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   // `CouponCard` carries its own bottom margin, so the page spaces itself and
   // only the hero needs a gap of its own. No `gap` here: the space between the
-  // bubble and the character is the sprite's own lift, which has to be able to
+  // balloon and the character is the sprite's own lift, which has to be able to
   // go negative to cancel its headroom.
   hero: { alignItems: "center", marginBottom: 20 },
+  mascot: { marginTop: LIFT },
   bubble: { maxWidth: 300 },
   sectionTitle: {
     fontFamily: fonts.bodyBold,

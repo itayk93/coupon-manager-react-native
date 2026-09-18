@@ -7,7 +7,7 @@ import {
   spokenSoFar,
 } from "./speechPacing";
 
-const LINE = "55.00 ₪ על הכף ב-2 קופונים";
+const LINE = "55.00 ₪ עומדים לפוג ב-2 קופונים";
 
 describe("speechDuration", () => {
   it("reads a line at the speaking rate", () => {

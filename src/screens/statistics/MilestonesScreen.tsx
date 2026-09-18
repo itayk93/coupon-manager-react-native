@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Check } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Kuponi } from "@/components/ui/Kuponi";
-import { SpeechBubble } from "@/components/ui/SpeechBubble";
+import { SpeechBubble, SPEECH_TAIL_CLEARANCE } from "@/components/ui/SpeechBubble";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { useMilestones } from "@/hooks/useMilestones";
@@ -162,7 +162,7 @@ function Moment({ source, label }: { source: number; label: string }) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
-  hero: { alignItems: "center", gap: 10 },
+  hero: { alignItems: "center", gap: SPEECH_TAIL_CLEARANCE },
   bubble: { maxWidth: 300 },
   card: { borderWidth: 1, borderRadius: radii.card, padding: 14, gap: 10 },
   cardTitle: { fontFamily: fonts.bodyBold, fontSize: 15, textAlign: "right", writingDirection: "rtl" },

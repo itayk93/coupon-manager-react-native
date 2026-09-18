@@ -34,7 +34,7 @@ export function speechDuration(text: string): number {
  * The part of the line that is out by `progress`, a fraction of its duration.
  *
  * Whole words only. A per-character reveal looks right in English and falls
- * apart in ours: "55.00 ₪ על הכף" is bidirectional text, and a half-arrived
+ * apart in ours: "55.00 ₪ עומדים לפוג" is bidirectional text, and a half-arrived
  * number reorders itself on screen as its digits land. A word is the smallest
  * unit that never does that, and it is closer to how speech arrives anyway.
  *

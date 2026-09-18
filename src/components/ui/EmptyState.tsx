@@ -4,7 +4,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { Button } from "./button";
 import { Kuponi } from "@/components/ui/Kuponi";
-import { SpeechBubble } from "@/components/ui/SpeechBubble";
+import { SpeechBubble, SPEECH_TAIL_CLEARANCE } from "@/components/ui/SpeechBubble";
 
 type EmptyStateProps = {
   icon?: React.ReactNode;
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   stage: {
     alignItems: "center",
     alignSelf: "stretch",
-    gap: 10,
+    gap: SPEECH_TAIL_CLEARANCE,
     marginBottom: 10,
   },
   bubble: {

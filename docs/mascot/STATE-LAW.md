@@ -113,7 +113,7 @@ export type MascotState =
 | `OnboardingScreen.tsx` | משתנה | תגובה לתשובות המשתמש |
 | `EmptyState.tsx` | `talking` | הוא מסביר מה חסר |
 | `KuponiLoading.tsx` | `calm` | ממתין יחד עם המשתמש |
-| `AtRiskScreen.tsx` | `talking` בכניסה, ואז נגזר מ־`expiryLevel` | הוא מוסר את הסכום שעל הכף, ואז חוזר לפרצוף שהתאריך נותן לו |
+| `AtRiskScreen.tsx` | `talking` בכניסה, ואז נגזר מ־`expiryLevel` | הוא מוסר את הסכום שעומד לפוג, ואז חוזר לפרצוף שהתאריך נותן לו |
 | `MilestonesScreen.tsx` | `cheering` | אבני דרך שנחצו |
 | `MonthlyRecapScreen.tsx` | `cheering` / `concerned` | חודש נקי מול כסף שפג |
 | `CelebrationOverlay.tsx` | `cheering` | מכירה או מימוש שהושלמו |

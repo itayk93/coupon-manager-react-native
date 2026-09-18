@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { Kuponi } from "@/components/ui/Kuponi";
-import { SpeechBubble } from "@/components/ui/SpeechBubble";
+import { SpeechBubble, SPEECH_TAIL_CLEARANCE } from "@/components/ui/SpeechBubble";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -53,9 +53,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 32,
-    gap: 16,
+    gap: SPEECH_TAIL_CLEARANCE,
   },
-  compact: { flex: 0, minHeight: 190, paddingVertical: 20, gap: 8 },
+  // The tail is the same size on a compact spinner as on a full one, so the
+  // room it needs does not scale down with the rest.
+  compact: { flex: 0, minHeight: 190, paddingVertical: 20, gap: SPEECH_TAIL_CLEARANCE },
   copy: { alignItems: "center", gap: 8, maxWidth: 320 },
   bubble: { maxWidth: 300 },
   subtitle: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, textAlign: "center" },
