@@ -9,7 +9,6 @@ import {
   ScrollView,
   SafeAreaView,
   Image,
-  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -37,14 +36,6 @@ function AppleLogo() {
 
 export function LoginScreen() {
   const router = useRouter();
-  const { height: windowHeight } = useWindowDimensions();
-  /**
-   * A 390x844 iPhone 16e or a 360x780 Galaxy S24 leaves about 725pt once the
-   * browser's own bars are out, and the block is ~732 tall with the roomy
-   * padding below. Eight pixels of scroll is enough to hide the terms line,
-   * so the shortest screens trade the breathing room for the fit.
-   */
-  const shortScreen = windowHeight < 760;
   const { theme } = useAppTheme();
   const { setLegacySession } = useAuth();
 
@@ -128,13 +119,12 @@ export function LoginScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            shortScreen && styles.scrollContentShort,
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.spacerTop} />
+
           {/* Brand */}
           <View style={styles.brand}>
             <Image
@@ -265,6 +255,8 @@ export function LoginScreen() {
               מדיניות הפרטיות
             </Text>
           </Text>
+
+          <View style={styles.spacerBottom} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -287,18 +279,19 @@ const styles = StyleSheet.create({
    */
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
     paddingHorizontal: 16,
     paddingTop: 20,
-    // Deeper than the top on purpose. The block is centred, so the extra
-    // padding lifts everything a little, and the terms line — the last thing
-    // on the page — stops sitting on the browser's own bottom bar.
     paddingBottom: 32,
   },
-  scrollContentShort: {
-    paddingTop: 12,
-    paddingBottom: 20,
-  },
+  /**
+   * Whatever is left over after the block is dealt out 42:58 instead of down
+   * the middle. The eye reads the centre of a screen as higher than the
+   * geometry says it is, so a block sitting at an exact 50% looks like it has
+   * sunk; landing it near 46% is what "centred" actually looks like. On a
+   * short screen there is nothing left to deal out and both spacers vanish.
+   */
+  spacerTop: { flexGrow: 42 },
+  spacerBottom: { flexGrow: 58 },
   brand: {
     alignItems: "center",
     marginBottom: 10,
