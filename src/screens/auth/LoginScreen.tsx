@@ -123,6 +123,8 @@ export function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.spacerTop} />
+
           {/* Brand */}
           <View style={styles.brand}>
             <Image
@@ -253,6 +255,8 @@ export function LoginScreen() {
               מדיניות הפרטיות
             </Text>
           </Text>
+
+          <View style={styles.spacerBottom} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -268,10 +272,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
     paddingHorizontal: 16,
-    paddingVertical: 32,
+    paddingTop: 20,
+    // Deeper than the top on purpose, so the terms line — the last thing on
+    // the page — stops sitting on the browser's own bottom bar.
+    paddingBottom: 32,
   },
+  /**
+   * Whatever is left over after the block is dealt out 42:58 instead of down
+   * the middle. The eye reads the centre of a screen as higher than the
+   * geometry says it is, so a block sitting at an exact 50% looks like it has
+   * sunk; landing it near 46% is what "centred" actually looks like. On a
+   * short screen there is nothing left to deal out and both spacers vanish.
+   */
+  spacerTop: { flexGrow: 42 },
+  spacerBottom: { flexGrow: 58 },
   brand: {
     alignItems: "center",
     marginBottom: 24,
@@ -425,6 +440,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12,
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 12,
   },
 });
