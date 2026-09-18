@@ -253,7 +253,6 @@ export function ProfileScreen() {
 
           <Input
             label="סיסמה חדשה"
-            placeholder="••••••••"
             isPassword
             value={newPassword}
             onChangeText={setNewPassword}
@@ -261,7 +260,6 @@ export function ProfileScreen() {
 
           <Input
             label="אימות סיסמה חדשה"
-            placeholder="••••••••"
             isPassword
             value={confirmPassword}
             onChangeText={setConfirmPassword}
