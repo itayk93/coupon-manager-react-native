@@ -264,15 +264,22 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  /**
+   * The whole screen has to clear the fold on a phone, because the terms and
+   * privacy links live under the card and a link you have to scroll to find is
+   * a link most people never read. On an iPhone 16 Pro in Safari — 874pt of
+   * screen, around 750 of it usable once the browser's own bars are out — the
+   * old 32pt padding put the total at roughly 780 and pushed those links off.
+   */
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingVertical: 32,
+    paddingVertical: 20,
   },
   brand: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 10,
   },
   // Horizontal Hebrew wordmark keeps the form within reach on small screens.
   brandMark: { width: 280, maxWidth: "100%", height: 64 },
@@ -283,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sheet,
     borderWidth: 1,
     paddingHorizontal: 28,
-    paddingVertical: 32,
+    paddingVertical: 26,
     overflow: "hidden",
     boxShadow: "0px 20px 50px rgba(16, 24, 40, 0.18)",
     elevation: 8,
@@ -306,7 +313,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 14,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 18,
   },
   fields: {
     gap: 0,

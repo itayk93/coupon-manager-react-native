@@ -32,7 +32,19 @@ for name in ('color-horizontal', 'color-stacked', 'white-horizontal', 'white-sta
     original = Image.open(BRAND / 'source' / f'{name}.png').convert('RGBA')
     assert original.getchannel('A').getextrema()[0] == 0
     # Trim transparent canvas only; preserve the approved art, bevels and shadows.
-    cropped = original.crop(original.getchannel('A').getbbox())
+    #
+    # Thresholded, because `getbbox()` counts any alpha above zero and the
+    # generated source carries a halo of 1-8 alpha reaching ~190px past the
+    # artwork. Cropping to that kept the halo as if it were art: the wordmark
+    # then had to shrink to fit the export canvas, so it landed at roughly half
+    # the height it should have, wrapped in invisible padding that read on
+    # screen as a gap nobody could find in the layout.
+    #
+    # 8 is comfortably below the real bevel and drop shadow — between alpha 8
+    # and 128 the artwork's own box only moves by a few pixels, so the shadow
+    # survives the crop intact.
+    alpha = original.getchannel('A')
+    cropped = original.crop(alpha.point(lambda value: 255 if value > 8 else 0).getbbox())
     cropped = ImageOps.expand(cropped, border=12, fill=(0, 0, 0, 0))
     size = (1200, 240) if name.endswith('horizontal') else (900, 900)
     marks[name] = fit(cropped, size)
