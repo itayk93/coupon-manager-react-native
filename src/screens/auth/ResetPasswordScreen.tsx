@@ -8,12 +8,12 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
-  Image,
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Lock } from "lucide-react-native";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { clearLegacyUser } from "@/lib/legacyAuth";
@@ -118,12 +118,7 @@ export function ResetPasswordScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <Image
-              source={require("../../../assets/branding/kuponi-wordmark/color-horizontal.png")}
-              accessibilityLabel="קופון מאסטר"
-              style={styles.brandMark}
-              resizeMode="contain"
-            />
+            <BrandMark width={280} />
           </View>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -214,7 +209,6 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   brand: { alignItems: "center", gap: 10, marginBottom: 28 },
-  brandMark: { width: 280, maxWidth: "100%", height: 64 },
   card: {
     width: "100%",
     maxWidth: 420,

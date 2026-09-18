@@ -8,12 +8,12 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
-  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Mail, Lock } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { Input } from "@/components/ui/input";
 import { signInLegacy } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -127,12 +127,7 @@ export function LoginScreen() {
 
           {/* Brand */}
           <View style={styles.brand}>
-            <Image
-              source={require("../../../assets/branding/kuponi-wordmark/color-horizontal.png")}
-              style={styles.brandMark}
-              resizeMode="contain"
-              accessibilityLabel="קופון מאסטר"
-            />
+            <BrandMark width={280} />
           </View>
 
           {/* Card */}
@@ -296,12 +291,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  /**
-   * The file is 1200x240, so `contain` inside a 280x64 box drew it at
-   * 280x56 and letterboxed 4pt of nothing above and below. Matching the
-   * box to the artwork gives 8pt back without moving a single pixel of it.
-   */
-  brandMark: { width: 280, maxWidth: "100%", height: 56 },
   card: {
     width: "100%",
     maxWidth: 420,

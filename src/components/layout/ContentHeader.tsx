@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
+import { BrandMark } from "@/components/ui/BrandMark";
 
 const LINKS = [
   { label: "אודות", path: "/about" },
@@ -28,12 +29,7 @@ export function ContentHeader() {
         activeOpacity={0.8}
         style={styles.brand}
       >
-        <Image
-          source={require("../../../assets/branding/kuponi-wordmark/color-horizontal.png")}
-          accessibilityLabel="קופון מאסטר"
-          style={styles.mark}
-          resizeMode="contain"
-        />
+        <BrandMark width={180} />
       </TouchableOpacity>
 
       <View style={styles.nav}>
@@ -74,7 +70,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  mark: { width: 180, height: 38 },
   nav: {
     flexDirection: "row-reverse",
     alignItems: "center",
