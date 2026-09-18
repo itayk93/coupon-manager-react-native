@@ -45,10 +45,15 @@ function coupon(overrides: Partial<DecryptedCoupon> = {}): DecryptedCoupon {
 
 const PREFS = { windows: [30, 7, 1, 0], daily_within: null, quiet_until: null };
 
+/** Every coupon in a plan, flattened, for the assertions that do not care how
+ *  the reminders were grouped. */
+const allDays = (planned: ReturnType<typeof planExpiryAlerts>) =>
+  planned.flatMap((alert) => alert.coupons.map((c) => c.daysLeft));
+
 describe("planExpiryAlerts", () => {
   it("schedules one reminder per configured window", () => {
     const planned = planExpiryAlerts([coupon()], PREFS, NOW);
-    expect(planned.map((a) => a.daysLeft)).toEqual([30, 7, 1, 0]);
+    expect(allDays(planned)).toEqual([30, 7, 1, 0]);
   });
 
   it("orders by date so the platform cap keeps the soonest alerts", () => {
@@ -59,7 +64,7 @@ describe("planExpiryAlerts", () => {
 
   it("skips windows that have already passed", () => {
     const soon = coupon({ expiration: "2026-01-05" });
-    expect(planExpiryAlerts([soon], PREFS, NOW).map((a) => a.daysLeft)).toEqual([1, 0]);
+    expect(allDays(planExpiryAlerts([soon], PREFS, NOW))).toEqual([1, 0]);
   });
 
   it("ignores used coupons and coupons with no expiry", () => {
@@ -70,8 +75,44 @@ describe("planExpiryAlerts", () => {
 
   it("tells the user once when a daily reminder lands on a window day", () => {
     const planned = planExpiryAlerts([coupon()], { ...PREFS, daily_within: 7 }, NOW);
-    const keys = planned.map((a) => `${a.couponId}:${a.daysLeft}`);
+    const keys = planned.flatMap((alert) =>
+      alert.coupons.map((c) => `${c.couponId}:${c.daysLeft}`),
+    );
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("raises one banner for every coupon that lands on the same morning", () => {
+    // Three coupons, same expiry date, so every window collides.
+    const wallet = [1, 2, 3].map((id) => coupon({ id, company: `חברה ${id}` }));
+    const planned = planExpiryAlerts(wallet, PREFS, NOW);
+    expect(planned).toHaveLength(4);
+    for (const alert of planned) expect(alert.coupons).toHaveLength(3);
+  });
+
+  it("groups by the moment, not the deadline, so mixed windows still share a banner", () => {
+    // Expiry day for one, the week-before mark for the other: same morning.
+    const wallet = [
+      coupon({ id: 1, expiration: "2026-02-10" }),
+      coupon({ id: 2, expiration: "2026-02-17" }),
+    ];
+    const planned = planExpiryAlerts(wallet, PREFS, NOW);
+    const shared = planned.find((alert) => alert.coupons.length > 1);
+    expect(shared?.coupons.map((c) => c.daysLeft)).toEqual([0, 7]);
+  });
+
+  it("raises one banner a morning for the wallet that prompted this", () => {
+    // The reported case: two coupons a day apart, daily reminder switched on.
+    // Ungrouped this was one banner per coupon per morning.
+    const wallet = [
+      coupon({ id: 1, company: "Babka", expiration: "2026-01-15" }),
+      coupon({ id: 2, company: "BuyMe", expiration: "2026-01-14" }),
+    ];
+    const planned = planExpiryAlerts(wallet, { ...PREFS, daily_within: 14 }, NOW);
+    const couponAlerts = planned.reduce((n, a) => n + a.coupons.length, 0);
+    expect(couponAlerts).toBe(29);
+    expect(planned).toHaveLength(15);
+    // Every morning both coupons are due, they share the one banner.
+    expect(planned.filter((a) => a.coupons.length === 2)).toHaveLength(14);
   });
 
   it("stays under the platform's pending-notification limit", () => {
@@ -82,9 +123,20 @@ describe("planExpiryAlerts", () => {
     expect(planned.length).toBeLessThanOrEqual(56);
   });
 
+  it("spends the platform budget on days rather than on coupons", () => {
+    // Forty coupons sharing one expiry date: ungrouped this was forty slots for
+    // a single morning, and the cap was reached before the week was out.
+    const wallet = Array.from({ length: 40 }, (_, i) => coupon({ id: i + 1 }));
+    const planned = planExpiryAlerts(wallet, { ...PREFS, daily_within: 14 }, NOW);
+    const moments = new Set(planned.map((a) => a.at));
+    expect(planned.length).toBe(moments.size);
+    // Every window and every daily day still reaches the user.
+    expect(planned.length).toBeGreaterThanOrEqual(15);
+  });
+
   it("holds everything back until a quiet period is over", () => {
     const prefs = { ...PREFS, quiet_until: "2026-02-25T00:00:00Z" };
-    expect(planExpiryAlerts([coupon()], prefs, NOW).map((a) => a.daysLeft)).toEqual([1, 0]);
+    expect(allDays(planExpiryAlerts([coupon()], prefs, NOW))).toEqual([1, 0]);
   });
 });
 

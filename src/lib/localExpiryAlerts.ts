@@ -41,11 +41,26 @@ type Prefs = {
   quiet_until: string | null;
 };
 
-type PlannedAlert = {
-  at: number;
+/** One coupon's share of a reminder. */
+type PlannedCoupon = {
   couponId: number;
   company: string;
   daysLeft: number;
+};
+
+/**
+ * One banner, at one moment, for every coupon that moment is about.
+ *
+ * The grouping is the whole point. A wallet with two coupons expiring on
+ * different dates used to raise two separate banners at the same minute, one
+ * naming each, and with the daily reminder switched on it did that again every
+ * morning — six notifications over three days to say the same two things. The
+ * phone has no more right to interrupt twice than the server does, and the
+ * server has always sent one digest per run.
+ */
+type PlannedAlert = {
+  at: number;
+  coupons: PlannedCoupon[];
 };
 
 function alertDate(expiration: string, daysBefore: number): number | null {
@@ -57,16 +72,45 @@ function alertDate(expiration: string, daysBefore: number): number | null {
   return at.getTime();
 }
 
-function body(company: string, daysLeft: number, remaining: number): string {
-  const value = remaining > 0 ? ` (נותרו \u2066₪\u00A0${remaining.toLocaleString("he-IL")}\u2069)` : "";
-  if (daysLeft <= 0) return `הקופון של ${company} פג היום${value}.`;
-  if (daysLeft === 1) return `הקופון של ${company} פג מחר${value}.`;
-  return `הקופון של ${company} פג בעוד ${daysLeft} ימים${value}.`;
+function whenLabel(daysLeft: number): string {
+  if (daysLeft <= 0) return "היום";
+  if (daysLeft === 1) return "מחר";
+  return `בעוד ${daysLeft} ימים`;
+}
+
+function money(remaining: number): string {
+  return remaining > 0 ? ` (נותרו \u2066₪\u00A0${remaining.toLocaleString("he-IL")}\u2069)` : "";
 }
 
 /**
- * Every reminder the preferences call for, soonest first and trimmed to what
- * the platform will actually hold.
+ * What the banner says. One coupon keeps the sentence it always had; more than
+ * one is counted rather than listed, because a lock-screen banner truncates and
+ * the count is the part that decides whether to open the app.
+ *
+ * A group can hold different deadlines — a coupon on its expiry day and another
+ * at its week-before mark fall on the same morning — so the soonest one leads,
+ * and the total is what is actually at stake.
+ */
+function body(coupons: PlannedCoupon[], remainingById: Map<number, number>): string {
+  const total = coupons.reduce((sum, c) => sum + (remainingById.get(c.couponId) ?? 0), 0);
+  const soonest = Math.min(...coupons.map((c) => c.daysLeft));
+  if (coupons.length === 1) {
+    return `הקופון של ${coupons[0].company} פג ${whenLabel(soonest)}${money(total)}.`;
+  }
+  const sameDay = coupons.every((c) => c.daysLeft === soonest);
+  return sameDay
+    ? `${coupons.length} קופונים פגים ${whenLabel(soonest)}${money(total)}.`
+    : `${coupons.length} קופונים פגים בקרוב, הראשון ${whenLabel(soonest)}${money(total)}.`;
+}
+
+/**
+ * Every reminder the preferences call for, soonest first, one per moment, and
+ * trimmed to what the platform will actually hold.
+ *
+ * The cap counts banners, not coupons, which is the other half of the grouping:
+ * a ten-coupon wallet on a daily reminder used to spend the entire budget
+ * inside a week and then go silent, because every coupon took a slot of its
+ * own on every one of those mornings.
  */
 export function planExpiryAlerts(
   coupons: DecryptedCoupon[],
@@ -79,7 +123,7 @@ export function planExpiryAlerts(
   // A window and the daily reminder can both land on the same day for the same
   // coupon; keyed here so the user is told once, not twice.
   const seen = new Set<string>();
-  const planned: PlannedAlert[] = [];
+  const byMoment = new Map<number, PlannedCoupon[]>();
 
   for (const coupon of coupons) {
     if (!coupon.expiration || !isSpendableCoupon(coupon)) continue;
@@ -97,11 +141,16 @@ export function planExpiryAlerts(
       const key = `${coupon.id}:${daysBefore}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      planned.push({ at, couponId: coupon.id, company: coupon.company, daysLeft: daysBefore });
+      const list = byMoment.get(at) || [];
+      list.push({ couponId: coupon.id, company: coupon.company, daysLeft: daysBefore });
+      byMoment.set(at, list);
     }
   }
 
-  return planned.sort((a, b) => a.at - b.at).slice(0, MAX_SCHEDULED);
+  return [...byMoment.entries()]
+    .map(([at, list]) => ({ at, coupons: list.sort((a, b) => a.daysLeft - b.daysLeft) }))
+    .sort((a, b) => a.at - b.at)
+    .slice(0, MAX_SCHEDULED);
 }
 
 /** Cancels only what this module scheduled, leaving other features' alerts alone. */
@@ -142,7 +191,7 @@ async function syncLocalExpiryAlertsNow(
   const remainingById = new Map(coupons.map((c) => [c.id, couponRemainingValue(c)]));
 
   const fingerprint = JSON.stringify(
-    planned.map((alert) => [alert.couponId, alert.at, alert.daysLeft]),
+    planned.map((alert) => [alert.at, alert.coupons.map((c) => [c.couponId, c.daysLeft])]),
   );
   if ((await AsyncStorage.getItem(PLAN_KEY).catch(() => null)) === fingerprint) return;
 
@@ -150,11 +199,15 @@ async function syncLocalExpiryAlertsNow(
   await cancelOurs();
 
   for (const alert of planned) {
+    const single = alert.coupons.length === 1 ? alert.coupons[0] : null;
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: rtlText("קופון עומד לפוג"),
-        body: rtlText(body(alert.company, alert.daysLeft, remainingById.get(alert.couponId) ?? 0)),
-        data: { kind: KIND, couponId: alert.couponId },
+        title: rtlText(single ? "קופון עומד לפוג" : "קופונים עומדים לפוג"),
+        body: rtlText(body(alert.coupons, remainingById)),
+        // A digest has no single coupon to open, so it lands on the list.
+        data: single
+          ? { kind: KIND, couponId: single.couponId }
+          : { kind: KIND, couponIds: alert.coupons.map((c) => c.couponId) },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
