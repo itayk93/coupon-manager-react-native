@@ -179,7 +179,6 @@ export function RegisterScreen() {
 
             <Input
               label="סיסמה"
-              placeholder="••••••••"
               isPassword
               value={password}
               onChangeText={setPassword}
@@ -189,7 +188,6 @@ export function RegisterScreen() {
 
             <Input
               label="אימות סיסמה"
-              placeholder="••••••••"
               isPassword
               value={confirmPassword}
               onChangeText={setConfirmPassword}

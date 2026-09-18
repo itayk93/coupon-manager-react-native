@@ -175,7 +175,6 @@ export function LoginScreen() {
               <Input
                 label="סיסמה"
                 testID="login-password"
-                placeholder="••••••••"
                 isPassword
                 value={password}
                 onChangeText={setPassword}

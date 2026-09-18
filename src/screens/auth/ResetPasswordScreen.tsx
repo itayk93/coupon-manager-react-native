@@ -161,7 +161,6 @@ export function ResetPasswordScreen() {
               <>
                 <Input
                   label="סיסמה חדשה"
-                  placeholder="••••••••"
                   isPassword
                   value={password}
                   onChangeText={setPassword}
@@ -171,7 +170,6 @@ export function ResetPasswordScreen() {
 
                 <Input
                   label="אימות סיסמה"
-                  placeholder="••••••••"
                   isPassword
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
