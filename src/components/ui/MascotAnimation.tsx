@@ -30,7 +30,11 @@ const ATLASES = [
 ];
 const FRAME_COUNT = 36;
 const GRID = 6;
-const FPS = 24;
+const DEFAULT_FPS = 24;
+const STATE_FPS: Record<MascotState, number> = {
+  calm: 12, scanning: 12, concerned: 16, worried: 18,
+  talking: 24, cheering: 24, alarmed: 24, relieved: 24, "six-seven": 24,
+};
 const ROW: Record<MascotState, number> = {
   calm: 0, scanning: 0, talking: 1, cheering: 2, concerned: 3, "six-seven": 4,
   worried: 5, alarmed: 6, relieved: 7,
@@ -81,7 +85,7 @@ export function MascotAnimation({
     return () => { alive = false; motion.remove(); app.remove(); };
   }, []);
 
-  const fps = FPS * (speed > 0 ? speed : 1);
+  const fps = (STATE_FPS[state] ?? DEFAULT_FPS) * (Number.isFinite(speed) && speed > 0 ? speed : 1);
   useEffect(() => {
     setStep(0);
     if (paused) {

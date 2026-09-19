@@ -18,14 +18,16 @@
 
 ## 2. אטלסי האנימציה — בתוך האפליקציה
 
-`assets/mascot/3d/` · 36 פריימים ברשת 6×6 · 24fps · לופ של 1.5 שניות
+`assets/mascot/3d/` · 36 פריימים ברשת 6×6 · תא 256px · קצב לפי מצב: סריקה 12fps (3 שניות),
+דאגה 16fps (2.25 שניות), מודאג 18fps (2 שניות), היתר 24fps (1.5 שניות).
+הקלה היא רצף חד־פעמי. מיפוי המצבים נשאר ללא שינוי.
 
 | קובץ | שורה באטלס | מצבים | סטטוס |
 |---|---|---|---|
-| `scan-smooth.webp` | 0 | `scanning`, `thinking`, `calm` | 🟢 |
+| `scan-smooth.webp` | 0 | `scanning`, `calm` | 🟢 |
 | `greeting-smooth.webp` | 1 | `talking` | 🟢 |
-| `success-smooth.webp` | 2 | `cheering`, `success` | 🟢 |
-| `concern-smooth.webp` | 3 | `concerned`, `anxious`, `panic`, `emergency` | 🟢 |
+| `success-smooth.webp` | 2 | `cheering` | 🟢 |
+| `concern-smooth.webp` | 3 | `concerned` | 🟢 |
 | `six-seven-smooth.webp` | 4 | `six-seven` | 🟢 |
 | `worried-smooth.webp` | 5 | `worried` — 2–3 ימים לתפוגה | 🟢 |
 | `alarmed-smooth.webp` | 6 | `alarmed` — היום או מחר | 🟢 |

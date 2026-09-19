@@ -361,7 +361,8 @@ class ShareViewController: UIViewController {
     mascot.image = frames[0]
     guard !reduceMotion else { return }
     mascot.animationImages = frames
-    mascot.animationDuration = Double(frames.count) / 24.0
+    // Scanning settles over three seconds; the celebration stays brisk.
+    mascot.animationDuration = Double(frames.count) / (row == 0 ? 12.0 : 24.0)
     mascot.animationRepeatCount = once ? 1 : 0
     mascot.startAnimating()
   }

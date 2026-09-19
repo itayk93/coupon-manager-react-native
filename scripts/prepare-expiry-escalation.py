@@ -24,6 +24,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageFilter
+from mascot_motion import breathe, preview, validate_budget
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'assets/mascot/3d'
@@ -97,21 +98,23 @@ def ease(t):
 
 
 def interpolate(keys, loop):
-    sequence = [0, 1, 2, 1, 0] if loop else list(range(6))
+    sequence = [0, 1, 2, 0] if loop else list(range(6))
     # Loops omit the duplicate closing pose; the player supplies it on wrap.
     # Relief includes its endpoint so a one-shot can hold the actual smile.
-    intervals = COUNT if loop else COUNT - 1
-    segments = len(sequence) - 1
-    if intervals % segments:
-        raise ValueError('Frame count must evenly divide the pose intervals')
-    steps = intervals // segments
+    budgets = [9, 11, 16] if loop else [7, 7, 7, 7, 7]
+    validate_budget(sequence, budgets, COUNT, loop)
     frames = []
-    for start, end in zip(sequence, sequence[1:]):
+    for start, end, steps in zip(sequence, sequence[1:], budgets):
         a, b = pixels(keys[start]), pixels(keys[end])
         ga, gb = gray(a), gray(b)
         estimator = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
         forward = estimator.calc(ga, gb, None)
         backward = estimator.calc(gb, ga, None)
+        # Untextured limbs produce discontinuous flow. Regularize the field
+        # before inverse sampling; otherwise it tears small holes in a hand.
+        if loop:
+            forward = cv2.GaussianBlur(forward, (0, 0), CELL * .025)
+            backward = cv2.GaussianBlur(backward, (0, 0), CELL * .025)
         for step in range(steps):
             t = ease(step / steps)
             if step == 0:
@@ -188,12 +191,12 @@ def main():
     except (OSError, ValueError) as error:
         parser.error(str(error))
     output.mkdir(parents=True, exist_ok=True)
-    worried = interpolate(escalation_keys[:3], loop=True)
+    worried = breathe(interpolate(escalation_keys[:3], loop=True), .005)
     alarmed = interpolate(escalation_keys[3:], loop=True)
     relieved = interpolate(relief_keys, loop=False)
     for name, frames in [('worried', worried), ('alarmed', alarmed), ('relieved', relieved)]:
         save_atlas(frames, output / f'{name}-smooth.webp')
-    save_preview([worried, alarmed], output / 'escalation-preview.webp', loop=True)
+    preview([worried, alarmed], [18, 24], output / 'escalation-preview.webp')
     save_preview([relieved], output / 'relief-preview.webp', loop=False)
 
 
