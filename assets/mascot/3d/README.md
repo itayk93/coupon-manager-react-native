@@ -120,12 +120,17 @@ and previews at actual per-state rates. `inspect-mascot-atlases.py --output-dir
 /tmp/kuponi-review` creates all-frame contact sheets on both themes and reports
 wrap/midpoint deltas. Deltas are diagnostics, not an artistic pass criterion.
 
-The motion-only revision leaves the six-seven asset and builder untouched and
+The first motion revision left six-seven untouched. Its follow-up corrects the
+cosine palindrome with asymmetric vertical timing and a small horizontal return
+path; both masks and amplitude are fractions of CELL. This follow-up still
 keeps every production atlas at 256px per cell. Native iOS share animations use
 the same 12fps scan / 24fps cheer timing. Screen-state mapping is unchanged.
 
 Animation principles verified against [AnimSchool's idle breakdown](https://blog.animschool.edu/2024/06/14/breathing-life-into-idle-animations/):
 overlapping body layers and varied timing support a living idle. These are
 animation choices, not a claim that every sinusoid or reversal is a defect.
-The unchanged six-seven cosine naturally reverses direction at its extrema;
-what is removed from the pose cycles is the complete mirrored replay.
+The original six-seven cosine was seamless but exactly mirrored. A scalar second
+harmonic changes timing, not the geometric path. The corrected field uses
+(sin(p) + 0.15*sin(2*p))/1.15 vertically and a 3/256*CELL horizontal cosine,
+with opposing arm masks and phase pi/3. This produces a narrow closed orbit,
+keeps the peak swing close to the original, and anchors face and feet.

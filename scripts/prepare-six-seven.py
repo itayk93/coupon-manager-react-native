@@ -27,17 +27,23 @@ def smoothstep(low, high, value):
 
 base = np.asarray(keys[2]).astype(np.float32)/255
 base[:,:,:3] *= base[:,:,3:4]
-left = 1-smoothstep(58,91,xx)
-right = smoothstep(174,207,xx)
 frames = []
 for index in range(36):
-    amplitude = 18*np.cos(2*np.pi*index/36)
-    source_y = yy.copy()
+    phase = 2*np.pi*index/36 + np.pi/3
+    # Cosine alone retraced the same gesture. An asymmetric vertical wave
+    # varies timing; a small quadrature horizontal component gives the return
+    # its own route. A scalar harmonic alone would still retrace one line.
+    amplitude = CELL*(18/256)*(np.sin(phase)+.15*np.sin(2*phase))/1.15
+    sideways = CELL*(3/256)*np.cos(phase)
+    source_x, source_y = xx.copy(), yy.copy()
     for _ in range(8):
-        vertical = smoothstep(105,134,source_y)*(1-smoothstep(170,203,source_y))
-        displacement = amplitude*(right-left)*vertical
-        source_y = yy-displacement
-    p = cv2.remap(base,xx,source_y.astype(np.float32),cv2.INTER_LINEAR,borderMode=cv2.BORDER_CONSTANT)
+        vertical = smoothstep(CELL*105/256,CELL*134/256,source_y)*(1-smoothstep(CELL*170/256,CELL*203/256,source_y))
+        arm_left = 1-smoothstep(CELL*58/256,CELL*91/256,source_x)
+        arm_right = smoothstep(CELL*174/256,CELL*207/256,source_x)
+        band = (arm_right-arm_left)*vertical
+        source_x = xx-sideways*band
+        source_y = yy-amplitude*band
+    p = cv2.remap(base,source_x.astype(np.float32),source_y.astype(np.float32),cv2.INTER_LINEAR,borderMode=cv2.BORDER_CONSTANT)
     p[:,:,:3] = np.divide(p[:,:,:3],p[:,:,3:4],out=np.zeros_like(p[:,:,:3]),where=p[:,:,3:4]>0.001)
     frames.append(Image.fromarray(np.uint8(np.clip(p*255,0,255))))
 atlas = Image.new('RGBA',(1536,1536))
@@ -51,6 +57,7 @@ for i,frame in enumerate(frames):
     preview.append(bg)
 # Lossless WebP: pixel-identical to PNG, ~40% smaller in the bundle.
 atlas.save(OUT/'six-seven-smooth.webp',lossless=True,quality=100,method=6,exact=True)
+assert np.array_equal(np.asarray(atlas), np.asarray(Image.open(OUT/'six-seven-smooth.webp').convert('RGBA'))), 'lossless RGBA round-trip failed'
 preview[0].save(OUT/'six-seven-preview.webp',save_all=True,append_images=preview[1:],duration=[round((i+1)*1000/24)-round(i*1000/24) for i in range(36)],loop=0,quality=95)
 Image.open(ROOT/'assets/mascot/celebration/C10-six-seven.png').convert('RGB').resize((600,600),Image.Resampling.LANCZOS).save(ROOT/'modules/coupon-widget/android/src/main/res/drawable-nodpi/celebration_67.webp',quality=94)
 print('Six-seven: 36 frames, 24fps; widget uses the supplied artwork')
