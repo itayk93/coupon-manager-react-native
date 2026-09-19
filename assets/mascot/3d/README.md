@@ -15,6 +15,41 @@ The opaque source draft and old preview are not referenced by the application.
 Reference: user-provided `original_app_mascot.png`.
 Generated using the built-in image generation tool on 2026-09-10.
 
+## New keyframe sheets: measured, not yet usable
+
+`source/scan-keyframes.png`, `greeting-`, `concern-` and `success-keyframes.png`
+are 1536x1024 sheets of 512px cells, generated to unblock two things: a 512px
+atlas cell, and a fourth `success` pose so cheering can cycle instead of
+bouncing between two. Neither is unblocked yet. Measured against the approved
+art they carry two defects that cropping cannot reach.
+
+**The character is drawn too small in the cell.** The torso is 201-331px where
+the existing 512px sheets carry 379. Framed so the torso matches what ships,
+the magnifier falls outside the cell and is cut in half; framed so nothing is
+clipped, the character renders about 35% smaller than every other state, which
+is worse than the blur it was meant to fix.
+
+**The arms are extended too far.** This is the root of it. Across the approved
+poses the full silhouette is 1.03-1.06x the torso width — the magnifier is held
+in close. Across these sheets it is 1.84-2.02x. That ratio is what decides
+whether a square cell can hold both the body at full size and the magnifier,
+and at 2x it cannot. It also breaks the interpolation: the magnifier travels so
+far between poses that optical flow loses it and renders two of them in the
+in-between frames.
+
+What a regeneration needs, beyond the existing brief: **the magnifier and both
+hands stay close to the body, so the full silhouette is no wider than about
+1.1x the torso**, and the torso fills roughly three quarters of the cell, as it
+does in `source/escalation-keyframes.png`. Pose variety has to come from the
+body leaning, crouching and rising rather than from the arms reaching out.
+
+`scripts/mascot_keys.py` is ready for that artwork. It keys the green, finds
+each pose by the empty columns around it, and crops on the feet rather than on
+the nominal grid — needed because these sheets drift up to 53px vertically
+between cells, and because two `greeting` poses cross the cell boundary into
+each other. It solves the window size against a torso measured at the output
+scale, so the character lands the size he already is.
+
 ## Character invariants
 
 Cobalt-blue rounded square body, large white eyes with dark pupils and white
