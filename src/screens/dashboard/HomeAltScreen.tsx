@@ -1,13 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   RefreshControl,
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import Animated from "react-native-reanimated";
+import { GestureDetector } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
@@ -19,6 +20,7 @@ import { OnboardingBanner, useOnboardingPending } from "@/components/layout/Onbo
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { AddCouponFab, FAB_CLEARANCE } from "@/components/ui/AddCouponFab";
+import { PullUpIndicator, usePullUpAction } from "@/components/ui/PullUpAction";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -52,6 +54,12 @@ import { couponRouteId } from "@/lib/couponId";
  * `ExpiringCouponsBanner` is deliberately absent: the hero already says how
  * many coupons are close, from the same `homeHero` numbers. The banner is
  * untouched and still used by the current dashboard.
+ *
+ * The end of the page is also a way out of it. Keep dragging once the last
+ * section has run out and a tab rises out of the bottom edge offering a new
+ * coupon — the one thing this screen is about that is not already on it. See
+ * `PullUpAction`; the button in the corner does the same job for anyone who
+ * never pulls, so the gesture is only ever a shortcut, never the only door.
  */
 
 /**
@@ -73,6 +81,10 @@ export function HomeAltScreen() {
   // Which company's coupons are open in the sheet — the screen's fast path.
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const onboardingPending = useOnboardingPending();
+
+  // Stable across renders so the gesture is not rebuilt mid-drag.
+  const addCoupon = useCallback(() => router.push("/coupons/add"), [router]);
+  const pullUp = usePullUpAction({ onTrigger: addCoupon });
 
   // Same ordering the dashboard uses: most recently used first, then most
   // often used, then newest. Imported rather than re-invented so a coupon can
@@ -180,109 +192,118 @@ export function HomeAltScreen() {
         </Text>
       </View>
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={theme.primary}
-            colors={[theme.primary]}
+      <GestureDetector gesture={pullUp.gesture}>
+        <Animated.ScrollView
+          ref={pullUp.scrollRef}
+          onScroll={pullUp.scrollHandler}
+          scrollEventThrottle={16}
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
+          }
+        >
+          {/* A new account still gets the walkthrough prompt first — it is the one
+              thing more useful than the search field when there is nothing to
+              search. */}
+          <OnboardingBanner />
+
+          <CouponAccessHero coupons={coupons} isLoading={isLoading} />
+
+          {/* The fast path, as high as the screen allows. Someone opening this
+              app is usually at a till: they know the shop and need the barcode,
+              so naming the shop is the shortest route there. Same component and
+              same ordering as the dashboard, so a shop is never near the top on
+              one screen and buried on the other. */}
+          <CompanyCardsSlider
+            companyCards={cards}
+            selectedCompany={sheetCompany}
+            onSelectCompany={setSheetCompany}
           />
-        }
-      >
-        {/* A new account still gets the walkthrough prompt first — it is the one
-            thing more useful than the search field when there is nothing to
-            search. */}
-        <OnboardingBanner />
 
-        <CouponAccessHero coupons={coupons} isLoading={isLoading} />
-
-        {/* The fast path, as high as the screen allows. Someone opening this
-            app is usually at a till: they know the shop and need the barcode,
-            so naming the shop is the shortest route there. Same component and
-            same ordering as the dashboard, so a shop is never near the top on
-            one screen and buried on the other. */}
-        <CompanyCardsSlider
-          companyCards={cards}
-          selectedCompany={sheetCompany}
-          onSelectCompany={setSheetCompany}
-        />
-
-        {isLoading && coupons.length === 0 ? (
-          <View style={styles.skeletons}>
-            {[1, 2].map((item) => (
-              <CouponCardSkeleton key={item} />
-            ))}
-          </View>
-        ) : null}
-
-        <CouponSection
-          title="כדאי להשתמש בקרוב"
-          coupons={expiring}
-          tagsMap={tagsMap}
-          keyPrefix="expiring"
-          onOpen={openCoupon}
-          onReportUsage={reportUsage}
-        />
-        <CouponSection
-          title="בשימוש לאחרונה"
-          coupons={favourites}
-          tagsMap={tagsMap}
-          keyPrefix="favourite"
-          onOpen={openCoupon}
-          onReportUsage={reportUsage}
-        />
-
-        {visibleCoupons.length > 0 ? (
-          <>
-            {/* Each tile names the filter it wants, including the one that
-                wants none of them. The list is a tab route, so it is usually
-                still mounted with whatever filter the last tile set: two of
-                these used to travel with no params at all, which the list
-                reads as "nothing to apply" — so after "פגים בקרוב" the other
-                two landed on a list still filtered to what is expiring. */}
-            <View style={styles.statsRow}>
-              {stat(String(visibleCoupons.length), "קופונים פעילים", () =>
-                router.navigate({ pathname: "/coupons", params: { initialStatus: "active" } })
-              )}
-              {stat(String(companyCount), "חברות", () => router.push("/companies"))}
-              {stat(String(expiringSoon(coupons).length), "פגים בקרוב", () =>
-                router.push({ pathname: "/coupons", params: { initialStatus: "expiring" } })
-              )}
+          {isLoading && coupons.length === 0 ? (
+            <View style={styles.skeletons}>
+              {[1, 2].map((item) => (
+                <CouponCardSkeleton key={item} />
+              ))}
             </View>
+          ) : null}
 
-            <TouchableOpacity
-              onPress={() => router.navigate("/coupons")}
-              style={styles.seeAllBtn}
-              accessibilityRole="button"
-            >
-              <ChevronLeft size={16} color={theme.primary} />
-              <Text style={[styles.seeAllText, { color: theme.primary }]}>לכל הקופונים</Text>
-            </TouchableOpacity>
-          </>
-        ) : null}
-
-        {visibleCoupons.length === 0 && !isLoading ? (
-          <EmptyState
-            // No second character: the hero's mascot is a few points above this
-            // card, and two of him on one screen is one too many.
-            visual={<View />}
-            icon={<Sparkles size={32} color={theme.primary} />}
-            title="הארנק מחכה לקופון הראשון"
-            subtitle="מוסיפים קופון ומתחילים לשמור על כל שקל."
-            actionTitle="הוספת קופון"
-            onAction={() => router.push("/scanner")}
+          <CouponSection
+            title="כדאי להשתמש בקרוב"
+            coupons={expiring}
+            tagsMap={tagsMap}
+            keyPrefix="expiring"
+            onOpen={openCoupon}
+            onReportUsage={reportUsage}
           />
-        ) : null}
+          <CouponSection
+            title="בשימוש לאחרונה"
+            coupons={favourites}
+            tagsMap={tagsMap}
+            keyPrefix="favourite"
+            onOpen={openCoupon}
+            onReportUsage={reportUsage}
+          />
 
-        {/* Below the coupons on purpose: a permission prompt must not be the
-            thing standing between the user and the search field. */}
-        {onboardingPending ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
-      </ScrollView>
+          {visibleCoupons.length > 0 ? (
+            <>
+              {/* Each tile names the filter it wants, including the one that
+                  wants none of them. The list is a tab route, so it is usually
+                  still mounted with whatever filter the last tile set: two of
+                  these used to travel with no params at all, which the list
+                  reads as "nothing to apply" — so after "פגים בקרוב" the other
+                  two landed on a list still filtered to what is expiring. */}
+              <View style={styles.statsRow}>
+                {stat(String(visibleCoupons.length), "קופונים פעילים", () =>
+                  router.navigate({ pathname: "/coupons", params: { initialStatus: "active" } })
+                )}
+                {stat(String(companyCount), "חברות", () => router.push("/companies"))}
+                {stat(String(expiringSoon(coupons).length), "פגים בקרוב", () =>
+                  router.push({ pathname: "/coupons", params: { initialStatus: "expiring" } })
+                )}
+              </View>
+
+              <TouchableOpacity
+                onPress={() => router.navigate("/coupons")}
+                style={styles.seeAllBtn}
+                accessibilityRole="button"
+              >
+                <ChevronLeft size={16} color={theme.primary} />
+                <Text style={[styles.seeAllText, { color: theme.primary }]}>לכל הקופונים</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
+          {visibleCoupons.length === 0 && !isLoading ? (
+            <EmptyState
+              // No second character: the hero's mascot is a few points above this
+              // card, and two of him on one screen is one too many.
+              visual={<View />}
+              icon={<Sparkles size={32} color={theme.primary} />}
+              title="הארנק מחכה לקופון הראשון"
+              subtitle="מוסיפים קופון ומתחילים לשמור על כל שקל."
+              actionTitle="הוספת קופון"
+              onAction={() => router.push("/scanner")}
+            />
+          ) : null}
+
+          {/* Below the coupons on purpose: a permission prompt must not be the
+              thing standing between the user and the search field. */}
+          {onboardingPending ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
+        </Animated.ScrollView>
+      </GestureDetector>
+
+      {/* Under the page and behind the button, so the pull draws it out of the
+          bottom edge instead of dropping it on top of the content. */}
+      <PullUpIndicator travel={pullUp.travel} armed={pullUp.armed} label="קופון חדש" />
 
       {/* Outside the ScrollView so it stays put while the page moves under it:
           adding a coupon is the one thing this screen is for that is not about
