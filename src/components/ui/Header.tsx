@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-na
 import { ChevronRight, Bell } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 
 type HeaderProps = {
@@ -28,74 +29,80 @@ export function Header({
 }: HeaderProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
+  // The bar runs edge to edge; its title lines up with the column below it.
+  const contentStyle = useContentStyle("grid");
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.card }]}>
+      {/* The bar and its rule run edge to edge; what is on it lines up
+          with the content column below. */}
       <View
         style={[
-          styles.container,
+          styles.bar,
           {
             backgroundColor: theme.card,
             borderBottomColor: theme.cardBorder,
           },
         ]}
       >
-        <View style={styles.actionsGroup}>
-          {rightAction ? (
-            rightAction
-          ) : (
-            <>
-              {showNotifications ? (
-                <TouchableOpacity
-                  onPress={onNotificationsPress}
-                  style={[
-                    styles.iconButton,
-                    { backgroundColor: theme.surfaceAlt },
-                  ]}
-                >
-                  <Bell size={18} color={theme.text} />
-                  {hasUnreadNotifications ? (
-                    <View style={[styles.badgeDot, { backgroundColor: theme.danger }]} />
-                  ) : null}
-                </TouchableOpacity>
-              ) : null}
-            </>
-          )}
-        </View>
+        <View style={[styles.container, contentStyle]}>
+          <View style={styles.actionsGroup}>
+            {rightAction ? (
+              rightAction
+            ) : (
+              <>
+                {showNotifications ? (
+                  <TouchableOpacity
+                    onPress={onNotificationsPress}
+                    style={[
+                      styles.iconButton,
+                      { backgroundColor: theme.surfaceAlt },
+                    ]}
+                  >
+                    <Bell size={18} color={theme.text} />
+                    {hasUnreadNotifications ? (
+                      <View style={[styles.badgeDot, { backgroundColor: theme.danger }]} />
+                    ) : null}
+                  </TouchableOpacity>
+                ) : null}
+              </>
+            )}
+          </View>
 
-        <View style={styles.titleContainer}>
-          <Text
-            numberOfLines={1}
-            style={[styles.title, { color: theme.text, textAlign: "right" }]}
-          >
-            {title}
-          </Text>
-          {subtitle ? (
+          <View style={styles.titleContainer}>
             <Text
               numberOfLines={1}
+              style={[styles.title, { color: theme.text, textAlign: "right" }]}
+            >
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.subtitle,
+                  { color: theme.textMuted, textAlign: "right" },
+                ]}
+              >
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+
+          {showBack ? (
+            <TouchableOpacity
+              onPress={onBack}
               style={[
-                styles.subtitle,
-                { color: theme.textMuted, textAlign: "right" },
+                styles.backButton,
+                { backgroundColor: theme.surfaceAlt },
               ]}
             >
-              {subtitle}
-            </Text>
-          ) : null}
+              <ChevronRight size={22} color={theme.text} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.placeholder} />
+          )}
         </View>
-
-        {showBack ? (
-          <TouchableOpacity
-            onPress={onBack}
-            style={[
-              styles.backButton,
-              { backgroundColor: theme.surfaceAlt },
-            ]}
-          >
-            <ChevronRight size={22} color={theme.text} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.placeholder} />
-        )}
       </View>
     </SafeAreaView>
   );
@@ -105,13 +112,15 @@ const styles = StyleSheet.create({
   safeArea: {
     width: "100%",
   },
+  bar: {
+    borderBottomWidth: 1,
+  },
   container: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   titleContainer: {
     flex: 1,

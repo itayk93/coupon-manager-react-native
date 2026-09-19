@@ -3,6 +3,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { FileCheck2 } from "lucide-react-native";
 import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts } from "@/lib/theme";
 
 const UPDATED_AT = "1 בספטמבר 2026";
@@ -60,10 +61,11 @@ const SECTIONS = [
 
 export function TermsScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ContentHeader />
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, contentStyle]} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.headerBox}>
             <FileCheck2 size={28} color={theme.primary} />

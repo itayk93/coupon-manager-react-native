@@ -20,6 +20,7 @@ import {
 } from "@/lib/notificationTypes";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import {
@@ -167,6 +168,7 @@ function TypeCard({
 
 export function NotificationSettingsScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { data: prefs, isLoading: prefsLoading } = useNotificationPreferences();
   const updatePrefs = useUpdateNotificationPreferences();
 
@@ -268,7 +270,7 @@ export function NotificationSettingsScreen() {
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="ההתראות שלי" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <Text style={[styles.groupTitle, { color: theme.textMuted }]}>ערוצי התראות</Text>
 

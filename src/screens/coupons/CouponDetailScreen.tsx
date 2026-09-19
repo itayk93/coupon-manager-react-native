@@ -36,6 +36,7 @@ import {
   RefreshCw,
 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
+import { TwoPane } from "@/components/layout/TwoPane";
 import { CouponBarcodeView } from "@/components/coupons/CouponBarcodeView";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { QuickShareSheet } from "@/components/coupons/QuickShareSheet";
@@ -61,6 +62,7 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useCappedWidth, useContentStyle } from "@/hooks/useResponsive";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
@@ -68,6 +70,7 @@ import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
 import { effectiveUsedValue } from "@/lib/couponLedger";
 import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useQueryClient } from "@tanstack/react-query";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import { SaleCelebration } from "@/components/coupons/SaleCelebration";
@@ -144,13 +147,36 @@ function DeleteConfirm({
   );
 }
 
-export function CouponDetailScreen() {
+type CouponDetailScreenProps = {
+  /**
+   * Set when the screen is a pane rather than a route — the coupons list shows
+   * it beside itself on an iPad. It then takes its coupon from here instead of
+   * from the URL, and drops the back button, since there is nothing to go back
+   * from.
+   */
+  couponId?: string;
+  embedded?: boolean;
+  /** Called instead of going back when the coupon on show stops existing. */
+  onDismiss?: () => void;
+};
+
+export function CouponDetailScreen({
+  couponId: selectedCouponId,
+  embedded = false,
+  onDismiss,
+}: CouponDetailScreenProps = {}) {
   const router = useRouter();
   const { id, highlightUsage } = useLocalSearchParams<{ id: string; highlightUsage?: string }>();
-  const couponIdentifier = typeof id === "string" ? id : undefined;
+  const couponIdentifier = selectedCouponId ?? (typeof id === "string" ? id : undefined);
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("grid");
+  // The bar stays full-bleed; the button inside it does not stretch to 1180pt.
+  const actionWidth = useCappedWidth(520);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  // As a pane it sits inside a screen that has already paid the safe-area
+  // inset; paying it twice would drop this header below the list's title.
+  const Shell = embedded ? View : SafeAreaView;
 
   const { data: coupon, isLoading } = useCoupon(couponIdentifier);
   const couponId = coupon?.id;
@@ -217,12 +243,26 @@ export function CouponDetailScreen() {
     return () => clearTimeout(timer);
   }, [showUsageCelebration]);
 
+  // A pane with nothing chosen yet: the list beside it is the instruction.
+  if (embedded && !couponIdentifier) {
+    return (
+      <Shell style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <EmptyState
+          mascot="helper"
+          largeVisual
+          title="בחרו קופון מהרשימה"
+          subtitle="הפרטים, הברקוד וההיסטוריה של הקופון יופיעו כאן."
+        />
+      </Shell>
+    );
+  }
+
   if (isLoading || !coupon) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <Header title="טוען קופון..." showBack onBack={() => router.back()} />
+      <Shell style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <Header title="טוען קופון..." showBack={!embedded} onBack={() => router.back()} />
         <CouponDetailsSkeleton />
-      </SafeAreaView>
+      </Shell>
     );
   }
 
@@ -256,7 +296,10 @@ export function CouponDetailScreen() {
     snapshots.forEach(([key, list]) => {
       if (list) queryClient.setQueryData(key, list.filter((item) => item.id !== coupon.id));
     });
-    router.back();
+    // As a pane there is nothing to go back to: the list is already on screen,
+    // and it is the selection that has to let go of the deleted coupon.
+    if (embedded) onDismiss?.();
+    else router.back();
     const id = coupon.id;
     void deleteCoupon.mutateAsync(id);
     notify.undo(
@@ -325,10 +368,10 @@ export function CouponDetailScreen() {
   const logo = getCompanyLogoSource(coupon.company);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <Shell style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
         title={coupon.company}
-        showBack
+        showBack={!embedded}
         onBack={() => router.back()}
         rightAction={
           isSharedWithMe ? undefined : (
@@ -354,517 +397,531 @@ export function CouponDetailScreen() {
       <ScrollView
         ref={scrollRef}
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Company Header Box */}
-        <View
-          style={[
-            styles.companyBox,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
-          <View style={styles.companyHeaderTop}>
-            <View style={styles.statusBadges}>
-              {isFullyUsed ? (
-                <Badge label="נוצל במלואו" variant="default" />
-              ) : daysLeft !== null && daysLeft < 0 ? (
-                <Badge label="פג תוקף" variant="danger" />
-              ) : daysLeft !== null && daysLeft <= 14 ? (
-                <Badge
-                  label={`פג בעוד ${daysLeft} ימים`}
-                  variant="warning"
-                  icon={<Clock size={12} color={theme.warningText} />}
-                />
-              ) : (
-                <Badge label="פעיל בארנק" variant="success" />
-              )}
-            </View>
-
-            <View style={styles.logoAndName}>
-              <View style={styles.nameGroup}>
-                <Text style={[styles.companyMainTitle, { color: theme.text }]}>
-                  {coupon.company}
-                </Text>
-              </View>
-
+        {/* Two columns once there is room for both: the coupon itself —
+            company, barcode, the actions on it — stays at a readable
+            width on the right, and everything about it runs beside it.
+            On a phone this is the same single column it always was. */}
+        <TwoPane
+          primaryWidth={420}
+          primary={
+            <>
+              {/* Company Header Box */}
               <View
                 style={[
-                  styles.companyLogoFrame,
-                  { backgroundColor: theme.surfaceAlt },
+                  styles.companyBox,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                  },
                 ]}
               >
-                <Image source={logo} style={styles.companyLogoImg} resizeMode="contain" />
-              </View>
-            </View>
-          </View>
+                <View style={styles.companyHeaderTop}>
+                  <View style={styles.statusBadges}>
+                    {isFullyUsed ? (
+                      <Badge label="נוצל במלואו" variant="default" />
+                    ) : daysLeft !== null && daysLeft < 0 ? (
+                      <Badge label="פג תוקף" variant="danger" />
+                    ) : daysLeft !== null && daysLeft <= 14 ? (
+                      <Badge
+                        label={`פג בעוד ${daysLeft} ימים`}
+                        variant="warning"
+                        icon={<Clock size={12} color={theme.warningText} />}
+                      />
+                    ) : (
+                      <Badge label="פעיל בארנק" variant="success" />
+                    )}
+                  </View>
 
-          {/* Balance Gauge */}
-          <View
-            style={[
-              styles.gaugeContainer,
-              { backgroundColor: theme.surfaceAlt },
-            ]}
-          >
-            <View style={styles.gaugeRow}>
-              <View style={styles.gaugeCol}>
-                <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>נוצל</Text>
-                <Text
-                  style={[styles.gaugeVal, { color: theme.textMuted }]}
-                  maxFontSizeMultiplier={1.3}
-                >
-                  {formatIls(coupon.used_value || 0)}
-                </Text>
-              </View>
+                  <View style={styles.logoAndName}>
+                    <View style={styles.nameGroup}>
+                      <Text style={[styles.companyMainTitle, { color: theme.text }]}>
+                        {coupon.company}
+                      </Text>
+                    </View>
 
-              <View style={styles.gaugeCol}>
-                <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>שווי מקורי</Text>
-                <Text
-                  style={[styles.gaugeVal, { color: theme.text }]}
-                  maxFontSizeMultiplier={1.3}
-                >
-                  {formatIls(coupon.value || 0)}
-                </Text>
-              </View>
+                    <View
+                      style={[
+                        styles.companyLogoFrame,
+                        { backgroundColor: theme.surfaceAlt },
+                      ]}
+                    >
+                      <Image source={logo} style={styles.companyLogoImg} resizeMode="contain" />
+                    </View>
+                  </View>
+                </View>
 
-              <View style={styles.gaugeCol}>
-                <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>יתרה זמינה</Text>
-                <Text
-                  style={[styles.gaugeValHighlight, { color: theme.primary }]}
-                  maxFontSizeMultiplier={1.3}
-                >
-                  {formatIls(remaining)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-        </View>
-
-        {/* Barcode & QR Code Presentation Box */}
-        <CouponBarcodeView coupon={coupon} />
-
-        {showUsageCelebration ? (
-          <View
-            style={[styles.usageCelebration, { backgroundColor: theme.successBg }]}
-            accessibilityLiveRegion="polite"
-            accessible
-            accessibilityLabel="השימוש נשמר בהצלחה"
-          >
-            <CharacterSpotlight
-              character="investigator"
-              state="cheering"
-              size="small"
-              tone="success"
-            />
-            <View style={styles.usageCelebrationCopy}>
-              <Text style={[styles.usageCelebrationTitle, { color: theme.successText }]}>השימוש נשמר</Text>
-              <Text style={[styles.usageCelebrationText, { color: theme.successText }]}>היתרה בארנק כבר מעודכנת.</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {coupon.expiration ? (
-          <View
-            style={[
-              styles.expirationRow,
-              { backgroundColor: theme.surfaceAlt },
-            ]}
-          >
-            <Text style={[styles.expirationLabel, { color: theme.textMuted }]}>
-              תוקף הקופון
-            </Text>
-            <Text
-              maxFontSizeMultiplier={1.3}
-              style={[
-                styles.expirationValue,
-                {
-                  color:
-                    daysLeft !== null && daysLeft < 0
-                      ? theme.danger
-                      : daysLeft !== null && daysLeft <= 14
-                      ? theme.warningText
-                      : theme.text,
-                },
-              ]}
-            >
-              {formatDateHebrew(coupon.expiration)}
-            </Text>
-          </View>
-        ) : null}
-
-        {coupon.description ? (
-          <View
-            style={[
-              styles.descriptionCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            <Text style={[styles.descriptionLabel, { color: theme.textMuted }]}>תיאור</Text>
-            <Text style={[styles.companyDescription, { color: theme.textMuted }]}>
-              {coupon.description}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* Action Buttons Row */}
-        <View style={styles.actionsGrid}>
-          {user?.id === 1 ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsMerchantDirectoryOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel={`בדיקת החנויות שמכבדות את הקופון של ${coupon.company}`}
-              style={[styles.actionBtn, { backgroundColor: theme.primaryTint }]}
-            >
-              <Store size={18} color={theme.primary} />
-              <Text style={[styles.actionBtnText, { color: theme.primary }]}>איפה אפשר לממש?</Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {!isFullyUsed && coupon.is_one_time ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleMarkAsUsed}
-              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <CheckCircle2 size={18} color={theme.text} />
-              <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנוצל</Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {/* Only an owner can hand a coupon on. A coupon shared with you is
-              not yours to pass along, and the server refuses it anyway. */}
-          {!isSharedWithMe ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsQuickShareOpen(true)}
-              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <Share2 size={18} color={theme.text} />
-              <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {!isSharedWithMe ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsSaleOpen(true)}
-              style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
-            >
-              <BadgeDollarSign size={18} color={theme.text} />
-              <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנמכר</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        {/* Redemption Link if available */}
-        {coupon.buyme_coupon_url ||
-        coupon.strauss_coupon_url ||
-        coupon.xgiftcard_coupon_url ||
-        coupon.xtra_coupon_url ? (
-          <TouchableOpacity
-            onPress={handleOpenUrl}
-            style={[
-              styles.externalLinkBtn,
-              {
-                backgroundColor: theme.surfaceAlt,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <ExternalLink size={18} color={theme.secondary} />
-            <Text style={[styles.externalLinkText, { color: theme.secondary }]}>
-              פתיחת שובר מקוון באתר החברה
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Home-screen widget is available only in native app builds. */}
-        {isWidgetSupported ? (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={widget.toggle}
-            style={[
-              styles.widgetCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
-                opacity: !widget.canToggle && !widget.inWidget ? 0.6 : 1,
-              },
-            ]}
-          >
-            <Switch
-              value={widget.inWidget}
-              onValueChange={widget.toggle}
-              disabled={!widget.canToggle && !widget.inWidget}
-              trackColor={{ false: theme.inputBorder, true: theme.primary }}
-              thumbColor="#ffffff"
-            />
-            <View style={styles.widgetCardContent}>
-              <View style={styles.widgetCardHeader}>
-                <Text
-                  style={[styles.widgetCardTitle, { color: theme.text }]}
-                >
-                  הצג בווידג'ט מסך הבית
-                </Text>
-                <LayoutGrid size={18} color={theme.primary} />
-              </View>
-              <Text
-                style={[styles.widgetCardSubtitle, { color: theme.textMuted }]}
-              >
-                {widget.inWidget
-                  ? "הקופון מוצג בווידג'ט לגישה מהירה מהמסך הראשי"
-                  : widget.isFull
-                  ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
-                  : !widget.canToggle
-                  ? "קופון זה אינו זמין להצגה בווידג'ט"
-                  : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Tags */}
-        <View
-          style={[
-            styles.sectionCard,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>תגיות</Text>
-            <Tag size={16} color={theme.primary} />
-          </View>
-          <View style={styles.tagsRow}>
-            {tags.length > 0 ? (
-              tags.map((t) => (
+                {/* Balance Gauge */}
                 <View
-                  key={t.id}
                   style={[
-                    styles.tagBubble,
+                    styles.gaugeContainer,
                     { backgroundColor: theme.surfaceAlt },
                   ]}
                 >
-                  <Text style={[styles.tagBubbleText, { color: theme.primary }]}>
-                    #{t.name}
+                  <View style={styles.gaugeRow}>
+                    <View style={styles.gaugeCol}>
+                      <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>נוצל</Text>
+                      <Text
+                        style={[styles.gaugeVal, { color: theme.textMuted }]}
+                        maxFontSizeMultiplier={1.3}
+                      >
+                        {formatIls(coupon.used_value || 0)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.gaugeCol}>
+                      <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>שווי מקורי</Text>
+                      <Text
+                        style={[styles.gaugeVal, { color: theme.text }]}
+                        maxFontSizeMultiplier={1.3}
+                      >
+                        {formatIls(coupon.value || 0)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.gaugeCol}>
+                      <Text style={[styles.gaugeLabel, { color: theme.textMuted }]}>יתרה זמינה</Text>
+                      <Text
+                        style={[styles.gaugeValHighlight, { color: theme.primary }]}
+                        maxFontSizeMultiplier={1.3}
+                      >
+                        {formatIls(remaining)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+              </View>
+
+              {/* Barcode & QR Code Presentation Box */}
+              <CouponBarcodeView coupon={coupon} />
+
+              {showUsageCelebration ? (
+                <View
+                  style={[styles.usageCelebration, { backgroundColor: theme.successBg }]}
+                  accessibilityLiveRegion="polite"
+                  accessible
+                  accessibilityLabel="השימוש נשמר בהצלחה"
+                >
+                  <CharacterSpotlight
+                    character="investigator"
+                    state="cheering"
+                    size="small"
+                    tone="success"
+                  />
+                  <View style={styles.usageCelebrationCopy}>
+                    <Text style={[styles.usageCelebrationTitle, { color: theme.successText }]}>השימוש נשמר</Text>
+                    <Text style={[styles.usageCelebrationText, { color: theme.successText }]}>היתרה בארנק כבר מעודכנת.</Text>
+                  </View>
+                </View>
+              ) : null}
+
+              {coupon.expiration ? (
+                <View
+                  style={[
+                    styles.expirationRow,
+                    { backgroundColor: theme.surfaceAlt },
+                  ]}
+                >
+                  <Text style={[styles.expirationLabel, { color: theme.textMuted }]}>
+                    תוקף הקופון
+                  </Text>
+                  <Text
+                    maxFontSizeMultiplier={1.3}
+                    style={[
+                      styles.expirationValue,
+                      {
+                        color:
+                          daysLeft !== null && daysLeft < 0
+                            ? theme.danger
+                            : daysLeft !== null && daysLeft <= 14
+                            ? theme.warningText
+                            : theme.text,
+                      },
+                    ]}
+                  >
+                    {formatDateHebrew(coupon.expiration)}
                   </Text>
                 </View>
-              ))
-            ) : (
-              <Text style={{ color: theme.textMuted, fontSize: 13 }}>אין תגיות לקופון זה</Text>
-            )}
-          </View>
-        </View>
+              ) : null}
 
-        {/* Usage & Transaction History */}
-        {usageLocations.length > 0 ? (
-          <View
-            style={[
-              styles.sectionCard,
-              { backgroundColor: theme.card, borderColor: theme.cardBorder },
-            ]}
-          >
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>מפת מקומות שימוש</Text>
-              <MapPin size={16} color={theme.primary} />
-            </View>
-            <CouponLocationMap
-              locations={usageLocations.map((row) => ({
-                latitude: row.latitude as number,
-                longitude: row.longitude as number,
-                title: row.place_name || "מיקום שימוש",
-                description: row.place_address || row.details,
-              }))}
-              height={230}
-            />
-            <Text style={[styles.mapHint, { color: theme.textMuted }]}>כל נקודה היא שימוש בקופון</Text>
-          </View>
-        ) : null}
-
-        <View
-          onLayout={(e) => {
-            sectionCardYRef.current = e.nativeEvent.layout.y;
-          }}
-          style={[
-            styles.sectionCard,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              היסטוריית שימושים וטעינות
-            </Text>
-            <View style={styles.historyHeaderActions}>
-              {!isSharedWithMe && history.some((h) => h.source_table !== "sum_row" && typeof h.id === "number") ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    setPendingDeleteId(null);
-                    setIsEditingHistory((prev) => !prev);
-                  }}
+              {coupon.description ? (
+                <View
                   style={[
-                    styles.historyEditToggle,
+                    styles.descriptionCard,
                     {
-                      backgroundColor: isEditingHistory ? theme.primary : theme.neutralBg,
+                      backgroundColor: theme.card,
+                      borderColor: theme.cardBorder,
                     },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.historyEditToggleText,
-                      { color: isEditingHistory ? "#fff" : theme.text },
-                    ]}
+                  <Text style={[styles.descriptionLabel, { color: theme.textMuted }]}>תיאור</Text>
+                  <Text style={[styles.companyDescription, { color: theme.textMuted }]}>
+                    {coupon.description}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Action Buttons Row */}
+              <View style={styles.actionsGrid}>
+                {user?.id === 1 ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setIsMerchantDirectoryOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`בדיקת החנויות שמכבדות את הקופון של ${coupon.company}`}
+                    style={[styles.actionBtn, { backgroundColor: theme.primaryTint }]}
                   >
-                    {isEditingHistory ? "סיום" : "עריכה"}
+                    <Store size={18} color={theme.primary} />
+                    <Text style={[styles.actionBtnText, { color: theme.primary }]}>איפה אפשר לממש?</Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {!isFullyUsed && coupon.is_one_time ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={handleMarkAsUsed}
+                    style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+                  >
+                    <CheckCircle2 size={18} color={theme.text} />
+                    <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנוצל</Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {/* Only an owner can hand a coupon on. A coupon shared with you is
+                    not yours to pass along, and the server refuses it anyway. */}
+                {!isSharedWithMe ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setIsQuickShareOpen(true)}
+                    style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+                  >
+                    <Share2 size={18} color={theme.text} />
+                    <Text style={[styles.actionBtnText, { color: theme.text }]}>שתף</Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {!isSharedWithMe ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setIsSaleOpen(true)}
+                    style={[styles.actionBtn, { backgroundColor: theme.surfaceAlt }]}
+                  >
+                    <BadgeDollarSign size={18} color={theme.text} />
+                    <Text style={[styles.actionBtnText, { color: theme.text }]}>סמן כנמכר</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </>
+          }
+          secondary={
+            <>
+              {/* Redemption Link if available */}
+              {coupon.buyme_coupon_url ||
+              coupon.strauss_coupon_url ||
+              coupon.xgiftcard_coupon_url ||
+              coupon.xtra_coupon_url ? (
+                <TouchableOpacity
+                  onPress={handleOpenUrl}
+                  style={[
+                    styles.externalLinkBtn,
+                    {
+                      backgroundColor: theme.surfaceAlt,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <ExternalLink size={18} color={theme.secondary} />
+                  <Text style={[styles.externalLinkText, { color: theme.secondary }]}>
+                    פתיחת שובר מקוון באתר החברה
                   </Text>
                 </TouchableOpacity>
               ) : null}
-              <History size={16} color={theme.primary} />
-            </View>
-          </View>
 
-          {history.length > 0 ? (
-            history.map((h) => {
-              const isNegative = h.transaction_amount < 0;
-              const canDelete = h.source_table !== "sum_row" && typeof h.id === "number";
-              const isPendingDelete = pendingDeleteId === String(h.id);
-              return (
-                <View
-                  key={String(h.id)}
-                  onLayout={(e) => {
-                    rowYRef.current[String(h.id)] = e.nativeEvent.layout.y;
-                  }}
+              {/* Home-screen widget is available only in native app builds. */}
+              {isWidgetSupported ? (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={widget.toggle}
+                  style={[
+                    styles.widgetCard,
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: widget.inWidget ? theme.primary : theme.cardBorder,
+                      opacity: !widget.canToggle && !widget.inWidget ? 0.6 : 1,
+                    },
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.historyRow,
-                      { borderBottomColor: theme.border },
-                      isPendingDelete && { borderBottomWidth: 0 },
-                      flashRowId === String(h.id) && { backgroundColor: theme.primaryTint },
-                    ]}
-                  >
-                    {/* RTL: the row reads from the right, so its action sits at
-                        the end of the line — the left edge. */}
-                    {isEditingHistory && canDelete ? (
-                      <TouchableOpacity
-                        onPress={() =>
-                          setPendingDeleteId(isPendingDelete ? null : String(h.id))
-                        }
+                  <Switch
+                    value={widget.inWidget}
+                    onValueChange={widget.toggle}
+                    disabled={!widget.canToggle && !widget.inWidget}
+                    trackColor={{ false: theme.inputBorder, true: theme.primary }}
+                    thumbColor="#ffffff"
+                  />
+                  <View style={styles.widgetCardContent}>
+                    <View style={styles.widgetCardHeader}>
+                      <Text
+                        style={[styles.widgetCardTitle, { color: theme.text }]}
+                      >
+                        הצג בווידג'ט מסך הבית
+                      </Text>
+                      <LayoutGrid size={18} color={theme.primary} />
+                    </View>
+                    <Text
+                      style={[styles.widgetCardSubtitle, { color: theme.textMuted }]}
+                    >
+                      {widget.inWidget
+                        ? "הקופון מוצג בווידג'ט לגישה מהירה מהמסך הראשי"
+                        : widget.isFull
+                        ? `הווידג'ט מלא - עד ${widget.maxCoupons} קופונים`
+                        : !widget.canToggle
+                        ? "קופון זה אינו זמין להצגה בווידג'ט"
+                        : "גישה מהירה לקוד בלי לפתוח את האפליקציה"}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+
+              {/* Tags */}
+              <View
+                style={[
+                  styles.sectionCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>תגיות</Text>
+                  <Tag size={16} color={theme.primary} />
+                </View>
+                <View style={styles.tagsRow}>
+                  {tags.length > 0 ? (
+                    tags.map((t) => (
+                      <View
+                        key={t.id}
                         style={[
-                          styles.historyDeleteBtn,
+                          styles.tagBubble,
+                          { backgroundColor: theme.surfaceAlt },
+                        ]}
+                      >
+                        <Text style={[styles.tagBubbleText, { color: theme.primary }]}>
+                          #{t.name}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: theme.textMuted, fontSize: 13 }}>אין תגיות לקופון זה</Text>
+                  )}
+                </View>
+              </View>
+
+              {/* Usage & Transaction History */}
+              {usageLocations.length > 0 ? (
+                <View
+                  style={[
+                    styles.sectionCard,
+                    { backgroundColor: theme.card, borderColor: theme.cardBorder },
+                  ]}
+                >
+                  <View style={styles.sectionHeader}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>מפת מקומות שימוש</Text>
+                    <MapPin size={16} color={theme.primary} />
+                  </View>
+                  <CouponLocationMap
+                    locations={usageLocations.map((row) => ({
+                      latitude: row.latitude as number,
+                      longitude: row.longitude as number,
+                      title: row.place_name || "מיקום שימוש",
+                      description: row.place_address || row.details,
+                    }))}
+                    height={230}
+                  />
+                  <Text style={[styles.mapHint, { color: theme.textMuted }]}>כל נקודה היא שימוש בקופון</Text>
+                </View>
+              ) : null}
+
+              <View
+                onLayout={(e) => {
+                  sectionCardYRef.current = e.nativeEvent.layout.y;
+                }}
+                style={[
+                  styles.sectionCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                    היסטוריית שימושים וטעינות
+                  </Text>
+                  <View style={styles.historyHeaderActions}>
+                    {!isSharedWithMe && history.some((h) => h.source_table !== "sum_row" && typeof h.id === "number") ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setPendingDeleteId(null);
+                          setIsEditingHistory((prev) => !prev);
+                        }}
+                        style={[
+                          styles.historyEditToggle,
                           {
-                            backgroundColor: isPendingDelete
-                              ? theme.danger
-                              : theme.dangerBg,
+                            backgroundColor: isEditingHistory ? theme.primary : theme.neutralBg,
                           },
                         ]}
-                        accessibilityLabel="מחיקת רשומה"
                       >
-                        <Trash2
-                          size={16}
-                          color={isPendingDelete ? "#ffffff" : theme.danger}
-                        />
+                        <Text
+                          style={[
+                            styles.historyEditToggleText,
+                            { color: isEditingHistory ? "#fff" : theme.text },
+                          ]}
+                        >
+                          {isEditingHistory ? "סיום" : "עריכה"}
+                        </Text>
                       </TouchableOpacity>
                     ) : null}
+                    <History size={16} color={theme.primary} />
+                  </View>
+                </View>
 
-                    <Text
-                      style={[
-                        styles.historyAmount,
-                        {
-                          color:
-                            h.source_table === "sum_row"
-                              ? theme.primary
-                              : isNegative
-                              ? theme.danger
-                              : theme.primary,
-                        },
-                      ]}
-                    >
-                      {isNegative ? "-" : "+"}
-                      {formatIls(Math.abs(h.transaction_amount))}
-                    </Text>
-
-                    <View style={styles.historyDetailsCol}>
-                      {!h.place_name ? (
-                        <Text style={[styles.historyDetails, { color: theme.text }]}>{h.details}</Text>
-                      ) : null}
-                      {h.place_name ? (
-                        <View style={styles.historyPlaceRow}>
-                          <Text style={[styles.historyPlace, { color: theme.text }]}>{h.place_name}</Text>
-                          {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
+                {history.length > 0 ? (
+                  history.map((h) => {
+                    const isNegative = h.transaction_amount < 0;
+                    const canDelete = h.source_table !== "sum_row" && typeof h.id === "number";
+                    const isPendingDelete = pendingDeleteId === String(h.id);
+                    return (
+                      <View
+                        key={String(h.id)}
+                        onLayout={(e) => {
+                          rowYRef.current[String(h.id)] = e.nativeEvent.layout.y;
+                        }}
+                      >
+                        <View
+                          style={[
+                            styles.historyRow,
+                            { borderBottomColor: theme.border },
+                            isPendingDelete && { borderBottomWidth: 0 },
+                            flashRowId === String(h.id) && { backgroundColor: theme.primaryTint },
+                          ]}
+                        >
+                          {/* RTL: the row reads from the right, so its action sits at
+                              the end of the line — the left edge. */}
+                          {isEditingHistory && canDelete ? (
                             <TouchableOpacity
-                              activeOpacity={0.75}
-                              accessibilityRole="button"
-                              accessibilityLabel={`הצגת מפה עבור ${h.place_name}`}
-                              accessibilityHint="פותח מפה גדולה שאפשר להזיז ולהגדיל"
-                              hitSlop={7}
-                              style={[
-                                styles.showMapButton,
-                                { backgroundColor: theme.neutralBg },
-                              ]}
                               onPress={() =>
-                                setSelectedMapLocation({
-                                  latitude: h.latitude as number,
-                                  longitude: h.longitude as number,
-                                  title: h.place_name as string,
-                                })
+                                setPendingDeleteId(isPendingDelete ? null : String(h.id))
                               }
+                              style={[
+                                styles.historyDeleteBtn,
+                                {
+                                  backgroundColor: isPendingDelete
+                                    ? theme.danger
+                                    : theme.dangerBg,
+                                },
+                              ]}
+                              accessibilityLabel="מחיקת רשומה"
                             >
-                              <MapPin size={16} color={theme.primary} strokeWidth={2.2} />
+                              <Trash2
+                                size={16}
+                                color={isPendingDelete ? "#ffffff" : theme.danger}
+                              />
                             </TouchableOpacity>
                           ) : null}
-                        </View>
-                      ) : null}
-                      {h.timestamp ? (
-                        <Text style={[styles.historyDate, { color: theme.textMuted }]}>
-                          {formatDateHebrew(h.timestamp)}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </View>
 
-                  {isPendingDelete ? (
-                    <DeleteConfirm
-                      theme={theme}
-                      busy={deleteTx.isPending}
-                      onCancel={() => setPendingDeleteId(null)}
-                      onConfirm={() => {
-                        setPendingDeleteId(null);
-                        deleteTx.mutate(
-                          {
-                            recordId: h.id,
-                            sourceTable: h.source_table,
-                            couponId: coupon.id,
-                          },
-                          {
-                            onSuccess: () =>
-                              notify.success("הרשומה נמחקה", "יתרת הקופון עודכנה"),
-                          }
-                        );
-                      }}
-                    />
-                  ) : null}
-                </View>
-              );
-            })
-          ) : (
-            <Text style={{ color: theme.textMuted, fontSize: 13, textAlign: "center", paddingVertical: 12 }}>
-              עוד לא נרשמו שימושים בקופון
-            </Text>
-          )}
-        </View>
+                          <Text
+                            style={[
+                              styles.historyAmount,
+                              {
+                                color:
+                                  h.source_table === "sum_row"
+                                    ? theme.primary
+                                    : isNegative
+                                    ? theme.danger
+                                    : theme.primary,
+                              },
+                            ]}
+                          >
+                            {isNegative ? "-" : "+"}
+                            {formatIls(Math.abs(h.transaction_amount))}
+                          </Text>
+
+                          <View style={styles.historyDetailsCol}>
+                            {!h.place_name ? (
+                              <Text style={[styles.historyDetails, { color: theme.text }]}>{h.details}</Text>
+                            ) : null}
+                            {h.place_name ? (
+                              <View style={styles.historyPlaceRow}>
+                                <Text style={[styles.historyPlace, { color: theme.text }]}>{h.place_name}</Text>
+                                {typeof h.latitude === "number" && typeof h.longitude === "number" ? (
+                                  <TouchableOpacity
+                                    activeOpacity={0.75}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`הצגת מפה עבור ${h.place_name}`}
+                                    accessibilityHint="פותח מפה גדולה שאפשר להזיז ולהגדיל"
+                                    hitSlop={7}
+                                    style={[
+                                      styles.showMapButton,
+                                      { backgroundColor: theme.neutralBg },
+                                    ]}
+                                    onPress={() =>
+                                      setSelectedMapLocation({
+                                        latitude: h.latitude as number,
+                                        longitude: h.longitude as number,
+                                        title: h.place_name as string,
+                                      })
+                                    }
+                                  >
+                                    <MapPin size={16} color={theme.primary} strokeWidth={2.2} />
+                                  </TouchableOpacity>
+                                ) : null}
+                              </View>
+                            ) : null}
+                            {h.timestamp ? (
+                              <Text style={[styles.historyDate, { color: theme.textMuted }]}>
+                                {formatDateHebrew(h.timestamp)}
+                              </Text>
+                            ) : null}
+                          </View>
+                        </View>
+
+                        {isPendingDelete ? (
+                          <DeleteConfirm
+                            theme={theme}
+                            busy={deleteTx.isPending}
+                            onCancel={() => setPendingDeleteId(null)}
+                            onConfirm={() => {
+                              setPendingDeleteId(null);
+                              deleteTx.mutate(
+                                {
+                                  recordId: h.id,
+                                  sourceTable: h.source_table,
+                                  couponId: coupon.id,
+                                },
+                                {
+                                  onSuccess: () =>
+                                    notify.success("הרשומה נמחקה", "יתרת הקופון עודכנה"),
+                                }
+                              );
+                            }}
+                          />
+                        ) : null}
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={{ color: theme.textMuted, fontSize: 13, textAlign: "center", paddingVertical: 12 }}>
+                    עוד לא נרשמו שימושים בקופון
+                  </Text>
+                )}
+              </View>
+            </>
+          }
+        />
       </ScrollView>
 
       {!isFullyUsed ? (
@@ -877,7 +934,7 @@ export function CouponDetailScreen() {
             }}
             accessibilityRole="button"
             accessibilityLabel="דיווח על שימוש בקופון"
-            style={[styles.primaryBottomAction, { backgroundColor: theme.primary }]}
+            style={[styles.primaryBottomAction, actionWidth, { backgroundColor: theme.primary }]}
           >
             <ReceiptText size={20} color="#ffffff" />
             <Text style={styles.actionBtnTextWhite}>דיווח שימוש</Text>
@@ -992,7 +1049,11 @@ export function CouponDetailScreen() {
         />
       </Modal>
 
-      {isCelebrating ? <SaleCelebration onDone={() => router.replace("/coupons")} /> : null}
+      {isCelebrating ? (
+        <SaleCelebration
+          onDone={() => (embedded ? onDismiss?.() : router.replace("/coupons"))}
+        />
+      ) : null}
 
       <Modal
         visible={selectedMapLocation !== null}
@@ -1024,7 +1085,7 @@ export function CouponDetailScreen() {
           </View>
         ) : null}
       </Modal>
-    </SafeAreaView>
+    </Shell>
   );
 }
 

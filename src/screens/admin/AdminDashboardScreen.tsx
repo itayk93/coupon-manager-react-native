@@ -32,6 +32,7 @@ import {
 import { useAdminTags, useRenameTag, useDeleteTag } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle, useResponsive } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
@@ -59,6 +60,8 @@ const TAB_KEYS: AdminTab[] = [
 ];
 
 export function AdminDashboardScreen() {
+  const contentStyle = useContentStyle("grid");
+  const { gutter } = useResponsive();
   const router = useRouter();
   const { theme } = useAppTheme();
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
@@ -125,10 +128,11 @@ export function AdminDashboardScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="פאנל ניהול" showBack onBack={() => router.back()} />
 
-      <View style={styles.container}>
+      <View style={[styles.container, contentStyle]}>
         {/* Navigation Tabs — a horizontal pill rail. Seven tabs never fit one
             row in Hebrew, so let them scroll instead of wrapping mid-word. */}
-        <View style={styles.tabsRailWrap}>
+        {/* The rail runs to both edges, whatever the page's gutter is. */}
+        <View style={[styles.tabsRailWrap, { marginHorizontal: -gutter }]}>
           <ScrollView
             ref={tabsScrollRef}
             horizontal

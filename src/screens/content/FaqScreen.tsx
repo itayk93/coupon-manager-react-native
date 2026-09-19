@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { ChevronDown, ChevronUp, HelpCircle } from "lucide-react-native";
 import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 
 const FAQ_ITEMS = [
@@ -35,6 +36,7 @@ const FAQ_ITEMS = [
 export function FaqScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(0);
 
   const toggle = (idx: number) => {
@@ -47,7 +49,7 @@ export function FaqScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
         {FAQ_ITEMS.map((item, idx) => {

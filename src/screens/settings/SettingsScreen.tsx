@@ -32,6 +32,7 @@ import {
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { useExportAccount, useDeleteAccount } from "@/hooks/useConsent";
 import { useMyReferralStatus } from "@/hooks/useReferral";
@@ -44,6 +45,7 @@ import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 export function SettingsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { user, isAdmin, signOut } = useAuth();
   const { data: profile } = useProfile();
   const biometric = useBiometricAuth();
@@ -102,7 +104,7 @@ export function SettingsScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
         {/* User Profile Card */}

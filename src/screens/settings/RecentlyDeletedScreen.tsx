@@ -19,6 +19,8 @@ import {
   type DecryptedCoupon,
 } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { notify } from "@/lib/notify";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
@@ -43,6 +45,7 @@ function maskedCode(code: string | null | undefined): string | null {
 export function RecentlyDeletedScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("grid");
   const { data: coupons = [], isLoading } = useDeletedCoupons();
   const restore = useRestoreCoupons();
   const purge = usePermanentDeleteCoupons();
@@ -69,7 +72,7 @@ export function RecentlyDeletedScreen() {
       {isLoading ? (
         <MascotLoadingState title="טוען קופונים שנמחקו" subtitle="בודקים מה עדיין אפשר לשחזר" />
       ) : coupons.length === 0 ? (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
           <EmptyState
             icon={<Sparkles size={28} color={theme.primary} />}
             title="הפח ריק"
@@ -77,72 +80,74 @@ export function RecentlyDeletedScreen() {
           />
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
           <Text style={[styles.note, { color: theme.textMuted }]}>
             קופון שנמחק נשמר כאן {TRASH_RETENTION_DAYS} ימים ואז נמחק לצמיתות.
           </Text>
 
-          {coupons.map((coupon) => {
-            const left = daysLeftInTrash(coupon.deleted_at);
-            const remaining = couponRemainingValue(coupon);
-            return (
-              <View
-                key={coupon.id}
-                style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-              >
-                <View style={styles.cardHead}>
-                  <Text style={[styles.company, { color: theme.text }]} numberOfLines={1}>
-                    {coupon.company}
+          <ResponsiveGrid minItemWidth={300} maxColumns={2} rowGap={12}>
+            {coupons.map((coupon) => {
+              const left = daysLeftInTrash(coupon.deleted_at);
+              const remaining = couponRemainingValue(coupon);
+              return (
+                <View
+                  key={coupon.id}
+                  style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+                >
+                  <View style={styles.cardHead}>
+                    <Text style={[styles.company, { color: theme.text }]} numberOfLines={1}>
+                      {coupon.company}
+                    </Text>
+                    <Text style={[styles.value, { color: theme.textMuted }]}>
+                      {formatIls(remaining)}
+                    </Text>
+                  </View>
+
+                  {maskedCode(coupon.code) ? (
+                    <Text style={[styles.code, { color: theme.textMuted }]} numberOfLines={1}>
+                      קוד קופון: {maskedCode(coupon.code)}
+                    </Text>
+                  ) : null}
+
+                  <Text style={[styles.timeLeft, { color: left <= 3 ? theme.danger : theme.textMuted }]}>
+                    {left === 0 ? "נמחק בקרוב" : `עוד ${left} ימים עד מחיקה סופית`}
                   </Text>
-                  <Text style={[styles.value, { color: theme.textMuted }]}>
-                    {formatIls(remaining)}
-                  </Text>
+
+                  <View style={styles.actions}>
+                    <TouchableOpacity
+                      onPress={() => handleRestore(coupon)}
+                      disabled={restore.isPending}
+                      style={[styles.btn, { backgroundColor: theme.primary }]}
+                    >
+                      <RotateCcw size={16} color="#ffffff" />
+                      <Text style={[styles.btnText, { color: "#ffffff" }]}>שחזור</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handlePurge(coupon)}
+                      disabled={purge.isPending}
+                      style={[styles.btn, { backgroundColor: theme.surfaceAlt }]}
+                    >
+                      <Trash2 size={16} color={theme.danger} />
+                      <Text style={[styles.btnText, { color: theme.danger }]}>מחיקה לצמיתות</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        router.push({ pathname: "/coupons/[id]", params: { id: String(coupon.id) } })
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={`פרטי הקופון של ${coupon.company}`}
+                      style={[styles.btn, { backgroundColor: theme.surfaceAlt }]}
+                    >
+                      <FileText size={16} color={theme.primary} />
+                      <Text style={[styles.btnText, { color: theme.primary }]}>פרטים</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-
-                {maskedCode(coupon.code) ? (
-                  <Text style={[styles.code, { color: theme.textMuted }]} numberOfLines={1}>
-                    קוד קופון: {maskedCode(coupon.code)}
-                  </Text>
-                ) : null}
-
-                <Text style={[styles.timeLeft, { color: left <= 3 ? theme.danger : theme.textMuted }]}>
-                  {left === 0 ? "נמחק בקרוב" : `עוד ${left} ימים עד מחיקה סופית`}
-                </Text>
-
-                <View style={styles.actions}>
-                  <TouchableOpacity
-                    onPress={() => handleRestore(coupon)}
-                    disabled={restore.isPending}
-                    style={[styles.btn, { backgroundColor: theme.primary }]}
-                  >
-                    <RotateCcw size={16} color="#ffffff" />
-                    <Text style={[styles.btnText, { color: "#ffffff" }]}>שחזור</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handlePurge(coupon)}
-                    disabled={purge.isPending}
-                    style={[styles.btn, { backgroundColor: theme.surfaceAlt }]}
-                  >
-                    <Trash2 size={16} color={theme.danger} />
-                    <Text style={[styles.btnText, { color: theme.danger }]}>מחיקה לצמיתות</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      router.push({ pathname: "/coupons/[id]", params: { id: String(coupon.id) } })
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={`פרטי הקופון של ${coupon.company}`}
-                    style={[styles.btn, { backgroundColor: theme.surfaceAlt }]}
-                  >
-                    <FileText size={16} color={theme.primary} />
-                    <Text style={[styles.btnText, { color: theme.primary }]}>פרטים</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </ResponsiveGrid>
         </ScrollView>
       )}
     </SafeAreaView>

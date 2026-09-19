@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { signInLegacy } from "@/lib/legacyAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { signInWithSocialProvider } from "@/lib/socialAuth";
@@ -37,6 +38,7 @@ function AppleLogo() {
 export function LoginScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { setLegacySession } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -119,7 +121,7 @@ export function LoginScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >

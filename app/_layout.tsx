@@ -35,6 +35,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BiometricGate } from "@/components/layout/BiometricGate";
 import { BrandLaunchAnimation } from "@/components/layout/BrandLaunchAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { SideNav } from "@/components/layout/SideNav";
 import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
@@ -228,18 +229,27 @@ function RootLayoutNav() {
             edges={Platform.OS === "ios" ? [] : ["top"]}
             style={[styles.appViewport, { backgroundColor: theme.background }]}
           >
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: "slide_from_right",
-                contentStyle: { backgroundColor: theme.background },
-              }}
-            />
-            {/* Above the tab bar and inside the column: the install strip takes
-                its own height off the screen rather than floating over what is
-                on it. */}
-            <InstallPrompt />
-            <BottomNav />
+            {/* One shape for every device: the rail renders nothing on a
+                phone and the bottom bar renders nothing on an iPad, so
+                rotating across the breakpoint moves the navigation without
+                remounting the navigator under it. */}
+            <View style={styles.shellRow}>
+              <SideNav />
+              <View style={styles.mainColumn}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    animation: "slide_from_right",
+                    contentStyle: { backgroundColor: theme.background },
+                  }}
+                />
+                {/* Above the tab bar and inside the column: the install strip
+                    takes its own height off the screen rather than floating
+                    over what is on it. */}
+                <InstallPrompt />
+                <BottomNav />
+              </View>
+            </View>
           </SafeAreaView>
           <BiometricGate />
           <SharedScreenshotUsage />
@@ -318,6 +328,14 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   appViewport: {
+    flex: 1,
+  },
+  // row-reverse puts the navigation rail on the right, where Hebrew starts.
+  shellRow: {
+    flex: 1,
+    flexDirection: "row-reverse",
+  },
+  mainColumn: {
     flex: 1,
   },
   shellDesktop: {

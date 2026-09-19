@@ -4,6 +4,7 @@ import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, Text, 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 
 export type ToastKind = "success" | "error" | "warning";
@@ -35,6 +36,7 @@ export function pushToast(
 
 function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () => void }) {
   const { theme } = useAppTheme();
+  const { isTablet } = useResponsive();
   const anim = React.useRef(new Animated.Value(0)).current;
   // Drag offset, kept apart from the entrance animation so a swipe can move the
   // card without fighting the fade-in.
@@ -108,6 +110,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
       accessibilityHint="אפשר להחליק מעלה כדי לסגור"
       style={[
         styles.toast,
+        isTablet && styles.toastTablet,
         shadows.lifted,
         {
           backgroundColor: theme.card,
@@ -164,6 +167,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastPayload; onDismiss: () =>
  */
 export function ToastHost() {
   const insets = useSafeAreaInsets();
+  const { isTablet } = useResponsive();
   const [toasts, setToasts] = React.useState<ToastPayload[]>([]);
 
   React.useEffect(() => {
@@ -180,7 +184,13 @@ export function ToastHost() {
   if (toasts.length === 0) return null;
 
   return (
-    <View style={[styles.host, { top: insets.top + 8, pointerEvents: "box-none" }]}>
+    <View
+      style={[
+        styles.host,
+        isTablet && styles.hostTablet,
+        { top: insets.top + 8, pointerEvents: "box-none" },
+      ]}
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
       ))}
@@ -196,6 +206,13 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     gap: 8,
     ...(Platform.OS === "web" ? { maxWidth: 430, marginHorizontal: "auto" } : null),
+  },
+  hostTablet: {
+    alignItems: "center",
+  },
+  toastTablet: {
+    width: "100%",
+    maxWidth: 480,
   },
   toast: {
     flexDirection: "row-reverse",

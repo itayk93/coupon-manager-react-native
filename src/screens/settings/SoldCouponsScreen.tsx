@@ -3,6 +3,8 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Header } from "@/components/ui/Header";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { useCouponSales } from "@/hooks/useCouponSales";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
@@ -17,53 +19,56 @@ const statusLabel = { pending: "ממתינה", completed: "נמכר", declined: 
 export function SoldCouponsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("grid");
   const { data: sales = [], isLoading } = useCouponSales();
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
-    {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="מרכזים את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
+    {isLoading ? <MascotLoadingState title="טוען מכירות" subtitle="מרכזים את כל הקופונים שמכרת" /> : <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
       {sales.length === 0 ? (
         <EmptyState
           title="עוד לא מכרת קופונים"
           subtitle="אחרי המכירה הראשונה יופיעו כאן המחיר, פרטי הקונה והרווח שלך."
         />
       ) : null}
-      {sales.map((sale) => {
-        const profit = sale.sale_price - sale.coupon_cost_snapshot;
-        const brandColor = getCompanyColor(sale.company_snapshot);
-        const brandTextColor = getContrastText(brandColor);
-        const logoSource = getCompanyLogoSource(sale.company_snapshot);
-        const statusBackground = brandTextColor === "#ffffff"
-          ? "rgba(255,255,255,0.22)"
-          : "rgba(0,0,0,0.12)";
+      <ResponsiveGrid minItemWidth={300} maxColumns={2} rowGap={20}>
+        {sales.map((sale) => {
+          const profit = sale.sale_price - sale.coupon_cost_snapshot;
+          const brandColor = getCompanyColor(sale.company_snapshot);
+          const brandTextColor = getContrastText(brandColor);
+          const logoSource = getCompanyLogoSource(sale.company_snapshot);
+          const statusBackground = brandTextColor === "#ffffff"
+            ? "rgba(255,255,255,0.22)"
+            : "rgba(0,0,0,0.12)";
 
-        return (
-          <View key={sale.id} style={[styles.card, shadows.card, { backgroundColor: theme.card }]}>
-            <View style={[styles.brandHeader, { backgroundColor: brandColor }]}>
-              <ShimmerLogo
-                source={logoSource}
-                size={56}
-                style={[styles.logoFrame, { backgroundColor: theme.card }]}
-                imageStyle={styles.logoImage}
-              />
-              <Text numberOfLines={1} style={[styles.company, { color: brandTextColor }]}>
-                {sale.company_snapshot || "ללא חברה"}
-              </Text>
-              <View style={[styles.statusPill, { backgroundColor: statusBackground }]}>
-                <Text style={[styles.status, { color: brandTextColor }]}>{statusLabel[sale.status]}</Text>
+          return (
+            <View key={sale.id} style={[styles.card, shadows.card, { backgroundColor: theme.card }]}>
+              <View style={[styles.brandHeader, { backgroundColor: brandColor }]}>
+                <ShimmerLogo
+                  source={logoSource}
+                  size={56}
+                  style={[styles.logoFrame, { backgroundColor: theme.card }]}
+                  imageStyle={styles.logoImage}
+                />
+                <Text numberOfLines={1} style={[styles.company, { color: brandTextColor }]}>
+                  {sale.company_snapshot || "ללא חברה"}
+                </Text>
+                <View style={[styles.statusPill, { backgroundColor: statusBackground }]}>
+                  <Text style={[styles.status, { color: brandTextColor }]}>{statusLabel[sale.status]}</Text>
+                </View>
+              </View>
+
+              <View style={styles.body}>
+                <Text style={[styles.line, { color: theme.text }]}>מחיר מכירה: {formatIls(sale.sale_price)}</Text>
+                <Text style={[styles.profit, { color: profit >= 0 ? theme.success : theme.danger }]}>רווח: {formatIls(profit)}</Text>
+                <Text style={[styles.meta, { color: theme.textMuted }]}>שווי {formatIls(sale.coupon_value_snapshot)} · עלות {formatIls(sale.coupon_cost_snapshot)}</Text>
+                {sale.buyer_name || sale.buyer_phone ? <Text style={[styles.meta, { color: theme.textMuted }]}>נמכר ל{[sale.buyer_name, sale.buyer_phone].filter(Boolean).join(" · ")}</Text> : null}
+                {sale.buyer_email ? <Text style={[styles.meta, { color: theme.textMuted }]}>{sale.buyer_email}</Text> : null}
+                <Text style={[styles.meta, { color: theme.textMuted }]}>{formatDateHebrew(sale.sold_at || sale.created_at)} · {sale.sale_type === "transfer" ? "העברה באפליקציה" : "סימון ידני"}</Text>
               </View>
             </View>
-
-            <View style={styles.body}>
-              <Text style={[styles.line, { color: theme.text }]}>מחיר מכירה: {formatIls(sale.sale_price)}</Text>
-              <Text style={[styles.profit, { color: profit >= 0 ? theme.success : theme.danger }]}>רווח: {formatIls(profit)}</Text>
-              <Text style={[styles.meta, { color: theme.textMuted }]}>שווי {formatIls(sale.coupon_value_snapshot)} · עלות {formatIls(sale.coupon_cost_snapshot)}</Text>
-              {sale.buyer_name || sale.buyer_phone ? <Text style={[styles.meta, { color: theme.textMuted }]}>נמכר ל{[sale.buyer_name, sale.buyer_phone].filter(Boolean).join(" · ")}</Text> : null}
-              {sale.buyer_email ? <Text style={[styles.meta, { color: theme.textMuted }]}>{sale.buyer_email}</Text> : null}
-              <Text style={[styles.meta, { color: theme.textMuted }]}>{formatDateHebrew(sale.sold_at || sale.created_at)} · {sale.sale_type === "transfer" ? "העברה באפליקציה" : "סימון ידני"}</Text>
-            </View>
-          </View>
-        );
-      })}
+          );
+        })}
+      </ResponsiveGrid>
     </ScrollView>}
   </SafeAreaView>;
 }

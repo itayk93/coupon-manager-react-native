@@ -22,6 +22,7 @@ import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { useHoldAction } from "@/hooks/useHoldAction";
@@ -99,6 +100,7 @@ type CompanySheetProps = {
  */
 export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   const { theme } = useAppTheme();
+  const { isTablet } = useResponsive();
   const router = useRouter();
   const { markCompanyViewed, markCodeViewed } = useCouponViewTracking();
 
@@ -254,7 +256,11 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheet, { backgroundColor: theme.card, transform: [{ translateY }] }]}
+          style={[
+            styles.sheet,
+            isTablet && styles.sheetTablet,
+            { backgroundColor: theme.card, transform: [{ translateY }] },
+          ]}
         >
           <View style={[styles.head, { backgroundColor: brand }]} {...panResponder.panHandlers}>
             <View style={styles.handle} />
@@ -569,6 +575,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radii.sheet,
     borderTopRightRadius: radii.sheet,
     overflow: "hidden",
+  },
+  // On an iPad it floats above the bottom edge as a card, like every other
+  // sheet in the app.
+  sheetTablet: {
+    maxWidth: 560,
+    marginBottom: 24,
+    borderRadius: radii.sheet,
   },
   head: {
     paddingHorizontal: 20,

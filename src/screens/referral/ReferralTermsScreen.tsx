@@ -2,6 +2,7 @@ import React from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 
 const SECTIONS = [
@@ -68,10 +69,11 @@ const SECTIONS = [
 
 export function ReferralTermsScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="תנאי התחרות" showBack />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
         <Text style={[styles.docTitle, { color: theme.text }]}>
           תקנון תוכנית השותפים — קופון מאסטר
         </Text>

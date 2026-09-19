@@ -31,6 +31,7 @@ import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { useParseCoupon, ParsedCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { CharacterSpotlight } from "@/components/onboarding/CharacterRig";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
@@ -40,6 +41,9 @@ import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
 export function BarcodeScannerScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  // The camera and the choices around it belong in a column the eye can take
+  // in, not spread across an iPad.
+  const contentStyle = useContentStyle("reading");
   const { width, fontScale } = useWindowDimensions();
   const compactLayout = width < 380 || fontScale > 1.2;
   const aiTitleFontSize = width < 350 || fontScale >= 1.3 ? 13 : compactLayout ? 14 : 16;
@@ -271,7 +275,7 @@ export function BarcodeScannerScreen() {
         }
       />
 
-      <View style={styles.container}>
+      <View style={[styles.container, contentStyle]}>
         {/* Top Mode Selector Tabs */}
         <View style={[styles.tabSelector, compactLayout && styles.tabSelectorCompact]}>
           <TouchableOpacity

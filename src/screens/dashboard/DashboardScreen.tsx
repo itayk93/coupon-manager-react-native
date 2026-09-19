@@ -24,7 +24,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { useCouponTagsMap } from "@/hooks/useTags";
-import { useContentWidth } from "@/hooks/useContentWidth";
+import { useContentStyle } from "@/hooks/useResponsive";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
@@ -37,8 +38,7 @@ export function DashboardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ saved?: string; savedCouponId?: string }>();
   const { theme } = useAppTheme();
-  const width = useContentWidth();
-  const isTablet = width >= 768;
+  const contentStyle = useContentStyle("grid");
   const { data: coupons = [], isLoading, isError, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
@@ -139,7 +139,7 @@ export function DashboardScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -216,21 +216,20 @@ export function DashboardScreen() {
             <View style={styles.sectionHeaderOnly}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>קופונים מועדפים</Text>
             </View>
-            <View style={isTablet ? styles.tabletCouponGrid : undefined}>
+            <ResponsiveGrid minItemWidth={280} maxColumns={3}>
               {favoriteCoupons.map((coupon) => (
-                <View key={`favorite-${coupon.id}`} style={isTablet ? styles.tabletCouponColumn : undefined}>
-                  <CouponCard
-                    coupon={coupon}
-                    tags={tagsMap[coupon.id] || []}
-                    onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
-                    onReportUsage={() => {
-                      setUsageCoupon(coupon);
-                      setIsUsageOpen(true);
-                    }}
-                  />
-                </View>
+                <CouponCard
+                  key={`favorite-${coupon.id}`}
+                  coupon={coupon}
+                  tags={tagsMap[coupon.id] || []}
+                  onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
+                  onReportUsage={() => {
+                    setUsageCoupon(coupon);
+                    setIsUsageOpen(true);
+                  }}
+                />
               ))}
-            </View>
+            </ResponsiveGrid>
           </>
         ) : null}
 
@@ -268,18 +267,20 @@ export function DashboardScreen() {
 
         {/* List of Recent Active Coupons */}
         {expiringCoupons.length > 0 ? (
-          expiringCoupons.map((coupon) => (
-            <CouponCard
-              key={coupon.id}
-              coupon={coupon}
-              tags={tagsMap[coupon.id] || []}
-              onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
-              onReportUsage={() => {
-                setUsageCoupon(coupon);
-                setIsUsageOpen(true);
-              }}
-            />
-          ))
+          <ResponsiveGrid minItemWidth={280} maxColumns={3}>
+            {expiringCoupons.map((coupon) => (
+              <CouponCard
+                key={coupon.id}
+                coupon={coupon}
+                tags={tagsMap[coupon.id] || []}
+                onPress={() => router.push(`/coupons/${couponRouteId(coupon)}`)}
+                onReportUsage={() => {
+                  setUsageCoupon(coupon);
+                  setIsUsageOpen(true);
+                }}
+              />
+            ))}
+          </ResponsiveGrid>
         ) : visibleCoupons.length === 0 ? (
           <EmptyState
             mascot="investigator"
@@ -342,15 +343,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 17,
     fontWeight: "800",
-  },
-  tabletCouponGrid: {
-    flexDirection: "row-reverse",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  tabletCouponColumn: {
-    width: "49%",
-    minWidth: 0,
   },
   seeAllBtn: {
     flexDirection: "row",

@@ -2,6 +2,7 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 
 const LINKS = [
@@ -20,44 +21,50 @@ export function ContentHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("grid");
 
   return (
-    <View style={[styles.bar, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-      <TouchableOpacity
-        onPress={() => router.navigate("/(tabs)")}
-        activeOpacity={0.8}
-        style={styles.brand}
-      >
-        <Image
-          source={require("../../../public/logo-icon.png")}
-          style={styles.mark}
-          resizeMode="contain"
-        />
-        <Text style={[styles.brandText, { color: theme.text }]}>קופון מאסטר</Text>
-      </TouchableOpacity>
+    <View style={[styles.shell, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+      <View style={[styles.bar, contentStyle]}>
+        <TouchableOpacity
+          onPress={() => router.navigate("/(tabs)")}
+          activeOpacity={0.8}
+          style={styles.brand}
+        >
+          <Image
+            source={require("../../../public/logo-icon.png")}
+            style={styles.mark}
+            resizeMode="contain"
+          />
+          <Text style={[styles.brandText, { color: theme.text }]}>קופון מאסטר</Text>
+        </TouchableOpacity>
 
-      <View style={styles.nav}>
-        {LINKS.map((link) => {
-          const active = pathname === link.path;
-          return (
-            <TouchableOpacity key={link.path} onPress={() => router.push(link.path)}>
-              <Text
-                style={[
-                  styles.navText,
-                  { color: active ? theme.primary : theme.textSecondary },
-                ]}
-              >
-                {link.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        <View style={styles.nav}>
+          {LINKS.map((link) => {
+            const active = pathname === link.path;
+            return (
+              <TouchableOpacity key={link.path} onPress={() => router.push(link.path)}>
+                <Text
+                  style={[
+                    styles.navText,
+                    { color: active ? theme.primary : theme.textSecondary },
+                  ]}
+                >
+                  {link.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    borderBottomWidth: 1,
+  },
   bar: {
     minHeight: 64,
     flexDirection: "row-reverse",
@@ -67,7 +74,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   brand: {
     flexDirection: "row-reverse",

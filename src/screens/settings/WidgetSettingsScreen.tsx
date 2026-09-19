@@ -12,6 +12,7 @@ import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, useUpdateCoupon, type DecryptedCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
 import { WidgetDebugPanel } from "@/components/WidgetDebugPanel";
@@ -33,6 +34,7 @@ function WidgetLoadingState() {
 
 export function WidgetSettingsScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { isAdmin } = useAuth();
   const { data: coupons = [], isLoading } = useCoupons();
   const updateCoupon = useUpdateCoupon();
@@ -116,7 +118,7 @@ export function WidgetSettingsScreen() {
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="ווידג'ט מסך הבית" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
         {isAdmin ? <WidgetDebugPanel /> : null}
 
         <View style={[styles.intro, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

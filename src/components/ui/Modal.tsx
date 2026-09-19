@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { X } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 import { fonts } from "@/lib/theme";
 
 type ModalProps = {
@@ -54,6 +55,10 @@ export function Modal({
   expandable = false,
 }: ModalProps) {
   const { theme } = useAppTheme();
+  // On an iPad a sheet the width of the screen is a wall. It becomes a card
+  // that floats above the bottom edge instead, which is what iPadOS does with
+  // a sheet of its own.
+  const { isTablet } = useResponsive();
 
   // Stays mounted through the exit animation, otherwise the sheet would vanish
   // instantly instead of sliding out.
@@ -152,6 +157,7 @@ export function Modal({
         <Animated.View
           style={[
             styles.sheet,
+            isTablet && styles.sheetTablet,
             {
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
@@ -260,6 +266,15 @@ const styles = StyleSheet.create({
     maxHeight: "90%",
     minHeight: "40%",
     paddingBottom: Platform.OS === "ios" ? 20 : 12,
+  },
+  sheetTablet: {
+    maxWidth: 560,
+    marginBottom: 24,
+    borderRadius: 28,
+    borderWidth: 1,
+    // A card that ends above the bottom edge needs its own floor, where a
+    // sheet flush with the screen borrowed the device's.
+    minHeight: "30%",
   },
   handleContainer: {
     alignItems: "center",

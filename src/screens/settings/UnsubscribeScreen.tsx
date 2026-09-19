@@ -14,6 +14,7 @@ import { Mail, Megaphone, CircleCheck, TriangleAlert } from "lucide-react-native
 import { Header } from "@/components/ui/Header";
 import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +43,7 @@ type State = {
 
 export function UnsubscribeScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const router = useRouter();
   const { session } = useAuth();
   const { token } = useLocalSearchParams<{ token?: string }>();
@@ -148,7 +150,7 @@ export function UnsubscribeScreen() {
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="ניהול התראות" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
         <Text style={[styles.intro, { color: theme.textMuted }]}>
           ההעדפות של {state.email}. השינוי נשמר מיד, ואפשר להחזיר אותו בכל רגע.
         </Text>

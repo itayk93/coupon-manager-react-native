@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/ui/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew } from "@/lib/formatDate";
@@ -43,6 +44,7 @@ import { MascotLoadingState } from "@/components/ui/MascotLoadingState";
 export function ClaimShareScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { session, isLoading: authLoading } = useAuth();
   const params = useLocalSearchParams<{ token?: string | string[] }>();
   const raw = Array.isArray(params.token) ? params.token[0] : params.token;
@@ -172,7 +174,7 @@ export function ClaimShareScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="קופון בשבילך" showBack />
-      <ScrollView contentContainerStyle={styles.content}>{body}</ScrollView>
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>{body}</ScrollView>
     </SafeAreaView>
   );
 }

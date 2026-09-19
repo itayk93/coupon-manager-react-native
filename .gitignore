@@ -59,6 +59,7 @@ docs/
 docs/*
 !docs/APP_STORE_LAUNCH_CHECKLIST.md
 !docs/dynamic-type-scaling.md
+!docs/ipad-layout.md
 # Authenticated QA screenshots may contain coupon codes. Keep them local only.
 /docs/android-qa/
 .commandcode/

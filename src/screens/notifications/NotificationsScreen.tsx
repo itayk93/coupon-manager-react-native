@@ -22,6 +22,7 @@ import {
   useMarkNotificationViewed,
 } from "@/hooks/useInAppNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, shadows } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { notify } from "@/lib/notify";
@@ -51,6 +52,7 @@ function iconFor(kind: string | null | undefined, color: string) {
 export function NotificationsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { data: coupons = [], refetch, isRefetching } = useCoupons();
   const { data: inAppRows = [] } = useInAppNotifications();
   const markViewed = useMarkNotificationViewed();
@@ -248,7 +250,7 @@ export function NotificationsScreen() {
       />
 
       <ScrollView
-        style={styles.container}
+        style={[styles.container, contentStyle]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={

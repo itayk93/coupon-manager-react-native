@@ -2,52 +2,13 @@ import React from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bell, Home, Handshake, Share2, Ticket, User } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
+import { useResponsive } from "@/hooks/useResponsive";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { buildNavItems, isNavItemActive } from "@/lib/navigation";
 import { fonts } from "@/lib/theme";
-
-type Item = {
-  label: string;
-  path: string;
-  Icon: typeof Home;
-  /** Extra paths that should light this tab up. */
-  match: string[];
-  /**
-   * Optical-centering nudge, in pixels. Most lucide glyphs are centered in
-   * their 24px box; `share-2` is drawn ~3 units left of center, so it reads
-   * offset under its label without this.
-   */
-  iconNudgeX?: number;
-};
-
-// Declared right-to-left: דשבורד leads, as Hebrew expects.
-//
-// Statistics and "איפה קניתי" are reached from the account page rather than
-// from here: six bars left each label under ten points of type, and neither
-// screen is somewhere people go mid-task.
-function buildItems(isAdmin: boolean): Item[] {
-  return [
-    { label: "דשבורד", path: "/", Icon: Home, match: [] },
-    { label: "קופונים", path: "/coupons", Icon: Ticket, match: ["/coupons", "/scanner"] },
-    { label: "שיתופים", path: "/sharing", Icon: Share2, match: ["/sharing"], iconNudgeX: 2.5 },
-    {
-      label: "שותפים",
-      path: isAdmin ? "/admin?tab=referrals" : "/invite",
-      Icon: Handshake,
-      match: isAdmin ? ["/admin"] : ["/invite", "/referral-program"],
-    },
-    { label: "התראות", path: "/notifications", Icon: Bell, match: ["/notifications"] },
-    { label: "חשבון", path: "/settings", Icon: User, match: ["/settings", "/profile", ...(isAdmin ? [] : ["/admin"])] },
-  ];
-}
-
-function isActive(item: Item, pathname: string) {
-  if (item.path === "/") return pathname === "/" || pathname === "/index";
-  // item.path may carry a query string; matching is on `match` alone.
-  return item.match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
-}
+import { NAV_ICONS } from "./navIcons";
 
 /**
  * Persistent bottom navigation.
@@ -56,6 +17,9 @@ function isActive(item: Item, pathname: string) {
  * screen — coupon detail, scanner, notifications and the rest — instead of
  * disappearing the moment a route is pushed. The tabs navigator's own bar is
  * hidden so there is exactly one.
+ *
+ * On an iPad the same destinations move to `SideNav`, so this returns null
+ * there — the two are never on screen together.
  */
 export function BottomNav() {
   const router = useRouter();
@@ -64,10 +28,12 @@ export function BottomNav() {
   const insets = useSafeAreaInsets();
   const { theme } = useAppTheme();
   const { session, isAdmin } = useAuth();
+  const { navMode } = useResponsive();
   const { data: notifications = [] } = useInAppNotifications();
   const unread = notifications.filter((item) => !item.viewed).length;
-  const items = buildItems(isAdmin);
+  const items = buildNavItems({ isAdmin });
 
+  if (navMode !== "bottom") return null;
   if (!session || segments[0] === "(auth)") return null;
 
   return (
@@ -91,8 +57,9 @@ export function BottomNav() {
         />
       ) : null}
       {items.map((item) => {
-        const active = isActive(item, pathname);
+        const active = isNavItemActive(item, pathname);
         const color = active ? theme.primary : theme.textSubtle;
+        const Icon = NAV_ICONS[item.icon];
         return (
           <TouchableOpacity
             key={item.path}
@@ -104,7 +71,7 @@ export function BottomNav() {
             accessibilityState={{ selected: active }}
           >
             <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
-              <item.Icon color={color} size={20} strokeWidth={1.8} />
+              <Icon color={color} size={20} strokeWidth={1.8} />
               {item.path === "/notifications" && unread > 0 ? (
                 <View style={[styles.badge, { borderColor: theme.card }]}>
                   <Text style={styles.badgeText} numberOfLines={1}>
