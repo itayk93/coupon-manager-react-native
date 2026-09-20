@@ -146,6 +146,27 @@ def _anchor(alpha, x0, x1):
     return x0 + feet_x.mean(), ground, rows.min()
 
 
+def _offset(found):
+    """One horizontal shift for the whole sheet, in source points.
+
+    The feet are the right anchor vertically — he crouches and leans but never
+    leaves the ground — and the wrong one horizontally as soon as a pose holds
+    the magnifier out to one side. A crop centred on the feet has to be wide
+    enough for the furthest reach on *both* sides, so `greeting`'s widest pose
+    occupies 410 points and demands a 548-point window; 138 of those points are
+    empty, and the character shrinks by the same proportion to pay for them.
+
+    So the window is centred on the envelope of the poses instead. What keeps
+    this honest is that the shift is one number for the sheet, never per pose:
+    every pose moves by the same amount, so nothing slides between frames,
+    which is the drift the feet anchor exists to prevent. It is the same fixed
+    camera, aimed better.
+    """
+    left = max(pose['centre'] - pose['span'][0] for pose in found)
+    right = max(pose['span'][1] - pose['centre'] for pose in found)
+    return (right - left) / 2, left + right
+
+
 def _crop(keyed, pose, window, cell):
     """One pose, cut to `window` square on its own feet and resized to `cell`.
 
@@ -165,7 +186,7 @@ def _crop(keyed, pose, window, cell):
     pulls fifty-odd columns of the previous pose into the cell, and optical
     flow then spends the whole cycle fading a second character in and out.
     """
-    left = int(round(pose['centre'] - window / 2))
+    left = int(round(pose['centre'] + pose['offset'] - window / 2))
     top = int(round(pose['ground'] + window * (1 - FEET_FRACTION) - window))
     cropped = keyed.crop((left, top, left + window, top + window))
     alpha = np.asarray(cropped.getchannel('A')).copy()
@@ -263,6 +284,10 @@ def load_sheet(path, cell, expected=None):
     # oscillates: a window small enough to clip the character reads its torso
     # as the whole cell, which throws the next guess as far the other way.
     # Pulling only part of the way each pass converges in about eight.
+    shift, envelope = _offset(found)
+    for pose in found:
+        pose['offset'] = shift
+
     target = TORSO_AT_256 * cell / 256
     radius = max(3, int(round(ERODE_AT_256 * cell / 256)))
     window = int(round(float(np.median([pose['bbox'] for pose in found])) * 1.15))
@@ -298,9 +323,7 @@ def load_sheet(path, cell, expected=None):
     # Lanczos resize to the atlas cell then spreads it over the boundary. Two
     # percent is about four points at this scale — invisible, and enough.
     tall = max((pose['ground'] - pose['top']) for pose in found) * 1.02
-    wide = max(max(pose['centre'] - pose['span'][0],
-                   pose['span'][1] - pose['centre']) for pose in found) * 2 * 1.02
-    window = max(window, int(np.ceil(tall / FEET_FRACTION)), int(np.ceil(wide)))
+    window = max(window, int(np.ceil(tall / FEET_FRACTION)), int(np.ceil(envelope * 1.02)))
 
     poses = [_crop(keyed, pose, window, cell) for pose in found]
     torso = float(np.median([

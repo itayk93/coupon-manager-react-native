@@ -25,10 +25,31 @@ SHEETS = {
     'success': (4, [0, 1, 2, 3, 0], [7, 8, 8, 13]),
     'concern': (4, [0, 1, 2, 3, 0], [7, 7, 8, 14]),
 }
-#: What each state falls back to while its replacement sheet is missing or
-#: fails the framing gate: the four approved 320px rows, and the cycles their
-#: pose counts allow. `success` is the reason any of this exists — two poses
-#: cannot cycle, so it bounces, and only new artwork fixes it.
+#: Which states the replacement artwork actually improves.
+#:
+#: Measured, not assumed. `success` is the reason any of this exists: two poses
+#: cannot cycle, so it bounced, and only new artwork fixed it. `concern` gained
+#: a fourth pose that opens its loop out. The other two did not gain anything —
+#: their replacement sheets are worse on both of the things that matter:
+#:
+#:                  retrace          torso
+#:   scan      2.25 -> 1.23     216 -> 174
+#:   greeting  1.92 -> 1.46     210 -> 191
+#:
+#: and worse in the way that does not reduce to a number. The new `greeting`
+#: poses hold a closed fist at the side: the character no longer waves, which
+#: is the one thing the greeting state exists to do. The brief asked for hands
+#: close to the body and pose variety from the torso rather than the arms,
+#: which is right for holding a magnifier and wrong for a wave. The new `scan`
+#: moves the magnifier off the face to beside the head, so it reads as holding
+#: one rather than looking through it.
+#:
+#: So these two keep the approved 320px rows, which were never the problem. A
+#: sheet has to earn the swap; being newer is not earning it.
+USE_SHEET = {'success': True, 'concern': True, 'scan': False, 'greeting': False}
+
+#: What each state falls back to: the four approved 320px rows, and the cycles
+#: their pose counts allow.
 LEGACY = {
     'scan': ([0, 1, 2, 3, 0], [8, 7, 6, 15]),
     'greeting': ([1, 2, 3, 1], [13, 11, 12]),
@@ -72,7 +93,10 @@ for row, name in enumerate(NAMES):
     # 320px row until then. Mixing the two is free — the player sizes every
     # atlas in points from `GRID` and never reads a file's pixel dimensions.
     sheet = OUT / f'source/{name}-keyframes.png'
-    ratio = sheet_ratio(sheet) if sheet.exists() else float('inf')
+    # The ratio gate stays on top of the explicit choice, so a sheet that is
+    # re-uploaded broken or reframed badly still falls back on its own rather
+    # than shipping a regression.
+    ratio = sheet_ratio(sheet) if USE_SHEET[name] and sheet.exists() else float('inf')
     if ratio <= MAX_SILHOUETTE_RATIO:
         poses, sequence, budgets = SHEETS[name]
         keys, framing = load_sheet(sheet, CELL, poses)
@@ -84,6 +108,8 @@ for row, name in enumerate(NAMES):
         sequence, budgets = LEGACY[name]
         if ratio != float('inf'):
             why = f'silhouette {ratio:.2f}x torso'
+        elif not USE_SHEET[name]:
+            why = 'its sheet is a regression, see USE_SHEET'
         elif not sheet.exists():
             why = 'no sheet yet'
         else:

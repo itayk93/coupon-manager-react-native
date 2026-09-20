@@ -15,67 +15,85 @@ The opaque source draft and old preview are not referenced by the application.
 Reference: user-provided `original_app_mascot.png`.
 Generated using the built-in image generation tool on 2026-09-10.
 
-## New keyframe sheets: two landed, two pending
+## New keyframe sheets: two of four earned the swap
 
-`source/success-keyframes.png` and `concern-keyframes.png` are in use. The
-other two (`scan-` and `greeting-keyframes.png`) are measured and rejected, so
-those states keep the approved 320px keys until replacements arrive. Each state
-picks its own source at build time, so sheets can land one at a time.
+All four replacement sheets are in `source/` and all four now decode. Two are
+in use and two are not, and the reason is not that the other two failed a
+check — they passed the framing gate. They are simply worse artwork for their
+states, measured against the approved 320px rows they would replace:
 
-What decides it is one number: how much wider the whole silhouette is than the
-torso. That ratio is what governs whether a square cell can hold both the body
-at full size and the magnifier, and it is also what optical flow can follow —
-past roughly 1.4 the magnifier travels so far between poses that the flow loses
-it and renders two. `MAX_SILHOUETTE_RATIO` in `scripts/mascot_keys.py` is the
-gate; `sheet_ratio()` measures a sheet against it without failing the build.
+| state | retrace, 320px -> sheet | torso, 320px -> sheet | in use |
+| --- | --- | --- | --- |
+| `success` | 0.42 -> 1.31 | — -> 196 | the sheet |
+| `concern` | 2.09 -> 2.25 | 206 -> 190 | the sheet |
+| `scan` | 2.25 -> 1.23 | 216 -> 174 | the 320px row |
+| `greeting` | 1.92 -> 1.46 | 210 -> 191 | the 320px row |
 
-| sheet | silhouette / torso | in use |
-| --- | --- | --- |
-| approved 320px art | 1.03-1.06 | the two fallbacks |
-| `success` (corrected) | 1.14 | yes |
-| `concern` (corrected) | 1.15 | yes |
-| `scan` (corrected) | — | no: the file will not decode |
-| `greeting` (corrected) | — | no: the file will not decode |
+"Retrace" is how far each frame is from the nearest frame that is not its own
+neighbour, in units of one frame-to-frame step. Low means the loop passes close
+to itself — the out-and-back this whole effort exists to remove. `success` at
+0.42 had frames that were bit-identical to each other.
 
-Corrected `scan` and `greeting` sheets were committed and are unusable for a
-reason that has nothing to do with the artwork: both arrived truncated at
-exactly 786,444 bytes — 768 KiB plus twelve — with no IEND and a deflate stream
-that breaks mid-chunk. About 30% of each decodes, and what decodes is right:
-the magnifier is held in close, the head fills the cell, the background is
-clean chroma green. The remaining bytes are not a continuation of the stream at
-any offset, so they cannot be recovered. These two need re-uploading, not
-redrawing.
+`success` is the reason any of this happened: the approved art gave it only two
+poses that shared an expression, so it could not cycle at all. `concern` gained
+a fourth pose. `scan` and `greeting` gained nothing — their 320px rows already
+cycled, and the sheets are worse on both numbers.
 
-`sheet_ratio` treats a file that will not decode exactly as it treats a file
-that is not there, so one truncated sheet cannot stop the other six atlases
-from building. The build says which case it hit.
+They are also worse in the way that does not reduce to a number, which is the
+part worth remembering. The brief for these sheets asked for the hands close to
+the body and pose variety from the torso leaning rather than the arms reaching
+out. That is exactly right for a character holding a magnifier, and it is wrong
+for a wave: the new `greeting` poses hold a closed fist at the side, so the
+greeting state no longer greets. The new `scan` moves the magnifier off the
+face to beside the head, so he reads as holding one rather than looking through
+it. A constraint written for one gesture was applied to all four.
 
-The two rejected sheets fail the same way the first `success` sheet did: the
-arms are extended too far, which both pushes the magnifier out of the cell and
-shrinks the body to about 35% less than every other state once framed so
-nothing clips. What a regeneration needs, beyond the existing brief: **the
-magnifier and both hands stay close to the body, so the full silhouette is no
-wider than about 1.1x the torso**, and the torso fills roughly three quarters
-of the cell, as it does in `source/escalation-keyframes.png`. Pose variety has
-to come from the body leaning, crouching and rising rather than from the arms
-reaching out. The corrected `success` and `concern` sheets are the worked
-examples.
+`USE_SHEET` in `scripts/interpolate-mascot-3d.py` records the choice per state.
+The ratio gate still runs on top of it, so a sheet that is later re-uploaded
+broken or reframed badly falls back on its own rather than shipping a
+regression.
 
-Both corrected sheets are nevertheless bound by height rather than by width:
-the raised magnifier reaches further above the head than a window sized to the
-shipping torso would allow, so the window widens to avoid clipping it and the
-character lands at 190-196px rather than 213. That is the right trade — a
-magnifier cut off at the cell edge is worse than a character 9% small — but a
-sheet that keeps the magnifier about 10% lower would render at full size. Worth
-saying in the brief for the two that remain.
+### What the gate measures, and what it cannot
+
+`MAX_SILHOUETTE_RATIO` (1.4) is how much wider the whole silhouette may be than
+the torso. It governs whether a square cell can hold both the body at full size
+and the magnifier, and whether optical flow can follow the magnifier between
+poses instead of rendering two of them. The approved art sits at 1.03-1.06, the
+accepted sheets at 1.14-1.15, and the two unused ones at 1.32-1.33 — inside the
+gate, which is why the gate alone does not decide.
+
+A file that will not decode gets the same answer as a file that is not there.
+Two sheets first arrived truncated at exactly 786,444 bytes — 768 KiB plus
+twelve, no IEND, deflate broken mid-chunk — and one unreadable sheet must not
+stop the other seven atlases from building.
+
+### Framing
 
 `scripts/mascot_keys.py` keys the green, finds each pose by the empty columns
-around it, and crops on the feet rather than on the nominal grid — needed
-because these sheets drift up to 53px vertically between cells, and because two
-`greeting` poses cross the cell boundary into each other. It solves the window
-size against a torso measured at the output scale, so the character lands the
-size he already is, then widens the window if any pose reaches higher than that
-size allows, so a raised arm is never cut off at the top of the cell.
+around it, and crops on the feet rather than the nominal grid, which these
+sheets need: they drift up to 53px vertically between cells, and two `greeting`
+poses cross a cell boundary into each other.
+
+Three rules the sheets taught it:
+
+**The window follows the artwork in both directions.** It is solved against a
+torso measured at the output scale, then widened if any pose reaches further
+than that allows — up, down or sideways. Before the sideways half existed,
+`scan` needed 580 points across, got 421, and lost 159 points of arm silently.
+Silent clipping is the worst outcome available; shrinking is at least visible.
+
+**Every crop is masked to its own band and span.** A window wide enough for an
+extended arm is wider than the 512 points between poses, so it reaches into the
+pose next door — fifty-odd columns of another character, which optical flow
+would fade in and out for the whole cycle.
+
+**The window centres on the sheet's envelope, not on the feet.** The feet are
+the right anchor vertically, and the wrong one horizontally the moment a pose
+holds the magnifier out to one side: a feet-centred crop must be wide enough
+for the furthest reach on *both* sides. `greeting`'s widest pose occupies 410
+points and demanded 548, and the character shrank by the difference — 129px of
+torso where the same sheet framed on its envelope gives 191. The shift is one
+number for the whole sheet, never per pose, so nothing slides between frames.
 
 ## Character invariants
 
