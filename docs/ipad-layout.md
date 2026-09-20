@@ -71,23 +71,64 @@ and let `gridColumns` answer, so an untested screen size still lands right.
 
 ### The duo layout
 
-Two things carry the name, and both appear only above 840pt of content — an
-iPad in landscape, never a phone, never Split View.
+The list and the thing it opens, side by side. It appears only above 856pt of
+content — 380 for the list, 460 for the detail, 16 between them — which in
+practice means an iPad in landscape, never a phone, never Split View.
 
-**The wallet and the coupon it opens.** `CouponsListScreen` keeps the list in a
-column on the right and renders `CouponDetailScreen` beside it as a pane;
+`CouponsListScreen` keeps the list in a column on the right and renders `CouponDetailScreen` beside it as a pane;
 tapping a card fills the pane instead of pushing a route, and the card that is
 showing keeps the border it already draws when selected. Below that width the
 list is the whole screen and the detail is a pushed route, exactly as before.
 
-**Inside one screen.** `<TwoPane primary={…} secondary={…} />` is two columns
-on a screen wide enough for both and one stack everywhere else, in that order.
-`CouponDetailScreen` uses it as a route: the coupon itself — company, barcode,
-the actions on it — holds a readable width on the right, and everything about
-it (link, widget, tags, history, map) runs beside it.
+`CouponDetailScreen` takes `couponId`, `embedded` and `onDismiss` for this. A
+pane is handed its coupon rather than reading the route, takes no safe-area
+inset of its own (the window already did), and closes by clearing the selection
+rather than popping a route that was never pushed. It is keyed on the coupon,
+so opening a second one starts fresh instead of carrying the first one's scroll
+position and half-open sheets across.
 
-Nothing is hidden by either split and nothing is added by it. The same content
+Rotating to portrait takes the second column away and clears the selection. The
+alternative — pushing the open coupon as a route — is a navigation the user did
+not ask for, fired by turning the device.
+
+On every width the app ships to:
+
+| Device | Splits | List pane | Detail pane | Cards per row in the list |
+|---|---|---|---|---|
+| iPhone, Slide Over, 1/2 Split View | no | whole screen | pushed route | 1 |
+| 2/3 Split View (694pt) | no | whole screen | pushed route | 2 |
+| iPad mini portrait (744pt) | no | 652 | pushed route | 1 |
+| iPad 11"/Pro portrait | no | 742 / 792 | pushed route | 2 |
+| iPad 11" landscape (1194pt) | yes | 380 | 566 | 1 |
+| iPad Pro landscape (1366pt) | yes | 380 | 738 | 1 |
+
+The mini showing one card where a *narrower* 2/3 Split View shows two is not a
+bug: the mini is wide enough for the icon rail, which takes 92pt off the
+content before the cards see it. Two cards would be 292pt each, and the card
+stops working below 320.
+
+Which is the point of asking `columns(320, 2)` rather than a width threshold.
+Nothing in either screen compares a width itself.
+
+Nothing is hidden by the split and nothing is added by it. The same content
 changes shape.
+
+### TwoPane, and why nothing uses it yet
+
+`<TwoPane primary={…} secondary={…} />` is the same idea one level down: two
+columns inside a single screen where there is room, one stack everywhere else.
+It is written and it works, and no screen calls it.
+
+The obvious candidate is the coupon detail — the coupon itself on the right,
+everything about it (link, widget, tags, history, map) beside it. But it would
+never fire. `TwoPane` splits at the same 856pt, and the detail is only ever a
+pane 566-738pt wide (in landscape, where the list screen has already split) or
+a pushed route on an iPad in portrait, where the content is 742-792. There is
+no shipped width at which the detail screen has 856pt to itself.
+
+So it waits for a screen that does: a settings page, a statistics view, or the
+detail screen if the list pane ever gets narrower. Adding a call that cannot
+fire would only be dead code that reads as a feature.
 
 ### Panes measure themselves
 

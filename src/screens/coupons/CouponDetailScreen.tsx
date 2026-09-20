@@ -147,10 +147,35 @@ function DeleteConfirm({
   );
 }
 
-export function CouponDetailScreen() {
+type Props = {
+  /**
+   * The coupon to show, when the screen is not the route deciding that.
+   * A pane is handed its coupon by the list beside it.
+   */
+  couponId?: string;
+  /**
+   * Rendered inside something else — the duo layout's detail pane — rather
+   * than as a route of its own. An embedded screen does not own the window,
+   * so it takes no safe-area inset (the window already did) and closing it
+   * returns to the caller instead of popping a route that was never pushed.
+   */
+  embedded?: boolean;
+  onDismiss?: () => void;
+};
+
+export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismiss }: Props = {}) {
   const router = useRouter();
   const { id, highlightUsage } = useLocalSearchParams<{ id: string; highlightUsage?: string }>();
-  const couponIdentifier = typeof id === "string" ? id : undefined;
+  // The prop wins when it is there: a pane's coupon comes from the list beside
+  // it, and the route's own `id` belongs to whatever screen is actually pushed.
+  const couponIdentifier = pinned ?? (typeof id === "string" ? id : undefined);
+  // Everything that used to go back now goes wherever the caller says. On a
+  // route that is still `router.back`; in a pane it is "clear the selection",
+  // because there is nothing to pop.
+  const dismiss = onDismiss ?? (() => router.back());
+  // A pane sits inside a window that has already taken the notch into account,
+  // so a second SafeAreaView would inset it twice.
+  const Shell = embedded ? View : SafeAreaView;
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -220,10 +245,10 @@ export function CouponDetailScreen() {
 
   if (isLoading || !coupon) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <Header title="טוען קופון..." showBack onBack={() => router.back()} />
+      <Shell style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <Header title="טוען קופון..." showBack={!embedded} onBack={dismiss} />
         <CouponDetailsSkeleton />
-      </SafeAreaView>
+      </Shell>
     );
   }
 
@@ -257,7 +282,7 @@ export function CouponDetailScreen() {
     snapshots.forEach(([key, list]) => {
       if (list) queryClient.setQueryData(key, list.filter((item) => item.id !== coupon.id));
     });
-    router.back();
+    dismiss();
     const id = coupon.id;
     void deleteCoupon.mutateAsync(id);
     notify.undo(
@@ -371,11 +396,11 @@ export function CouponDetailScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <Shell style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
         title={coupon.company}
-        showBack
-        onBack={() => router.back()}
+        showBack={!embedded}
+        onBack={dismiss}
         rightAction={
           isSharedWithMe ? undefined : (
             <View style={styles.headerRightGroup}>
@@ -1083,7 +1108,7 @@ export function CouponDetailScreen() {
           </View>
         ) : null}
       </Modal>
-    </SafeAreaView>
+    </Shell>
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,12 @@ import {
   Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useContentStyle } from "@/hooks/useResponsive";
+import {
+  LayoutWidth,
+  useContentStyle,
+  useDuoPanes,
+  useResponsive,
+} from "@/hooks/useResponsive";
 import {
   Search,
   Plus,
@@ -49,11 +54,11 @@ import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
-import { useContentWidth } from "@/hooks/useContentWidth";
 import { WifiOff } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMerchantQuery, useCouponMerchantSearch } from "@/hooks/useCouponMerchantSearch";
 import { formatIls } from "@/lib/formatIls";
+import { CouponDetailScreen } from "@/screens/coupons/CouponDetailScreen";
 
 type FilterStatus = "all" | "active" | "expiring" | "used" | "expired";
 
@@ -62,6 +67,38 @@ const FILTER_STATUSES: FilterStatus[] = ["all", "active", "expiring", "used", "e
 /** A status handed to us in the URL is only a status if it is one of ours. */
 function asFilterStatus(value: unknown): FilterStatus | null {
   return FILTER_STATUSES.includes(value as FilterStatus) ? (value as FilterStatus) : null;
+}
+
+/** Below this a coupon card stops showing what it has to show. */
+const COUPON_CARD_MIN_WIDTH = 320;
+
+/**
+ * The coupons column: a pane of its own in the duo layout, the whole screen
+ * otherwise.
+ *
+ * `LayoutWidth` is what makes the pane honest. Inside it `useResponsive`
+ * answers for the pane rather than the window, so the list at 460pt lays
+ * itself out as the phone screen it now is — one card per row, phone gutters —
+ * while the iPad around it stays an iPad. Without it the list would keep
+ * reading 1194pt and pair up cards that have nowhere near the room for it.
+ *
+ * `width === null` is the phone, and it is a pass-through — the phone's only
+ * change is the one flex wrapper the row needs, which a column of the same
+ * height lays out identically.
+ */
+function ListPane({
+  width,
+  children,
+}: {
+  width: number | null;
+  children: React.ReactNode;
+}) {
+  if (width === null) return <>{children}</>;
+  return (
+    <View style={{ width }}>
+      <LayoutWidth width={width}>{children}</LayoutWidth>
+    </View>
+  );
 }
 
 interface CouponSection {
@@ -84,8 +121,44 @@ export function CouponsListScreen() {
     ids?: string;
   }>();
   const { theme } = useAppTheme();
-  const width = useContentWidth();
-  const isTablet = width >= 768;
+  // Two cards abreast once two of them actually fit, asked of the column the
+  // cards are in rather than of the device. Inside the duo layout that column
+  // is the list pane, so a 380pt pane on a 1366pt iPad correctly says one.
+  //
+  // A width threshold cannot answer this: an iPad mini gives the content 652pt
+  // once the rail has its side, and two cards there would be 292pt each —
+  // narrower than the card works at, on a device any "is this a tablet" test
+  // says yes to.
+  const { columns } = useResponsive();
+  const isTablet = columns(COUPON_CARD_MIN_WIDTH, 2) > 1;
+  const { split, listWidth, detailWidth, gap } = useDuoPanes();
+  // Which coupon the detail pane is showing. Only the duo layout has one; on a
+  // phone the detail is a pushed route and this stays null.
+  const [openCoupon, setOpenCoupon] = useState<string | null>(null);
+
+  /**
+   * Open a coupon: into the pane beside the list where there is one, as a
+   * pushed route where there is not.
+   *
+   * Both paths name the coupon the same way, so the pane shows exactly what
+   * the route would have.
+   */
+  const showCoupon = useCallback(
+    (coupon: DecryptedCoupon) => {
+      const route = couponRouteId(coupon);
+      if (split) setOpenCoupon(route);
+      else router.push(`/coupons/${route}`);
+    },
+    [split, router],
+  );
+
+  // Rotating an iPad to portrait takes the second column away. Rather than
+  // push the open coupon as a route — a navigation the user did not ask for,
+  // fired by turning the device — the list simply becomes the whole screen
+  // again, one tap from where they were.
+  useEffect(() => {
+    if (!split) setOpenCoupon(null);
+  }, [split]);
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
@@ -389,475 +462,506 @@ export function CouponsListScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View style={[styles.titleRow, contentStyle]}>
-        <Text style={[styles.pageTitle, { color: theme.text }]}>הקופונים שלי</Text>
+      <View style={split ? [styles.duo, { gap }] : styles.solo}>
+        <ListPane width={split ? listWidth : null}>
+          <View style={[styles.titleRow, contentStyle]}>
+            <Text style={[styles.pageTitle, { color: theme.text }]}>הקופונים שלי</Text>
 
-        <View style={styles.headerActions}>
-          {showMaintainerAutoUpdate ? (
-            <TouchableOpacity
-              onPress={() => triggerAutoUpdate.mutate(undefined)}
-              disabled={triggerAutoUpdate.isPending}
-              style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
-              accessibilityLabel="עדכון יתרות"
-            >
-              <RefreshCw
-                size={18}
-                color={theme.text}
-                style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
-              />
-            </TouchableOpacity>
-          ) : null}
+            <View style={styles.headerActions}>
+              {showMaintainerAutoUpdate ? (
+                <TouchableOpacity
+                  onPress={() => triggerAutoUpdate.mutate(undefined)}
+                  disabled={triggerAutoUpdate.isPending}
+                  style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
+                  accessibilityLabel="עדכון יתרות"
+                >
+                  <RefreshCw
+                    size={18}
+                    color={theme.text}
+                    style={triggerAutoUpdate.isPending ? { opacity: 0.5 } : {}}
+                  />
+                </TouchableOpacity>
+              ) : null}
 
-          <TouchableOpacity
-            onPress={() => setShowStatusRow((v) => !v)}
-            accessibilityLabel="סינון לפי סטטוס"
-            style={[
-              styles.iconBtn,
-              { backgroundColor: showStatusRow ? theme.primaryTint : theme.surfaceAlt },
-            ]}
-          >
-            <SlidersHorizontal size={18} color={showStatusRow ? theme.primary : theme.text} />
-          </TouchableOpacity>
-
-          {/* Lands on the scanner's camera mode. It used to push "/scanner"
-              exactly like the button beside it — two controls, one
-              destination, and a decision the reader did not need to make. */}
-          <TouchableOpacity
-            onPress={() => router.push("/scanner?tab=camera")}
-            accessibilityLabel="סריקת קוד קופון במצלמה"
-            style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
-          >
-            <QrCode size={18} color={theme.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push("/scanner")}
-            style={[styles.addBtn, { backgroundColor: theme.primary }]}
-            accessibilityLabel="הוספת קופון מטקסט או SMS"
-          >
-            <Plus size={16} color="#ffffff" />
-            <Text style={styles.addBtnText}>הוספת קופון</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={[styles.container, contentStyle]}>
-        {offline.usingCache ? (
-          <View
-            style={[styles.offlineBanner, { backgroundColor: theme.warningBg, borderColor: theme.warning }]}
-            accessibilityRole="alert"
-          >
-            <WifiOff size={16} color={theme.warningText} />
-            <Text style={[styles.offlineText, { color: theme.warningText }]}>מצב אופליין — מוצגים הנתונים האחרונים שנשמרו</Text>
-          </View>
-        ) : null}
-        {focusIds ? (
-          <View style={[styles.focusBanner, { backgroundColor: theme.primaryTint }]}>
-            <Text style={[styles.focusText, { color: theme.primary }]}>
-              מציג את הקופונים מההתראה
-            </Text>
-            <TouchableOpacity onPress={() => setFocusIds(null)} hitSlop={8}>
-              <Text style={[styles.focusClear, { color: theme.primary }]}>הצג הכל</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {/* Search Bar */}
-        <View
-          style={[
-            styles.searchBar,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.inputBorder,
-            },
-          ]}
-        >
-          {search ? (
-            <TouchableOpacity onPress={() => setSearch("")}>
-              <X size={16} color={theme.textMuted} />
-            </TouchableOpacity>
-          ) : (
-            <Search size={18} color={theme.textMuted} />
-          )}
-          <TextInput
-            placeholder={showMaintainerAutoUpdate ? "באיזו חנות רוצים לקנות?" : "חיפוש לפי חברה, תיאור או מספר קופון"}
-            placeholderTextColor={theme.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            textAlign="right"
-            returnKeyType="search"
-            onSubmitEditing={() => Keyboard.dismiss()}
-            style={[styles.searchInput, { color: theme.text }]}
-          />
-        </View>
-
-        {showMaintainerAutoUpdate && isMerchantQuery(search) && !currentSearchHasMerchantResults ? (
-          <TouchableOpacity
-            onPress={startMerchantSearch}
-            accessibilityRole="button"
-            accessibilityLabel={`בדיקת הקופונים שלי עבור ${search.trim()}`}
-            style={[
-              styles.merchantSearchButton,
-              { backgroundColor: theme.primaryTint, borderColor: theme.primary },
-            ]}
-          >
-            <Sparkles size={15} color={theme.primary} />
-            <Text
-              style={[styles.merchantSearchButtonText, { color: theme.primary }]}
-              numberOfLines={1}
-            >
-              איזה מהקופונים שלי מתאים?
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {showMaintainerAutoUpdate && merchantQuery && currentSearchHasMerchantResults ? (
-          <TouchableOpacity
-            disabled={merchantSearch.isFetching}
-            onPress={() => {
-              if (primaryMerchantResult && !merchantSearch.isError) setIsMerchantResultsOpen(true);
-              else void merchantSearch.refetch();
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: merchantSearch.isFetching }}
-            accessibilityLabel={
-              merchantSearch.isFetching
-                ? `מחפש קופון ל${merchantQuery}`
-                : primaryMerchantResult
-                  ? `בחירה מתוך ${merchantResultCoupons.length} קופונים שמתאימים ל${merchantQuery}`
-                  : `בדיקה חוזרת עבור ${merchantQuery}`
-            }
-            style={[
-              styles.merchantTaskCard,
-              {
-                backgroundColor: merchantSearch.isFetching
-                  ? theme.primaryTint
-                  : merchantSearch.isError
-                    ? theme.dangerBg
-                    : primaryMerchantResult
-                      ? theme.successBg
-                      : theme.surfaceAlt,
-                borderColor: merchantSearch.isFetching
-                  ? theme.primary
-                  : merchantSearch.isError
-                    ? theme.danger
-                    : primaryMerchantResult
-                      ? theme.success
-                      : theme.border,
-              },
-            ]}
-            accessibilityLiveRegion="polite"
-          >
-            {merchantSearch.isFetching ? (
-              <ActivityIndicator size="small" color={theme.primary} />
-            ) : merchantSearch.isError ? (
-              <CircleAlert size={20} color={theme.danger} />
-            ) : primaryMerchantResult ? (
-              <CircleCheck size={20} color={theme.success} />
-            ) : (
-              <Search size={20} color={theme.textMuted} />
-            )}
-            <View style={styles.merchantTaskCopy}>
-              <Text style={[styles.merchantTaskTitle, { color: theme.text }]} numberOfLines={1}>
-                {merchantSearch.isFetching
-                  ? `מחפש קופון ל־${merchantQuery}...`
-                  : merchantSearch.isError
-                    ? "הבדיקה נכשלה — לחיצה לניסיון חוזר"
-                    : primaryMerchantResult
-                      ? `נמצאו ${merchantResultCoupons.length} קופונים — לחיצה לבחירה`
-                      : "לא נמצא קופון — לחיצה לבדיקה חוזרת"}
-              </Text>
-              <Text style={[styles.merchantTaskSubtitle, { color: theme.textMuted }]} numberOfLines={1}>
-                {merchantSearch.isFetching
-                  ? "בודק קופונים וכרטיסים כלליים באינטרנט"
-                  : primaryMerchantResult
-                    ? `מתאימים ל־${merchantQuery}`
-                    : "אפשר לשנות את החיפוש או לנסות שוב"}
-              </Text>
-            </View>
-            {!merchantSearch.isFetching ? (
-              primaryMerchantResult ? (
-                <ArrowLeft size={19} color={theme.primary} />
-              ) : (
-                <RefreshCw size={18} color={merchantSearch.isError ? theme.danger : theme.primary} />
-              )
-            ) : null}
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Company chips — ordered by coupon count, most on the right */}
-        <ScrollView
-          ref={companyScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chipRow}
-          contentContainerStyle={styles.companyChipRowContent}
-        >
-          <TouchableOpacity
-            key="all"
-            onPress={() => setSelectedCompany(null)}
-            style={[
-              styles.tagChip,
-              {
-                backgroundColor: selectedCompany === null ? theme.primary : theme.card,
-                borderColor: selectedCompany === null ? theme.primary : theme.inputBorder,
-              },
-            ]}
-          >
-            <Text
-              style={[styles.tagChipText, { color: selectedCompany === null ? "#ffffff" : theme.label }]}
-            >
-              הכל
-            </Text>
-          </TouchableOpacity>
-
-          {Array.from(
-            new Set([
-              ...companyChips.slice(-5),
-              ...(selectedCompany ? [selectedCompany] : []),
-            ])
-          ).map((company) => {
-            const isCurrent = companyKey(selectedCompany) === companyKey(company);
-            const count = usableCoupons.filter(
-              (coupon) => companyKey(coupon.company) === companyKey(company)
-            ).length;
-            return (
               <TouchableOpacity
-                key={company}
-                onPress={() => setSelectedCompany(isCurrent ? null : company)}
+                onPress={() => setShowStatusRow((v) => !v)}
+                accessibilityLabel="סינון לפי סטטוס"
                 style={[
-                  styles.companyChip,
+                  styles.iconBtn,
+                  { backgroundColor: showStatusRow ? theme.primaryTint : theme.surfaceAlt },
+                ]}
+              >
+                <SlidersHorizontal size={18} color={showStatusRow ? theme.primary : theme.text} />
+              </TouchableOpacity>
+
+              {/* Lands on the scanner's camera mode. It used to push "/scanner"
+                  exactly like the button beside it — two controls, one
+                  destination, and a decision the reader did not need to make. */}
+              <TouchableOpacity
+                onPress={() => router.push("/scanner?tab=camera")}
+                accessibilityLabel="סריקת קוד קופון במצלמה"
+                style={[styles.iconBtn, { backgroundColor: theme.surfaceAlt }]}
+              >
+                <QrCode size={18} color={theme.text} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push("/scanner")}
+                style={[styles.addBtn, { backgroundColor: theme.primary }]}
+                accessibilityLabel="הוספת קופון מטקסט או SMS"
+              >
+                <Plus size={16} color="#ffffff" />
+                <Text style={styles.addBtnText}>הוספת קופון</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.container, contentStyle]}>
+            {offline.usingCache ? (
+              <View
+                style={[styles.offlineBanner, { backgroundColor: theme.warningBg, borderColor: theme.warning }]}
+                accessibilityRole="alert"
+              >
+                <WifiOff size={16} color={theme.warningText} />
+                <Text style={[styles.offlineText, { color: theme.warningText }]}>מצב אופליין — מוצגים הנתונים האחרונים שנשמרו</Text>
+              </View>
+            ) : null}
+            {focusIds ? (
+              <View style={[styles.focusBanner, { backgroundColor: theme.primaryTint }]}>
+                <Text style={[styles.focusText, { color: theme.primary }]}>
+                  מציג את הקופונים מההתראה
+                </Text>
+                <TouchableOpacity onPress={() => setFocusIds(null)} hitSlop={8}>
+                  <Text style={[styles.focusClear, { color: theme.primary }]}>הצג הכל</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {/* Search Bar */}
+            <View
+              style={[
+                styles.searchBar,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+            >
+              {search ? (
+                <TouchableOpacity onPress={() => setSearch("")}>
+                  <X size={16} color={theme.textMuted} />
+                </TouchableOpacity>
+              ) : (
+                <Search size={18} color={theme.textMuted} />
+              )}
+              <TextInput
+                placeholder={showMaintainerAutoUpdate ? "באיזו חנות רוצים לקנות?" : "חיפוש לפי חברה, תיאור או מספר קופון"}
+                placeholderTextColor={theme.textMuted}
+                value={search}
+                onChangeText={setSearch}
+                textAlign="right"
+                returnKeyType="search"
+                onSubmitEditing={() => Keyboard.dismiss()}
+                style={[styles.searchInput, { color: theme.text }]}
+              />
+            </View>
+
+            {showMaintainerAutoUpdate && isMerchantQuery(search) && !currentSearchHasMerchantResults ? (
+              <TouchableOpacity
+                onPress={startMerchantSearch}
+                accessibilityRole="button"
+                accessibilityLabel={`בדיקת הקופונים שלי עבור ${search.trim()}`}
+                style={[
+                  styles.merchantSearchButton,
+                  { backgroundColor: theme.primaryTint, borderColor: theme.primary },
+                ]}
+              >
+                <Sparkles size={15} color={theme.primary} />
+                <Text
+                  style={[styles.merchantSearchButtonText, { color: theme.primary }]}
+                  numberOfLines={1}
+                >
+                  איזה מהקופונים שלי מתאים?
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {showMaintainerAutoUpdate && merchantQuery && currentSearchHasMerchantResults ? (
+              <TouchableOpacity
+                disabled={merchantSearch.isFetching}
+                onPress={() => {
+                  if (primaryMerchantResult && !merchantSearch.isError) setIsMerchantResultsOpen(true);
+                  else void merchantSearch.refetch();
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: merchantSearch.isFetching }}
+                accessibilityLabel={
+                  merchantSearch.isFetching
+                    ? `מחפש קופון ל${merchantQuery}`
+                    : primaryMerchantResult
+                      ? `בחירה מתוך ${merchantResultCoupons.length} קופונים שמתאימים ל${merchantQuery}`
+                      : `בדיקה חוזרת עבור ${merchantQuery}`
+                }
+                style={[
+                  styles.merchantTaskCard,
                   {
-                    backgroundColor: isCurrent ? theme.primary : theme.card,
-                    borderColor: isCurrent ? theme.primary : theme.inputBorder,
+                    backgroundColor: merchantSearch.isFetching
+                      ? theme.primaryTint
+                      : merchantSearch.isError
+                        ? theme.dangerBg
+                        : primaryMerchantResult
+                          ? theme.successBg
+                          : theme.surfaceAlt,
+                    borderColor: merchantSearch.isFetching
+                      ? theme.primary
+                      : merchantSearch.isError
+                        ? theme.danger
+                        : primaryMerchantResult
+                          ? theme.success
+                          : theme.border,
+                  },
+                ]}
+                accessibilityLiveRegion="polite"
+              >
+                {merchantSearch.isFetching ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : merchantSearch.isError ? (
+                  <CircleAlert size={20} color={theme.danger} />
+                ) : primaryMerchantResult ? (
+                  <CircleCheck size={20} color={theme.success} />
+                ) : (
+                  <Search size={20} color={theme.textMuted} />
+                )}
+                <View style={styles.merchantTaskCopy}>
+                  <Text style={[styles.merchantTaskTitle, { color: theme.text }]} numberOfLines={1}>
+                    {merchantSearch.isFetching
+                      ? `מחפש קופון ל־${merchantQuery}...`
+                      : merchantSearch.isError
+                        ? "הבדיקה נכשלה — לחיצה לניסיון חוזר"
+                        : primaryMerchantResult
+                          ? `נמצאו ${merchantResultCoupons.length} קופונים — לחיצה לבחירה`
+                          : "לא נמצא קופון — לחיצה לבדיקה חוזרת"}
+                  </Text>
+                  <Text style={[styles.merchantTaskSubtitle, { color: theme.textMuted }]} numberOfLines={1}>
+                    {merchantSearch.isFetching
+                      ? "בודק קופונים וכרטיסים כלליים באינטרנט"
+                      : primaryMerchantResult
+                        ? `מתאימים ל־${merchantQuery}`
+                        : "אפשר לשנות את החיפוש או לנסות שוב"}
+                  </Text>
+                </View>
+                {!merchantSearch.isFetching ? (
+                  primaryMerchantResult ? (
+                    <ArrowLeft size={19} color={theme.primary} />
+                  ) : (
+                    <RefreshCw size={18} color={merchantSearch.isError ? theme.danger : theme.primary} />
+                  )
+                ) : null}
+              </TouchableOpacity>
+            ) : null}
+
+            {/* Company chips — ordered by coupon count, most on the right */}
+            <ScrollView
+              ref={companyScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipRow}
+              contentContainerStyle={styles.companyChipRowContent}
+            >
+              <TouchableOpacity
+                key="all"
+                onPress={() => setSelectedCompany(null)}
+                style={[
+                  styles.tagChip,
+                  {
+                    backgroundColor: selectedCompany === null ? theme.primary : theme.card,
+                    borderColor: selectedCompany === null ? theme.primary : theme.inputBorder,
                   },
                 ]}
               >
-                <Image
-                  source={getCompanyLogoSource(company)}
-                  style={styles.companyChipLogo}
-                  resizeMode="contain"
-                />
                 <Text
-                  numberOfLines={1}
-                  style={[styles.companyChipText, { color: isCurrent ? "#ffffff" : theme.label }]}
+                  style={[styles.tagChipText, { color: selectedCompany === null ? "#ffffff" : theme.label }]}
                 >
-                  {company}
-                </Text>
-                <Text
-                  style={[styles.companyChipCount, { color: isCurrent ? "rgba(255,255,255,0.85)" : theme.textMuted }]}
-                >
-                  {count}
+                  הכל
                 </Text>
               </TouchableOpacity>
-            );
-          })}
-          {companyChips.length > 5 ? (
-            <TouchableOpacity
-              onPress={() => setCompanyFilterOpen(true)}
-              style={[styles.companyChip, { backgroundColor: theme.surfaceAlt, borderColor: theme.inputBorder }]}
-              accessibilityRole="button"
-            >
-              <Text style={[styles.companyChipText, { color: theme.primary }]}>
-                {`כל החברות (${companyChips.length})`}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-        </ScrollView>
 
-        {/* Status filter, revealed from the header's filter button */}
-        {showStatusRow ? (
-          <View style={styles.statusTabsRow}>
-            {(
-              [
-                { key: "all", label: "הכל" },
-                { key: "active", label: "פעילים" },
-                { key: "expiring", label: "פגים בקרוב" },
-                { key: "expired", label: "פגי תוקף" },
-                { key: "used", label: "נוצלו" },
-              ] as const
-            ).map((tab) => {
-              const isCurrent = statusFilter === tab.key;
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  onPress={() => setStatusFilter(tab.key)}
-                  style={[
-                    styles.statusTab,
-                    {
-                      backgroundColor: isCurrent ? theme.primary : theme.card,
-                      borderColor: isCurrent ? theme.primary : theme.inputBorder,
-                    },
-                  ]}
-                >
-                  <Text
+              {Array.from(
+                new Set([
+                  ...companyChips.slice(-5),
+                  ...(selectedCompany ? [selectedCompany] : []),
+                ])
+              ).map((company) => {
+                const isCurrent = companyKey(selectedCompany) === companyKey(company);
+                const count = usableCoupons.filter(
+                  (coupon) => companyKey(coupon.company) === companyKey(company)
+                ).length;
+                return (
+                  <TouchableOpacity
+                    key={company}
+                    onPress={() => setSelectedCompany(isCurrent ? null : company)}
                     style={[
-                      styles.statusTabText,
-                      { color: isCurrent ? "#ffffff" : theme.label },
+                      styles.companyChip,
+                      {
+                        backgroundColor: isCurrent ? theme.primary : theme.card,
+                        borderColor: isCurrent ? theme.primary : theme.inputBorder,
+                      },
                     ]}
                   >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ) : null}
-
-        {/* Tag Filter Chips (if tags exist), hidden behind the same filter button */}
-        {showStatusRow && allTags.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipRow}
-            contentContainerStyle={styles.chipRowContent}
-          >
-            {allTags.map((item) => {
-              const isSelected = selectedTag === item;
-              return (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => setSelectedTag(isSelected ? null : item)}
-                  style={[
-                    styles.tagChip,
-                    {
-                      backgroundColor: isSelected ? theme.primary : theme.card,
-                      borderColor: isSelected ? theme.primary : theme.inputBorder,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.tagChipText, { color: isSelected ? "#ffffff" : theme.label }]}
-                  >
-                    #{item}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        ) : null}
-
-        {/* Multi-Select Action Bar */}
-        {isSelectMode ? (
-          <View
-            style={[
-              styles.selectionBar,
-              {
-                backgroundColor: theme.surfaceAlt,
-                borderColor: theme.inputBorder,
-              },
-            ]}
-          >
-            <TouchableOpacity
-              onPress={handleBulkDelete}
-              style={[styles.deleteBtn, { backgroundColor: theme.danger }]}
-            >
-              <Trash2 size={16} color="#ffffff" />
-              <Text style={styles.deleteBtnText}>מחק ({selectedIds.length})</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setIsSelectMode(false);
-                setSelectedIds([]);
-              }}
-            >
-              <Text style={[styles.cancelSelectText, { color: theme.textMuted }]}>
-                ביטול
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {/* Coupons List */}
-        <SectionList
-          sections={renderedSections}
-          keyExtractor={(item: DecryptedCoupon[]) => item.map((coupon) => coupon.id).join("-")}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          stickySectionHeadersEnabled={false}
-          // Scrolling the results is the signal that the user is done typing —
-          // drop the keyboard so the list gets the full screen back.
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              tintColor={theme.primary}
-              colors={[theme.primary]}
-            />
-          }
-          renderSectionHeader={({ section: { title, count } }) => (
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderTitleRow}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  {title}
-                </Text>
-                <View style={[styles.sectionBadge, { backgroundColor: theme.surfaceAlt }]}>
-                  <Text style={[styles.sectionBadgeText, { color: theme.textSubtle }]}>
-                    {count}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
-          renderItem={({ item }: { item: DecryptedCoupon[] }) => (
-            <View style={[styles.couponRow, isTablet && styles.tabletCouponRow]}>
-              {item.map((coupon) => (
-                <View key={coupon.id} style={styles.couponColumn}>
-                  <Swipeable
-                    overshootLeft={false}
-                    overshootRight={false}
-                    friction={2}
-                    renderRightActions={() => (
-                      <TouchableOpacity
-                        onPress={() => setUsageCoupon(coupon)}
-                        accessibilityLabel={`דיווח שימוש בקופון של ${coupon.company}`}
-                        style={[styles.swipeAction, { backgroundColor: theme.success }]}
-                      >
-                        <ReceiptText size={20} color="#ffffff" />
-                        <Text style={styles.swipeActionText}>דיווח שימוש</Text>
-                      </TouchableOpacity>
-                    )}
-                  >
-                    <CouponCard
-                      coupon={coupon}
-                      tags={tagsMap[coupon.id] || []}
-                      selected={selectedIds.includes(coupon.id)}
-                      showSelect={isSelectMode}
-                      onSelect={() => toggleSelect(coupon.id)}
-                      onPress={() => {
-                        if (isSelectMode) {
-                          toggleSelect(coupon.id);
-                        } else {
-                          router.push(`/coupons/${couponRouteId(coupon)}`);
-                        }
-                      }}
-                      onReportUsage={() => setUsageCoupon(coupon)}
+                    <Image
+                      source={getCompanyLogoSource(company)}
+                      style={styles.companyChipLogo}
+                      resizeMode="contain"
                     />
-                  </Swipeable>
-                </View>
-              ))}
-              {isTablet && item.length === 1 ? <View style={styles.couponColumn} /> : null}
-            </View>
-          )}
-          ListEmptyComponent={
-            isLoading ? (
-              <View>{[1, 2, 3].map((item) => <CouponCardSkeleton key={item} />)}</View>
-            ) : showMaintainerAutoUpdate && merchantQuery && currentSearchHasMerchantResults ? null : <EmptyState
-              largeVisual
-              title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
-              subtitle={
-                search || selectedTag
-                  ? "אפשר לנסות חיפוש אחר או לנקות את הסינון."
-                  : "הקופון הראשון שלך מתחיל כאן."
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.companyChipText, { color: isCurrent ? "#ffffff" : theme.label }]}
+                    >
+                      {company}
+                    </Text>
+                    <Text
+                      style={[styles.companyChipCount, { color: isCurrent ? "rgba(255,255,255,0.85)" : theme.textMuted }]}
+                    >
+                      {count}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {companyChips.length > 5 ? (
+                <TouchableOpacity
+                  onPress={() => setCompanyFilterOpen(true)}
+                  style={[styles.companyChip, { backgroundColor: theme.surfaceAlt, borderColor: theme.inputBorder }]}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.companyChipText, { color: theme.primary }]}>
+                    {`כל החברות (${companyChips.length})`}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </ScrollView>
+
+            {/* Status filter, revealed from the header's filter button */}
+            {showStatusRow ? (
+              <View style={styles.statusTabsRow}>
+                {(
+                  [
+                    { key: "all", label: "הכל" },
+                    { key: "active", label: "פעילים" },
+                    { key: "expiring", label: "פגים בקרוב" },
+                    { key: "expired", label: "פגי תוקף" },
+                    { key: "used", label: "נוצלו" },
+                  ] as const
+                ).map((tab) => {
+                  const isCurrent = statusFilter === tab.key;
+                  return (
+                    <TouchableOpacity
+                      key={tab.key}
+                      onPress={() => setStatusFilter(tab.key)}
+                      style={[
+                        styles.statusTab,
+                        {
+                          backgroundColor: isCurrent ? theme.primary : theme.card,
+                          borderColor: isCurrent ? theme.primary : theme.inputBorder,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusTabText,
+                          { color: isCurrent ? "#ffffff" : theme.label },
+                        ]}
+                      >
+                        {tab.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {/* Tag Filter Chips (if tags exist), hidden behind the same filter button */}
+            {showStatusRow && allTags.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipRow}
+                contentContainerStyle={styles.chipRowContent}
+              >
+                {allTags.map((item) => {
+                  const isSelected = selectedTag === item;
+                  return (
+                    <TouchableOpacity
+                      key={item}
+                      onPress={() => setSelectedTag(isSelected ? null : item)}
+                      style={[
+                        styles.tagChip,
+                        {
+                          backgroundColor: isSelected ? theme.primary : theme.card,
+                          borderColor: isSelected ? theme.primary : theme.inputBorder,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.tagChipText, { color: isSelected ? "#ffffff" : theme.label }]}
+                      >
+                        #{item}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            ) : null}
+
+            {/* Multi-Select Action Bar */}
+            {isSelectMode ? (
+              <View
+                style={[
+                  styles.selectionBar,
+                  {
+                    backgroundColor: theme.surfaceAlt,
+                    borderColor: theme.inputBorder,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={handleBulkDelete}
+                  style={[styles.deleteBtn, { backgroundColor: theme.danger }]}
+                >
+                  <Trash2 size={16} color="#ffffff" />
+                  <Text style={styles.deleteBtnText}>מחק ({selectedIds.length})</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsSelectMode(false);
+                    setSelectedIds([]);
+                  }}
+                >
+                  <Text style={[styles.cancelSelectText, { color: theme.textMuted }]}>
+                    ביטול
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {/* Coupons List */}
+            <SectionList
+              sections={renderedSections}
+              keyExtractor={(item: DecryptedCoupon[]) => item.map((coupon) => coupon.id).join("-")}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              stickySectionHeadersEnabled={false}
+              // Scrolling the results is the signal that the user is done typing —
+              // drop the keyboard so the list gets the full screen back.
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefetching}
+                  onRefresh={refetch}
+                  tintColor={theme.primary}
+                  colors={[theme.primary]}
+                />
               }
-              actionTitle="הוספת קופון"
-              onAction={() => router.push("/scanner")}
+              renderSectionHeader={({ section: { title, count } }) => (
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionHeaderTitleRow}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                      {title}
+                    </Text>
+                    <View style={[styles.sectionBadge, { backgroundColor: theme.surfaceAlt }]}>
+                      <Text style={[styles.sectionBadgeText, { color: theme.textSubtle }]}>
+                        {count}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+              renderItem={({ item }: { item: DecryptedCoupon[] }) => (
+                <View style={[styles.couponRow, isTablet && styles.tabletCouponRow]}>
+                  {item.map((coupon) => (
+                    <View key={coupon.id} style={styles.couponColumn}>
+                      <Swipeable
+                        overshootLeft={false}
+                        overshootRight={false}
+                        friction={2}
+                        renderRightActions={() => (
+                          <TouchableOpacity
+                            onPress={() => setUsageCoupon(coupon)}
+                            accessibilityLabel={`דיווח שימוש בקופון של ${coupon.company}`}
+                            style={[styles.swipeAction, { backgroundColor: theme.success }]}
+                          >
+                            <ReceiptText size={20} color="#ffffff" />
+                            <Text style={styles.swipeActionText}>דיווח שימוש</Text>
+                          </TouchableOpacity>
+                        )}
+                      >
+                        <CouponCard
+                          coupon={coupon}
+                          tags={tagsMap[coupon.id] || []}
+                          selected={
+                            selectedIds.includes(coupon.id) ||
+                            openCoupon === couponRouteId(coupon)
+                          }
+                          showSelect={isSelectMode}
+                          onSelect={() => toggleSelect(coupon.id)}
+                          onPress={() => {
+                            if (isSelectMode) {
+                              toggleSelect(coupon.id);
+                            } else {
+                              showCoupon(coupon);
+                            }
+                          }}
+                          onReportUsage={() => setUsageCoupon(coupon)}
+                        />
+                      </Swipeable>
+                    </View>
+                  ))}
+                  {isTablet && item.length === 1 ? <View style={styles.couponColumn} /> : null}
+                </View>
+              )}
+              ListEmptyComponent={
+                isLoading ? (
+                  <View>{[1, 2, 3].map((item) => <CouponCardSkeleton key={item} />)}</View>
+                ) : showMaintainerAutoUpdate && merchantQuery && currentSearchHasMerchantResults ? null : <EmptyState
+                  largeVisual
+                  title={search || selectedTag ? "לא מצאנו קופון מתאים" : "עוד אין כאן קופונים"}
+                  subtitle={
+                    search || selectedTag
+                      ? "אפשר לנסות חיפוש אחר או לנקות את הסינון."
+                      : "הקופון הראשון שלך מתחיל כאן."
+                  }
+                  actionTitle="הוספת קופון"
+                  onAction={() => router.push("/scanner")}
+                />
+              }
             />
-          }
-        />
+          </View>
+        </ListPane>
+
+        {split ? (
+          <View style={[styles.detailPane, { borderColor: theme.cardBorder }]}>
+            <LayoutWidth width={detailWidth}>
+              {openCoupon ? (
+                // Keyed on the coupon, so opening a second one starts the
+                // detail screen fresh instead of carrying the first one's
+                // scroll position and half-open sheets across.
+                <CouponDetailScreen
+                  key={openCoupon}
+                  couponId={openCoupon}
+                  embedded
+                  onDismiss={() => setOpenCoupon(null)}
+                />
+              ) : (
+                <View style={styles.detailPlaceholder}>
+                  <Text style={[styles.detailPlaceholderText, { color: theme.textMuted }]}>
+                    בחרו קופון מהרשימה כדי לראות אותו כאן
+                  </Text>
+                </View>
+              )}
+            </LayoutWidth>
+          </View>
+        ) : null}
       </View>
 
       <QuickUsageModal
@@ -895,7 +999,7 @@ export function CouponsListScreen() {
                 accessibilityLabel={`בחירת קופון ${coupon.company}, יתרה ${formatIls(remaining)}`}
                 onPress={() => {
                   setIsMerchantResultsOpen(false);
-                  router.push(`/coupons/${couponRouteId(coupon)}`);
+                  showCoupon(coupon);
                 }}
                 style={[
                   styles.merchantResultOption,
@@ -949,6 +1053,35 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  // The list and the coupon it opened, side by side. row-reverse because the
+  // list belongs on the right, where reading starts.
+  duo: {
+    flex: 1,
+    flexDirection: "row-reverse",
+  },
+  // What the screen is on every width below the split: one column, untouched.
+  solo: {
+    flex: 1,
+  },
+  detailPane: {
+    flex: 1,
+    minWidth: 0,
+    // A rule rather than a gap, so the two columns read as one screen split
+    // instead of two windows that happen to be adjacent.
+    borderStartWidth: 1,
+  },
+  detailPlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  detailPlaceholderText: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    textAlign: "center",
+    writingDirection: "rtl",
   },
   container: {
     flex: 1,

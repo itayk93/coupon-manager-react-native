@@ -7,12 +7,14 @@ import {
   gridColumns,
   isTabletWidth,
   layoutClass,
+  detailPaneWidth,
   listPaneWidth,
   navMode,
   navWidth,
   scaleFont,
   GRID_MAX_WIDTH,
   READING_MAX_WIDTH,
+  DUO_DETAIL_MIN_WIDTH,
 } from "./responsive";
 
 // Point widths of the devices the app actually ships to.
@@ -149,6 +151,28 @@ describe("the duo layout", () => {
 
   it("stops the list pane growing without bound on the widest iPad", () => {
     expect(listPaneWidth(IPAD_PRO_LANDSCAPE)).toBeLessThanOrEqual(460);
+  });
+
+  it("leaves the list pane measuring as a phone, because that is what it is", () => {
+    // The point of `LayoutWidth`: inside the pane, everything asks the pane.
+    // A list column that kept reading the iPad's width would pair up cards
+    // into a 460pt column and give each one 222pt, which is narrower than the
+    // card works at.
+    for (const window of [IPAD_11_LANDSCAPE, IPAD_PRO_LANDSCAPE]) {
+      const pane = listPaneWidth(window - navWidth(window));
+      expect(layoutClass(pane)).toBe("compact");
+      expect(isTabletWidth(pane)).toBe(false);
+      expect(gridColumns(pane - 2 * contentGutter(pane), { min: 320, max: 3 })).toBe(1);
+    }
+  });
+
+  it("never splits into a detail pane narrower than the split promised", () => {
+    // The threshold has to count the gap between the columns, or the split
+    // fires at a width where the detail then lands below its own minimum.
+    for (let width = 700; width <= 1400; width += 1) {
+      if (!canSplitPanes(width)) continue;
+      expect(detailPaneWidth(width)).toBeGreaterThanOrEqual(DUO_DETAIL_MIN_WIDTH);
+    }
   });
 });
 

@@ -145,9 +145,23 @@ export function navWidth(width: number): number {
  */
 export const DUO_LIST_WIDTH = 380;
 export const DUO_DETAIL_MIN_WIDTH = 460;
+/**
+ * Space the screen leaves between the two panes.
+ *
+ * Counted here rather than only in the screen, because a threshold that
+ * ignores it promises a detail pane the layout then cannot deliver: at exactly
+ * 840pt the split would fire and the detail would land at 444, below the very
+ * minimum that justified splitting.
+ */
+export const DUO_GAP = 16;
 
 export function canSplitPanes(width: number): boolean {
-  return width >= DUO_LIST_WIDTH + DUO_DETAIL_MIN_WIDTH;
+  return width >= DUO_LIST_WIDTH + DUO_GAP + DUO_DETAIL_MIN_WIDTH;
+}
+
+/** What is left for the detail pane once the list and the gap have taken theirs. */
+export function detailPaneWidth(width: number): number {
+  return width - listPaneWidth(width) - DUO_GAP;
 }
 
 /**

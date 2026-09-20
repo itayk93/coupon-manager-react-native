@@ -7,10 +7,12 @@ import {
   GRID_MAX_WIDTH,
   LayoutClass,
   NavMode,
+  DUO_GAP,
   canSplitPanes,
   columnWidth,
   contentGutter,
   contentMaxWidth,
+  detailPaneWidth,
   gridColumns,
   layoutClass,
   listPaneWidth,
@@ -138,11 +140,21 @@ export function useCappedWidth(max = 480): ViewStyle {
   );
 }
 
-/** The split ratio for a duo (list + detail) screen, in points. */
-export function useDuoPanes(): { split: boolean; listWidth: number } {
+/** The two columns of a duo (list + detail) screen, in points. */
+export function useDuoPanes(): {
+  split: boolean;
+  listWidth: number;
+  detailWidth: number;
+  gap: number;
+} {
   const { contentWidth, canSplit } = useResponsive();
   return useMemo(
-    () => ({ split: canSplit, listWidth: listPaneWidth(contentWidth) }),
+    () => ({
+      split: canSplit,
+      listWidth: listPaneWidth(contentWidth),
+      detailWidth: detailPaneWidth(contentWidth),
+      gap: DUO_GAP,
+    }),
     [contentWidth, canSplit],
   );
 }
