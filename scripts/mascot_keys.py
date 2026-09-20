@@ -131,10 +131,25 @@ def _crop(keyed, pose, window, cell):
 
     `Image.crop` pads past the sheet's edges with transparency, which is what a
     pose standing near the border needs.
+
+    The window reaches below the feet and above the head by whatever the sheet's
+    scale demands, which on a tightly packed sheet is far enough to catch the
+    row above or below. So the crop is masked to the band the pose was found
+    in: a pose found in a band lies entirely inside it, which makes the mask
+    free of risk to the pose itself and fatal only to a neighbour leaking in.
+    Without it the `concern` sheet puts a five-pixel sliver of the second row's
+    head along the bottom edge of the first row's first cell, and optical flow
+    then spends the whole cycle fading it in and out.
     """
     left = int(round(pose['centre'] - window / 2))
     top = int(round(pose['ground'] + window * (1 - FEET_FRACTION) - window))
     cropped = keyed.crop((left, top, left + window, top + window))
+    above, below = pose['band'][0] - top, pose['band'][1] - top
+    if above > 0 or below < window:
+        alpha = np.asarray(cropped.getchannel('A')).copy()
+        alpha[:max(0, above)] = 0
+        alpha[max(0, min(window, below)):] = 0
+        cropped.putalpha(Image.fromarray(alpha))
     return cropped.resize((cell, cell), Image.Resampling.LANCZOS)
 
 
@@ -185,6 +200,7 @@ def load_sheet(path, cell, expected=None):
                 'centre': centre,
                 'ground': top + ground,
                 'top': top + highest,
+                'band': (top, bottom),
                 'bbox': x1 - x0,
                 'span': (x0, x1),
             })

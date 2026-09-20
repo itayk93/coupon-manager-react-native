@@ -15,10 +15,10 @@ The opaque source draft and old preview are not referenced by the application.
 Reference: user-provided `original_app_mascot.png`.
 Generated using the built-in image generation tool on 2026-09-10.
 
-## New keyframe sheets: one landed, three pending
+## New keyframe sheets: two landed, two pending
 
-`source/success-keyframes.png` is in use. The other three
-(`scan-`, `greeting-`, `concern-keyframes.png`) are measured and rejected, so
+`source/success-keyframes.png` and `concern-keyframes.png` are in use. The
+other two (`scan-` and `greeting-keyframes.png`) are measured and rejected, so
 those states keep the approved 320px keys until replacements arrive. Each state
 picks its own source at build time, so sheets can land one at a time.
 
@@ -31,13 +31,13 @@ gate; `sheet_ratio()` measures a sheet against it without failing the build.
 
 | sheet | silhouette / torso | in use |
 | --- | --- | --- |
-| approved 320px art | 1.03-1.06 | the three fallbacks |
+| approved 320px art | 1.03-1.06 | the two fallbacks |
 | `success` (corrected) | 1.14 | yes |
-| `concern` | 1.57 | no |
+| `concern` (corrected) | 1.15 | yes |
 | `scan` | 1.53 | no |
 | `greeting` | 1.58 | no |
 
-The three rejected sheets fail the same way the first `success` sheet did: the
+The two rejected sheets fail the same way the first `success` sheet did: the
 arms are extended too far, which both pushes the magnifier out of the cell and
 shrinks the body to about 35% less than every other state once framed so
 nothing clips. What a regeneration needs, beyond the existing brief: **the
@@ -45,7 +45,16 @@ magnifier and both hands stay close to the body, so the full silhouette is no
 wider than about 1.1x the torso**, and the torso fills roughly three quarters
 of the cell, as it does in `source/escalation-keyframes.png`. Pose variety has
 to come from the body leaning, crouching and rising rather than from the arms
-reaching out. The corrected `success` sheet is the worked example.
+reaching out. The corrected `success` and `concern` sheets are the worked
+examples.
+
+Both corrected sheets are nevertheless bound by height rather than by width:
+the raised magnifier reaches further above the head than a window sized to the
+shipping torso would allow, so the window widens to avoid clipping it and the
+character lands at 190-196px rather than 213. That is the right trade — a
+magnifier cut off at the cell edge is worse than a character 9% small — but a
+sheet that keeps the magnifier about 10% lower would render at full size. Worth
+saying in the brief for the two that remain.
 
 `scripts/mascot_keys.py` keys the green, finds each pose by the empty columns
 around it, and crops on the feet rather than on the nominal grid — needed
@@ -82,12 +91,14 @@ that pose on wrap. In the first motion-only revision, scan follows `[0,1,2,3,0]`
 with budgets `[8,7,6,15]`; greeting `[1,2,3,1]` with `[13,11,12]`; concern
 `[0,1,2,0]` with `[9,11,16]`; worried/alarmed `[0,1,2,0]` with `[9,11,16]`.
 Concern's fourth original pose changes grip and mouth shape, so it is excluded.
-Success has since moved to `source/success-keyframes.png` and a genuine
-four-pose cycle, `[0,1,2,3,0]` with `[7,8,8,13]`. It was the one state the
-approved art could not cycle: only two of its four poses shared an
-expression, so `[0,1,0]` with `[12,24]` went out to one pose and came back
-the same way — the bounce this whole upgrade exists to remove. The other
-three states still run the budgets above from the approved keys.
+Success and concern have since moved to their own keyframe sheets and to
+four-pose cycles: `[0,1,2,3,0]` with `[7,8,8,13]` and `[7,7,8,14]`. Success was
+the one state the approved art could not cycle at all — only two of its four
+poses shared an expression, so `[0,1,0]` with `[12,24]` went out to one pose and
+came back the same way, the bounce this whole upgrade exists to remove. Concern
+could cycle on three poses but passed close to itself doing it; the fourth pose
+opens the loop out. Scan and greeting still run the budgets above from the
+approved keys.
 The mirrored return was dropped because replaying every gesture backwards reads
 as a rewind. Smoothstep and a single warped source avoid translucent second arms.
 A premultiplied periodic breathing field offsets head and torso by one eighth of
