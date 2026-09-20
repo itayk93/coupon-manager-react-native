@@ -29,13 +29,11 @@ import {
   UserPlus,
   Download,
   BadgeDollarSign,
-  Home,
 } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
-import { useHomeScreen } from "@/hooks/useHomeScreen";
 import { useExportAccount, useDeleteAccount } from "@/hooks/useConsent";
 import { useMyReferralStatus } from "@/hooks/useReferral";
 import { fonts, radii, shadows } from "@/lib/theme";
@@ -51,7 +49,6 @@ export function SettingsScreen() {
   const { user, isAdmin, signOut } = useAuth();
   const { data: profile } = useProfile();
   const biometric = useBiometricAuth();
-  const homeScreen = useHomeScreen();
   // Absent for anyone outside a referral chain, which is how the pilot stays
   // closed without a feature flag to remember to turn off later.
   const { data: referral } = useMyReferralStatus();
@@ -188,25 +185,6 @@ export function SettingsScreen() {
               },
             ]}
           >
-
-            {/* The Kuponi home screen was built, reviewed, and then sat behind
-                an admin gate where nobody could see it. Releasing it as a
-                choice rather than swapping everyone's home screen for them. */}
-            <View style={styles.menuItem}>
-              <Switch
-                value={homeScreen.choice === "kuponi"}
-                onValueChange={(on) => homeScreen.choose.mutate(on ? "kuponi" : "classic")}
-                trackColor={{ false: theme.inputBorder, true: theme.primary }}
-                thumbColor="#ffffff"
-                accessibilityLabel="מסך הבית של קופוני"
-              />
-              <View style={styles.menuItemLabelGroup}>
-                <Text style={[styles.menuItemText, { color: theme.text }]}>
-                  מסך הבית של קופוני
-                </Text>
-                <Home size={20} color={theme.textMuted} />
-              </View>
-            </View>
 
             {biometric.isAvailable ? (
               <View style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}>

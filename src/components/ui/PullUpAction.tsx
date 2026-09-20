@@ -9,7 +9,7 @@ import Animated, {
   runOnJS,
   type SharedValue,
 } from "react-native-reanimated";
-import { Gesture, type GestureType } from "react-native-gesture-handler";
+import { Gesture, type ComposedGesture } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { Plus } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -51,7 +51,7 @@ function press() {
 }
 
 export type PullUpAction = {
-  gesture: GestureType;
+  gesture: ComposedGesture;
   scrollHandler: ReturnType<typeof useAnimatedScrollHandler>;
   scrollRef: ReturnType<typeof useAnimatedRef<Animated.ScrollView>>;
   /** Tab travel in points, for the indicator to read. */
@@ -93,18 +93,27 @@ export function usePullUpAction({
     if (!atEnd.value) anchor.value = null;
   });
 
-  const gesture = Gesture.Pan()
+  // The scroll view's own gesture, named so the pan can be told to run
+  // alongside it rather than instead of it.
+  //
+  // This has to be a real gesture and not the scroll view's ref. Gesture
+  // handler only knows about scrollables it wraps itself — its own `ScrollView`
+  // export — and the screen hands us Reanimated's `Animated.ScrollView`, which
+  // wraps React Native's. Passing that ref to `simultaneousWithExternalGesture`
+  // type-checks and then silently does nothing: no relation is registered, the
+  // native scroll claims the touch the moment the finger moves, and the pan is
+  // cancelled before it ever reports a single update. Which is exactly how it
+  // failed — not intermittently, never.
+  //
+  // `Gesture.Native()` attaches to whatever the detector wraps, so it works for
+  // any scrollable the caller brings.
+  const native = Gesture.Native();
+
+  const pan = Gesture.Pan()
     // The scroll view keeps its own gesture. This one reads the same finger
     // rather than taking it away, so the page still scrolls normally and the
     // pull is only what happens after the scrolling has nowhere left to go.
-    //
-    // The cast is the library's typing, not a shortcut around it: gesture
-    // handler's `GestureRef` asks for a ref holding a component *type*, while a
-    // React ref holds the mounted instance. Every ref anyone can actually pass
-    // here has the same mismatch.
-    .simultaneousWithExternalGesture(
-      scrollRef as unknown as React.RefObject<React.ComponentType>
-    )
+    .simultaneousWithExternalGesture(native)
     .onUpdate((event) => {
       if (!scrollable.value || !atEnd.value) {
         anchor.value = null;
@@ -131,6 +140,10 @@ export function usePullUpAction({
       // this point commits to anything.
       if (fire) runOnJS(onTrigger)();
     });
+
+  // Both, together: the detector has to carry the native gesture too, or there
+  // is nothing for the pan to run simultaneously *with*.
+  const gesture = Gesture.Simultaneous(pan, native);
 
   return { gesture, scrollHandler, scrollRef, travel, armed };
 }

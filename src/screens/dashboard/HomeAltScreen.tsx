@@ -10,7 +10,7 @@ import {
 import Animated from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
+import { ChevronLeft, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
 import { CouponSection } from "@/components/dashboard/CouponSection";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
@@ -36,9 +36,13 @@ import { expiringSoon } from "@/lib/homeHero";
 import { couponRouteId } from "@/lib/couponId";
 
 /**
- * The home screen built around Kuponi, offered in settings as "מסך הבית של
- * קופוני". `DashboardScreen` stays the default; this is opt-in per device
- * (`homeScreenPref.ts`) and reversible from the same switch.
+ * The home screen.
+ *
+ * It spent a while behind an admin gate and then behind a settings switch,
+ * which is why the file is still called `HomeAltScreen` — the name is the only
+ * thing left of that. `DashboardScreen` is what it replaced; that file stays in
+ * the tree, unreferenced, so the old screen can be read and lifted from rather
+ * than reconstructed from git.
  *
  * What it is testing: a home screen that answers "how much do I have, what is
  * about to expire, and what do I reach for" in one glance, and gets out of the
@@ -177,24 +181,6 @@ export function HomeAltScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      {/* The only chrome this screen adds: it is not on the tab bar, so it needs
-          its own way back, and it says out loud that it is a debug build of the
-          home screen. */}
-      <View style={[styles.debugBar, { backgroundColor: theme.warningBg }]}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="חזרה"
-          style={styles.debugBack}
-        >
-          <ChevronRight size={18} color={theme.warningText} />
-        </TouchableOpacity>
-        <Text style={[styles.debugText, { color: theme.warningText }]}>
-          מסך בית אלטרנטיבי · ניסוי אדמין
-        </Text>
-      </View>
-
       <GestureDetector gesture={pullUp.gesture}>
         <Animated.ScrollView
           ref={pullUp.scrollRef}
@@ -345,27 +331,6 @@ const styles = StyleSheet.create({
     // Enough that the last thing on the page can be scrolled clear of the
     // button rather than ending underneath it.
     paddingBottom: FAB_CLEARANCE + 16,
-  },
-  debugBar: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  debugBack: {
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  debugText: {
-    flex: 1,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
-    fontWeight: "700",
-    textAlign: "right",
-    writingDirection: "rtl",
   },
   skeletons: {
     marginTop: 4,

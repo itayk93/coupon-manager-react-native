@@ -37,6 +37,18 @@ import { widgetSelection } from "@/lib/widgetSelection";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { couponRouteId } from "@/lib/couponId";
 
+/**
+ * The home screen this app shipped with, kept and no longer routed to.
+ *
+ * `HomeAltScreen` is the home tab now. This file is deliberately unreferenced:
+ * it is the reference for how the old screen did things — the sections, the
+ * empty states, the widget selection — so that work can be read and lifted
+ * from rather than reconstructed out of git history. Nothing imports it, so it
+ * costs a file and no bundle weight that the tree shaker cannot see.
+ *
+ * If it is ever brought back, note that it was written before the responsive
+ * layer and before the pull-up gesture, and has neither.
+ */
 export function DashboardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ saved?: string; savedCouponId?: string }>();

@@ -11,7 +11,7 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Search, Plus, Trash2, Send, Home } from "lucide-react-native";
+import { Search, Plus, Trash2, Send } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -222,12 +222,6 @@ export function AdminDashboardScreen() {
                 מסך הבית של קופוני: הודעה מקופוני, חיפוש, פילטרים מהירים ואז
                 הקופונים עצמם. עמוד הבית הרגיל לא משתנה, והמסך הזה נגיש מכאן בלבד.
               </Text>
-              <Button
-                title="פתיחת המסך הניסיוני"
-                onPress={() => router.push("/home-alt")}
-                icon={<Home size={18} color="#ffffff" />}
-                style={{ marginTop: 12 }}
-              />
             </View>
           </ScrollView>
         ) : null}
