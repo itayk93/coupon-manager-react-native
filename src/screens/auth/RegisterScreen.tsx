@@ -17,6 +17,7 @@ import { BrandMark } from "@/components/ui/BrandMark";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, palette, radii } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
@@ -24,6 +25,7 @@ import { logActivity } from "@/lib/activityLog";
 export function RegisterScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -122,7 +124,7 @@ export function RegisterScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >

@@ -27,6 +27,8 @@ import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { couponRouteId } from "@/lib/couponId";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
+import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { formatIls } from "@/lib/formatIls";
@@ -38,6 +40,7 @@ import { Kuponi } from "@/components/ui/Kuponi";
 export function SharingScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("grid");
   const [activeTab, setActiveTab] = useState<"shared_with_me" | "my_shares">("shared_with_me");
 
   const { data: sharedWithMe = [], isLoading: loadingWithMe, refetch: refetchWithMe, isRefetching: refetchingWithMe } = useSharedWithMe();
@@ -114,7 +117,7 @@ export function SharingScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.container}>
+      <View style={[styles.container, contentStyle]}>
         {/* Tabs */}
         <View style={[styles.tabsRow, { backgroundColor: theme.surfaceAlt }]}>
           <TouchableOpacity
@@ -196,88 +199,90 @@ export function SharingScreen() {
             <KuponiLoading title="טוען שיתופים" subtitle="אוסף את הקופונים וההזמנות שלך" />
           ) : activeTab === "shared_with_me" ? (
             sharedWithMe.length > 0 ? (
-              sharedWithMe.map((item) => {
-                const rem = Math.max(
-                  0,
-                  (item.coupon?.value || 0) - (item.coupon?.used_value || 0)
-                );
-                return (
-                  <TouchableOpacity
-                    key={item.id}
-                    accessibilityRole={item.status === "accepted" ? "button" : undefined}
-                    accessibilityLabel={
-                      item.status === "accepted"
-                        ? `פתיחת פרטי קופון של ${item.coupon?.company || "קופון"}`
-                        : undefined
-                    }
-                    activeOpacity={item.status === "accepted" ? 0.82 : 1}
-                    disabled={item.status !== "accepted" || !item.coupon}
-                    onPress={() => {
-                      if (item.status === "accepted" && item.coupon) {
-                        router.push(`/coupons/${couponRouteId(item.coupon)}`);
+              <ResponsiveGrid minItemWidth={300} maxColumns={2}>
+                {sharedWithMe.map((item) => {
+                  const rem = Math.max(
+                    0,
+                    (item.coupon?.value || 0) - (item.coupon?.used_value || 0)
+                  );
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      accessibilityRole={item.status === "accepted" ? "button" : undefined}
+                      accessibilityLabel={
+                        item.status === "accepted"
+                          ? `פתיחת פרטי קופון של ${item.coupon?.company || "קופון"}`
+                          : undefined
                       }
-                    }}
-                    style={[
-                      styles.shareCard,
-                      {
-                        backgroundColor: theme.card,
-                        borderColor: theme.cardBorder,
-                      },
-                    ]}
-                  >
-                    <View style={styles.shareCardHeader}>
-                      <View style={styles.shareBadge}>
-                        <Text style={styles.shareBadgeText}>
-                          שותף ע״י {item.shared_by?.first_name || item.shared_by?.email}
-                        </Text>
-                      </View>
-
-                      <View style={styles.companyGroup}>
-                        <Text style={[styles.companyTitle, { color: theme.text }]}>
-                          {item.coupon?.company}
-                        </Text>
-                        <Image
-                          source={getCompanyLogoSource(item.coupon?.company)}
-                          style={styles.shareLogo}
-                          resizeMode="contain"
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.shareDetailsRow}>
-                      <Text style={[styles.shareCode, { color: theme.textSubtle }]}>
-                        קוד: {item.coupon?.code || "לא זמין"}
-                      </Text>
-                      <Text
-                        style={[styles.shareBalance, { color: theme.text }]}
-                        maxFontSizeMultiplier={1.3}
-                      >
-                        יתרה: {formatIls(rem)}
-                      </Text>
-                    </View>
-                    {item.status === "pending" ? (
-                      <View style={styles.invitationActions}>
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          onPress={() => respondToShare.mutate({ shareId: item.id, accept: false })}
-                          style={[styles.secondaryAction, { borderColor: theme.border }]}
-                        >
-                          <Text style={[styles.secondaryActionText, { color: theme.textMuted }]}>דחייה</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          onPress={() => respondToShare.mutate({ shareId: item.id, accept: true })}
-                          style={[styles.primaryAction, { backgroundColor: theme.primary }]}
-                        >
-                          <Text style={styles.primaryActionText}>
-                            {item.share_type === "transfer" ? "אישור קבלת הקופון" : "אישור השיתוף"}
+                      activeOpacity={item.status === "accepted" ? 0.82 : 1}
+                      disabled={item.status !== "accepted" || !item.coupon}
+                      onPress={() => {
+                        if (item.status === "accepted" && item.coupon) {
+                          router.push(`/coupons/${couponRouteId(item.coupon)}`);
+                        }
+                      }}
+                      style={[
+                        styles.shareCard,
+                        {
+                          backgroundColor: theme.card,
+                          borderColor: theme.cardBorder,
+                        },
+                      ]}
+                    >
+                      <View style={styles.shareCardHeader}>
+                        <View style={styles.shareBadge}>
+                          <Text style={styles.shareBadgeText}>
+                            שותף ע״י {item.shared_by?.first_name || item.shared_by?.email}
                           </Text>
-                        </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.companyGroup}>
+                          <Text style={[styles.companyTitle, { color: theme.text }]}>
+                            {item.coupon?.company}
+                          </Text>
+                          <Image
+                            source={getCompanyLogoSource(item.coupon?.company)}
+                            style={styles.shareLogo}
+                            resizeMode="contain"
+                          />
+                        </View>
                       </View>
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })
+
+                      <View style={styles.shareDetailsRow}>
+                        <Text style={[styles.shareCode, { color: theme.textSubtle }]}>
+                          קוד: {item.coupon?.code || "לא זמין"}
+                        </Text>
+                        <Text
+                          style={[styles.shareBalance, { color: theme.text }]}
+                          maxFontSizeMultiplier={1.3}
+                        >
+                          יתרה: {formatIls(rem)}
+                        </Text>
+                      </View>
+                      {item.status === "pending" ? (
+                        <View style={styles.invitationActions}>
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            onPress={() => respondToShare.mutate({ shareId: item.id, accept: false })}
+                            style={[styles.secondaryAction, { borderColor: theme.border }]}
+                          >
+                            <Text style={[styles.secondaryActionText, { color: theme.textMuted }]}>דחייה</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            onPress={() => respondToShare.mutate({ shareId: item.id, accept: true })}
+                            style={[styles.primaryAction, { backgroundColor: theme.primary }]}
+                          >
+                            <Text style={styles.primaryActionText}>
+                              {item.share_type === "transfer" ? "אישור קבלת הקופון" : "אישור השיתוף"}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ResponsiveGrid>
             ) : (
               <EmptyState
                 visual={
@@ -294,62 +299,64 @@ export function SharingScreen() {
               />
             )
           ) : myShares.length > 0 ? (
-            myShares.map((item: any) => {
-              return (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.shareCard,
-                    {
-                      backgroundColor: theme.card,
-                      borderColor: theme.cardBorder,
-                    },
-                  ]}
-                >
-                  <View style={styles.shareCardHeader}>
-                    {item.status === "pending" || item.status === "accepted" ? (
-                      <TouchableOpacity
-                        onPress={() => handleRevoke(item.id, item.coupon?.company)}
-                        style={styles.revokeBtn}
-                      >
-                        <Trash2 size={16} color={theme.danger} />
-                        <Text style={[styles.revokeText, { color: theme.danger }]}>בטל</Text>
-                      </TouchableOpacity>
-                    ) : <View />}
+            <ResponsiveGrid minItemWidth={300} maxColumns={2}>
+              {myShares.map((item: any) => {
+                return (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.shareCard,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.cardBorder,
+                      },
+                    ]}
+                  >
+                    <View style={styles.shareCardHeader}>
+                      {item.status === "pending" || item.status === "accepted" ? (
+                        <TouchableOpacity
+                          onPress={() => handleRevoke(item.id, item.coupon?.company)}
+                          style={styles.revokeBtn}
+                        >
+                          <Trash2 size={16} color={theme.danger} />
+                          <Text style={[styles.revokeText, { color: theme.danger }]}>בטל</Text>
+                        </TouchableOpacity>
+                      ) : <View />}
 
-                    <View style={styles.companyGroup}>
-                      <View style={styles.companyCopy}>
-                        <Text
-                          numberOfLines={1}
-                          style={[styles.companyTitle, { color: theme.text }]}
-                        >
-                          {item.coupon?.company}
-                        </Text>
-                        <Text
-                          numberOfLines={2}
-                          style={[styles.sharedWithText, { color: theme.textMuted }]}
-                        >
-                          {`שיתפתי את ${item.coupon?.company || "הקופון"} ${item.shared_with?.email ? `עם ${item.shared_with.email}` : item.recipient_email ? `עם ${item.recipient_email}` : "בקישור פתוח"}`}
-                        </Text>
-                        <Text
-                          numberOfLines={1}
-                          style={[styles.sharedWithText, { color: theme.primary }]}
-                        >
-                          {item.status === "pending"
-                            ? `ממתין לאישור · ${item.share_type === "transfer" ? "העברת בעלות" : "שימוש משותף"}`
-                            : item.share_type === "transfer" ? "הועבר" : "שיתוף פעיל"}
-                        </Text>
+                      <View style={styles.companyGroup}>
+                        <View style={styles.companyCopy}>
+                          <Text
+                            numberOfLines={1}
+                            style={[styles.companyTitle, { color: theme.text }]}
+                          >
+                            {item.coupon?.company}
+                          </Text>
+                          <Text
+                            numberOfLines={2}
+                            style={[styles.sharedWithText, { color: theme.textMuted }]}
+                          >
+                            {`שיתפתי את ${item.coupon?.company || "הקופון"} ${item.shared_with?.email ? `עם ${item.shared_with.email}` : item.recipient_email ? `עם ${item.recipient_email}` : "בקישור פתוח"}`}
+                          </Text>
+                          <Text
+                            numberOfLines={1}
+                            style={[styles.sharedWithText, { color: theme.primary }]}
+                          >
+                            {item.status === "pending"
+                              ? `ממתין לאישור · ${item.share_type === "transfer" ? "העברת בעלות" : "שימוש משותף"}`
+                              : item.share_type === "transfer" ? "הועבר" : "שיתוף פעיל"}
+                          </Text>
+                        </View>
+                        <Image
+                          source={getCompanyLogoSource(item.coupon?.company)}
+                          style={styles.shareLogo}
+                          resizeMode="contain"
+                        />
                       </View>
-                      <Image
-                        source={getCompanyLogoSource(item.coupon?.company)}
-                        style={styles.shareLogo}
-                        resizeMode="contain"
-                      />
                     </View>
                   </View>
-                </View>
-              );
-            })
+                );
+              })}
+            </ResponsiveGrid>
           ) : (
             <EmptyState
               largeVisual

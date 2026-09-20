@@ -8,6 +8,7 @@ import { useParseCoupon, type ParsedCoupon } from "@/hooks/useCouponAI";
 import { saveOnboardingCouponDrafts } from "@/lib/couponDraft";
 import { notify } from "@/lib/notify";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fonts, palette, radii } from "@/lib/theme";
@@ -53,6 +54,7 @@ export function OnboardingScreen() {
   const { social, pendingVerification } = useLocalSearchParams<{ social?: string; pendingVerification?: string }>();
   const { user, refreshUser } = useAuth();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const parseCoupon = useParseCoupon();
   const { data: existingCoupons, isLoading: walletLoading } = useCoupons();
   const identity = user?.email || pendingVerification;
@@ -191,7 +193,7 @@ export function OnboardingScreen() {
 
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
           {steps.indexOf(mode) > 0
             ? <Pressable onPress={back} style={styles.iconButton} accessibilityLabel="חזרה"><ChevronRight size={24} color={theme.text} /></Pressable>

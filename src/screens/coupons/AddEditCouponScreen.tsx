@@ -23,6 +23,7 @@ import { useCouponForm } from "@/hooks/useCouponForm";
 import { AUTO_PROVIDERS } from "@/lib/couponForm";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { getSharedCouponImport } from "@/lib/sharedCouponImport";
 
 type CouponFormProps = {
@@ -127,6 +128,7 @@ function CouponForm({
   allowEmptyCode,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const router = useRouter();
   const [showAdvanced, setShowAdvanced] = React.useState(Boolean(existingCoupon));
 
@@ -202,7 +204,7 @@ function CouponForm({
       >
         <ScrollView
           style={styles.container}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}

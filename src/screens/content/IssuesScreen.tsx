@@ -14,12 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 export function IssuesScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { user } = useAuth();
 
   const [subject, setSubject] = useState("");
@@ -50,7 +52,7 @@ export function IssuesScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

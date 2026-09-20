@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { LinearGradient } from "expo-linear-gradient";
 import { Mail, Lock } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
@@ -35,6 +36,8 @@ function AppleLogo() {
 }
 
 export function LoginScreen() {
+  // A reading column: a sign-in form is read line by line.
+  const contentStyle = useContentStyle("reading");
   const router = useRouter();
   const { theme } = useAppTheme();
   const { setLegacySession } = useAuth();
@@ -119,7 +122,7 @@ export function LoginScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >

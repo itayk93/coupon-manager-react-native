@@ -32,12 +32,15 @@ import { Button } from "@/components/ui/button";
 import { useParseCoupon, ParsedCoupon } from "@/hooks/useCouponAI";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Kuponi } from "@/components/ui/Kuponi";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { usePageTutorial } from "@/hooks/usePageTutorial";
 import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
 
 export function BarcodeScannerScreen() {
+  // A reading column: this screen is a form and a camera frame, not a grid.
+  const contentStyle = useContentStyle("reading");
   const router = useRouter();
   const { theme } = useAppTheme();
   const { width, fontScale } = useWindowDimensions();
@@ -284,7 +287,7 @@ export function BarcodeScannerScreen() {
         }
       />
 
-      <View style={styles.container}>
+      <View style={[styles.container, contentStyle]}>
         {/* Mode selector. Both entries are modes of *this* screen and both
             drive `activeTab`, so whichever one you are in is the one lit up.
             The manual form is a different screen, so it is a link below rather

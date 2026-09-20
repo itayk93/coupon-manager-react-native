@@ -2,6 +2,7 @@ import React from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Header } from "@/components/ui/Header";
 import { useRouter } from "expo-router";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCouponSales } from "@/hooks/useCouponSales";
 import { formatIls } from "@/lib/formatIls";
@@ -15,12 +16,13 @@ import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/co
 const statusLabel = { pending: "ממתינה", completed: "נמכר", declined: "נדחתה", cancelled: "בוטלה" } as const;
 
 export function SoldCouponsScreen() {
+  const contentStyle = useContentStyle("grid");
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: sales = [], isLoading } = useCouponSales();
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
-    {isLoading ? <KuponiLoading title="טוען מכירות" subtitle="אוסף את כל מה שמכרת" /> : <ScrollView contentContainerStyle={styles.content}>
+    {isLoading ? <KuponiLoading title="טוען מכירות" subtitle="אוסף את כל מה שמכרת" /> : <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
       {sales.length === 0 ? (
         <EmptyState
           title="עוד לא מכרת קופונים"

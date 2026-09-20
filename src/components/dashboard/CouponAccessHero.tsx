@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { ChevronLeft, Flame, ScanLine, Search } from "lucide-react-native";
 import { MascotAnimation, type MascotState } from "@/components/ui/MascotAnimation";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { useContentWidth } from "@/hooks/useContentWidth";
+import { useResponsive } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
 import { EXPIRY_PERFORMANCE, expiryLevel } from "@/lib/expiryUrgency";
 import { formatIls } from "@/lib/formatIls";
@@ -70,7 +70,7 @@ type CouponAccessHeroProps = {
 export function CouponAccessHero({ coupons, isLoading }: CouponAccessHeroProps) {
   const router = useRouter();
   const { theme } = useAppTheme();
-  const width = useContentWidth();
+  const { width, isTablet } = useResponsive();
   const [text, setText] = useState("");
   // The measured height of the bubble row, which is also the mascot's box: he
   // is centred in it, so however tall the bubble grew, he stays level with its
@@ -79,7 +79,7 @@ export function CouponAccessHero({ coupons, isLoading }: CouponAccessHeroProps) 
 
   // Narrow phones give the bubble the room instead of the character; tablets do
   // not get a giant mascot, they get the same one with more text beside it.
-  const mascotSize = width < 360 ? 104 : width >= 768 ? 132 : 122;
+  const mascotSize = width < 360 ? 104 : isTablet ? 132 : 122;
   const summary = useMemo(() => homeHeroSummary(coupons), [coupons]);
   const remaining = useMemo(() => totalRemainingValue(coupons), [coupons]);
   const spendableCount = useMemo(() => coupons.filter(isSpendableCoupon).length, [coupons]);

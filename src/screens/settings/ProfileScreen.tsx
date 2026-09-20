@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { linkSocialProvider, SocialProvider } from "@/lib/socialAuth";
@@ -27,6 +28,7 @@ import { deleteProfileImage, uploadProfileImage } from "@/lib/profileImage";
 export function ProfileScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const { user, isAdmin } = useAuth();
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
@@ -165,7 +167,7 @@ export function ProfileScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

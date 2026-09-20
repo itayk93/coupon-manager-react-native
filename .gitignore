@@ -61,6 +61,8 @@ docs/*
 !docs/dynamic-type-scaling.md
 # Mascot character bible, voice and rollout plan — shared, not local notes.
 !docs/mascot/
+# The iPad layout rationale, for the same reason.
+!docs/ipad-layout.md
 # Authenticated QA screenshots may contain coupon codes. Keep them local only.
 /docs/android-qa/
 .commandcode/

@@ -1,6 +1,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { BrandMark } from "@/components/ui/BrandMark";
@@ -18,12 +19,14 @@ const LINKS = [
  * the other side.
  */
 export function ContentHeader() {
+  const contentStyle = useContentStyle("grid");
   const router = useRouter();
   const pathname = usePathname();
   const { theme } = useAppTheme();
 
   return (
-    <View style={[styles.bar, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+    <View style={[styles.shell, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+      <View style={[styles.bar, contentStyle]}>
       <TouchableOpacity
         onPress={() => router.navigate("/(tabs)")}
         activeOpacity={0.8}
@@ -48,12 +51,18 @@ export function ContentHeader() {
             </TouchableOpacity>
           );
         })}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // The bar's background spans the whole width; its contents stop at the
+  // content column, so the rule under it still reaches both edges.
+  shell: {
+    borderBottomWidth: 1,
+  },
   bar: {
     minHeight: 64,
     flexDirection: "row-reverse",

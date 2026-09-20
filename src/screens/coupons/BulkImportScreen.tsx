@@ -16,11 +16,13 @@ import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
 import { useAddCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { notify } from "@/lib/notify";
 
 export function BulkImportScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const addCoupon = useAddCoupon();
 
   const [company, setCompany] = useState("");
@@ -79,7 +81,7 @@ export function BulkImportScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

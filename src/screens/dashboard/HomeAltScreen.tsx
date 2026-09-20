@@ -21,6 +21,7 @@ import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { AddCouponFab, FAB_CLEARANCE } from "@/components/ui/AddCouponFab";
 import { PullUpIndicator, usePullUpAction } from "@/components/ui/PullUpAction";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -81,6 +82,8 @@ export function HomeAltScreen() {
   // Which company's coupons are open in the sheet — the screen's fast path.
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const onboardingPending = useOnboardingPending();
+  // A grid column: this screen is cards filling their width, not a form.
+  const contentStyle = useContentStyle("grid");
 
   // Stable across renders so the gesture is not rebuilt mid-drag.
   const addCoupon = useCallback(() => router.push("/coupons/add"), [router]);
@@ -198,7 +201,7 @@ export function HomeAltScreen() {
           onScroll={pullUp.scrollHandler}
           scrollEventThrottle={16}
           style={styles.container}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={

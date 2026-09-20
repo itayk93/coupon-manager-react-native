@@ -28,6 +28,7 @@ import { useRouter } from "expo-router";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyReferralStatus } from "@/hooks/useReferral";
 import { useMyApplication, useSubmitApplication } from "@/hooks/useReferralApplication";
@@ -47,6 +48,7 @@ const STEPS = [
 
 export function ReferralProgramScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
   const router = useRouter();
   const { session } = useAuth();
   const { data: referralStatus, isLoading: loadingStatus } = useMyReferralStatus();
@@ -66,7 +68,7 @@ export function ReferralProgramScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="תוכנית השותפים" showBack />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
 
         {/* ── Hero ── */}
         <View style={styles.heroCard}>

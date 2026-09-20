@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Plus, Share2, Ticket, User } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
+import { useResponsive } from "@/hooks/useResponsive";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 
@@ -67,6 +68,10 @@ function isActive(item: Item, pathname: string) {
  * hidden so there is exactly one.
  */
 export function BottomNav() {
+  // On a tablet these same destinations live in `SideNav`, so this draws
+  // nothing rather than doubling them. Both components stay mounted across the
+  // breakpoint; only one of them ever renders.
+  const { navMode } = useResponsive();
   const router = useRouter();
   const pathname = usePathname();
   const segments = useSegments();

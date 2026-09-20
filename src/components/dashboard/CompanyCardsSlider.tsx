@@ -7,7 +7,7 @@ import { isFemaleUser } from "@/lib/gender";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { useAuth } from "@/contexts/AuthContext";
 import { fonts, radii, shadows } from "@/lib/theme";
-import { useContentWidth } from "@/hooks/useContentWidth";
+import { useResponsive } from "@/hooks/useResponsive";
 
 type CompanyCardItem = {
   company: string;
@@ -25,6 +25,9 @@ type CompanyCardsSliderProps = {
   showAll?: boolean;
 };
 
+/** Space between company tiles, in points. */
+const CARD_GAP = 8;
+
 /**
  * "חברות עם קופונים פעילים" — a wrapping grid of company tiles, per the
  * redesign (the previous version was a horizontal slider).
@@ -37,9 +40,12 @@ export function CompanyCardsSlider({
 }: CompanyCardsSliderProps) {
   const { theme } = useAppTheme();
   const { user } = useAuth();
-  const width = useContentWidth();
-  const isTablet = width >= 768;
-  const collapsedCount = isTablet ? 10 : 6;
+  const { columns, columnWidth, isCompact } = useResponsive();
+  // Three logos across a phone, as drawn, and as many as fit on an iPad — with
+  // always two rows before the "show all" toggle, whatever that count is.
+  const perRow = isCompact ? 3 : columns(90, 6, CARD_GAP);
+  const cardWidth = columnWidth(perRow, CARD_GAP);
+  const collapsedCount = perRow * 2;
   const [isExpanded, setIsExpanded] = useState(false);
   const expanded = showAll || isExpanded;
 
@@ -82,7 +88,7 @@ export function CompanyCardsSlider({
               onPress={() => onSelectCompany(item.company)}
               style={[
                 styles.card,
-                isTablet && styles.tabletCard,
+                { width: cardWidth },
                 shadows.card,
                 {
                   backgroundColor: theme.card,
@@ -137,19 +143,15 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
-    gap: 8,
+    gap: CARD_GAP,
   },
   card: {
-    width: "31%",
     borderRadius: radii.card,
     minHeight: 98,
     paddingVertical: 9,
     paddingHorizontal: 6,
     alignItems: "center",
     gap: 5,
-  },
-  tabletCard: {
-    width: "19%",
   },
   logoWrapper: {
     width: 44,

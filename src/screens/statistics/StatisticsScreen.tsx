@@ -17,6 +17,7 @@ import {
 } from "lucide-react-native";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle, useResponsive } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { formatIls, formatIlsCompact } from "@/lib/formatIls";
 import { PressableScale } from "@/components/ui/PressableScale";
@@ -36,9 +37,17 @@ import { Kuponi } from "@/components/ui/Kuponi";
 import { useSavingsByMonth } from "@/hooks/useCouponUsage";
 import { totalGiftValueUsed, totalRealizedSavings } from "@/lib/couponSavings";
 
+/** Space between the four figures at the top, in points. */
+const KPI_GAP = 10;
+
 export function StatisticsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("grid");
+  const { columns, columnWidth, isCompact } = useResponsive();
+  // Two figures across a phone, as drawn; all four in a row once an iPad can
+  // hold them.
+  const kpiWidth = columnWidth(isCompact ? 2 : columns(130, 4, KPI_GAP), KPI_GAP);
   const { data: coupons = [] } = useCoupons();
   const { data: sales = [] } = useCouponSales();
   const [activeKpi, setActiveKpi] = useState<KpiConfig | null>(null);
@@ -154,7 +163,7 @@ export function StatisticsScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
         {/* The story card is the way into the milestone history: the numbers
@@ -194,6 +203,7 @@ export function StatisticsScreen() {
               onPress={() => setActiveKpi(kpi.config)}
               style={[
                 styles.kpiCard,
+                { width: kpiWidth },
                 {
                   backgroundColor: theme.card,
                   borderColor: theme.cardBorder,
@@ -508,7 +518,7 @@ const styles = StyleSheet.create({
   kpiGrid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
-    gap: 10,
+    gap: KPI_GAP,
     marginBottom: 14,
   },
   mascotStory: {
@@ -537,7 +547,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   kpiCard: {
-    width: "48%",
     padding: 16,
     borderRadius: radii.card,
     borderWidth: 1,

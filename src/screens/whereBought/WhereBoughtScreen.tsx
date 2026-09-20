@@ -22,6 +22,7 @@ import { useRouter } from "expo-router";
 import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
 import { formatIls } from "@/lib/formatIls";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useResponsive } from "@/hooks/useResponsive";
 
 /* A straight port of the "איפה אכלתי" page from budget-lens-new: one blue spend
    ramp on the map, a draggable panel on top of it, and the same sections in the
@@ -48,6 +49,9 @@ const SHEET_STOPS = [
 const SHEET_RATIO_KEY = "where-bought-sheet-ratio";
 const CORRECTIONS_KEY = "where-bought-corrections";
 const SWIPE_MIN = 48;
+/** How wide the panel over the map is allowed to get on an iPad. */
+const PANEL_MAX_WIDTH = 620;
+
 /* Web has no real map, only an embed; it fills the strip left above the sheet. */
 const WEB_MAP_HEIGHT = SCREEN.height - SHEET_STOPS[1];
 
@@ -174,6 +178,10 @@ function Small({ value, label }: { value: string; label: string }) {
 }
 
 export function WhereBoughtScreen() {
+  const { contentWidth, isTablet } = useResponsive();
+  // The map keeps the whole screen. The panel over it does not: past a phone
+  // it stops being a full-width sheet and becomes a card the map shows around.
+  const panelInset = isTablet ? Math.max(0, (contentWidth - PANEL_MAX_WIDTH) / 2) : 0;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
@@ -621,7 +629,13 @@ export function WhereBoughtScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      <Animated.View style={[S.panel, { height: sheetHeight }]}>
+      <Animated.View
+        style={[
+          S.panel,
+          { height: sheetHeight, left: panelInset, right: panelInset },
+          isTablet && S.panelTablet,
+        ]}
+      >
         <View style={S.sheetHandle} {...sheetPan.panHandlers}>
           <View style={S.sheetHandleBar} />
         </View>
@@ -978,6 +992,10 @@ const S = StyleSheet.create({
   },
   controlButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
 
+  panelTablet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
   panel: {
     position: "absolute",
     left: 0,

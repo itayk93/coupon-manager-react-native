@@ -3,6 +3,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Lock } from "lucide-react-native";
 import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useContentStyle } from "@/hooks/useResponsive";
 import { CONSENT_VERSION } from "@/lib/consent";
 import { fonts } from "@/lib/theme";
 
@@ -93,13 +94,14 @@ const SECTIONS = [
 
 export function PrivacyScreen() {
   const { theme } = useAppTheme();
+  const contentStyle = useContentStyle("reading");
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ContentHeader />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

@@ -14,7 +14,7 @@ import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import { formatIls } from "@/lib/formatIls";
 import { IlsAmount } from "@/components/ui/IlsAmount";
-import { useContentWidth } from "@/hooks/useContentWidth";
+import { useResponsive } from "@/hooks/useResponsive";
 import { useInAppNotifications } from "@/hooks/useInAppNotifications";
 
 type WalletHeroCardProps = {
@@ -31,8 +31,10 @@ export function WalletHeroCard({
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const width = useContentWidth();
-  const isTablet = width >= 768;
+  // `useResponsive` rather than a bare width comparison: the breakpoint lives
+  // in `responsive.ts` with the rest of them, and it is 700 not 768 so an iPad
+  // mini in portrait counts as a tablet.
+  const { isTablet } = useResponsive();
   const { data: notifications = [] } = useInAppNotifications();
   const unread = notifications.filter((item) => !item.viewed).length;
 

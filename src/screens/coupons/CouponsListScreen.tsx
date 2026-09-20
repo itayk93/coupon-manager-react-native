@@ -15,6 +15,7 @@ import {
   Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useContentStyle } from "@/hooks/useResponsive";
 import {
   Search,
   Plus,
@@ -70,6 +71,7 @@ interface CouponSection {
 }
 
 export function CouponsListScreen() {
+  const contentStyle = useContentStyle("grid");
   const router = useRouter();
   const params = useLocalSearchParams<{
     initialFilterTag?: string;
@@ -387,7 +389,7 @@ export function CouponsListScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View style={styles.titleRow}>
+      <View style={[styles.titleRow, contentStyle]}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>הקופונים שלי</Text>
 
         <View style={styles.headerActions}>
@@ -439,7 +441,7 @@ export function CouponsListScreen() {
         </View>
       </View>
 
-      <View style={styles.container}>
+      <View style={[styles.container, contentStyle]}>
         {offline.usingCache ? (
           <View
             style={[styles.offlineBanner, { backgroundColor: theme.warningBg, borderColor: theme.warning }]}
