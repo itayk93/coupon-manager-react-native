@@ -116,6 +116,26 @@ def _torso(alpha, radius):
     return stats[largest, cv2.CC_STAT_WIDTH] + radius - 1
 
 
+def _reach(occupied, x0, x1):
+    """The pose's true left and right edges, past the span that found it.
+
+    `_spans` calls a column background below `MIN_COLUMN` pixels, which is the
+    right rule for telling two poses apart and the wrong one for framing: a
+    magnifier handle three pixels wide is not background, and a crop sized to
+    the span alone cuts it off. So the span is grown outward while there is
+    anything at all in the column, stopping at the first empty one — which is
+    the same gap `_spans` used to separate this pose from its neighbour, so
+    growing can never run into the pose next door.
+    """
+    any_pixel = occupied > 0
+    left, right = x0, x1
+    while left > 0 and any_pixel[left - 1]:
+        left -= 1
+    while right < len(any_pixel) and any_pixel[right]:
+        right += 1
+    return left, right
+
+
 def _anchor(alpha, x0, x1):
     """Where this pose stands: the centre of its feet, the ground line, and the
     highest pixel it reaches."""
@@ -132,23 +152,34 @@ def _crop(keyed, pose, window, cell):
     `Image.crop` pads past the sheet's edges with transparency, which is what a
     pose standing near the border needs.
 
-    The window reaches below the feet and above the head by whatever the sheet's
-    scale demands, which on a tightly packed sheet is far enough to catch the
-    row above or below. So the crop is masked to the band the pose was found
-    in: a pose found in a band lies entirely inside it, which makes the mask
-    free of risk to the pose itself and fatal only to a neighbour leaking in.
-    Without it the `concern` sheet puts a five-pixel sliver of the second row's
-    head along the bottom edge of the first row's first cell, and optical flow
-    then spends the whole cycle fading it in and out.
+    The window reaches past the pose on every side by whatever the sheet's scale
+    demands, which on a tightly packed sheet is far enough to catch the pose
+    next door. So the crop is masked to the band and the span the pose was
+    found in: a pose lies entirely inside both, which makes the mask free of
+    risk to the pose itself and fatal only to a neighbour leaking in.
+
+    Both axes, because both happen. Vertically the `concern` sheet puts a
+    five-pixel sliver of the second row's head along the bottom edge of the
+    first row's first cell. Horizontally it is worse: a window wide enough for
+    an extended arm — `scan` wants 580 points where the poses sit 512 apart —
+    pulls fifty-odd columns of the previous pose into the cell, and optical
+    flow then spends the whole cycle fading a second character in and out.
     """
     left = int(round(pose['centre'] - window / 2))
     top = int(round(pose['ground'] + window * (1 - FEET_FRACTION) - window))
     cropped = keyed.crop((left, top, left + window, top + window))
-    above, below = pose['band'][0] - top, pose['band'][1] - top
-    if above > 0 or below < window:
-        alpha = np.asarray(cropped.getchannel('A')).copy()
-        alpha[:max(0, above)] = 0
-        alpha[max(0, min(window, below)):] = 0
+    alpha = np.asarray(cropped.getchannel('A')).copy()
+    touched = False
+    for axis, (lo, hi), origin in ((0, pose['band'], top), (1, pose['span'], left)):
+        near, far = lo - origin, hi - origin
+        if near <= 0 and far >= window:
+            continue
+        touched = True
+        head = (slice(None, max(0, near)),) if axis == 0 else (slice(None), slice(None, max(0, near)))
+        tail = (slice(max(0, min(window, far)), None),) if axis == 0 else (slice(None), slice(max(0, min(window, far)), None))
+        alpha[head] = 0
+        alpha[tail] = 0
+    if touched:
         cropped.putalpha(Image.fromarray(alpha))
     return cropped.resize((cell, cell), Image.Resampling.LANCZOS)
 
@@ -193,7 +224,8 @@ def load_sheet(path, cell, expected=None):
     for band in range(2):
         top, bottom = band * band_height, (band + 1) * band_height
         strip = alpha[top:bottom, :]
-        occupied = (strip > 8).sum(axis=0) >= MIN_COLUMN
+        column = (strip > 8).sum(axis=0)
+        occupied = column >= MIN_COLUMN
         for x0, x1 in _spans(occupied):
             centre, ground, highest = _anchor(strip, x0, x1)
             found.append({
@@ -202,7 +234,9 @@ def load_sheet(path, cell, expected=None):
                 'top': top + highest,
                 'band': (top, bottom),
                 'bbox': x1 - x0,
-                'span': (x0, x1),
+                # Framing has to use the true edges, not the ones that told
+                # this pose apart from the next. See `_reach`.
+                'span': _reach(column, x0, x1),
             })
 
     if expected is not None and len(found) != expected:
@@ -230,18 +264,34 @@ def load_sheet(path, cell, expected=None):
         # Too big on screen means the window was too tight: widen it.
         window = max(cell // 4, int(round(window * (measured / target) ** 0.6)))
 
-    # The torso sets the scale, but the tallest pose sets the floor: a cheer
-    # that reaches higher than the others would have its raised arms cut off at
-    # the top of the cell, which is the one thing worse than a slightly small
-    # character. Whichever is larger wins, so the size follows the artwork
+    # The torso sets the scale, but the furthest-reaching pose sets the floor: a
+    # cheer that reaches higher than the others would have its raised arms cut
+    # off at the top of the cell, which is the one thing worse than a slightly
+    # small character. Whichever is larger wins, so the size follows the artwork
     # rather than a constant, and no sheet can clip whatever its poses do.
     #
+    # Both directions, because they fail differently and a sheet can fail
+    # either. Height is what the two accepted sheets are bound by — the
+    # magnifier held above the head. Width is what the two rejected ones would
+    # be: `scan` needs 580 points across and a torso-sized window gives it 421,
+    # so before this it silently cropped 159 points of arm away rather than
+    # reporting a sheet it could not frame. Silent clipping is the worst of the
+    # three outcomes; shrinking is visible, and `MAX_SILHOUETTE_RATIO` is what
+    # stops a sheet that would shrink too far from being used at all.
+    #
+    # Sideways is measured from the crop's own centre rather than as a plain
+    # bounding box, because the crop centres on the feet: an arm out to one
+    # side needs half the window on that side alone, which is the whole
+    # difference between 1.53x the torso and 1.15x.
+    #
     # The 2% is not slack for its own sake: sizing the window to exactly the
-    # measured reach leaves the topmost pixel on the cell's edge, and the
+    # measured reach leaves the outermost pixel on the cell's edge, and the
     # Lanczos resize to the atlas cell then spreads it over the boundary. Two
     # percent is about four points at this scale — invisible, and enough.
-    reach = max((pose['ground'] - pose['top']) for pose in found) * 1.02
-    window = max(window, int(np.ceil(reach / FEET_FRACTION)))
+    tall = max((pose['ground'] - pose['top']) for pose in found) * 1.02
+    wide = max(max(pose['centre'] - pose['span'][0],
+                   pose['span'][1] - pose['centre']) for pose in found) * 2 * 1.02
+    window = max(window, int(np.ceil(tall / FEET_FRACTION)), int(np.ceil(wide)))
 
     poses = [_crop(keyed, pose, window, cell) for pose in found]
     torso = float(np.median([
