@@ -50,6 +50,20 @@ MIN_COLUMN = 3
 #: Narrower than this and a span is a keying artefact, not a character.
 MIN_POSE_WIDTH = 60
 
+#: How much wider than the torso the whole character is allowed to be before a
+#: sheet is unusable.
+#:
+#: This is the number the first four sheets failed on, and it is the one that
+#: decides whether a square cell can hold the body at full size and the
+#: magnifier at once. The approved poses sit at 1.03-1.06 — the magnifier is
+#: held in close — and the rejected sheets at 1.84-2.02, with the arm at full
+#: reach. Past roughly 1.4 there is no framing that keeps the character the
+#: size he ships at without cutting the magnifier off at the cell edge, and the
+#: magnifier travels so far between poses that optical flow renders two of
+#: them. The gate sits well clear of both groups so it never has to be argued
+#: about.
+MAX_SILHOUETTE_RATIO = 1.4
+
 
 def cutout(path):
     """Key the chroma green, using the escalation sheet's keyer exactly.
@@ -103,12 +117,13 @@ def _torso(alpha, radius):
 
 
 def _anchor(alpha, x0, x1):
-    """Where this pose stands: the centre of its feet, and the ground line."""
+    """Where this pose stands: the centre of its feet, the ground line, and the
+    highest pixel it reaches."""
     window = alpha[:, x0:x1]
     rows, _ = np.nonzero(window > 8)
     ground = rows.max() + 1
     _, feet_x = np.nonzero(window[ground - 40:ground, :] > 8)
-    return x0 + feet_x.mean(), ground
+    return x0 + feet_x.mean(), ground, rows.min()
 
 
 def _crop(keyed, pose, window, cell):
@@ -121,6 +136,30 @@ def _crop(keyed, pose, window, cell):
     top = int(round(pose['ground'] + window * (1 - FEET_FRACTION) - window))
     cropped = keyed.crop((left, top, left + window, top + window))
     return cropped.resize((cell, cell), Image.Resampling.LANCZOS)
+
+
+def sheet_ratio(path):
+    """How much wider than his torso the character is on this sheet.
+
+    Returned rather than asserted so the caller can fall back to older artwork
+    instead of failing the build: sheets land one at a time, and a state whose
+    replacement is not ready yet should keep the atlas it already has.
+    """
+    keyed = cutout(path)
+    alpha = np.asarray(keyed)[:, :, 3]
+    band_height = alpha.shape[0] // 2
+    ratios = []
+    for band in range(2):
+        strip = alpha[band * band_height:(band + 1) * band_height, :]
+        occupied = (strip > 8).sum(axis=0) >= MIN_COLUMN
+        for x0, x1 in _spans(occupied):
+            pose = strip[:, x0:x1]
+            rows, cols = np.nonzero(pose > 8)
+            silhouette = max(cols.max() - cols.min() + 1, rows.max() - rows.min() + 1)
+            torso = _torso(pose, 45)
+            if torso:
+                ratios.append(silhouette / torso)
+    return float(np.median(ratios)) if ratios else float('inf')
 
 
 def load_sheet(path, cell, expected=None):
@@ -141,10 +180,11 @@ def load_sheet(path, cell, expected=None):
         strip = alpha[top:bottom, :]
         occupied = (strip > 8).sum(axis=0) >= MIN_COLUMN
         for x0, x1 in _spans(occupied):
-            centre, ground = _anchor(strip, x0, x1)
+            centre, ground, highest = _anchor(strip, x0, x1)
             found.append({
                 'centre': centre,
                 'ground': top + ground,
+                'top': top + highest,
                 'bbox': x1 - x0,
                 'span': (x0, x1),
             })
@@ -173,6 +213,19 @@ def load_sheet(path, cell, expected=None):
             for pose in found]))
         # Too big on screen means the window was too tight: widen it.
         window = max(cell // 4, int(round(window * (measured / target) ** 0.6)))
+
+    # The torso sets the scale, but the tallest pose sets the floor: a cheer
+    # that reaches higher than the others would have its raised arms cut off at
+    # the top of the cell, which is the one thing worse than a slightly small
+    # character. Whichever is larger wins, so the size follows the artwork
+    # rather than a constant, and no sheet can clip whatever its poses do.
+    #
+    # The 2% is not slack for its own sake: sizing the window to exactly the
+    # measured reach leaves the topmost pixel on the cell's edge, and the
+    # Lanczos resize to the atlas cell then spreads it over the boundary. Two
+    # percent is about four points at this scale — invisible, and enough.
+    reach = max((pose['ground'] - pose['top']) for pose in found) * 1.02
+    window = max(window, int(np.ceil(reach / FEET_FRACTION)))
 
     poses = [_crop(keyed, pose, window, cell) for pose in found]
     torso = float(np.median([

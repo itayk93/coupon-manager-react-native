@@ -7,6 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image
+from mascot_keys import MAX_SILHOUETTE_RATIO, load_sheet, sheet_ratio
 from mascot_motion import breathe, preview, validate_budget
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +16,25 @@ CELL = 256
 COUNT = 36
 GRID = 6
 NAMES = ['scan', 'greeting', 'success', 'concern']
+#: How many poses a replacement sheet carries, and the cycle each one enables.
+#: Asserted rather than discovered, so a sheet that silently loses a pose to a
+#: keying failure stops the build instead of quietly shortening a cycle.
+SHEETS = {
+    'scan': (4, [0, 1, 2, 3, 0], [8, 7, 6, 15]),
+    'greeting': (3, [0, 1, 2, 0], [12, 10, 14]),
+    'success': (4, [0, 1, 2, 3, 0], [7, 8, 8, 13]),
+    'concern': (4, [0, 1, 2, 3, 0], [7, 7, 8, 14]),
+}
+#: What each state falls back to while its replacement sheet is missing or
+#: fails the framing gate: the four approved 320px rows, and the cycles their
+#: pose counts allow. `success` is the reason any of this exists — two poses
+#: cannot cycle, so it bounces, and only new artwork fixes it.
+LEGACY = {
+    'scan': ([0, 1, 2, 3, 0], [8, 7, 6, 15]),
+    'greeting': ([1, 2, 3, 1], [13, 11, 12]),
+    'success': ([0, 1, 0], [12, 24]),
+    'concern': ([0, 1, 2, 0], [9, 11, 16]),
+}
 source = Image.open(OUT / 'mascot-atlas.png').convert('RGBA')
 yy, xx = np.mgrid[:CELL, :CELL].astype(np.float32)
 
@@ -47,21 +67,25 @@ def image(data):
 
 all_frames = []
 for row, name in enumerate(NAMES):
-    keys = [source.crop((col*320, row*320, (col+1)*320, (row+1)*320)).resize((CELL, CELL), Image.Resampling.LANCZOS) for col in range(4)]
+    # Replacement sheets land one state at a time, so each state picks its own
+    # source: the new artwork once it can actually be framed, the approved
+    # 320px row until then. Mixing the two is free — the player sizes every
+    # atlas in points from `GRID` and never reads a file's pixel dimensions.
+    sheet = OUT / f'source/{name}-keyframes.png'
+    ratio = sheet_ratio(sheet) if sheet.exists() else float('inf')
+    if ratio <= MAX_SILHOUETTE_RATIO:
+        poses, sequence, budgets = SHEETS[name]
+        keys, framing = load_sheet(sheet, CELL, poses)
+        print(f'{name}: {poses} new poses, silhouette {ratio:.2f}x torso, '
+              f'torso {framing["torso"]:.0f}px', flush=True)
+    else:
+        keys = [source.crop((col*320, row*320, (col+1)*320, (row+1)*320))
+                .resize((CELL, CELL), Image.Resampling.LANCZOS) for col in range(4)]
+        sequence, budgets = LEGACY[name]
+        why = 'no sheet yet' if ratio == float('inf') else f'silhouette {ratio:.2f}x torso'
+        print(f'{name}: approved 320px keys ({why})', flush=True)
     # Topology changes (closed -> open eyes or mouth) cannot be reliably inferred
-    # from only two pictures. Use consistent expressions instead of ghost faces.
-    sequence = {
-        'scan': [0, 1, 2, 3, 0],
-        'greeting': [1, 2, 3, 1],
-        'success': [0, 1, 0],
-        'concern': [0, 1, 2, 0],
-    }[name]
-    # The fourth concern key changes grip and expression; its return cannot
-    # be inferred without inventing an occluded hand. Use the three stable keys.
-    # Success temporarily has only two compatible poses; its 12/24 timing is
-    # deliberately asymmetric until the separate artwork upgrade supplies four.
-    budgets = {'scan': [8, 7, 6, 15], 'greeting': [13, 11, 12],
-               'success': [12, 24], 'concern': [9, 11, 16]}[name]
+    # from only two pictures, so every sequence holds one expression throughout.
     validate_budget(sequence, budgets, COUNT)
     frames = []
     for start, end, steps in zip(sequence, sequence[1:], budgets):
