@@ -82,7 +82,15 @@ for row, name in enumerate(NAMES):
         keys = [source.crop((col*320, row*320, (col+1)*320, (row+1)*320))
                 .resize((CELL, CELL), Image.Resampling.LANCZOS) for col in range(4)]
         sequence, budgets = LEGACY[name]
-        why = 'no sheet yet' if ratio == float('inf') else f'silhouette {ratio:.2f}x torso'
+        if ratio != float('inf'):
+            why = f'silhouette {ratio:.2f}x torso'
+        elif not sheet.exists():
+            why = 'no sheet yet'
+        else:
+            # The file is there and unreadable, which is worth saying out loud:
+            # it looks like a landed sheet in `git log` and behaves like a
+            # missing one here.
+            why = f'sheet will not decode ({sheet.stat().st_size} bytes)'
         print(f'{name}: approved 320px keys ({why})', flush=True)
     # Topology changes (closed -> open eyes or mouth) cannot be reliably inferred
     # from only two pictures, so every sequence holds one expression throughout.

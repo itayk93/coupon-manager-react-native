@@ -34,8 +34,21 @@ gate; `sheet_ratio()` measures a sheet against it without failing the build.
 | approved 320px art | 1.03-1.06 | the two fallbacks |
 | `success` (corrected) | 1.14 | yes |
 | `concern` (corrected) | 1.15 | yes |
-| `scan` | 1.53 | no |
-| `greeting` | 1.58 | no |
+| `scan` (corrected) | — | no: the file will not decode |
+| `greeting` (corrected) | — | no: the file will not decode |
+
+Corrected `scan` and `greeting` sheets were committed and are unusable for a
+reason that has nothing to do with the artwork: both arrived truncated at
+exactly 786,444 bytes — 768 KiB plus twelve — with no IEND and a deflate stream
+that breaks mid-chunk. About 30% of each decodes, and what decodes is right:
+the magnifier is held in close, the head fills the cell, the background is
+clean chroma green. The remaining bytes are not a continuation of the stream at
+any offset, so they cannot be recovered. These two need re-uploading, not
+redrawing.
+
+`sheet_ratio` treats a file that will not decode exactly as it treats a file
+that is not there, so one truncated sheet cannot stop the other six atlases
+from building. The build says which case it hit.
 
 The two rejected sheets fail the same way the first `success` sheet did: the
 arms are extended too far, which both pushes the magnifier out of the cell and

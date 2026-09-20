@@ -190,8 +190,17 @@ def sheet_ratio(path):
     Returned rather than asserted so the caller can fall back to older artwork
     instead of failing the build: sheets land one at a time, and a state whose
     replacement is not ready yet should keep the atlas it already has.
+
+    A file that will not decode gets the same answer as a file that is not
+    there, for the same reason. Two sheets arrived truncated at exactly 768 KiB
+    — good artwork, half a PNG — and a build that dies on them is a build that
+    cannot produce the other six atlases either. Infinity routes this state to
+    its fallback and leaves the rest of the run alone; the caller prints why.
     """
-    keyed = cutout(path)
+    try:
+        keyed = cutout(path)
+    except (OSError, ValueError, SyntaxError):
+        return float('inf')
     alpha = np.asarray(keyed)[:, :, 3]
     band_height = alpha.shape[0] // 2
     ratios = []
