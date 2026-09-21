@@ -35,9 +35,9 @@ const META: Array<[string, string]> = [
 ];
 
 const LINKS: Array<Record<string, string>> = [
-  { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png?v=kuponi-face-1" },
+  { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png?v=kuponi-face-2" },
   { rel: "manifest", href: "/manifest.json" },
-  { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=kuponi-face-1" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=kuponi-face-2" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "stylesheet",

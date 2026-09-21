@@ -9,3 +9,7 @@ Exports cover Expo icons, PWA any/maskable, Apple touch, transparent PNG/ICO fav
 Maskable/adaptive foreground occupies 62% of the canvas to retain the whole face under circular masks. Native installed apps need a new binary; OTA cannot replace launcher assets. PWA icon URLs carry a revision query; existing iOS home-screen shortcuts may require removal and re-addition after deployment. No native device build was performed here.
 
 Native splash, BrandLaunchAnimation and PWA launch background use #e8f2fd. Product screens keep their warm cream theme.
+
+## Upright launcher revision (kuponi-face-2)
+
+The face and opaque masters now use an upright, front-facing head, level eyes and eyebrows, and a centered smile. Generated with the built-in image editor from the existing Kuponi artwork. Prompt: preserve the blue 3D identity while correcting tilt, balancing the rounded-square silhouette and eye geometry, and centering the smile; export the opaque version on pale blue and the matching transparent face. Regenerate platform sizes with the existing icon exporter. Web icon revision queries are bumped to invalidate cached assets.
