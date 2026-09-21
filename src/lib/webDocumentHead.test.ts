@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { injectWebHead, webHead } from "../../scripts/inject-web-head.mjs";
+import { injectBootSplash, injectWebHead, webHead } from "../../scripts/inject-web-head.mjs";
 import head from "./webHead.json";
+import startupImages from "./webHeadStartupImages.json";
 
 /**
  * The web build ships `web.output: "single"`, so Expo serves its own stock
@@ -44,6 +45,7 @@ describe("webHead.json", () => {
   it("names only files the site actually serves", () => {
     const urls = [
       ...head.links.map((link) => link.href),
+      ...startupImages.map((link) => link.href),
       ...(head.meta as Array<{ name?: string; property?: string; content: string }>)
         .filter((tag) => /image/.test(tag.property ?? tag.name ?? ""))
         .map((tag) => tag.content),
@@ -67,6 +69,50 @@ describe("webHead.json", () => {
   });
 });
 
+/** The `(device-width: 430px) ... (-webkit-device-pixel-ratio: 3)` a link carries. */
+function deviceOf(media: string) {
+  const read = (name: string) => Number(new RegExp(`${name}:\\s*(\\d+)`).exec(media)?.[1]);
+  return {
+    width: read("device-width"),
+    height: read("device-height"),
+    scale: read("-webkit-device-pixel-ratio"),
+    orientation: /orientation:\s*(\w+)/.exec(media)?.[1],
+  };
+}
+
+/**
+ * iOS draws no launch screen of its own: it ignores the manifest's
+ * `background_color`, and a device whose size matches none of these links opens
+ * the installed app on a white page and holds it there until the bundle has
+ * booted. `scripts/build-pwa-splash.py` writes both the images and this list.
+ */
+describe("webHeadStartupImages.json", () => {
+  it("covers both orientations of every device size", () => {
+    const byDevice = new Map<string, Set<string | undefined>>();
+    for (const link of startupImages) {
+      const { width, height, scale, orientation } = deviceOf(link.media);
+      const key = `${width}x${height}@${scale}`;
+      byDevice.set(key, (byDevice.get(key) ?? new Set()).add(orientation));
+    }
+    expect(byDevice.size).toBeGreaterThan(15);
+    expect([...byDevice].filter(([, seen]) => seen.size !== 2)).toEqual([]);
+  });
+
+  it("gives each device an image at exactly its own pixel size", () => {
+    // iOS matches on the media query but draws the file: an image that is not
+    // the size the query claims is stretched across the screen, which is the
+    // launch screen looking wrong on the one device nobody tested on.
+    const wrong = startupImages.filter((link) => {
+      const { width, height, scale, orientation } = deviceOf(link.media);
+      const bytes = readFileSync(publicFile(link.href)!);
+      const expected =
+        orientation === "portrait" ? [width * scale, height * scale] : [height * scale, width * scale];
+      return bytes.readUInt32BE(16) !== expected[0] || bytes.readUInt32BE(20) !== expected[1];
+    });
+    expect(wrong.map((link) => link.href)).toEqual([]);
+  });
+});
+
 describe("injectWebHead", () => {
   const injected = injectWebHead(TEMPLATE);
 
@@ -76,6 +122,13 @@ describe("injectWebHead", () => {
     expect(injected).toContain('rel="manifest"');
     expect(injected).toContain('property="og:image"');
     expect(injected).toContain('name="twitter:card"');
+  });
+
+  it("gives the installed app a launch screen on every iPhone and iPad", () => {
+    for (const link of startupImages) {
+      expect(injected).toContain(`media="${link.media}"`);
+      expect(injected).toContain(`href="${link.href}"`);
+    }
   });
 
   it("carries every tag the runtime pass would add", () => {
@@ -94,5 +147,36 @@ describe("injectWebHead", () => {
 
   it("changes nothing on a second run", () => {
     expect(injectWebHead(injected)).toBe(injected);
+  });
+});
+
+/**
+ * The launch screen ends where the bundle begins. iOS shows its launch image
+ * until the page's first paint, and Expo's page is an empty white root until
+ * React mounts — so the branded launch would end in a white screen, which is
+ * most of the wait on a cold start. `hideWebBootSplash` takes this down.
+ */
+describe("injectBootSplash", () => {
+  const injected = injectBootSplash(TEMPLATE);
+
+  it("paints the same wordmark on the same tint the launch image ends on", () => {
+    expect(injected).toContain('id="boot-splash"');
+    expect(injected).toContain("#e8f2fd");
+    expect(existsSync(publicFile("/splash/wordmark.png")!)).toBe(true);
+    expect(injected).toContain('src="/splash/wordmark.png"');
+  });
+
+  it("puts the style in the head and the screen in the body", () => {
+    expect(injected.indexOf('id="boot-splash-style"')).toBeLessThan(injected.indexOf("</head>"));
+    expect(injected.indexOf('id="boot-splash"')).toBeGreaterThan(injected.indexOf("<body"));
+    expect(injected.indexOf('id="boot-splash"')).toBeLessThan(injected.indexOf("</body>"));
+  });
+
+  it("cannot leave the screen covered if the bundle never arrives", () => {
+    expect(injected).toContain("boot-splash--done");
+  });
+
+  it("changes nothing on a second run", () => {
+    expect(injectBootSplash(injected)).toBe(injected);
   });
 });

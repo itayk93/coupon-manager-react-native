@@ -7,6 +7,7 @@
   "scripts": {
     "postinstall": "patch-package",
     "logo-colors": "python3 scripts/generate-logo-colors.py",
+    "pwa-splash": "python3 scripts/build-pwa-splash.py",
     "start": "expo start --dev-client",
     "start:clear": "expo start --dev-client -c",
     "start:go": "expo start --go",

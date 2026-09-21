@@ -42,6 +42,7 @@ import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { applyWebDocumentHead } from "@/lib/webDocumentHead";
+import { hideWebBootSplash } from "@/lib/webBootSplash";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
@@ -195,6 +196,14 @@ function RootLayoutNav() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsSettled, launchVisible]);
+
+  // Web has no native splash to hide and no launch animation to play: its
+  // launch screen is in the document, painted before this bundle existed. It
+  // stays up until the tree on screen is the one the session calls for, so the
+  // wait reads as one screen rather than a logo, a flash and a spinner.
+  useEffect(() => {
+    if (Platform.OS === "web" && isReady) hideWebBootSplash();
+  }, [isReady]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 

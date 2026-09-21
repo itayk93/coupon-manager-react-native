@@ -1,4 +1,5 @@
 import head from "./webHead.json";
+import startupImages from "./webHeadStartupImages.json";
 
 /** Open Graph keys on `property`, everything else on `name`. */
 type MetaTag = { name?: string; property?: string; content: string };
@@ -37,6 +38,11 @@ const META: MetaTag[] = head.meta;
  *   shortcut in a browser tab rather than standalone.
  * - `apple-touch-icon` is the icon iOS puts on the home screen and in the share
  *   sheet; the Open Graph pair is the card every messenger draws.
+ * - `apple-touch-startup-image` is the launch screen of the installed app, one
+ *   per device size, and the only launch screen iOS will draw: it ignores the
+ *   manifest's `background_color`, so a device that matches none of them opens
+ *   a white page and sits on it until the bundle has booted. The images are
+ *   the native splash redrawn, from `scripts/build-pwa-splash.py`.
  * - Heebo, because the web styles ask for the plain family name while the
  *   native builds register `Heebo_400Regular` through expo-font.
  */
@@ -66,7 +72,7 @@ export function applyWebDocumentHead(doc: Document = document): void {
     doc.head.appendChild(meta);
   }
 
-  for (const attributes of head.links) {
+  for (const attributes of [...head.links, ...startupImages]) {
     // `rel` alone is not the identity: two links can share it. Match on the
     // pair so a second call is a no-op rather than a duplicate.
     if (doc.querySelector(`link[rel="${attributes.rel}"][href="${attributes.href}"]`)) continue;
