@@ -12,6 +12,22 @@ face = Image.open(ROOT/'assets/branding/kuponi-face/face-transparent.png').conve
 icon = Image.open(ROOT/'assets/branding/kuponi-face/icon-source.png').convert('RGB')
 assert face.getextrema()[3][0] == 0
 
+# Keep the diagonal artwork; normalize only its exported footprint. Source
+# canvas margins are not balanced, so resizing the full source preserves drift.
+# Blue silhouette bounds exclude the pale background and preserve facial detail.
+silhouette = Image.new('L', icon.size)
+silhouette.putdata([
+    255 if blue - red > 60 and blue - green > 15 else 0
+    for red, green, blue in icon.getdata()
+])
+bounds = silhouette.getbbox()
+if bounds is None:
+    raise ValueError('Icon source must contain the blue Kuponi silhouette')
+# A square footprint gives all four sides the same 64px (6.25%) clearance.
+framed_icon = Image.new('RGB', (1024, 1024), BG)
+framed_icon.paste(icon.crop(bounds).resize((896, 896), Image.Resampling.LANCZOS), (64, 64))
+icon = framed_icon
+
 def export(path, size, kind='icon'):
     if isinstance(size, int): size = (size, size)
     if kind in ('adaptive', 'maskable'):

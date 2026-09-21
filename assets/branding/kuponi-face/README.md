@@ -10,6 +10,6 @@ Maskable/adaptive foreground occupies 62% of the canvas to retain the whole face
 
 Native splash, BrandLaunchAnimation and PWA launch background use #e8f2fd. Product screens keep their warm cream theme.
 
-## Upright launcher revision (kuponi-face-2)
+## Balanced padding revision (kuponi-face-3)
 
-The face and opaque masters now use an upright, front-facing head, level eyes and eyebrows, and a centered smile. Generated with the built-in image editor from the existing Kuponi artwork. Prompt: preserve the blue 3D identity while correcting tilt, balancing the rounded-square silhouette and eye geometry, and centering the smile; export the opaque version on pale blue and the matching transparent face. Regenerate platform sizes with the existing icon exporter. Web icon revision queries are bumped to invalidate cached assets.
+The original diagonal face is intentional. The transparent face master is restored to the original artwork. The opaque icon was edited with the built-in image editor with the prompt: preserve the original tilted head and expression, change only outer spacing on pale blue. The exporter normalizes its blue silhouette to an 896px square footprint on a 1024px canvas with 64px clearance on each side, retaining the diagonal orientation. Web icon URLs use revision 3.
