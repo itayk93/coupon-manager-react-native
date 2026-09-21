@@ -39,8 +39,10 @@ self.addEventListener("push", (event) => {
     // other, and the text itself carries bidi marks for the rest.
     dir: data.dir || "rtl",
     lang: data.lang || "he",
-    icon: data.icon || "/pwa-192x192.png",
-    badge: data.badge || "/pwa-192x192.png",
+    icon: data.icon || "/pwa-192x192.png?v=kuponi-face-3",
+    // Android masks the badge down to a monochrome glyph in the status bar, so
+    // it gets the silhouette; the full-colour face would come out a white square.
+    badge: data.badge || "/notification-badge.png",
     tag: data.tag || "coupon-master-update",
     renotify: Boolean(data.renotify),
     requireInteraction: Boolean(data.requireInteraction),

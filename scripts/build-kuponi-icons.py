@@ -5,7 +5,7 @@ Artwork edits belong in the masters; this script only sizes/pads platform export
 from pathlib import Path
 import base64
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageChops, ImageFilter
 ROOT = Path(__file__).resolve().parents[1]
 BG = '#e8f2fd'
 face = Image.open(ROOT/'assets/branding/kuponi-face/face-transparent.png').convert('RGBA')
@@ -28,6 +28,29 @@ framed_icon = Image.new('RGB', (1024, 1024), BG)
 framed_icon.paste(icon.crop(bounds).resize((896, 896), Image.Resampling.LANCZOS), (64, 64))
 icon = framed_icon
 
+# Android draws a status-bar icon from its alpha channel alone, so the colour
+# face arrives as a featureless white blob. The notification mark carries the
+# face as transparency instead: body and eye whites fuse into one white shape,
+# and the brows, pupils and smile are the holes that make it read as a face.
+def notification_face():
+    art = face.crop(face.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox())
+    body = art.getchannel('A')
+    # convert('L') is 601 luma; the features are the only near-black ink here.
+    ink = art.convert('L').point(lambda v: round(255 * (1 - min(1, max(0, (v - 40) / 32)))))
+    ink = ImageChops.multiply(ink, body.point(lambda v: 255 if v > 8 else 0))
+    # Opened at a fixed working width so the kernels stay proportional: erosion
+    # drops the thin shading ring around each eye, which would otherwise
+    # downscale into grey noise, and the wider dilation thickens what survives
+    # so the brows and smile still read at 24px.
+    scale = 384 / max(body.size)
+    work = ink.resize((round(art.width * scale), round(art.height * scale)), Image.Resampling.LANCZOS)
+    work = work.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(7))
+    out = Image.new('RGBA', art.size, (255, 255, 255, 0))
+    out.putalpha(ImageChops.subtract(body, work.resize(art.size, Image.Resampling.LANCZOS)))
+    return out
+
+notification = notification_face()
+
 def export(path, size, kind='icon'):
     if isinstance(size, int): size = (size, size)
     if kind in ('adaptive', 'maskable'):
@@ -37,6 +60,15 @@ def export(path, size, kind='icon'):
         fg = face.resize((n,n), Image.Resampling.LANCZOS)
         out.alpha_composite(fg, ((size[0]-n)//2,(size[1]-n)//2))
         if kind == 'maskable': out = out.convert('RGB')
+    elif kind == 'notification':
+        # 86% of the canvas: the tilted face needs clearance on every side or
+        # Android clips it against the status-bar edge.
+        out = Image.new('RGBA', size, (255, 255, 255, 0))
+        n = min(size) * .86 / max(notification.size)
+        fg = notification.resize(
+            (round(notification.width * n), round(notification.height * n)), Image.Resampling.LANCZOS
+        )
+        out.alpha_composite(fg, ((size[0] - fg.width) // 2, (size[1] - fg.height) // 2))
     else:
         out = (face if kind == 'transparent' else icon).resize(size, Image.Resampling.LANCZOS)
     path = ROOT/path
@@ -60,6 +92,9 @@ for n in [16,32]: export(f'public/favicon-{n}x{n}.png',n,'transparent')
 export('public/apple-touch-icon.png',180)
 for n in [192,512]: export(f'public/pwa-{n}x{n}.png',n)
 export('public/pwa-maskable-512x512.png',512,'maskable')
+# Small icons that the OS masks: Android's status bar and the Web Push badge.
+export('assets/notification-icon.png',512,'notification')
+export('public/notification-badge.png',96,'notification')
 face.resize((64,64),Image.Resampling.LANCZOS).save(ROOT/'public/favicon.ico',sizes=[(16,16),(32,32),(48,48),(64,64)])
 # Checked-in native projects must agree with Expo's next prebuild.
 for p in list((ROOT/'ios').glob('**/AppIcon.appiconset/*.png')) + list((ROOT/'targets').glob('**/AppIcon.appiconset/*.png')):
@@ -69,6 +104,10 @@ for p in (ROOT/'android/app/src/main/res').glob('mipmap-*/*.webp'):
     if not p.name.startswith('ic_launcher'): continue
     with Image.open(p) as old: size=old.size
     export(p,size,'adaptive' if 'foreground' in p.name else 'icon')
+# expo-notifications resizes assets/notification-icon.png into these at
+# prebuild (24dp baseline); the checked-in project has to carry them meanwhile.
+for folder, n in [('mdpi',24),('hdpi',36),('xhdpi',48),('xxhdpi',72),('xxxhdpi',96)]:
+    export(f'android/app/src/main/res/drawable-{folder}/notification_icon.png',n,'notification')
 for p in list((ROOT/'ios').glob('**/SplashScreenLogo.imageset/*.png')) + list((ROOT/'android/app/src/main/res').glob('drawable-*/splashscreen_logo.png')):
     with Image.open(p) as old: size=old.size
     # Preserve canvas dimensions and aspect ratio of the face.

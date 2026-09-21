@@ -9,8 +9,10 @@ const DEFAULT_PAYLOAD = {
   body: 'יש עדכון חדש בארנק שלך.',
   dir: 'rtl',
   url: '/notifications',
-  icon: '/pwa-192x192.png',
-  badge: '/pwa-192x192.png',
+  icon: '/pwa-192x192.png?v=kuponi-face-3',
+  // The badge is masked to a monochrome glyph by the browser; the silhouette
+  // keeps the Kuponi face readable where the full-colour icon flattens.
+  badge: '/notification-badge.png',
   tag: 'coupon-master-update',
   requireInteraction: false,
   renotify: false,
