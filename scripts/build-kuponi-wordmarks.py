@@ -51,6 +51,16 @@ for name in ('color-horizontal', 'color-stacked', 'white-horizontal', 'white-sta
     save(marks[name], BRAND / f'{name}.png')
 
 save(marks['color-horizontal'], 'public/logo.png')
+
+# Link previews. iOS, WhatsApp, Slack and search engines fetch the page without
+# running its JS, so whatever sits here is the only branding a shared link can
+# show. Built from the approved wordmark rather than drawn, so it cannot drift
+# from the identity the way the retired English artwork did.
+preview = Image.new('RGBA', (1200, 630), '#e8f2fd')
+preview.alpha_composite(fit(marks['color-horizontal'], (800, 160)), (200, 235))
+preview = preview.convert('RGB')
+save(preview, 'public/og-image.png')
+save(preview, 'public/social-preview.png')
 save(marks['color-horizontal'], 'public/newsletter-logo.png')
 asset = ROOT / 'targets/widget/Assets.xcassets/KuponiWordmarkWhite.imageset'
 images = []

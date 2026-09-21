@@ -1,0 +1,53 @@
+{
+  "origin": "https://coupons.itaykarkason.com",
+  "lang": "he",
+  "title": "קופון מאסטר",
+  "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover",
+  "meta": [
+    { "name": "theme-color", "content": "#1f6fd1" },
+    { "name": "apple-mobile-web-app-capable", "content": "yes" },
+    { "name": "apple-mobile-web-app-status-bar-style", "content": "default" },
+    { "name": "apple-mobile-web-app-title", "content": "קופון מאסטר" },
+    { "name": "mobile-web-app-capable", "content": "yes" },
+    {
+      "name": "description",
+      "content": "מערכת חכמה לניהול, שמירה ושיתוף קופונים ושוברי מתנה דיגיטליים"
+    },
+    { "property": "og:type", "content": "website" },
+    { "property": "og:site_name", "content": "קופון מאסטר" },
+    { "property": "og:title", "content": "קופון מאסטר" },
+    {
+      "property": "og:description",
+      "content": "מערכת חכמה לניהול, שמירה ושיתוף קופונים ושוברי מתנה דיגיטליים"
+    },
+    { "property": "og:locale", "content": "he_IL" },
+    { "property": "og:url", "content": "https://coupons.itaykarkason.com/" },
+    {
+      "property": "og:image",
+      "content": "https://coupons.itaykarkason.com/og-image.png?v=kuponi-face-3"
+    },
+    { "property": "og:image:width", "content": "1200" },
+    { "property": "og:image:height", "content": "630" },
+    { "property": "og:image:alt", "content": "קופון מאסטר" },
+    { "name": "twitter:card", "content": "summary_large_image" },
+    { "name": "twitter:title", "content": "קופון מאסטר" },
+    {
+      "name": "twitter:description",
+      "content": "מערכת חכמה לניהול, שמירה ושיתוף קופונים ושוברי מתנה דיגיטליים"
+    },
+    {
+      "name": "twitter:image",
+      "content": "https://coupons.itaykarkason.com/og-image.png?v=kuponi-face-3"
+    }
+  ],
+  "links": [
+    { "rel": "icon", "type": "image/png", "sizes": "32x32", "href": "/favicon-32x32.png?v=kuponi-face-3" },
+    { "rel": "apple-touch-icon", "href": "/apple-touch-icon.png?v=kuponi-face-3" },
+    { "rel": "manifest", "href": "/manifest.json" },
+    { "rel": "preconnect", "href": "https://fonts.googleapis.com" },
+    {
+      "rel": "stylesheet",
+      "href": "https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap"
+    }
+  ]
+}

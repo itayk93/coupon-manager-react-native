@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx expo export --platform web --output-dir dist",
+  "buildCommand": "npx expo export --platform web --output-dir dist && node scripts/inject-web-head.mjs dist/index.html",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "rewrites": [
