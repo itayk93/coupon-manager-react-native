@@ -1,9 +1,14 @@
 # באדג'ים לאבני הדרך — בריף הפקה
 
 שנים־עשר באדג'ים, אחד לכל שלב בשני הסולמות של `src/lib/celebrationTrigger.ts`
-(`COUNT_STEPS`, `SAVINGS_STEPS`). העמוד עובד היום בלעדיהם — כל אבן נפתחת על
-`C2-coupon-milestone` או `C3-lifetime-savings` לפי הסולם — והם מחליפים את
-ברירת המחדל הזאת באמנות משלה לכל שלב.
+(`COUNT_STEPS`, `SAVINGS_STEPS`). **כולם הופקו והם בפנים.** נפילה חזרה לסצנת
+הסולם (`C2-coupon-milestone` / `C3-lifetime-savings`) נשארה בקוד עבור שלב
+שיתווסף לסולם בעתיד ועוד אין לו אמנות.
+
+פתוח: `savings-10000` הוא עדיין חזיר גנרי. החלופה המאושרת היא קופסת חיסכון
+בצללית של הדמות — בלי פנים, בלי עיניים, בלי גפיים — שהיא חפץ בעולם שלו ולא
+וריאציה שלו, מה ש-`docs/mascot/CHARACTER.md` §3 אוסר. שורת הנושא לה נמצאת
+בפרומפטים למטה.
 
 ## אלה אובייקטים, לא הדמות
 
@@ -77,7 +82,7 @@ never corporate, never photoreal, never flat vector.
  6. coupons-250    — a monumental tower of blue coupon tickets, a gold laurel wreath resting around its foot
  7. savings-1000   — three thick gold coins leaning against each other
  8. savings-5000   — a neat pile of gold coins
- 9. savings-10000  — a rounded blue piggy bank beside a pile of gold coins, one coin dropping into its slot
+ 9. savings-10000  — a rounded-square cobalt-blue money box in the mascot's own silhouette, no face, no eyes, no limbs, furniture and not a creature, a warm gold coin slot across the top and a thin gold trim line, one gold coin dropping into the slot, a small pile of gold coins beside it
 10. savings-25000  — a rounded treasure chest half full of gold coins, lid open, blue body with gold fittings
 11. savings-50000  — a treasure chest overflowing with gold coins, a gold key resting against it
 12. savings-100000 — a rounded blue vault door standing open, warm gold light pouring out, coins spilling across the threshold

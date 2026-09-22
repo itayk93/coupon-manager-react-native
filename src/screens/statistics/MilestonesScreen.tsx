@@ -56,9 +56,10 @@ const SCENES = {
 /**
  * A badge of its own per step, as they arrive.
  *
- * Keyed `kind:value`, the same token `celebrationMemory` stores. A step with
- * no badge yet falls back to its ladder's scene, so they can land one at a
- * time — see `assets/mascot/MILESTONE_BADGES_BRIEF.md`.
+ * Keyed `kind:value`, the same token `celebrationMemory` stores. All twelve
+ * steps are covered; the fallback below stays because a step added to either
+ * ladder would otherwise have nothing to draw — see
+ * `assets/mascot/MILESTONE_BADGES_BRIEF.md`.
  */
 const STEP_BADGE: Record<string, number | undefined> = {
   "milestone:5": require("../../../assets/mascot/milestones/coupons-5.webp"),
@@ -72,6 +73,7 @@ const STEP_BADGE: Record<string, number | undefined> = {
   "savings:10000": require("../../../assets/mascot/milestones/savings-10000.webp"),
   "savings:25000": require("../../../assets/mascot/milestones/savings-25000.webp"),
   "savings:50000": require("../../../assets/mascot/milestones/savings-50000.webp"),
+  "savings:100000": require("../../../assets/mascot/milestones/savings-100000.webp"),
 };
 
 /** The art each ladder celebrates with, for a step with no badge of its own. */
