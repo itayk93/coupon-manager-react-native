@@ -43,7 +43,7 @@ import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { applyWebDocumentHead } from "@/lib/webDocumentHead";
-import { hideWebBootSplash } from "@/lib/webBootSplash";
+import { hideWebBootSplash, paintWebBackground } from "@/lib/webBootSplash";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { rememberPendingRoute, takePendingRoute } from "@/lib/pendingRoute";
 import { useWidgetSync } from "@/hooks/useWidgetSync";
@@ -203,8 +203,12 @@ function RootLayoutNav() {
   // stays up until the tree on screen is the one the session calls for, so the
   // wait reads as one screen rather than a logo, a flash and a spinner.
   useEffect(() => {
-    if (Platform.OS === "web" && isReady) hideWebBootSplash();
-  }, [isReady]);
+    if (Platform.OS !== "web" || !isReady) return;
+    hideWebBootSplash();
+    // The document was painted the launch screen's tint; from here the app's
+    // own surface owns it, in whichever theme is running.
+    paintWebBackground(theme.background);
+  }, [isReady, theme.background]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 

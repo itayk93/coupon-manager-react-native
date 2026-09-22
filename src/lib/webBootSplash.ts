@@ -31,3 +31,18 @@ export function hideWebBootSplash(doc?: Document): void {
   // the node in the tree for as long as the app stays out of sight.
   setTimeout(remove, 600);
 }
+
+/**
+ * The page's own background, once the launch screen is out of the way.
+ *
+ * It starts as the brand tint, which is what the launch is drawn on, and the
+ * app's surface is a warm neutral — so the tint would otherwise stay behind
+ * the app for the rest of the session, showing through wherever the app does
+ * not paint. Called with the live theme, so dark mode gets its own.
+ */
+export function paintWebBackground(color: string, doc?: Document): void {
+  const target = doc ?? (typeof document === "undefined" ? null : document);
+  if (!target) return;
+  target.documentElement.style.backgroundColor = color;
+  if (target.body) target.body.style.backgroundColor = color;
+}
