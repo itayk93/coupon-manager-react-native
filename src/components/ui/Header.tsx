@@ -1,10 +1,26 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { ChevronRight, Bell } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
+
+/**
+ * Which insets this bar pays, and why it is not all of them.
+ *
+ * It used to be react-native-web's `SafeAreaView`, which pads all four edges
+ * from `env(safe-area-inset-*)` and, unlike UIKit, does not care where the
+ * view actually sits. At the top of the screen that meant the bar carried the
+ * home indicator's 34px as a white band under its own rule, on every screen of
+ * the installed web app.
+ *
+ * The top inset is paid exactly once, and `app/_layout.tsx` is the other half
+ * of this: it pays it everywhere except native iOS, so that is the one place
+ * left for the bar to pay it.
+ */
+const SAFE_EDGES: Edge[] = Platform.OS === "ios" ? ["top"] : [];
 
 type HeaderProps = {
   title: string;
@@ -33,7 +49,7 @@ export function Header({
   const contentStyle = useContentStyle("grid");
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.card }]}>
+    <SafeAreaView edges={SAFE_EDGES} style={[styles.safeArea, { backgroundColor: theme.card }]}>
       {/* The bar and its rule run edge to edge; what is on it lines up
           with the content column below. */}
       <View
