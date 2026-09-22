@@ -63,6 +63,12 @@ const SCENES = {
 const STEP_BADGE: Record<string, number | undefined> = {
   "milestone:5": require("../../../assets/mascot/milestones/coupons-5.webp"),
   "milestone:10": require("../../../assets/mascot/milestones/coupons-10.webp"),
+  "milestone:25": require("../../../assets/mascot/milestones/coupons-25.webp"),
+  "milestone:50": require("../../../assets/mascot/milestones/coupons-50.webp"),
+  "milestone:100": require("../../../assets/mascot/milestones/coupons-100.webp"),
+  "milestone:250": require("../../../assets/mascot/milestones/coupons-250.webp"),
+  "savings:1000": require("../../../assets/mascot/milestones/savings-1000.webp"),
+  "savings:5000": require("../../../assets/mascot/milestones/savings-5000.webp"),
 };
 
 /** The art each ladder celebrates with, for a step with no badge of its own. */
