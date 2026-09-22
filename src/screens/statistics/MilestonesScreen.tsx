@@ -53,7 +53,18 @@ const SCENES = {
   monthly: require("../../../assets/mascot/celebration/app/C4-monthly-recap.webp"),
 } as const;
 
-/** The art each ladder celebrates with, for the stone that opens. */
+/**
+ * A badge of its own per step, as they arrive.
+ *
+ * Keyed `kind:value`, the same token `celebrationMemory` stores. A step with
+ * no badge yet falls back to its ladder's scene, so they can land one at a
+ * time — see `assets/mascot/MILESTONE_BADGES_BRIEF.md`.
+ */
+const STEP_BADGE: Record<string, number | undefined> = {
+  "milestone:5": require("../../../assets/mascot/milestones/coupons-5.webp"),
+};
+
+/** The art each ladder celebrates with, for a step with no badge of its own. */
 const LADDER_SCENE: Record<Ladder["kind"], number> = {
   milestone: require("../../../assets/mascot/celebration/app/C2-coupon-milestone.webp"),
   savings: require("../../../assets/mascot/celebration/app/C3-lifetime-savings.webp"),
@@ -427,6 +438,7 @@ function StoneSheet({
   if (!current) return <Modal visible={false} onClose={onClose}>{null}</Modal>;
 
   const { rung, step } = current;
+  const badge = STEP_BADGE[`${rung.kind}:${step.value}`];
   const gap = Math.max(0, step.value - rung.value);
   const title = `${stepText(rung.kind, step.value)} ${LADDER_TITLE[rung.kind]}`;
   const body = step.reached
@@ -440,12 +452,25 @@ function StoneSheet({
   return (
     <Modal visible={Boolean(stone)} onClose={onClose} title={title}>
       <View style={styles.sheet}>
-        <Image
-          source={LADDER_SCENE[rung.kind]}
-          style={[styles.sheetScene, !step.reached && styles.sheetSceneLocked]}
-          accessible={false}
-          resizeMode="cover"
-        />
+        {/* A badge is an object on nothing, so it is given a surface to stand
+            on; a scene is already a picture and fills the frame itself. */}
+        {badge ? (
+          <View style={[styles.sheetStage, { backgroundColor: theme.primaryTint }]}>
+            <Image
+              source={badge}
+              style={[styles.sheetBadge, !step.reached && styles.sheetArtLocked]}
+              accessible={false}
+              resizeMode="contain"
+            />
+          </View>
+        ) : (
+          <Image
+            source={LADDER_SCENE[rung.kind]}
+            style={[styles.sheetScene, !step.reached && styles.sheetArtLocked]}
+            accessible={false}
+            resizeMode="cover"
+          />
+        )}
         <Text style={[styles.sheetBody, { color: theme.textSecondary }]}>{body}</Text>
       </View>
     </Modal>
@@ -517,7 +542,9 @@ const styles = StyleSheet.create({
 
   sheet: { gap: 14, paddingBottom: 8 },
   sheetScene: { width: "100%", height: 170, borderRadius: radii.card },
-  sheetSceneLocked: { opacity: 0.35 },
+  sheetStage: { height: 190, borderRadius: radii.card, alignItems: "center", justifyContent: "center" },
+  sheetBadge: { width: 158, height: 158 },
+  sheetArtLocked: { opacity: 0.35 },
   sheetBody: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, textAlign: "right", writingDirection: "rtl" },
 
   momentsBlock: { gap: 10 },
