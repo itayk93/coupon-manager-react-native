@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   I18nManager,
   Platform,
   StyleSheet,
@@ -34,6 +33,8 @@ import { Outfit_600SemiBold, Outfit_800ExtraBold } from "@expo-google-fonts/outf
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BiometricGate } from "@/components/layout/BiometricGate";
 import { BrandLaunchAnimation } from "@/components/layout/BrandLaunchAnimation";
+import { BrandWaitOverlay } from "@/components/layout/BrandWaitOverlay";
+import { ScreenTransition } from "@/components/layout/ScreenTransition";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { SideNav } from "@/components/layout/SideNav";
 import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
@@ -245,13 +246,19 @@ function RootLayoutNav() {
             <View style={styles.shellRow}>
               <SideNav />
               <View style={styles.mainColumn}>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    animation: "slide_from_right",
-                    contentStyle: { backgroundColor: theme.background },
-                  }}
-                />
+                {/* `animation` below is a native-stack option and does
+                    nothing on web, where screens are swapped in place; the
+                    wrapper is what moves them there, and nothing at all on
+                    native. */}
+                <ScreenTransition>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      animation: "slide_from_right",
+                      contentStyle: { backgroundColor: theme.background },
+                    }}
+                  />
+                </ScreenTransition>
                 {/* Above the tab bar and inside the column: the install strip
                     takes its own height off the screen rather than floating
                     over what is on it. */}
@@ -273,13 +280,7 @@ function RootLayoutNav() {
             />
           ) : null}
 
-          {!isReady && !launchVisible ? (
-            <View
-              style={[styles.loadingOverlay, { backgroundColor: theme.background, pointerEvents: "auto" }]}
-            >
-              <ActivityIndicator size="large" color={theme.primary} />
-            </View>
-          ) : null}
+          <BrandWaitOverlay visible={!isReady && !launchVisible} />
         </View>
         {isDesktopWeb ? (
           <Text style={[styles.webFooterText, { color: theme.textSubtle }]}>
@@ -364,10 +365,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     marginTop: 10,
     opacity: 0.7,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
