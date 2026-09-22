@@ -1,4 +1,5 @@
-import { baselineCelebrationTokens, COUNT_STEPS, SAVINGS_STEPS } from "./celebrationTrigger";
+import { baselineCelebrationTokens, lifetimeSavings, COUNT_STEPS, SAVINGS_STEPS } from "./celebrationTrigger";
+import { isSpendableCoupon } from "./couponTotals";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 
 /**
@@ -34,6 +35,12 @@ export type Ladder = {
   /** The next step, or null once the ladder is topped out. */
   next: number | null;
   steps: LadderStep[];
+  /**
+   * Where the wallet stands right now, in this ladder's own unit — coupons or
+   * shekels. The steps say what has been passed; this is what says how far the
+   * next one is, which is the only part a person can act on.
+   */
+  value: number;
 };
 
 export type MilestoneSummary = {
@@ -63,12 +70,13 @@ function parse(tokens: string[]): Map<string, number[]> {
   return byKind;
 }
 
-function ladder(kind: Ladder["kind"], all: number[], reached: number[]): Ladder {
+function ladder(kind: Ladder["kind"], all: number[], reached: number[], value = 0): Ladder {
   const passed = new Set(reached);
   const best = reached.length ? Math.max(...reached) : null;
   return {
     kind,
     best,
+    value,
     next: all.find((step) => (best === null ? true : step > best)) ?? null,
     steps: all.map((value) => ({ value, reached: passed.has(value) || (best !== null && value <= best) })),
   };
@@ -116,5 +124,13 @@ export function milestonesFor(
   coupons: DecryptedCoupon[] = [],
   remembered: string[] = [],
 ): MilestoneSummary {
-  return summariseMilestones([...remembered, ...baselineCelebrationTokens(coupons)]);
+  const summary = summariseMilestones([...remembered, ...baselineCelebrationTokens(coupons)]);
+  const standing: Record<Ladder["kind"], number> = {
+    milestone: coupons.filter(isSpendableCoupon).length,
+    savings: lifetimeSavings(coupons),
+  };
+  return {
+    ...summary,
+    ladders: summary.ladders.map((rung) => ({ ...rung, value: standing[rung.kind] })),
+  };
 }
