@@ -1,4 +1,5 @@
-import { COUNT_STEPS, SAVINGS_STEPS } from "./celebrationTrigger";
+import { baselineCelebrationTokens, COUNT_STEPS, SAVINGS_STEPS } from "./celebrationTrigger";
+import type { DecryptedCoupon } from "@/hooks/useCoupons";
 
 /**
  * What the stored celebration tokens add up to.
@@ -14,6 +15,14 @@ import { COUNT_STEPS, SAVINGS_STEPS } from "./celebrationTrigger";
  * indistinguishable from earned ones. "You have passed 25 coupons" is true in
  * both cases; "we celebrated this together" would not be, and no date is
  * claimed for the same reason.
+ *
+ * Which is why `milestonesFor` reads the wallet as well as the memory. The
+ * tokens live in device storage, so reinstalling the web app, clearing site
+ * data or signing in on a second device wipes the lot — and a wallet holding
+ * 35 coupons and ₪5,000 of savings was being told it had never passed
+ * anything. The memory is the only record of a record broken or a clean month
+ * survived, so it still counts; it is simply no longer the only witness to the
+ * two ladders the wallet can prove on its own.
  */
 
 export type LadderStep = { value: number; reached: boolean };
@@ -66,7 +75,9 @@ function ladder(kind: Ladder["kind"], all: number[], reached: number[]): Ladder 
 }
 
 export function summariseMilestones(tokens: string[] = []): MilestoneSummary {
-  const byKind = parse(tokens);
+  // The wallet and the memory both name the step a wallet stands on, and a
+  // month celebrated twice is still one month.
+  const byKind = parse([...new Set(tokens)]);
   const ladders: Ladder[] = [
     ladder("milestone", COUNT_STEPS, byKind.get("milestone") ?? []),
     ladder("savings", SAVINGS_STEPS, byKind.get("savings") ?? []),
@@ -86,5 +97,24 @@ export function summariseMilestones(tokens: string[] = []): MilestoneSummary {
     if (values?.length) repeats.push({ kind, count: values.length });
   }
 
-  return { ladders, oneOffs, repeats, total: tokens.length };
+  // Counted from the rungs rather than the tokens: a wallet that passed 5, 10
+  // and 25 one at a time and a wallet derived at 25 in one go have reached the
+  // same three milestones, and the headline should not depend on which.
+  const total =
+    ladders.reduce((sum, rung) => sum + rung.steps.filter((step) => step.reached).length, 0) +
+    oneOffs.length +
+    repeats.reduce((sum, moment) => sum + moment.count, 0);
+
+  return { ladders, oneOffs, repeats, total };
+}
+
+/**
+ * Every milestone this wallet has passed: what the device remembers, and what
+ * the wallet itself proves regardless of what any device remembers.
+ */
+export function milestonesFor(
+  coupons: DecryptedCoupon[] = [],
+  remembered: string[] = [],
+): MilestoneSummary {
+  return summariseMilestones([...remembered, ...baselineCelebrationTokens(coupons)]);
 }
