@@ -52,26 +52,44 @@ BASE (prepend to every prompt):
 no numerals, no logos. Soft matte plastic material with gentle subsurface
 glow, rounded toy-like forms, no sharp corners. Studio three-point lighting
 with a soft blue rim light from the upper left and a warm gold bounce from
-below. Shallow depth of field, crisp edges, no banding. Square 1024x1024,
-transparent background. Palette: cobalt blue #1f6fd1, deep navy #154a8f, pale
-blue #5b9bd8, warm gold #f5b429 for metal and accents only. The object must
-look like it belongs in the same universe as a rounded cobalt-blue blob mascot
-made of the same matte plastic — friendly and tactile, never corporate,
-never photoreal, never flat vector.
+below. Crisp edges, no banding. Square 1024x1024, transparent background.
+Palette: cobalt blue #1f6fd1, deep navy #154a8f, pale blue #5b9bd8, warm gold
+#f5b429 for metal and accents only.
 
- 1. coupons-5      — five glossy blue coupon tickets with rounded corners and a notched edge, fanned in a shallow arc, resting on a small blue disc
+CAMERA — identical on every badge in the set: three-quarter view from slightly
+above, roughly 25 degrees, object facing the viewer, no top-down and no
+straight-on elevation.
+
+BASE PLINTH — on every badge without exception: the object rests on the same
+rounded cobalt-blue pedestal disc with a thin warm-gold rim around its top
+edge. The plinth is the same size and material every time; only what stands on
+it changes. This is what makes twelve separate generations read as one set.
+
+The object must look like it belongs in the same universe as a rounded
+cobalt-blue blob mascot made of the same matte plastic — friendly and tactile,
+never corporate, never photoreal, never flat vector.
+
+ 1. coupons-5      — five glossy blue coupon tickets with rounded corners and a notched edge, fanned in a shallow arc
  2. coupons-10     — ten blue coupon tickets in two neat leaning rows, a single gold ticket among them
  3. coupons-25     — a tidy stack of blue coupon tickets bound with a thin gold ribbon tied in a small bow
  4. coupons-50     — a tall confident stack of blue coupon tickets, slightly fanned, one gold ticket standing upright on top
  5. coupons-100    — an open rounded chest overflowing with blue coupon tickets, warm gold light spilling from inside
- 6. coupons-250    — a monumental tower of blue coupon tickets on a round gold pedestal, a gold laurel wreath resting at its base
- 7. savings-1000   — three thick gold coins leaning against each other on a small blue disc
- 8. savings-5000   — a neat pile of gold coins stacked on a rounded blue pedestal
+ 6. coupons-250    — a monumental tower of blue coupon tickets, a gold laurel wreath resting around its foot
+ 7. savings-1000   — three thick gold coins leaning against each other
+ 8. savings-5000   — a neat pile of gold coins
  9. savings-10000  — a rounded blue piggy bank beside a pile of gold coins, one coin dropping into its slot
 10. savings-25000  — a rounded treasure chest half full of gold coins, lid open, blue body with gold fittings
 11. savings-50000  — a treasure chest overflowing with gold coins, a gold key resting against it
 12. savings-100000 — a rounded blue vault door standing open, warm gold light pouring out, coins spilling across the threshold
 ```
+
+## למה המצלמה והבסיס נוספו
+
+הראשון (`coupons-5`) חזר בשלושת־רבעי מלמעלה, עם עומק ועם פודיום כחול מכותרת
+זהב. השני (`coupons-10`) חזר כמעט חזיתי, שטוח יותר, בלי בסיס — נכון לפרומפט
+שלו, ולא אח של הראשון. הפרומפט לא אמר זווית ולא אמר בסיס, אז כל הפקה בחרה
+לעצמה. שתי הפסקאות האלה הן התיקון, והפודיום של הראשון הוא מה שנבחר כחתימה של
+הסדרה.
 
 ## כשהם מגיעים
 
