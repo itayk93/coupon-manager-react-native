@@ -20,6 +20,7 @@
 | `WIDGET_MASCOT_REDO_2-3-4-8.md` | תיקון States 2, 3, 4, 8 |
 | `WIDGET_MASCOT_CELEBRATION_STATES.md` | סצנות החגיגה C1–C10 |
 | `CELEBRATION_REDO_BRIEF.md` | תיקון סצנות החגיגה |
+| `MILESTONE_BADGES_BRIEF.md` | שנים־עשר הבאדג'ים של אבני הדרך |
 | `3d/README.md` | אטלסי האנימציה שבתוך האפליקציה |
 
 **הרפרנס לכל נכס חדש:** `original_app_mascot.png`. האינווריאנטים שאסור לשנות
