@@ -31,11 +31,15 @@ describe("notification faces", () => {
   });
 
   it("leaves a face that is not drawn yet to the app icon", () => {
-    expect(notificationIconUrl("expiry-today")).toBeUndefined();
+    expect(notificationIconUrl("monthly-summary")).toBeUndefined();
   });
 
   it("serves only faces that exist", () => {
-    const keys = [0, 1, 2, 5].map(expiryIconKey);
+    const keys = [
+      ...[0, 1, 2, 5].map(expiryIconKey),
+      ...(["monthly_summary", "idle_money", "share_received", "balance_updated",
+        "coupon_finished", "coupon_milestone", "expired_unused"] as const).map((t) => iconKeyFor(t)),
+    ];
     for (const key of keys) {
       const url = notificationIconUrl(key);
       if (!url) continue;

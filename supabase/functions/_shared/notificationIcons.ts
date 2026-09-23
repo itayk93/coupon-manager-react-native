@@ -29,6 +29,11 @@ export type NotificationIconKey =
 const AVAILABLE: ReadonlySet<NotificationIconKey> = new Set<NotificationIconKey>([
   'expiry-week',
   'expiry-soon',
+  'expiry-tomorrow',
+  'expiry-today',
+  'idle-money',
+  'share-received',
+  'balance-updated',
 ]);
 
 // Bump when a drawn face is replaced, so browsers do not keep the old one.
