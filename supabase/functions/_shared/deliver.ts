@@ -11,7 +11,8 @@
 import { safeFetch } from './ssrf.ts';
 import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from './unsubscribe.ts';
 import { messageEmailHtml } from './emailTemplate.ts';
-import { sendPushToRows, type PushSubscriptionRow } from './push.ts';
+import { iconFields, sendPushToRows, type PushSubscriptionRow } from './push.ts';
+import { iconKeyFor } from './notificationIcons.ts';
 import { notificationUrl } from './appLinks.ts';
 import {
   NOTIFICATION_TYPES,
@@ -216,6 +217,7 @@ export async function deliver(
       // shade instead of stacking two of the same thing.
       tag: `${type}-${user.id}`,
       renotify: true,
+      ...iconFields(iconKeyFor(type)),
     });
     result.push = stats.sent > 0;
   }

@@ -21,7 +21,8 @@ import { isServiceRoleCall, requireAdmin } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
 import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubscribe.ts';
 import { expiryEmailHtml } from '../_shared/emailTemplate.ts';
-import { createServiceClient, sendPushToRows, type PushSubscriptionRow } from '../_shared/push.ts';
+import { createServiceClient, iconFields, sendPushToRows, type PushSubscriptionRow } from '../_shared/push.ts';
+import { expiryIconKey } from '../_shared/notificationIcons.ts';
 import { couponsUrl } from '../_shared/appLinks.ts';
 import { wants, type DeliveryPrefs } from '../_shared/deliver.ts';
 import { phrase } from '../_shared/notificationVoice.ts';
@@ -438,6 +439,7 @@ Deno.serve(async (req: Request) => {
             url: '/notifications',
             tag: `expiry-${days}-${user.id}`,
             renotify: true,
+            ...iconFields(expiryIconKey(days)),
           });
           const ok = stats.sent > 0;
           if (ok) pushCount += 1;

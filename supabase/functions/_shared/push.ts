@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 import { safeFetch } from '../_shared/ssrf.ts';
 import { rtlText } from './rtlText.ts';
+import { notificationIconUrl, type NotificationIconKey } from './notificationIcons.ts';
 
 const DEFAULT_SUBJECT = 'mailto:push@couponmaster.app';
 const DEFAULT_PAYLOAD = {
@@ -17,6 +18,16 @@ const DEFAULT_PAYLOAD = {
   requireInteraction: false,
   renotify: false,
 };
+
+/**
+ * The fields that put a Kuponi face on a banner. `icon` is what the PWA shows;
+ * a face not drawn yet leaves it out, and the service worker keeps the app
+ * icon. `iconKey` travels to native devices for the iOS extension to pick up.
+ */
+export function iconFields(key: NotificationIconKey): { icon?: string; iconKey: NotificationIconKey } {
+  const icon = notificationIconUrl(key);
+  return icon ? { icon, iconKey: key } : { iconKey: key };
+}
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -149,12 +160,13 @@ async function sendExpoPush(
     const title = String(payload.title || DEFAULT_PAYLOAD.title);
     const body = String(payload.body || DEFAULT_PAYLOAD.body);
     const url = String(payload.url || DEFAULT_PAYLOAD.url);
+    const iconKey = typeof payload.iconKey === 'string' ? payload.iconKey : undefined;
 
     const messages = tokens.map((to) => ({
       to,
       title,
       body,
-      data: { url },
+      data: iconKey ? { url, iconKey } : { url },
       sound: 'default',
       priority: 'high',
     }));
