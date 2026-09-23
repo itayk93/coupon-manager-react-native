@@ -38,7 +38,7 @@ describe("notification faces", () => {
   });
 
   it("leaves a face that is not drawn yet to the app icon", () => {
-    expect(notificationIconUrl("monthly-summary")).toBeUndefined();
+    expect(notificationIconUrl("default")).toBeUndefined();
   });
 
   it("serves only faces that exist", () => {

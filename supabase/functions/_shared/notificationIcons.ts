@@ -34,6 +34,10 @@ const AVAILABLE: ReadonlySet<NotificationIconKey> = new Set<NotificationIconKey>
   'idle-money',
   'share-received',
   'balance-updated',
+  'coupon-finished',
+  'coupon-milestone',
+  'monthly-summary',
+  'expired-unused',
 ]);
 
 // Bump when a drawn face is replaced, so browsers do not keep the old one.
