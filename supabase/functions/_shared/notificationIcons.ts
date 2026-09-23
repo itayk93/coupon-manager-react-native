@@ -38,6 +38,7 @@ const AVAILABLE: ReadonlySet<NotificationIconKey> = new Set<NotificationIconKey>
   'coupon-milestone',
   'monthly-summary',
   'expired-unused',
+  'default',
 ]);
 
 // Bump when a drawn face is replaced, so browsers do not keep the old one.

@@ -37,8 +37,8 @@ describe("notification faces", () => {
     expect(iconKeyFor("expiry", 5)).toBe("expiry-week");
   });
 
-  it("leaves a face that is not drawn yet to the app icon", () => {
-    expect(notificationIconUrl("default")).toBeUndefined();
+  it("falls back to the default face, not the app icon", () => {
+    expect(notificationIconUrl("default")).toBe("/notification-icons/default.png?v=1");
   });
 
   it("serves only faces that exist", () => {
@@ -46,6 +46,7 @@ describe("notification faces", () => {
       ...[0, 1, 2, 5].map(expiryIconKey),
       ...(["monthly_summary", "idle_money", "share_received", "balance_updated",
         "coupon_finished", "coupon_milestone", "expired_unused"] as const).map((t) => iconKeyFor(t)),
+      "default" as const,
     ];
     for (const key of keys) {
       const url = notificationIconUrl(key);
