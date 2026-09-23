@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { expiryFaceKey } from "./expiryFaceKey";
 import {
   expiryIconKey,
   iconKeyFor,
@@ -23,6 +24,12 @@ describe("notification faces", () => {
       "expiry-week",
       "expiry-week",
     ]);
+  });
+
+  it("puts the same face on a local reminder as on the push", () => {
+    for (const days of [0, 1, 2, 3, 4, 7, 30]) {
+      expect(expiryFaceKey(days)).toBe(expiryIconKey(days));
+    }
   });
 
   it("maps every other kind to its own face", () => {

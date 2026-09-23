@@ -23,6 +23,9 @@ vi.mock("@/lib/nativeNotifications", () => ({
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
 }));
+vi.mock("./notificationFaces", () => ({
+  expiryFaceAttachment: vi.fn(async () => undefined),
+}));
 
 const Notifications = await import("expo-notifications");
 const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;

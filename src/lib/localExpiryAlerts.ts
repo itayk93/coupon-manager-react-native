@@ -8,6 +8,7 @@ import {
   ensureAndroidChannel,
   getNativePushState,
 } from "@/lib/nativeNotifications";
+import { expiryFaceAttachment } from "./notificationFaces";
 import { rtlText } from "./rtlText";
 
 /**
@@ -22,8 +23,11 @@ import { rtlText } from "./rtlText";
 /** Marks the notifications this module owns, so it never cancels someone else's. */
 const KIND = "local-expiry";
 
-/** Hash of the last plan we scheduled, to skip re-scheduling an identical one. */
-const PLAN_KEY = "local-expiry:plan:v1";
+/**
+ * Hash of the last plan we scheduled, to skip re-scheduling an identical one.
+ * v2: reminders now carry Kuponi's face, so plans scheduled without it are redone.
+ */
+const PLAN_KEY = "local-expiry:plan:v2";
 
 /**
  * iOS keeps at most 64 pending local notifications per app and silently drops
@@ -200,8 +204,11 @@ async function syncLocalExpiryAlertsNow(
 
   for (const alert of planned) {
     const single = alert.coupons.length === 1 ? alert.coupons[0] : null;
+    // The soonest deadline leads the sentence, so it picks the face too.
+    const attachments = await expiryFaceAttachment(alert.coupons[0].daysLeft);
     await Notifications.scheduleNotificationAsync({
       content: {
+        ...(attachments ? { attachments } : {}),
         title: rtlText(single ? "קופון עומד לפוג" : "קופונים עומדים לפוג"),
         body: rtlText(body(alert.coupons, remainingById)),
         // A digest has no single coupon to open, so it lands on the list.

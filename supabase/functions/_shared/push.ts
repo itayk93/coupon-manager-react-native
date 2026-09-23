@@ -161,12 +161,19 @@ async function sendExpoPush(
     const body = String(payload.body || DEFAULT_PAYLOAD.body);
     const url = String(payload.url || DEFAULT_PAYLOAD.url);
     const iconKey = typeof payload.iconKey === 'string' ? payload.iconKey : undefined;
+    // Android draws `richContent.image` beside the text on its own. It must be
+    // absolute, and it is served with the PWA, so no base URL means no image.
+    const appBase = (Deno.env.get('APP_BASE_URL') || '').replace(/\/+$/, '');
+    const image = appBase && typeof payload.icon === 'string' && payload.icon.startsWith('/')
+      ? `${appBase}${payload.icon}`
+      : undefined;
 
     const messages = tokens.map((to) => ({
       to,
       title,
       body,
       data: iconKey ? { url, iconKey } : { url },
+      ...(image ? { richContent: { image } } : {}),
       sound: 'default',
       priority: 'high',
     }));
