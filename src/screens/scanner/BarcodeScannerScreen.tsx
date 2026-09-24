@@ -37,6 +37,8 @@ import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { usePageTutorial } from "@/hooks/usePageTutorial";
 import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
+import { parsedCouponIsland } from "@/lib/parsedCouponIsland";
+import { pushIsland } from "@/components/ui/Island";
 
 export function BarcodeScannerScreen() {
   // A reading column: this screen is a form and a camera frame, not a grid.
@@ -145,7 +147,7 @@ export function BarcodeScannerScreen() {
       if (results && results.length > 0) {
         // The AI reads the code from the photo too, but the scanner's decode
         // is exact — prefer it over whatever the model transcribed.
-        goToAddCoupon({ ...results[0], code: results[0].code || data });
+        goToAddCoupon({ ...results[0], code: results[0].code || data }, results.length);
       } else {
         fallbackToRawCode();
       }
@@ -170,13 +172,15 @@ export function BarcodeScannerScreen() {
   /// Hands the parsed fields to the add-coupon form. Every field the parser
   /// resolved has to be forwarded here — anything left out silently comes back
   /// as an empty input, which is what used to happen to the expiry date.
-  const goToAddCoupon = (parsed: ParsedCoupon) => {
+  /// `found` is how many coupons the parser returned; only the first opens.
+  const goToAddCoupon = (parsed: ParsedCoupon, found = 1) => {
     const importId = `scanner-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     storeSharedCouponImport(importId, parsed);
     router.push({
       pathname: "/coupons/add",
       params: { initialImportId: importId },
     });
+    pushIsland(parsedCouponIsland(parsed, found));
   };
 
   /// Text stays an explicit action so the user can finish pasting or editing it.
@@ -192,7 +196,7 @@ export function BarcodeScannerScreen() {
         text: aiText.trim(),
       });
       if (results && results.length > 0) {
-        goToAddCoupon(results[0]);
+        goToAddCoupon(results[0], results.length);
       }
     } catch (e: any) {
       console.error(e);
@@ -261,7 +265,7 @@ export function BarcodeScannerScreen() {
         imageBase64: asset.base64,
       });
       if (results.length > 0) {
-        goToAddCoupon(results[0]);
+        goToAddCoupon(results[0], results.length);
       }
     } catch (e: any) {
       console.error(e);

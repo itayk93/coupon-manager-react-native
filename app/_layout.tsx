@@ -41,6 +41,7 @@ import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
+import { IslandHost } from "@/components/ui/Island";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { applyWebDocumentHead } from "@/lib/webDocumentHead";
 import { hideWebBootSplash, paintWebBackground } from "@/lib/webBootSplash";
@@ -275,6 +276,7 @@ function RootLayoutNav() {
           <SharedScreenshotUsage />
           <ConfirmHost />
           <ToastHost />
+          <IslandHost />
 
           {launchVisible ? (
             <BrandLaunchAnimation

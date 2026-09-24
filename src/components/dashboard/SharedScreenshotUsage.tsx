@@ -12,6 +12,8 @@ import { useParseCoupon } from "@/hooks/useCouponAI";
 import { useCoupons } from "@/hooks/useCoupons";
 import { fonts } from "@/lib/theme";
 import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
+import { parsedCouponIsland } from "@/lib/parsedCouponIsland";
+import { pushIsland } from "@/components/ui/Island";
 
 /**
  * Mounted once at the root. When the user shares a screenshot into the app from
@@ -60,11 +62,13 @@ export function SharedScreenshotUsage() {
     if (!pendingImport || parseCoupon.isPending) return;
 
     try {
-      const [parsed] = await parseCoupon.mutateAsync({
+      const results = await parseCoupon.mutateAsync({
         imageBase64: pendingImport.imageBase64,
         text: pendingImport.text,
         companyNames: coupons.map((coupon) => coupon.company),
       });
+
+      const [parsed] = results;
 
       completeSharedImport();
       setPendingImport(null);
@@ -77,6 +81,7 @@ export function SharedScreenshotUsage() {
           returnToPrevious: "1",
         },
       });
+      pushIsland(parsedCouponIsland(parsed, results.length));
     } catch (e) {
       console.error(e);
       setMode("choose");
