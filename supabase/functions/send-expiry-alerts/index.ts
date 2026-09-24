@@ -36,6 +36,8 @@ const DEFAULT_SEND_HOUR = 9;
 const CHANNELS = ['email', 'push', 'in_app'] as const;
 /** A 'pending' claim older than this belonged to a run that never finished. */
 const STALE_CLAIM_MS = 60 * 60 * 1000;
+/** Users handled at once. Small, so the mail and push providers are not flooded. */
+const USER_CONCURRENCY = 5;
 
 type Channel = typeof CHANNELS[number];
 
@@ -371,9 +373,13 @@ Deno.serve(async (req: Request) => {
       }
     };
 
-    for (const { user, prefs, targets } of dueUsers) {
+    // Each user's sends touch only that user's coupons and ledger rows, so a
+    // few users go out at once instead of strictly one after another — a run
+    // over many users would otherwise outlast the function's time limit. The
+    // pool stays small to be gentle on the mail and push providers.
+    const processUser = async ({ user, prefs, targets }: typeof dueUsers[number]): Promise<void> => {
       const userCoupons = couponsByUser.get(user.id);
-      if (!userCoupons?.length) continue;
+      if (!userCoupons?.length) return;
 
       // Group this user's due coupons by the window they fall into.
       const byWindow = new Map<number, CouponRow[]>();
@@ -465,7 +471,24 @@ Deno.serve(async (req: Request) => {
           await settle('in_app', days, inAppClaimed, !error);
         }
       }
-    }
+    };
+
+    let failedUsers = 0;
+    let nextUser = 0;
+    const worker = async () => {
+      while (nextUser < dueUsers.length) {
+        const entry = dueUsers[nextUser++];
+        try {
+          await processUser(entry);
+        } catch (err) {
+          // One user's failure no longer stops everyone after them. Their
+          // unsettled claims age out and the next hourly run retries them.
+          failedUsers += 1;
+          console.error('[send-expiry-alerts] user failed:', entry.user.id, err);
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(USER_CONCURRENCY, dueUsers.length) }, worker));
 
     return jsonResponse({
       users: users.length,
@@ -474,6 +497,7 @@ Deno.serve(async (req: Request) => {
       push: pushCount,
       inApp: inAppCount,
       alerts: alertCount,
+      failedUsers,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

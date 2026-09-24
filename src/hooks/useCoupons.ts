@@ -6,6 +6,7 @@ import { notify } from "@/lib/notify";
 import { couponVault } from "@/lib/couponVault";
 import { logActivity } from "@/lib/activityLog";
 import { loadOfflineCoupons, saveOfflineCoupons } from "@/lib/offlineCoupons";
+import { mergeCouponIntoWallet } from "@/lib/walletCache";
 
 export type DecryptedCoupon = Omit<
   Coupon,
@@ -29,7 +30,40 @@ export type DecryptedCoupon = Omit<
   is_shared_with_me?: boolean;
 };
 
-// Helper function to decrypt a single coupon
+/**
+ * How long a fetched wallet counts as fresh. Every list call makes the vault
+ * decrypt every coupon, and over twenty screens read this query — without a
+ * window each screen change refetched the whole wallet. Edits made in the app
+ * write straight into the cache, pull-to-refresh bypasses the window, and
+ * server-side changes (usage, sales, auto-update) still invalidate it.
+ */
+export const COUPONS_STALE_TIME = 5 * 60 * 1000;
+
+/**
+ * Puts the coupon the vault returned into the cached wallet, in place of the
+ * old copy (or at the top when new), so a single edit does not refetch and
+ * re-decrypt the whole list.
+ */
+function writeCouponToCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  userId: number | undefined,
+  coupon: DecryptedCoupon
+) {
+  const wallet = queryClient.setQueryData<DecryptedCoupon[]>(["coupons", userId], (current) =>
+    current ? mergeCouponIntoWallet(current, coupon) : current
+  );
+  // No refetch follows any more, so the offline mirror is refreshed here —
+  // otherwise a wallet opened without signal would show the pre-edit copy.
+  if (wallet && userId !== undefined) void saveOfflineCoupons(userId, wallet);
+
+  // The detail screen keys the coupon by its public id or its numeric id,
+  // whichever the route carried, so match on the coupon itself.
+  queryClient.setQueriesData<DecryptedCoupon>(
+    { queryKey: ["coupon"], predicate: (query) => (query.state.data as DecryptedCoupon | undefined)?.id === coupon.id },
+    (current) => (current ? { ...coupon, is_shared_with_me: current.is_shared_with_me } : current)
+  );
+}
+
 export function useCoupons() {
   const { user } = useAuth();
 
@@ -52,6 +86,7 @@ export function useCoupons() {
       }
     },
     enabled: !!user,
+    staleTime: COUPONS_STALE_TIME,
   });
 }
 
@@ -146,12 +181,16 @@ export function useAddCoupon() {
         couponId: (created as any)?.id ?? null,
         metadata: { company: String((created as any)?.company || "") },
       });
-      queryClient.setQueryData<DecryptedCoupon[]>(["coupons", user?.id], (current) => {
-        if (!current) return [created];
-        if (current.some((coupon) => coupon.id === created.id)) return current;
-        return [created, ...current];
-      });
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      // The vault returns the stored, decrypted row, so the cache can take it
+      // as is — no need to fetch the whole wallet again.
+      const coupon = { ...created, is_shared_with_me: false };
+      // With no wallet loaded yet there is nothing to patch, and a one-coupon
+      // list would hide the rest, so fetch it instead.
+      if (queryClient.getQueryData(["coupons", user?.id])) {
+        writeCouponToCache(queryClient, user?.id, coupon);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["coupons", user?.id] });
+      }
     },
     onError: (error: any) => {
       notify.error("שגיאה בהוספת הקופון", error.message);
@@ -210,19 +249,20 @@ export function useUpdateCoupon() {
       if (context?.previousCoupon) {
         queryClient.setQueryData(["coupon", id], context.previousCoupon);
       }
+      // The server state is unknown after a failure, so resync from it.
+      queryClient.invalidateQueries({ queryKey: ["coupons", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["coupon", id] });
       notify.error("שגיאה בעדכון הקופון", error.message);
     },
-    onSuccess: (_data, { id, updates }) => {
+    onSuccess: (updated, { id, updates }) => {
+      // Replace the optimistic copy with what the vault actually stored.
+      writeCouponToCache(queryClient, user?.id, updated);
       // Which fields changed, never their values — an edit to a code must not
       // put the code in the activity log.
       logActivity("edit_coupon_submit", {
         couponId: id,
         metadata: { fields: Object.keys(updates).join(",") },
       });
-    },
-    onSettled: (_data, _error, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      queryClient.invalidateQueries({ queryKey: ["coupon", id] });
     },
   });
 }

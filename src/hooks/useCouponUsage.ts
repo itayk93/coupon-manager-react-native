@@ -492,16 +492,30 @@ export function useDeleteTransactionRecord() {
         if (error) throw error;
       }
 
-      // Recalculate the coupon balance from the remaining records
-      const { data: usageRows } = await supabase
-        .from("coupon_usage")
-        .select("used_amount, action, details")
-        .eq("coupon_id", couponId);
-
-      const { data: txRows } = await supabase
-        .from("coupon_transaction")
-        .select("usage_amount, recharge_amount, location, source")
-        .eq("coupon_id", couponId);
+      // Recalculate the coupon balance from the remaining records. The three
+      // reads do not depend on each other, so they go out together instead of
+      // costing three round trips in a row.
+      const [usageRes, txRes, couponRes] = await Promise.all([
+        supabase
+          .from("coupon_usage")
+          .select("used_amount, action, details")
+          .eq("coupon_id", couponId),
+        supabase
+          .from("coupon_transaction")
+          .select("usage_amount, recharge_amount, location, source")
+          .eq("coupon_id", couponId),
+        supabase
+          .from("coupon")
+          .select("value, status")
+          .eq("id", couponId)
+          .single(),
+      ]);
+      // A failed read would look like an empty ledger and reset the balance.
+      if (usageRes.error) throw usageRes.error;
+      if (txRes.error) throw txRes.error;
+      const usageRows = usageRes.data;
+      const txRows = txRes.data;
+      const couponRow = couponRes.data;
 
       // Same rows, same rule as the history list: anything hidden there is a
       // duplicate of a row that is shown, so counting it would spend twice.
@@ -513,12 +527,6 @@ export function useDeleteTransactionRecord() {
           .filter((r) => !isHiddenLedgerRow(r.location || r.source || ""))
           .map((r) => ledgerAmountFromTransaction(r.recharge_amount, r.usage_amount)),
       ];
-
-      const { data: couponRow } = await supabase
-        .from("coupon")
-        .select("value, status")
-        .eq("id", couponId)
-        .single();
 
       if (couponRow) {
         const capped = usedValueFromLedger(couponRow.value, ledger);

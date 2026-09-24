@@ -101,6 +101,69 @@ function ListPane({
   );
 }
 
+const NO_TAGS: string[] = [];
+
+/**
+ * One swipeable card in the list. Memoized with stable callbacks, so typing in
+ * the search box or picking a filter re-renders only the cards whose own props
+ * changed, not every card on screen.
+ */
+const CouponListItem = React.memo(function CouponListItem({
+  coupon,
+  tags,
+  selected,
+  isSelectMode,
+  actionColor,
+  onToggleSelect,
+  onShow,
+  onReportUsage,
+}: {
+  coupon: DecryptedCoupon;
+  tags: string[];
+  selected: boolean;
+  isSelectMode: boolean;
+  actionColor: string;
+  onToggleSelect: (id: number) => void;
+  onShow: (coupon: DecryptedCoupon) => void;
+  onReportUsage: (coupon: DecryptedCoupon) => void;
+}) {
+  return (
+    <View style={styles.couponColumn}>
+      <Swipeable
+        overshootLeft={false}
+        overshootRight={false}
+        friction={2}
+        renderRightActions={() => (
+          <TouchableOpacity
+            onPress={() => onReportUsage(coupon)}
+            accessibilityLabel={`דיווח שימוש בקופון של ${coupon.company}`}
+            style={[styles.swipeAction, { backgroundColor: actionColor }]}
+          >
+            <ReceiptText size={20} color="#ffffff" />
+            <Text style={styles.swipeActionText}>דיווח שימוש</Text>
+          </TouchableOpacity>
+        )}
+      >
+        <CouponCard
+          coupon={coupon}
+          tags={tags}
+          selected={selected}
+          showSelect={isSelectMode}
+          onSelect={() => onToggleSelect(coupon.id)}
+          onPress={() => {
+            if (isSelectMode) {
+              onToggleSelect(coupon.id);
+            } else {
+              onShow(coupon);
+            }
+          }}
+          onReportUsage={() => onReportUsage(coupon)}
+        />
+      </Swipeable>
+    </View>
+  );
+});
+
 interface CouponSection {
   key: string;
   title: string;
@@ -421,15 +484,24 @@ export function CouponsListScreen() {
   );
 
 
-  const toggleSelect = (id: number) => {
-    if (selectedIds.includes(id)) {
-      const next = selectedIds.filter((item) => item !== id);
+  // Read through a ref so the callback stays the same across renders and the
+  // memoized list items do not all re-render when one selection changes.
+  const selectedIdsRef = React.useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
+  const toggleSelect = useCallback((id: number) => {
+    const current = selectedIdsRef.current;
+    if (current.includes(id)) {
+      const next = current.filter((item) => item !== id);
+      selectedIdsRef.current = next;
       setSelectedIds(next);
       if (next.length === 0) setIsSelectMode(false);
     } else {
-      setSelectedIds([...selectedIds, id]);
+      const next = [...current, id];
+      selectedIdsRef.current = next;
+      setSelectedIds(next);
     }
-  };
+  }, []);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   // Keep the highest-count company (the right edge of the row) in view when
   // the data first lands or changes.
@@ -880,42 +952,20 @@ export function CouponsListScreen() {
               renderItem={({ item }: { item: DecryptedCoupon[] }) => (
                 <View style={[styles.couponRow, isTablet && styles.tabletCouponRow]}>
                   {item.map((coupon) => (
-                    <View key={coupon.id} style={styles.couponColumn}>
-                      <Swipeable
-                        overshootLeft={false}
-                        overshootRight={false}
-                        friction={2}
-                        renderRightActions={() => (
-                          <TouchableOpacity
-                            onPress={() => setUsageCoupon(coupon)}
-                            accessibilityLabel={`דיווח שימוש בקופון של ${coupon.company}`}
-                            style={[styles.swipeAction, { backgroundColor: theme.success }]}
-                          >
-                            <ReceiptText size={20} color="#ffffff" />
-                            <Text style={styles.swipeActionText}>דיווח שימוש</Text>
-                          </TouchableOpacity>
-                        )}
-                      >
-                        <CouponCard
-                          coupon={coupon}
-                          tags={tagsMap[coupon.id] || []}
-                          selected={
-                            selectedIds.includes(coupon.id) ||
-                            openCoupon === couponRouteId(coupon)
-                          }
-                          showSelect={isSelectMode}
-                          onSelect={() => toggleSelect(coupon.id)}
-                          onPress={() => {
-                            if (isSelectMode) {
-                              toggleSelect(coupon.id);
-                            } else {
-                              showCoupon(coupon);
-                            }
-                          }}
-                          onReportUsage={() => setUsageCoupon(coupon)}
-                        />
-                      </Swipeable>
-                    </View>
+                    <CouponListItem
+                      key={coupon.id}
+                      coupon={coupon}
+                      tags={tagsMap[coupon.id] || NO_TAGS}
+                      selected={
+                        selectedIdSet.has(coupon.id) ||
+                        openCoupon === couponRouteId(coupon)
+                      }
+                      isSelectMode={isSelectMode}
+                      actionColor={theme.success}
+                      onToggleSelect={toggleSelect}
+                      onShow={showCoupon}
+                      onReportUsage={setUsageCoupon}
+                    />
                   ))}
                   {isTablet && item.length === 1 ? <View style={styles.couponColumn} /> : null}
                 </View>

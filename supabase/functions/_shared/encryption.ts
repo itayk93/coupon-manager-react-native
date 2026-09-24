@@ -22,18 +22,40 @@ function keyBytes(value: string, name: string): Uint8Array {
   return bytes;
 }
 
+// Importing a CryptoKey is not free, and a wallet list decrypts up to eight
+// fields per coupon. The raw key never changes inside one isolate, so each
+// imported key is built once and reused for every field after it.
+const importedKeys = new Map<string, Promise<CryptoKey>>();
+
+function importedKey(
+  rawKey: string,
+  part: 'hmac' | 'aes',
+  usage: KeyUsage,
+  name = 'encryption key',
+): Promise<CryptoKey> {
+  const cacheKey = `${part}:${usage}:${rawKey}`;
+  let key = importedKeys.get(cacheKey);
+  if (!key) {
+    const bytes = keyBytes(rawKey, name);
+    key = part === 'hmac'
+      ? crypto.subtle.importKey('raw', bytes.slice(0, 16), { name: 'HMAC', hash: 'SHA-256' }, false, [usage])
+      : crypto.subtle.importKey('raw', bytes.slice(16), { name: 'AES-CBC' }, false, [usage]);
+    // A rejected import must not stick: drop it so the next call retries.
+    key.catch(() => importedKeys.delete(cacheKey));
+    importedKeys.set(cacheKey, key);
+  }
+  return key;
+}
+
 async function decryptWithKey(value: string, rawKey: string): Promise<string> {
-  const bytes = keyBytes(rawKey, 'encryption key');
   const token = decodeBase64Url(value);
   if (token.length < 57 || token[0] !== 0x80) throw new Error('Invalid Fernet token');
 
-  const signingKey = await crypto.subtle.importKey(
-    'raw', bytes.slice(0, 16), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
-  );
+  const signingKey = await importedKey(rawKey, 'hmac', 'verify');
   const valid = await crypto.subtle.verify('HMAC', signingKey, token.slice(-32), token.slice(0, -32));
   if (!valid) throw new Error('Invalid encrypted coupon value');
 
-  const aesKey = await crypto.subtle.importKey('raw', bytes.slice(16), { name: 'AES-CBC' }, false, ['decrypt']);
+  const aesKey = await importedKey(rawKey, 'aes', 'decrypt');
   const plaintext = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: token.slice(9, 25) }, aesKey, token.slice(25, -32));
   return new TextDecoder().decode(plaintext);
 }
@@ -42,23 +64,20 @@ export async function encryptCouponValue(value: string): Promise<string> {
   if (!value) return value;
   const rawKey = Deno.env.get('ENCRYPTION_KEY');
   if (!rawKey) throw new Error('ENCRYPTION_KEY is not configured');
-  const bytes = keyBytes(rawKey, 'ENCRYPTION_KEY');
   const timestamp = BigInt(Math.floor(Date.now() / 1000));
   const header = new Uint8Array(25);
   header[0] = 0x80;
   new DataView(header.buffer).setBigUint64(1, timestamp, false);
   crypto.getRandomValues(header.subarray(9, 25));
 
-  const aesKey = await crypto.subtle.importKey('raw', bytes.slice(16), { name: 'AES-CBC' }, false, ['encrypt']);
+  const aesKey = await importedKey(rawKey, 'aes', 'encrypt', 'ENCRYPTION_KEY');
   const encrypted = new Uint8Array(await crypto.subtle.encrypt(
     { name: 'AES-CBC', iv: header.slice(9, 25) }, aesKey, textEncoder.encode(value)
   ));
   const unsigned = new Uint8Array(header.length + encrypted.length);
   unsigned.set(header);
   unsigned.set(encrypted, header.length);
-  const signingKey = await crypto.subtle.importKey(
-    'raw', bytes.slice(0, 16), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
+  const signingKey = await importedKey(rawKey, 'hmac', 'sign', 'ENCRYPTION_KEY');
   const signature = new Uint8Array(await crypto.subtle.sign('HMAC', signingKey, unsigned));
   const token = new Uint8Array(unsigned.length + signature.length);
   token.set(unsigned);
