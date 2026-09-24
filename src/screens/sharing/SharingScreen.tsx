@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -32,10 +32,14 @@ import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { formatIls } from "@/lib/formatIls";
+import { pickerCoupons } from "@/lib/couponPicker";
 import { SaleForm } from "@/components/coupons/SaleForm";
 import type { SaleInput } from "@/hooks/useCouponSales";
 import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { Kuponi } from "@/components/ui/Kuponi";
+
+/** Rows the coupon picker mounts at once; search reaches the rest. */
+const SHARE_PICKER_LIMIT = 30;
 
 export function SharingScreen() {
   const router = useRouter();
@@ -53,13 +57,25 @@ export function SharingScreen() {
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
+  const [couponQuery, setCouponQuery] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [shareType, setShareType] = useState<ShareType>("shared");
   const [isSale, setIsSale] = useState(false);
   const [sale, setSale] = useState<SaleInput | undefined>();
   const [emailError, setEmailError] = useState("");
-  const shareableCoupons = coupons.filter(
-    (c) => !c.is_shared_with_me && Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0
+  const shareableCoupons = useMemo(
+    () => coupons.filter(
+      (c) => !c.is_shared_with_me && Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0
+    ),
+    [coupons]
+  );
+
+  // The picker used to mount a row for every shareable coupon at once — a
+  // few hundred in a big wallet, inside a 220pt box. It now shows the first
+  // matches and a search for the rest; the chosen coupon always stays listed.
+  const picker = useMemo(
+    () => pickerCoupons(shareableCoupons, couponQuery, selectedCouponId, SHARE_PICKER_LIMIT),
+    [shareableCoupons, couponQuery, selectedCouponId]
   );
 
   const handleCreateShare = async () => {
@@ -82,6 +98,7 @@ export function SharingScreen() {
       setIsShareModalOpen(false);
       setRecipientEmail("");
       setSelectedCouponId(null);
+      setCouponQuery("");
       setShareType("shared");
       setIsSale(false);
       setSale(undefined);
@@ -422,8 +439,16 @@ export function SharingScreen() {
             בחר קופון לשיתוף *
           </Text>
 
-          <ScrollView style={{ maxHeight: 220, marginBottom: 14 }}>
-            {shareableCoupons.map((c) => {
+          {shareableCoupons.length > SHARE_PICKER_LIMIT ? (
+            <Input
+              placeholder="חיפוש לפי חברה, תיאור או קוד"
+              value={couponQuery}
+              onChangeText={setCouponQuery}
+            />
+          ) : null}
+
+          <ScrollView style={{ maxHeight: 220, marginBottom: picker.total > picker.shown.length ? 4 : 14 }}>
+            {picker.shown.map((c) => {
               const isSelected = selectedCouponId === c.id;
               const rem = Math.max(0, (c.value || 0) - (c.used_value || 0));
               return (
@@ -460,6 +485,11 @@ export function SharingScreen() {
               );
             })}
           </ScrollView>
+          {picker.total > picker.shown.length ? (
+            <Text style={[styles.pickerHint, { color: theme.textMuted }]}>
+              מוצגים {picker.shown.length} מתוך {picker.total} — חפשו כדי למצוא קופון אחר
+            </Text>
+          ) : null}
 
           {isSale && !sale ? (
             <SaleForm busy={false} submitTitle="שמירת פרטי המכירה" initialEmail={recipientEmail} onSubmit={setSale} />
@@ -477,6 +507,12 @@ export function SharingScreen() {
 }
 
 const styles = StyleSheet.create({
+  pickerHint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    textAlign: "right",
+    marginBottom: 14,
+  },
   pageTitle: {
     fontFamily: fonts.display,
     fontSize: 24,

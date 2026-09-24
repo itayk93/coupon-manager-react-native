@@ -24,7 +24,6 @@ import {
 import {
   Search,
   Plus,
-  Trash2,
   RefreshCw,
   SlidersHorizontal,
   X,
@@ -39,7 +38,7 @@ import { CouponCard } from "@/components/coupons/CouponCard";
 import { CompanyFilterSheet } from "@/components/coupons/CompanyFilterSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
-import { useCoupons, useBulkDeleteCoupons, useRestoreCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { Swipeable } from "react-native-gesture-handler";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
@@ -112,18 +111,14 @@ const CouponListItem = React.memo(function CouponListItem({
   coupon,
   tags,
   selected,
-  isSelectMode,
   actionColor,
-  onToggleSelect,
   onShow,
   onReportUsage,
 }: {
   coupon: DecryptedCoupon;
   tags: string[];
   selected: boolean;
-  isSelectMode: boolean;
   actionColor: string;
-  onToggleSelect: (id: number) => void;
   onShow: (coupon: DecryptedCoupon) => void;
   onReportUsage: (coupon: DecryptedCoupon) => void;
 }) {
@@ -148,15 +143,7 @@ const CouponListItem = React.memo(function CouponListItem({
           coupon={coupon}
           tags={tags}
           selected={selected}
-          showSelect={isSelectMode}
-          onSelect={() => onToggleSelect(coupon.id)}
-          onPress={() => {
-            if (isSelectMode) {
-              onToggleSelect(coupon.id);
-            } else {
-              onShow(coupon);
-            }
-          }}
+          onPress={() => onShow(coupon)}
           onReportUsage={() => onReportUsage(coupon)}
         />
       </Swipeable>
@@ -225,8 +212,6 @@ export function CouponsListScreen() {
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
-  const bulkDelete = useBulkDeleteCoupons();
-  const restoreCoupons = useRestoreCoupons();
   const triggerAutoUpdate = useTriggerAutoUpdate();
   const offline = useOfflineWalletStatus();
   const { user } = useAuth();
@@ -266,9 +251,6 @@ export function CouponsListScreen() {
     Boolean(params.initialFilterTag || asFilterStatus(params.initialStatus))
   );
   const [companyFilterOpen, setCompanyFilterOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([]);
-  const [isSelectMode, setIsSelectMode] = useState(false);
   // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const [isMerchantResultsOpen, setIsMerchantResultsOpen] = useState(false);
@@ -381,7 +363,6 @@ export function CouponsListScreen() {
 
   const matchedCoupons = useMemo(() => {
     return coupons.filter((coupon) => {
-      if (pendingDeleteIds.includes(coupon.id)) return false;
       if (focusIds && !focusIds.includes(coupon.public_id) && !focusIds.includes(String(coupon.id))) return false;
 
       // Search
@@ -400,7 +381,7 @@ export function CouponsListScreen() {
 
       return true;
     });
-  }, [coupons, currentSearchHasMerchantResults, focusIds, merchantResultIds, pendingDeleteIds, search, selectedCompany, selectedTag, tagsMap]);
+  }, [coupons, currentSearchHasMerchantResults, focusIds, merchantResultIds, search, selectedCompany, selectedTag, tagsMap]);
 
   const sections = useMemo(() => {
     const active: DecryptedCoupon[] = [];
@@ -484,24 +465,6 @@ export function CouponsListScreen() {
   );
 
 
-  // Read through a ref so the callback stays the same across renders and the
-  // memoized list items do not all re-render when one selection changes.
-  const selectedIdsRef = React.useRef(selectedIds);
-  selectedIdsRef.current = selectedIds;
-  const toggleSelect = useCallback((id: number) => {
-    const current = selectedIdsRef.current;
-    if (current.includes(id)) {
-      const next = current.filter((item) => item !== id);
-      selectedIdsRef.current = next;
-      setSelectedIds(next);
-      if (next.length === 0) setIsSelectMode(false);
-    } else {
-      const next = [...current, id];
-      selectedIdsRef.current = next;
-      setSelectedIds(next);
-    }
-  }, []);
-  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   // Keep the highest-count company (the right edge of the row) in view when
   // the data first lands or changes.
@@ -511,26 +474,6 @@ export function CouponsListScreen() {
       companyScrollRef.current?.scrollToEnd({ animated: false });
     }
   }, [companyChips]);
-
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    const ids = [...selectedIds];
-    setPendingDeleteIds((current) => [...new Set([...current, ...ids])]);
-    setSelectedIds([]);
-    setIsSelectMode(false);
-    void bulkDelete
-      .mutateAsync(ids)
-      .finally(() => setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id))));
-    notify.undo(
-      `${ids.length} קופונים עברו לנמחקו לאחרונה 👋`,
-      `אפשר לשחזר אותם מ"נמחקו לאחרונה" בהגדרות, עד 30 יום.`,
-      () => {
-        setPendingDeleteIds((current) => current.filter((id) => !ids.includes(id)));
-        void restoreCoupons.mutateAsync(ids);
-      },
-      7000,
-    );
-  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -884,38 +827,6 @@ export function CouponsListScreen() {
               </ScrollView>
             ) : null}
 
-            {/* Multi-Select Action Bar */}
-            {isSelectMode ? (
-              <View
-                style={[
-                  styles.selectionBar,
-                  {
-                    backgroundColor: theme.surfaceAlt,
-                    borderColor: theme.inputBorder,
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={handleBulkDelete}
-                  style={[styles.deleteBtn, { backgroundColor: theme.danger }]}
-                >
-                  <Trash2 size={16} color="#ffffff" />
-                  <Text style={styles.deleteBtnText}>מחק ({selectedIds.length})</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setIsSelectMode(false);
-                    setSelectedIds([]);
-                  }}
-                >
-                  <Text style={[styles.cancelSelectText, { color: theme.textMuted }]}>
-                    ביטול
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-
             {/* Coupons List */}
             <SectionList
               sections={renderedSections}
@@ -956,13 +867,8 @@ export function CouponsListScreen() {
                       key={coupon.id}
                       coupon={coupon}
                       tags={tagsMap[coupon.id] || NO_TAGS}
-                      selected={
-                        selectedIdSet.has(coupon.id) ||
-                        openCoupon === couponRouteId(coupon)
-                      }
-                      isSelectMode={isSelectMode}
+                      selected={openCoupon === couponRouteId(coupon)}
                       actionColor={theme.success}
-                      onToggleSelect={toggleSelect}
                       onShow={showCoupon}
                       onReportUsage={setUsageCoupon}
                     />
@@ -1411,32 +1317,6 @@ const styles = StyleSheet.create({
     minWidth: 18,
     textAlign: "center",
     flexShrink: 0,
-  },
-  selectionBar: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  deleteBtn: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  deleteBtnText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  cancelSelectText: {
-    fontSize: 13,
-    fontWeight: "600",
   },
   listContent: {
     paddingBottom: 32,

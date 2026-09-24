@@ -18,6 +18,10 @@ import { useAddCoupon } from "@/hooks/useCoupons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { notify } from "@/lib/notify";
+import { runPool } from "@/lib/runPool";
+
+/** Codes sent to the vault at once during a bulk import. */
+const BULK_IMPORT_CONCURRENCY = 4;
 
 export function BulkImportScreen() {
   const router = useRouter();
@@ -53,9 +57,11 @@ export function BulkImportScreen() {
     setLoading(true);
 
     try {
-      let imported = 0;
-      for (const code of lines) {
-        await addCoupon.mutateAsync({
+      // A few codes go out at once instead of one round trip after another —
+      // fifty codes used to mean fifty waits in a row. The pool stays small so
+      // the vault is not flooded, and one bad code no longer stops the rest.
+      const { failed, firstError } = await runPool(lines, BULK_IMPORT_CONCURRENCY, (code) =>
+        addCoupon.mutateAsync({
           company: company.trim(),
           code: code,
           value: numValue,
@@ -63,11 +69,25 @@ export function BulkImportScreen() {
           expiration: expiration.trim() || null,
           used_value: 0,
           status: "פעיל",
-        });
-        imported++;
+        })
+      );
+
+      if (failed.length) {
+        // Only the failed codes stay in the box, so trying again cannot
+        // import the successful ones a second time.
+        setBulkCodes(failed.join("\n"));
+        notify.error(
+          "שגיאה בייבוא מרובה",
+          `${lines.length - failed.length} מתוך ${lines.length} קודים יובאו. נכשלו: ${failed.join(", ")}${firstError instanceof Error ? ` (${firstError.message})` : ""}`
+        );
+        return;
       }
 
-      router.back();
+      // Nothing in the app links here, so the screen is usually opened from a
+      // URL with no history behind it; back() alone would leave the user on
+      // a finished import.
+      if (router.canGoBack()) router.back();
+      else router.replace("/coupons");
     } catch (e: any) {
       notify.error("שגיאה בייבוא מרובה", e.message);
     } finally {

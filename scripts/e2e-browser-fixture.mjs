@@ -86,19 +86,21 @@ try {
     if (process.argv[2] === "create") {
       const expiry = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+      // auto_update must be sent as false: it defaults to true, and the database
+      // only lets the maintainer own auto-updating coupons.
       primary = (await vault(owner.token, { action: "create", coupon: {
       company: "GoodPharm", code: "9376760189312784", cvv: "359", card_exp: "08/31",
-      description: "fixture", value: 100, cost: 80, used_value: 84.8, status: "פעיל",
+      description: "fixture", value: 100, cost: 80, used_value: 84.8, status: "פעיל", auto_update: false,
       expiration: "2031-08-31", date_added: new Date().toISOString(),
     } })).data;
     await vault(owner.token, { action: "create", coupon: {
       company: "גוד פארם", code: "E2E-SECOND", cvv: "111", card_exp: "09/31",
-      description: "fixture", value: 100, cost: 75, used_value: 88.7, status: "פעיל",
+      description: "fixture", value: 100, cost: 75, used_value: 88.7, status: "פעיל", auto_update: false,
       expiration: expiry, date_added: new Date().toISOString(),
     } });
     const sharedCoupon = (await vault(sender.token, { action: "create", coupon: {
       company: "Wolt", code: "E2E-SHARED", cvv: "222", card_exp: "10/31",
-      description: "fixture", value: 150, cost: 120, used_value: 10, status: "פעיל",
+      description: "fixture", value: 150, cost: 120, used_value: 10, status: "פעיל", auto_update: false,
       expiration: "2031-10-31", date_added: new Date().toISOString(),
     } })).data;
     await vault(sender.token, { action: "create_share", couponId: sharedCoupon.id, recipientEmail: owner.email });

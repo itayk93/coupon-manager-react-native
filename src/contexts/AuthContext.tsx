@@ -96,7 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
     loadUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      // The mount call above already covers the session that is there at
+      // start-up, and a token refresh does not change who is signed in —
+      // reloading on those read the `users` row twice at every launch and
+      // again every hour, re-rendering the whole app each time.
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
       if (isMounted) {
         loadUser();
       }

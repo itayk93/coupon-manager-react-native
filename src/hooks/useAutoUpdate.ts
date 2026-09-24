@@ -21,6 +21,8 @@ export function useTriggerAutoUpdate() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      // Open coupon pages hold their own copy; the server changed it too.
+      queryClient.invalidateQueries({ queryKey: ["coupon"] });
       queryClient.invalidateQueries({ queryKey: ["auto_update_runs"] });
     },
     onError: (error: any) => {

@@ -1,4 +1,4 @@
-type SearchableCoupon = {
+export type SearchableCoupon = {
   company?: string | null;
   description?: string | null;
   code?: string | null;

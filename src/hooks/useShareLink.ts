@@ -86,6 +86,8 @@ export function useClaimShareLink() {
       queryClient.invalidateQueries({ queryKey: ["shared_with_me"] });
       queryClient.invalidateQueries({ queryKey: ["my_shares"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      // Open coupon pages hold their own copy; the server changed it too.
+      queryClient.invalidateQueries({ queryKey: ["coupon"] });
       if (result.status === "declined") return;
       notify.success(result.status === "transferred" ? "הקופון הועבר אליך" : "הקופון שותף איתך");
     },

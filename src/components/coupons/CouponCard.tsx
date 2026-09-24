@@ -29,8 +29,6 @@ type CouponCardProps = {
   onReportUsage?: () => void;
   onEdit?: () => void;
   selected?: boolean;
-  onSelect?: () => void;
-  showSelect?: boolean;
 };
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -69,8 +67,6 @@ export function CouponCard({
   onReportUsage,
   onEdit,
   selected = false,
-  onSelect,
-  showSelect = false,
 }: CouponCardProps) {
   const router = useRouter();
   const { theme } = useAppTheme();
@@ -135,16 +131,12 @@ export function CouponCard({
     }
   }, [onReportUsage, onPress]);
 
-  const hold = useHoldAction({ onHold: reportUsage, enabled: !isInactive && !showSelect });
+  const hold = useHoldAction({ onHold: reportUsage, enabled: !isInactive });
 
   const handleCardPress = () => {
     // The hold already opened the usage flow — don't also navigate.
     if (hold.consumeHold()) return;
-    if (showSelect) {
-      onSelect?.();
-    } else {
-      onPress();
-    }
+    onPress();
   };
 
   const holdFill = hold.progress.interpolate({

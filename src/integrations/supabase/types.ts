@@ -1785,6 +1785,19 @@ export type Database = {
         Args: { p_coupon_id: number; p_usages: Json; p_import_key: string }
         Returns: { new_used: number; fully_used: boolean; inserted_count: number }[]
       }
+      coupon_usage_stats: {
+        Args: { p_coupon_ids: number[] }
+        Returns: {
+          coupon_id: number
+          usage_count: number
+          latest_usage: string | null
+          latest_transaction: string | null
+        }[]
+      }
+      is_hidden_ledger_row: {
+        Args: { p_details: string }
+        Returns: boolean
+      }
       claim_referral: {
         Args: { p_code: string; p_install_hash?: string; p_user_id: number }
         Returns: string

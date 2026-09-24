@@ -11,7 +11,7 @@ import {
   missingUsageFromLedger,
   usedValueFromLedger,
 } from "@/lib/couponLedger";
-import { DecryptedCoupon } from "./useCoupons";
+import { DecryptedCoupon, invalidateCouponDetail } from "./useCoupons";
 import { logActivity } from "@/lib/activityLog";
 import { notifyEvent } from "@/lib/notifyEvent";
 import { redemptionCelebration } from "@/lib/celebrationTrigger";
@@ -103,44 +103,26 @@ export function useCouponUsageStats(coupons: DecryptedCoupon[] = []) {
 
       const couponIds = coupons.map((c) => c.id);
 
-      const [usageRes, txRes] = await Promise.all([
-        supabase
-          .from("coupon_usage")
-          .select("coupon_id, details, action, timestamp")
-          .in("coupon_id", couponIds),
-        supabase
-          .from("coupon_transaction")
-          .select("coupon_id, location, source, usage_amount, transaction_date")
-          .in("coupon_id", couponIds),
-      ]);
+      // Counted in the database: one row per coupon instead of every ledger
+      // row of the wallet, and no 1000-row cap cutting a busy wallet short.
+      // The hidden Multipass audit rows are left out there, by the same rule
+      // as isHiddenLedgerRow().
+      const { data, error } = await supabase.rpc("coupon_usage_stats", { p_coupon_ids: couponIds });
+      if (error) throw error;
 
       const usageCountByCoupon: Record<number, number> = {};
       const latestUsageByCoupon: Record<number, number> = {};
 
-      (usageRes.data || []).forEach((u) => {
-        const details = u.details || u.action || "";
-        if (isHiddenLedgerRow(details)) return;
-        usageCountByCoupon[u.coupon_id] = (usageCountByCoupon[u.coupon_id] || 0) + 1;
-        if (u.timestamp) {
-          const ts = new Date(u.timestamp).getTime();
+      for (const row of data || []) {
+        usageCountByCoupon[row.coupon_id] = row.usage_count;
+        for (const stamp of [row.latest_usage, row.latest_transaction]) {
+          if (!stamp) continue;
+          const ts = new Date(stamp).getTime();
           if (!isNaN(ts)) {
-            latestUsageByCoupon[u.coupon_id] = Math.max(latestUsageByCoupon[u.coupon_id] || 0, ts);
+            latestUsageByCoupon[row.coupon_id] = Math.max(latestUsageByCoupon[row.coupon_id] || 0, ts);
           }
         }
-      });
-
-      (txRes.data || []).forEach((t) => {
-        const details = t.location || t.source || "";
-        if (isHiddenLedgerRow(details)) return;
-        usageCountByCoupon[t.coupon_id] = (usageCountByCoupon[t.coupon_id] || 0) + 1;
-        const dateStr = t.transaction_date;
-        if (dateStr) {
-          const ts = new Date(dateStr).getTime();
-          if (!isNaN(ts)) {
-            latestUsageByCoupon[t.coupon_id] = Math.max(latestUsageByCoupon[t.coupon_id] || 0, ts);
-          }
-        }
-      });
+      }
 
       // If a coupon has used_value > 0 but no explicit rows
       coupons.forEach((coupon) => {
@@ -423,7 +405,7 @@ export function useRecordUsage() {
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      queryClient.invalidateQueries({ queryKey: ["coupon", variables.couponId] });
+      invalidateCouponDetail(queryClient, variables.couponId);
     },
     onError: (error: any) => {
       notify.error("שגיאה ברישום השימוש", error.message);
@@ -461,7 +443,7 @@ export function useRecordUsage() {
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      queryClient.invalidateQueries({ queryKey: ["coupon", variables.couponId] });
+      invalidateCouponDetail(queryClient, variables.couponId);
     },
     onError: (error: any) => notify.error("שגיאה ברישום השימושים", error.message),
   });
@@ -556,7 +538,7 @@ export function useDeleteTransactionRecord() {
       queryClient.invalidateQueries({ queryKey: ["coupon_usage", variables.couponId] });
       queryClient.invalidateQueries({ queryKey: ["coupon_usage_stats"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      queryClient.invalidateQueries({ queryKey: ["coupon", variables.couponId] });
+      invalidateCouponDetail(queryClient, variables.couponId);
     },
     onError: (error: any) => {
       notify.error("שגיאה במחיקת הרשומה", error.message);

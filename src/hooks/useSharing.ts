@@ -60,6 +60,8 @@ export function useRespondToShare() {
       queryClient.invalidateQueries({ queryKey: ["shared_with_me"] });
       queryClient.invalidateQueries({ queryKey: ["my_shares"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      // Open coupon pages hold their own copy; the server changed it too.
+      queryClient.invalidateQueries({ queryKey: ["coupon"] });
       notify.success(accept ? "השיתוף אושר" : "ההזמנה נדחתה");
     },
     onError: (error: any) => notify.error("שגיאה במענה לשיתוף", error.message),

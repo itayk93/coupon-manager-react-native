@@ -101,6 +101,18 @@ export function useCoupon(couponIdentifier: string | number | undefined) {
   const hasValidIdentifier = publicId !== undefined
     || (Number.isSafeInteger(legacyId) && (legacyId as number) > 0);
 
+  const queryClient = useQueryClient();
+
+  // The wallet list holds the same decrypted row the vault's "get" returns, so
+  // a coupon opened from the list starts from it instead of asking the vault
+  // to decrypt it again. It counts as fresh for as long as the list does; a
+  // coupon that is not in the list (a deep link, a trashed one) still fetches.
+  const fromWallet = () => {
+    if (!user || !hasValidIdentifier) return undefined;
+    const coupons = queryClient.getQueryData<DecryptedCoupon[]>(["coupons", user.id]);
+    return coupons?.find((c) => (publicId !== undefined ? c.public_id === publicId : c.id === legacyId));
+  };
+
   return useQuery({
     queryKey: ["coupon", couponIdentifier],
     queryFn: async () => {
@@ -109,6 +121,27 @@ export function useCoupon(couponIdentifier: string | number | undefined) {
       return couponVault<DecryptedCoupon>({ action: "get", id: legacyId, publicId });
     },
     enabled: !!user && hasValidIdentifier,
+    initialData: fromWallet,
+    initialDataUpdatedAt: () =>
+      user ? queryClient.getQueryState(["coupons", user.id])?.dataUpdatedAt : undefined,
+    staleTime: COUPONS_STALE_TIME,
+  });
+}
+
+/**
+ * Marks one coupon's detail query stale, whichever id its route used. The
+ * detail is keyed by the route's identifier — usually the public `cpn_` id —
+ * so invalidating `["coupon", numericId]` alone never reached it.
+ */
+export function invalidateCouponDetail(
+  queryClient: ReturnType<typeof useQueryClient>,
+  couponId: number
+) {
+  return queryClient.invalidateQueries({
+    queryKey: ["coupon"],
+    predicate: (query) =>
+      query.queryKey[1] === couponId ||
+      (query.state.data as DecryptedCoupon | undefined)?.id === couponId,
   });
 }
 
@@ -172,6 +205,11 @@ export function useAddCoupon() {
         date_added: new Date().toISOString(),
         used_value: newCoupon.used_value || 0,
         status: newCoupon.status || "פעיל",
+        // The column defaults to true, and since 20260831080000 the database
+        // rejects an auto-updating coupon from anyone but the maintainer — so
+        // a caller that did not ask for it (bulk import, the onboarding coupon)
+        // had every insert fail. Only the add form opts in, explicitly.
+        auto_update: newCoupon.auto_update ?? false,
       };
 
       return couponVault<DecryptedCoupon>({ action: "create", coupon: couponToInsert });
@@ -251,7 +289,7 @@ export function useUpdateCoupon() {
       }
       // The server state is unknown after a failure, so resync from it.
       queryClient.invalidateQueries({ queryKey: ["coupons", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["coupon", id] });
+      invalidateCouponDetail(queryClient, id);
       notify.error("שגיאה בעדכון הקופון", error.message);
     },
     onSuccess: (updated, { id, updates }) => {
@@ -305,27 +343,6 @@ export function useDeleteCoupon() {
     },
     onError: (error: any) => {
       notify.error("שגיאה במחיקת הקופון", error.message);
-    },
-  });
-}
-
-export function useBulkDeleteCoupons() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async (ids: number[]) => {
-      if (!user) throw new Error("Not authenticated");
-      if (!ids.length) return 0;
-      const result = await couponVault<{ ids: number[] }>({ action: "soft_delete", ids });
-      return result.ids.length;
-    },
-    onSuccess: (deletedCount) => {
-      logActivity("delete_coupon", { metadata: { bulk: true, count: deletedCount } });
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
-    },
-    onError: (error: any) => {
-      notify.error("שגיאה במחיקה מרובה", error.message);
     },
   });
 }

@@ -47,6 +47,8 @@ export function useRecordManualSale() {
       couponVault<{ id: number }>({ action: "record_manual_sale", couponId, sale }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      // Open coupon pages hold their own copy; the server changed it too.
+      queryClient.invalidateQueries({ queryKey: ["coupon"] });
       queryClient.invalidateQueries({ queryKey: ["coupon_sales", user?.id] });
       notify.success("המכירה נשמרה", "הקופון הוסר מהארנק הפעיל");
     },
