@@ -9,7 +9,6 @@ import {
   ledgerAmountFromTransaction,
   ledgerAmountFromUsage,
   missingUsageFromLedger,
-  usedValueFromLedger,
 } from "@/lib/couponLedger";
 import { DecryptedCoupon, invalidateCouponDetail } from "./useCoupons";
 import { logActivity } from "@/lib/activityLog";
@@ -466,67 +465,16 @@ export function useDeleteTransactionRecord() {
     }) => {
       if (typeof recordId === "string") return { couponId };
 
-      if (sourceTable === "coupon_usage") {
-        const { error } = await supabase.from("coupon_usage").delete().eq("id", recordId);
-        if (error) throw error;
-      } else if (sourceTable === "coupon_transaction") {
-        const { error } = await supabase.from("coupon_transaction").delete().eq("id", recordId);
-        if (error) throw error;
-      }
-
-      // Recalculate the coupon balance from the remaining records. The three
-      // reads do not depend on each other, so they go out together instead of
-      // costing three round trips in a row.
-      const [usageRes, txRes, couponRes] = await Promise.all([
-        supabase
-          .from("coupon_usage")
-          .select("used_amount, action, details")
-          .eq("coupon_id", couponId),
-        supabase
-          .from("coupon_transaction")
-          .select("usage_amount, recharge_amount, location, source")
-          .eq("coupon_id", couponId),
-        supabase
-          .from("coupon")
-          .select("value, status")
-          .eq("id", couponId)
-          .single(),
-      ]);
-      // A failed read would look like an empty ledger and reset the balance.
-      if (usageRes.error) throw usageRes.error;
-      if (txRes.error) throw txRes.error;
-      const usageRows = usageRes.data;
-      const txRows = txRes.data;
-      const couponRow = couponRes.data;
-
-      // Same rows, same rule as the history list: anything hidden there is a
-      // duplicate of a row that is shown, so counting it would spend twice.
-      const ledger = [
-        ...(usageRows || [])
-          .filter((r) => !isHiddenLedgerRow(r.details || r.action || ""))
-          .map((r) => ledgerAmountFromUsage(r.used_amount)),
-        ...(txRows || [])
-          .filter((r) => !isHiddenLedgerRow(r.location || r.source || ""))
-          .map((r) => ledgerAmountFromTransaction(r.recharge_amount, r.usage_amount)),
-      ];
-
-      if (couponRow) {
-        const capped = usedValueFromLedger(couponRow.value, ledger);
-        const fullyUsed = capped >= couponRow.value;
-        const keepStatus =
-          couponRow.status === "נוצל" || couponRow.status === "פעיל"
-            ? null
-            : couponRow.status;
-
-        const { error: updateErr } = await supabase
-          .from("coupon")
-          .update({
-            used_value: capped,
-            status: keepStatus ?? (fullyUsed ? "נוצל" : "פעיל"),
-          })
-          .eq("id", couponId);
-        if (updateErr) throw updateErr;
-      }
+      // One call: the database deletes the row and recomputes the balance in
+      // the same transaction, by the same rules as couponLedger.ts. Doing it
+      // from here took five round trips, and a dropped connection between the
+      // delete and the balance write left the two out of step.
+      const { error } = await supabase.rpc("delete_coupon_ledger_record", {
+        p_coupon_id: couponId,
+        p_source: sourceTable,
+        p_record_id: recordId,
+      });
+      if (error) throw error;
 
       return { couponId };
     },

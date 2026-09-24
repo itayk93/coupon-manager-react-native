@@ -1794,6 +1794,10 @@ export type Database = {
           latest_transaction: string | null
         }[]
       }
+      delete_coupon_ledger_record: {
+        Args: { p_coupon_id: number; p_source: string; p_record_id: number }
+        Returns: { used_value: number; status: string }[]
+      }
       is_hidden_ledger_row: {
         Args: { p_details: string }
         Returns: boolean
