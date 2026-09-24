@@ -63,6 +63,9 @@ const BY_TYPE: Record<Exclude<NotificationTypeId, 'expiry'>, NotificationIconKey
   coupon_finished: 'coupon-finished',
   coupon_milestone: 'coupon-milestone',
   expired_unused: 'expired-unused',
+  // No faces of their own yet; the nearest drawn ones say the same thing.
+  weekly_pick: 'expiry-week',
+  unrecorded_usage: 'balance-updated',
 };
 
 export function iconKeyFor(type: NotificationTypeId, days?: number): NotificationIconKey {

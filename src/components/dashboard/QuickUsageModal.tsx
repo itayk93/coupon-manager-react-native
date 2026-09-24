@@ -25,6 +25,8 @@ import { CouponLocationMap } from "@/components/maps/CouponLocationMap";
 import { PlacePickerModal } from "@/components/dashboard/PlacePickerModal";
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedUsage, useParseUsageScreenshot, verifyCouponCodeInScreenshot } from "@/hooks/useUsageAI";
+import { recordedUsageIsland } from "@/lib/islandCopy";
+import { pushIsland } from "@/components/ui/Island";
 import { formatIls } from "@/lib/formatIls";
 import { matchCouponCode } from "@/lib/couponCodeMatch";
 import { cacheParsedUsage, getCachedParsedUsage } from "@/lib/usageParseCache";
@@ -455,10 +457,22 @@ export function QuickUsageModal({
         setError("כל השימושים האלה כבר דווחו לפי סכום ומועד.");
         return;
       }
+      const savedCoupon = coupons.find((c) => c.id === selectedCouponId);
       setDetectedUsages([]);
       setUsedAtDrafts({});
       onImportCompleted?.();
       onClose();
+      if (savedCoupon) {
+        pushIsland(recordedUsageIsland({
+          company: savedCoupon.company || "",
+          count: result.insertedCount,
+          amount: result.insertedCount === valid.length
+            ? valid.reduce((sum, item) => sum + item.amount, 0)
+            : null,
+          remaining: Math.max(0, (savedCoupon.value || 0) - result.newUsed),
+          fullyUsed: result.fullyUsed,
+        }));
+      }
     } catch (e) {
       console.error(e);
     } finally {

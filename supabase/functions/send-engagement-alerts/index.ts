@@ -1,13 +1,14 @@
 // Supabase Edge Function: send-engagement-alerts
 //
-// The four things worth saying that nobody triggers by doing anything:
+// The things worth saying that nobody triggers by doing anything:
 //
 //   monthly_summary    what last month was worth, once a month
 //   idle_money         balance nobody has looked at in a season
 //   coupon_milestone   the 1st, 10th, 50th, 100th coupon in the wallet
 //   expired_unused     a coupon that ran out with money still on it
+//   weekly_pick        on Sunday, the coupon to start the week with
 //
-// All four are recomputed from the same coupon rows on every run — none of them
+// All of them are recomputed from the same coupon rows on every run — none of them
 // is an event that happens once. What keeps them from repeating is the
 // notification_events ledger, through the dedupe key each one picks below.
 //
@@ -26,6 +27,7 @@ import { isServiceRoleCall, requireAdmin } from '../_shared/auth.ts';
 import { createServiceClient, type PushSubscriptionRow } from '../_shared/push.ts';
 import { deliver, type DeliveryPrefs, type DeliveryUser } from '../_shared/deliver.ts';
 import { money, monthName } from '../_shared/notificationTypes.ts';
+import { isSundayIn, isoWeekKey, weeklyPick } from '../_shared/weeklyPick.ts';
 
 const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 const ACTIVE_STATUS = 'פעיל';
@@ -182,7 +184,7 @@ Deno.serve(async (req) => {
 
     const sent: Record<string, number> = {
       monthly_summary: 0, idle_money: 0,
-      coupon_milestone: 0, expired_unused: 0,
+      coupon_milestone: 0, expired_unused: 0, weekly_pick: 0,
     };
 
     for (const user of users as UserRow[]) {
@@ -275,6 +277,29 @@ Deno.serve(async (req) => {
           'לכוונון התזכורות',
         );
         if (result.in_app || result.push || result.email) sent.expired_unused += 1;
+      }
+
+      // 5. On the user's Sunday, the coupon to start the week with. The pick
+      //    is arithmetic (weeklyPick.ts); the model only words it. Keyed by
+      //    ISO week, so the hourly runs after the first one are free.
+      if (isSundayIn(prefs.timezone || DEFAULT_TIMEZONE, now)) {
+        const pick = weeklyPick(userCoupons, now);
+        if (pick) {
+          const result = await send(
+            'weekly_pick',
+            {
+              company: pick.coupon.company,
+              remaining: pick.remaining,
+              daysLeft: pick.daysLeft,
+              others: pick.others,
+              couponPublicId: pick.coupon.public_id,
+            },
+            isoWeekKey(now),
+            money(pick.remaining),
+            'לקופון',
+          );
+          if (result.in_app || result.push || result.email) sent.weekly_pick += 1;
+        }
       }
     }
 

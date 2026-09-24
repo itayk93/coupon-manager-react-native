@@ -45,7 +45,7 @@ type FeedItem = {
 
 function iconFor(kind: string | null | undefined, color: string) {
   if (kind === "share_received") return <Share2 size={18} color={color} />;
-  if (kind === "idle_money" || kind === "balance_updated") return <WalletCards size={18} color={color} />;
+  if (kind === "idle_money" || kind === "balance_updated" || kind === "unrecorded_usage") return <WalletCards size={18} color={color} />;
   return <Bell size={18} color={color} />;
 }
 

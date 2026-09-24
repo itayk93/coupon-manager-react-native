@@ -20,7 +20,9 @@ export type NotificationTypeId =
   | 'balance_updated'
   | 'coupon_finished'
   | 'coupon_milestone'
-  | 'expired_unused';
+  | 'expired_unused'
+  | 'weekly_pick'
+  | 'unrecorded_usage';
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -79,6 +81,20 @@ export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta
     id: 'expired_unused',
     label: 'יתרה שלא הספקנו לנצל',
     defaults: { email: true, push: false, in_app: true },
+  },
+  // Weekly, and only when there is money with a deadline in the next two
+  // months: planning, not an alarm, so it stays out of the inbox.
+  weekly_pick: {
+    id: 'weekly_pick',
+    label: 'עם איזה קופון להתחיל השבוע',
+    defaults: { email: false, push: true, in_app: true },
+  },
+  // Money that left a coupon without a record may not have been the user's
+  // doing. Every channel, like the expiry reminder.
+  unrecorded_usage: {
+    id: 'unrecorded_usage',
+    label: 'היתרה ירדה בלי שימוש רשום',
+    defaults: { email: true, push: true, in_app: true },
   },
 };
 
@@ -197,6 +213,23 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         title: 'יתרה שלא הספקנו לנצל',
         body: `הקופון ב${payload.company} פג עם ${money(payload.remaining)}. בפעם הבאה נוכל להזכיר מוקדם יותר.`,
         link: '/notification-settings',
+      };
+    case 'weekly_pick': {
+      const others = Number(payload.others || 0);
+      const next = others > 0
+        ? ` ${others === 1 ? 'עוד קופון אחד מחכה' : `עוד ${others} קופונים מחכים`} אחריו.`
+        : '';
+      return {
+        title: 'עם איזה קופון להתחיל השבוע',
+        body: `${payload.company}: נשארו ${money(payload.remaining)} והוא פג בעוד ${payload.daysLeft} ימים.${next}`,
+        link: payload.couponPublicId ? `/coupons/${payload.couponPublicId}` : '/coupons',
+      };
+    }
+    case 'unrecorded_usage':
+      return {
+        title: 'היתרה ירדה בלי שימוש רשום',
+        body: `ב${payload.company} ירדו ${money(payload.drop)} שלא נרשמו באפליקציה, ונשארו ${money(payload.balance)}. אם זה לא היה שימוש שלך, כדאי לבדוק.`,
+        link: payload.couponPublicId ? `/coupons/${payload.couponPublicId}` : '/coupons',
       };
     default:
       return { title: 'קופוני', body: 'יש עדכון חדש בארנק שלך.', link: '/notifications' };

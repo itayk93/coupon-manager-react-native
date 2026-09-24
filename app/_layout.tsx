@@ -41,6 +41,8 @@ import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
+import { useNotificationRouting } from "@/hooks/useNotificationRouting";
+import { NearbyCouponWatcher } from "@/components/layout/NearbyCouponWatcher";
 import { IslandHost } from "@/components/ui/Island";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { applyWebDocumentHead } from "@/lib/webDocumentHead";
@@ -192,6 +194,7 @@ function RootLayoutNav() {
   const fontsSettled = fontsLoaded || Boolean(fontError) || fontWaitElapsed;
 
   const isReady = authReady && fontsSettled;
+  useNotificationRouting(isReady);
 
   useEffect(() => {
     if (fontsSettled && !launchVisible) {
@@ -277,6 +280,7 @@ function RootLayoutNav() {
           <ConfirmHost />
           <ToastHost />
           <IslandHost />
+          <NearbyCouponWatcher enabled={isReady && !launchVisible} />
 
           {launchVisible ? (
             <BrandLaunchAnimation

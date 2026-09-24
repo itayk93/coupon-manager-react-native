@@ -22,7 +22,9 @@ export type NotificationTypeId =
   | "balance_updated"
   | "coupon_finished"
   | "coupon_milestone"
-  | "expired_unused";
+  | "expired_unused"
+  | "weekly_pick"
+  | "unrecorded_usage";
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -62,6 +64,30 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
       what: "מישהו הזמין אותך לקבל קופון. הקופון נפתח רק אחרי שתאשר.",
       when: "מיד כשמישהו שולח אליך הזמנה.",
       where: "מסך השיתוף.",
+    },
+  },
+  {
+    id: "weekly_pick",
+    label: "עם איזה קופון להתחיל השבוע",
+    description: "פעם בשבוע, הקופון שהכי כדאי לא לדחות",
+    sample: "Wolt: נשארו 150.00 ש״ח והוא פג בעוד 15 ימים",
+    defaults: { email: false, push: true, in_app: true },
+    explanation: {
+      what: "הקופון שמפסיד הכי הרבה מכל יום המתנה — היתרה שנשארה חלקי הימים עד שהוא פג.",
+      when: "ביום ראשון בבוקר, אם יש קופון עם 20 ש״ח ומעלה שפג בעוד 8 עד 60 ימים.",
+      where: "הקופון שנבחר.",
+    },
+  },
+  {
+    id: "unrecorded_usage",
+    label: "היתרה ירדה בלי שימוש רשום",
+    description: "כשבדיקה אוטומטית מוצאת פחות כסף ממה שרשום אצלך",
+    sample: "במולטיפס ירדו 80.00 ש״ח שלא נרשמו באפליקציה",
+    defaults: { email: true, push: true, in_app: true },
+    explanation: {
+      what: "בדיקת היתרה האוטומטית מצאה שירד מהקופון יותר ממה שנרשם, כדי שתוכל לוודא שזה היה אתה.",
+      when: "מיד אחרי בדיקת יתרה אוטומטית שמצאה ירידה.",
+      where: "הקופון שהיתרה שלו ירדה.",
     },
   },
   {

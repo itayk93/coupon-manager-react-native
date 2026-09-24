@@ -45,3 +45,31 @@ export function parsedCouponIsland(first: ParsedCoupon, found = 1): IslandCopy {
     message: details(first) ?? "בדקו את הפרטים ושמרו",
   };
 }
+
+/**
+ * What the island says once usages the smart parser read off a screenshot or
+ * an SMS have been saved. The review happens in a modal, which covers the
+ * island, so the island speaks after it closes: what was recorded, and what is
+ * left on the coupon as the server now counts it.
+ *
+ * `amount` is the total of the saved usages, or null when the server skipped
+ * some as duplicates and the total of the rest is not known here.
+ */
+export function recordedUsageIsland(usage: {
+  company: string;
+  count: number;
+  amount: number | null;
+  remaining: number;
+  fullyUsed: boolean;
+}): IslandCopy {
+  const company = usage.company.trim();
+  const where = company ? ` ב${company}` : "";
+  const title = usage.count === 1 ? `עדכנו שימוש${where}` : `עדכנו ${usage.count} שימושים${where}`;
+  const after = usage.fullyUsed || usage.remaining <= 0
+    ? "הקופון נוצל עד הסוף"
+    : `נשארו ${amount(usage.remaining)}`;
+  return {
+    title,
+    message: usage.amount && usage.amount > 0 ? `${amount(usage.amount)} · ${after}` : after,
+  };
+}

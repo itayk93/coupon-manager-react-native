@@ -12,7 +12,7 @@ import { useParseCoupon } from "@/hooks/useCouponAI";
 import { useCoupons } from "@/hooks/useCoupons";
 import { fonts } from "@/lib/theme";
 import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
-import { parsedCouponIsland } from "@/lib/parsedCouponIsland";
+import { parsedCouponIsland } from "@/lib/islandCopy";
 import { pushIsland } from "@/components/ui/Island";
 
 /**

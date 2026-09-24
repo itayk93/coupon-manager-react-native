@@ -24,6 +24,7 @@ import { deliver, type DeliveryPrefs } from '../_shared/deliver.ts';
 import { money } from '../_shared/notificationTypes.ts';
 import { requireAdmin, requireSameUser } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
+import { splitBalanceChanges, type BalanceChange } from '../_shared/weeklyPick.ts';
 
 type Coupon = {
   id: number;
@@ -42,13 +43,7 @@ type Coupon = {
   last_code_view: string | null;
 };
 
-type UpdatedCouponSummary = {
-  id: number;
-  publicId: string;
-  company: string;
-  oldRemaining: number;
-  newRemaining: number;
-};
+type UpdatedCouponSummary = BalanceChange;
 
 function providerFor(coupon: Coupon): 'multipass' | 'buyme' | null {
   const lookup = [coupon.company, coupon.source, coupon.auto_download_details]
@@ -247,25 +242,54 @@ Deno.serve(async (req: Request) => {
           timezone: prefRow?.timezone || 'Asia/Jerusalem',
           type_channels: prefRow?.type_channels ?? null,
         };
-        const lead = changedCoupons[0];
-        await deliver(serviceSupabase, {
-          user: recipient,
-          prefs,
-          subscriptions: (subscriptions || []) as any,
-          type: 'balance_updated',
-          payload: {
-            company: lead.company,
-            balance: lead.newRemaining,
-            couponId: lead.id,
-            couponPublicId: lead.publicId,
-            extra: changedCoupons.length - 1,
-          },
-          // The user asked for this refresh and is watching it happen; holding
-          // the answer until morning would be absurd.
-          respectQuietHours: false,
-          highlight: money(lead.newRemaining),
-          ctaLabel: 'לראות את הקופון',
-        });
+        // A drop the app had no record of is its own message, one per coupon;
+        // everything else is summed up as a refresh, as before.
+        const { unrecorded, refreshed } = splitBalanceChanges(changedCoupons);
+
+        for (const change of unrecorded) {
+          const drop = Math.round((change.oldRemaining - change.newRemaining) * 100) / 100;
+          await deliver(serviceSupabase, {
+            user: recipient,
+            prefs,
+            subscriptions: (subscriptions || []) as any,
+            type: 'unrecorded_usage',
+            payload: {
+              company: change.company,
+              drop,
+              balance: change.newRemaining,
+              couponId: change.id,
+              couponPublicId: change.publicId,
+            },
+            // Keyed by the balance it found, so re-running the same check does
+            // not say it again, and a further drop later still does.
+            dedupeKey: `${change.id}:${change.newRemaining}`,
+            respectQuietHours: false,
+            highlight: money(drop),
+            ctaLabel: 'לבדוק את הקופון',
+          });
+        }
+
+        const lead = refreshed[0];
+        if (lead) {
+          await deliver(serviceSupabase, {
+            user: recipient,
+            prefs,
+            subscriptions: (subscriptions || []) as any,
+            type: 'balance_updated',
+            payload: {
+              company: lead.company,
+              balance: lead.newRemaining,
+              couponId: lead.id,
+              couponPublicId: lead.publicId,
+              extra: refreshed.length - 1,
+            },
+            // The user asked for this refresh and is watching it happen; holding
+            // the answer until morning would be absurd.
+            respectQuietHours: false,
+            highlight: money(lead.newRemaining),
+            ctaLabel: 'לראות את הקופון',
+          });
+        }
       }
     }
 

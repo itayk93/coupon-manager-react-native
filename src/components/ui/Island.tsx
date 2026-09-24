@@ -1,5 +1,5 @@
 import React from "react";
-import { AccessibilityInfo, Platform, StyleSheet, Text, View } from "react-native";
+import { AccessibilityInfo, Image, Platform, StyleSheet, Text, View, type ImageSourcePropType } from "react-native";
 import { initialWindowMetrics } from "react-native-safe-area-context";
 import { Sparkles } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -21,11 +21,18 @@ export type IslandPayload = {
   title: string;
   message?: string;
   onPress?: () => void;
+  /** Kuponi's face for a push; without one the card shows the smart-parser sparkle. */
+  face?: ImageSourcePropType;
 };
 
 type Listener = (island: IslandPayload) => void;
 
 let listener: Listener | null = null;
+
+/** Whether `pushIsland` will reach the island rather than fall back to a toast. */
+export function hasIslandHost(): boolean {
+  return listener !== null;
+}
 
 export function pushIsland(island: IslandPayload) {
   if (listener) {
@@ -70,9 +77,13 @@ function IslandCard({ island }: { island: IslandPayload }) {
   const { theme } = useAppTheme();
   return (
     <View style={styles.card}>
-      <View style={[styles.badge, { backgroundColor: theme.primaryTint }]}>
-        <Sparkles size={22} color={theme.primary} />
-      </View>
+      {island.face ? (
+        <Image source={island.face} style={styles.face} />
+      ) : (
+        <View style={[styles.badge, { backgroundColor: theme.primaryTint }]}>
+          <Sparkles size={22} color={theme.primary} />
+        </View>
+      )}
       <View style={styles.copy}>
         <Text numberOfLines={1} style={[styles.title, { color: theme.text }]}>
           {island.title}
@@ -153,6 +164,11 @@ const styles = StyleSheet.create({
     borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
+  },
+  face: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   copy: {
     flex: 1,

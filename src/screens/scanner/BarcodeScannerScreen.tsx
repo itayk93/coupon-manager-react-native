@@ -37,7 +37,7 @@ import { fonts } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 import { usePageTutorial } from "@/hooks/usePageTutorial";
 import { storeSharedCouponImport } from "@/lib/sharedCouponImport";
-import { parsedCouponIsland } from "@/lib/parsedCouponIsland";
+import { parsedCouponIsland } from "@/lib/islandCopy";
 import { pushIsland } from "@/components/ui/Island";
 
 export function BarcodeScannerScreen() {

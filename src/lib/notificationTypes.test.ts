@@ -94,11 +94,31 @@ describe("copy", () => {
       .toBe("/notification-settings");
   });
 
+  it("opens the weekly pick on its coupon and counts the ones behind it", () => {
+    const copy = copyFor("weekly_pick", {
+      company: "Wolt", remaining: 150, daysLeft: 15, others: 2, couponPublicId: "abc",
+    });
+    expect(copy.body).toContain("150.00 ש״ח");
+    expect(copy.body).toContain("15 ימים");
+    expect(copy.body).toContain("עוד 2 קופונים מחכים");
+    expect(copy.link).toBe("/coupons/abc");
+  });
+
+  it("names the unrecorded drop and what is left, and opens the coupon", () => {
+    const copy = copyFor("unrecorded_usage", {
+      company: "Multipass", drop: 80, balance: 120, couponPublicId: "xyz",
+    });
+    expect(copy.body).toContain("80.00 ש״ח");
+    expect(copy.body).toContain("120.00 ש״ח");
+    expect(copy.link).toBe("/coupons/xyz");
+  });
+
   it("writes every kind in Hebrew", () => {
     for (const id of Object.keys(SERVER_TYPES) as Array<keyof typeof SERVER_TYPES>) {
       const copy = copyFor(id, {
         month: 0, year: 2026, amount: 10, months: 3, fromName: "א", company: "ב",
         balance: 1, couponId: 1, saved: 5, threshold: 1000, count: 10, remaining: 5,
+        drop: 3, daysLeft: 12, others: 0,
       });
       // The sign never reaches a notification, whichever kind it is.
       expect(`${copy.title} ${copy.body}`).not.toContain("₪");

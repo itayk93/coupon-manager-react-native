@@ -8,17 +8,44 @@ export const ANDROID_CHANNEL_ID = "expiry-alerts";
 const PUSH_REGISTERED_KEY = "native-push:registered:v1";
 
 /**
+ * Shows a notification that arrived while the app is open in the app's own
+ * way, and says whether it did. Set by `useNotificationRouting`, which puts it
+ * in the Dynamic Island on phones that have one.
+ */
+export type ForegroundPresenter = (notification: Notifications.Notification) => boolean;
+
+let foregroundPresenter: ForegroundPresenter | null = null;
+
+export function setForegroundPresenter(presenter: ForegroundPresenter | null) {
+  foregroundPresenter = presenter;
+}
+
+function presentInApp(notification: Notifications.Notification): boolean {
+  try {
+    return foregroundPresenter?.(notification) ?? false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Without a handler, a notification that arrives while the app is open is
  * delivered silently — no banner, no sound. Registered at module load so it is
  * in place before the first push can land.
+ *
+ * When the app shows it itself, the system banner and sound step aside so the
+ * same message does not arrive twice; it still goes to Notification Center.
  */
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const shownInApp = presentInApp(notification);
+    return {
+      shouldShowBanner: !shownInApp,
+      shouldShowList: true,
+      shouldPlaySound: !shownInApp,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 /** Android shows nothing as a heads-up until a channel exists. */
