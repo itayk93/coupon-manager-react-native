@@ -46,6 +46,10 @@ SHEETS = {
 #:
 #: So these two keep the approved 320px rows, which were never the problem. A
 #: sheet has to earn the swap; being newer is not earning it.
+# States rebuilt as rigid cut-out rigs (scripts/mascot_rig/). Their atlases are
+# owned by that builder: the morph below is what made the body stretch, so it
+# must never write over them again. Frames are still made here for previews.
+RIGGED = {'scan'}
 USE_SHEET = {'success': True, 'concern': True, 'scan': False, 'greeting': False}
 
 #: What each state falls back to: the four approved 320px rows, and the cycles
@@ -145,12 +149,15 @@ for row, name in enumerate(NAMES):
     for index, frame in enumerate(frames):
         assert frame.getbbox() is not None
         atlas.alpha_composite(frame, ((index % GRID)*CELL, (index // GRID)*CELL))
+    all_frames.append(frames)
+    if name in RIGGED:
+        print(f'{name}: rigged, atlas left to scripts/mascot_rig', flush=True)
+        continue
     # Lossless WebP: pixel-identical to PNG, ~40% smaller in the bundle.
     atlas.save(OUT / f'{name}-smooth.webp', lossless=True, quality=100, method=6, exact=True)
     with Image.open(OUT / f'{name}-smooth.webp') as decoded:
         if not np.array_equal(np.asarray(decoded.convert('RGBA')), np.asarray(atlas)):
             raise ValueError(f'{name}: lossless RGBA round-trip failed')
-    all_frames.append(frames)
     if name in ('scan', 'success'):
         for target in ('share', 'add-share'):
             folder = ROOT / f'targets/{target}/Assets.xcassets/Mascot{name.title()}.imageset'

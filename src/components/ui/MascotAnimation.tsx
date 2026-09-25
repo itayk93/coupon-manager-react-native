@@ -32,7 +32,7 @@ const FRAME_COUNT = 36;
 const GRID = 6;
 const DEFAULT_FPS = 24;
 const STATE_FPS: Record<MascotState, number> = {
-  calm: 12, scanning: 12, concerned: 16, worried: 18,
+  calm: 18, scanning: 18, concerned: 16, worried: 18,
   talking: 24, cheering: 24, alarmed: 24, relieved: 24, "six-seven": 24,
 };
 const ROW: Record<MascotState, number> = {

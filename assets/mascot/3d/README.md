@@ -15,6 +15,27 @@ The opaque source draft and old preview are not referenced by the application.
 Reference: user-provided `original_app_mascot.png`.
 Generated using the built-in image generation tool on 2026-09-10.
 
+## Scan is a rigid rig now (2026-09-25)
+
+`scan-smooth.webp` (`scanning` and `calm`) is no longer morphed. The optical-flow
+interpolation below, and the breathing field on top of it, warped the body
+between separately drawn keyframes, so on screen he stretched and shrank like
+dough. Scan is now built by `scripts/mascot_rig/build_scan.py` from separate
+generated layers in `rig/scan/` (body, eye whites, pupil, lids, brows, mouth,
+resting arm, hand-and-magnifier) placed by `rig/scan/rig.json` in the pixel
+grid of `original_app_mascot.png`.
+
+Each layer is scaled once, uniformly. After that a frame can only translate or
+turn it, so the body is the same pixels in all 36 frames. The builder checks
+that before writing: body area and principal-axis spread must not change by
+0.2%, the 35 -> 0 step must not exceed an ordinary step by half, and no frame
+may touch its cell edge. Cells are 320px; the loop is 36 frames at 18fps (2s).
+`interpolate-mascot-3d.py` skips writing any state listed in its `RIGGED`
+set. The other seven atlases are still the morphs described below until
+their layers exist.
+
+    python3 scripts/mascot_rig/build_scan.py --preview /tmp/kuponi-review
+
 ## New keyframe sheets: two of four earned the swap
 
 All four replacement sheets are in `source/` and all four now decode. Two are

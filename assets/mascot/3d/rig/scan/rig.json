@@ -1,0 +1,172 @@
+{
+  "comment": "Canonical space is the pixel grid of assets/mascot/original_app_mascot.png. centre = where the artwork's bounding-box centre lands; width = its width there. Every layer is scaled uniformly, once.",
+  "window": {
+    "x": 250,
+    "y": -45,
+    "size": 1000
+  },
+  "feet": [
+    707,
+    910
+  ],
+  "layers": [
+    {
+      "name": "body",
+      "file": "canonical-body.png",
+      "width": 671,
+      "centre": [
+        707,
+        500
+      ]
+    },
+    {
+      "name": "hand-left",
+      "file": "hand-left-relaxed.png",
+      "width": 150,
+      "centre": [
+        425,
+        668
+      ],
+      "pivot": [
+        410,
+        572
+      ]
+    },
+    {
+      "name": "eye-left",
+      "file": "eye-white-left.png",
+      "width": 148,
+      "centre": [
+        722,
+        452
+      ]
+    },
+    {
+      "name": "eye-right",
+      "file": "eye-white-right.png",
+      "width": 122,
+      "centre": [
+        932,
+        393
+      ]
+    },
+    {
+      "name": "pupil-left",
+      "file": "pupil.png",
+      "width": 72,
+      "centre": [
+        760,
+        469
+      ],
+      "clip": "eye-left"
+    },
+    {
+      "name": "pupil-right",
+      "file": "pupil.png",
+      "width": 60,
+      "centre": [
+        951,
+        410
+      ],
+      "clip": "eye-right"
+    },
+    {
+      "name": "lid-half-left",
+      "file": "eyelid-half-left.png",
+      "width": 163,
+      "centre": [
+        722,
+        408
+      ],
+      "clip": "eye-left"
+    },
+    {
+      "name": "lid-half-right",
+      "file": "eyelid-half-right.png",
+      "width": 134,
+      "centre": [
+        932,
+        352
+      ],
+      "clip": "eye-right"
+    },
+    {
+      "name": "lid-closed-left",
+      "file": "eyelid-closed-left.png",
+      "width": 163,
+      "centre": [
+        722,
+        452
+      ],
+      "clip": "eye-left"
+    },
+    {
+      "name": "lid-closed-right",
+      "file": "eyelid-closed-right.png",
+      "width": 134,
+      "centre": [
+        932,
+        393
+      ],
+      "clip": "eye-right"
+    },
+    {
+      "name": "brow-left",
+      "file": "brow-neutral-left.png",
+      "width": 74,
+      "centre": [
+        689,
+        330
+      ]
+    },
+    {
+      "name": "brow-right",
+      "file": "brow-neutral-right.png",
+      "width": 66,
+      "centre": [
+        918,
+        268
+      ]
+    },
+    {
+      "name": "brow-raised-left",
+      "file": "brow-raised-left.png",
+      "width": 53,
+      "centre": [
+        691,
+        318
+      ]
+    },
+    {
+      "name": "brow-raised-right",
+      "file": "brow-raised-right.png",
+      "width": 69,
+      "centre": [
+        918,
+        255
+      ]
+    },
+    {
+      "name": "mouth",
+      "file": "mouth-smile-small.png",
+      "width": 82,
+      "centre": [
+        835,
+        532
+      ]
+    },
+    {
+      "name": "magnifier",
+      "file": "magnifier-front.png",
+      "width": 555,
+      "centre": [
+        913,
+        573
+      ],
+      "pivot": [
+        749,
+        684
+      ]
+    }
+  ]
+}
