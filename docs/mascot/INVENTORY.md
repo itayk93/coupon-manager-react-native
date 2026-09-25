@@ -18,13 +18,13 @@
 
 ## 2. אטלסי האנימציה — בתוך האפליקציה
 
-`assets/mascot/3d/` · 36 פריימים ברשת 6×6 · תא 256px (סריקה: 320px) · קצב לפי מצב: סריקה 18fps (2 שניות),
+`assets/mascot/3d/` · 36 פריימים ברשת 6×6 · תא 320px, ריג קשיח (`scripts/mascot_rig/build.py`) · קצב לפי מצב: סריקה 18fps (2 שניות),
 דאגה 16fps (2.25 שניות), מודאג 18fps (2 שניות), היתר 24fps (1.5 שניות).
 הקלה היא רצף חד־פעמי. מיפוי המצבים נשאר ללא שינוי.
 
 | קובץ | שורה באטלס | מצבים | סטטוס |
 |---|---|---|---|
-| `scan-smooth.webp` | 0 | `scanning`, `calm` — ריג קשיח, `scripts/mascot_rig/build_scan.py` | 🟢 |
+| `scan-smooth.webp` | 0 | `scanning`, `calm` | 🟢 |
 | `greeting-smooth.webp` | 1 | `talking` | 🟢 |
 | `success-smooth.webp` | 2 | `cheering` | 🟢 |
 | `concern-smooth.webp` | 3 | `concerned` | 🟢 |

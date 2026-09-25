@@ -1,0 +1,30 @@
+KUPONI — SOURCE ARTWORK HANDOFF / INCOMPLETE SPEC COMPLIANCE
+
+31 isolated new parts (including optional sweat drop), 8 full-character reference drafts,
+manifest.json, verbatim PROMPTS.md, and 4 replaced/unsuccessful image iterations.
+Existing scan parts were reused as references, not regenerated and not included.
+All delivered PNGs are 1254 x 1254 RGBA with real background alpha, not green.
+The tool did not deliver the requested 2048 resolution. Files were not upscaled.
+No atlas, animation code, app changes or rigid animation validation was performed.
+
+KNOWN FAILURES — DO NOT TREAT THIS ZIP AS A PASSED PRODUCTION KIT
+- Anatomical scale was not followed consistently despite explicit generation prompts.
+  intended_width_on_850px_torso is the requested placement target, not a measured match.
+  Images are original generation outputs; no rescaling/warping was applied after generation.
+- The new magnifier lenses do have alpha, but their opacity is too high/uneven and is
+  not certified within 55-75%. Retrying did not reliably fix this.
+- Full-character references are illustrative drafts, REJECTED as exact template-matching
+  targets: generator redrew body/parts. Several features, hands and proportions differ.
+  Greeting omits brows; worried reverses hand/prop placement; other references also differ.
+  Some references and the rejected enlarged raised magnifier fail the requested margins.
+- Edge speckling/blue fringes remain in some outputs. No claim of a passed 400% halo gate,
+  exact blue colour match, or exact camera/anatomy lock is made.
+- Pivots are visually estimated in each supplied image and require registration review.
+- Relieved start is an exact byte copy of the alarmed reference, as required for identity.
+- State-reference requests initially failed when more than five input images were used.
+  Retried with the three mandatory scan references plus at most two additional part images.
+  This input limitation contributed to inconsistent references.
+
+The two open-mouth retries remove the conspicuous blue lip rims.
+The enlarged raised-magnifier retry was rejected for poor framing; earlier version retained.
+rejected/ preserves the other generated versions. All submitted prompts are retained.

@@ -1,9 +1,9 @@
 {
   "comment": "Canonical space is the pixel grid of assets/mascot/original_app_mascot.png. centre = where the artwork's bounding-box centre lands; width = its width there. Every layer is scaled uniformly, once.",
   "window": {
-    "x": 250,
-    "y": -45,
-    "size": 1000
+    "x": 195,
+    "y": -95,
+    "size": 1100
   },
   "feet": [
     707,

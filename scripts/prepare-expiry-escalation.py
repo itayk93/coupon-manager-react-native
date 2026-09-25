@@ -194,8 +194,12 @@ def main():
     worried = breathe(interpolate(escalation_keys[:3], loop=True), .005)
     alarmed = interpolate(escalation_keys[3:], loop=True)
     relieved = interpolate(relief_keys, loop=False)
-    for name, frames in [('worried', worried), ('alarmed', alarmed), ('relieved', relieved)]:
-        save_atlas(frames, output / f'{name}-smooth.webp')
+    # The production atlases for these states now come from the rigid rigs
+    # (scripts/mascot_rig/build.py); this morph is what made the body stretch.
+    # Only the previews are written unless an explicit --output elsewhere asks.
+    if output.resolve() != OUT.resolve():
+        for name, frames in [('worried', worried), ('alarmed', alarmed), ('relieved', relieved)]:
+            save_atlas(frames, output / f'{name}-smooth.webp')
     preview([worried, alarmed], [18, 24], output / 'escalation-preview.webp')
     save_preview([relieved], output / 'relief-preview.webp', loop=False)
 

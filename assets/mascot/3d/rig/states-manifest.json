@@ -1,0 +1,673 @@
+[
+  {
+    "file": "shared/magnifier-raised.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate. Glass opacity does not reliably meet 55-75%; requires correction.",
+    "intended_width_on_850px_torso": 370,
+    "pivot_px": [
+      520,
+      830
+    ],
+    "pivot_meaning": "wrist stub beside hand at lower-left",
+    "visible_bbox_alpha_gt_25": [
+      480,
+      392,
+      862,
+      946
+    ]
+  },
+  {
+    "file": "shared/magnifier-lowered.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate. Glass opacity does not reliably meet 55-75%; requires correction.",
+    "intended_width_on_850px_torso": 410,
+    "pivot_px": [
+      325,
+      465
+    ],
+    "pivot_meaning": "wrist stub beside hand at upper-left",
+    "visible_bbox_alpha_gt_25": [
+      290,
+      398,
+      991,
+      984
+    ]
+  },
+  {
+    "file": "shared/hand-fist-chest-left.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 205,
+    "pivot_px": [
+      488,
+      634
+    ],
+    "pivot_meaning": "outer wrist stub at left",
+    "visible_bbox_alpha_gt_25": [
+      458,
+      540,
+      801,
+      789
+    ]
+  },
+  {
+    "file": "shared/hand-fist-chest-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 205,
+    "pivot_px": [
+      790,
+      631
+    ],
+    "pivot_meaning": "outer wrist stub at right",
+    "visible_bbox_alpha_gt_25": [
+      453,
+      529,
+      830,
+      805
+    ]
+  },
+  {
+    "file": "shared/brow-worried-left.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 88,
+    "visible_bbox_alpha_gt_25": [
+      563,
+      603,
+      694,
+      673
+    ]
+  },
+  {
+    "file": "shared/brow-worried-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 88,
+    "visible_bbox_alpha_gt_25": [
+      552,
+      590,
+      702,
+      663
+    ]
+  },
+  {
+    "file": "shared/pupil-small.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 64,
+    "visible_bbox_alpha_gt_25": [
+      576,
+      571,
+      678,
+      698
+    ]
+  },
+  {
+    "file": "greeting/mouth-talk-a.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 85,
+    "visible_bbox_alpha_gt_25": [
+      557,
+      601,
+      697,
+      695
+    ]
+  },
+  {
+    "file": "greeting/hand-wave-open.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 170,
+    "pivot_px": [
+      706,
+      905
+    ],
+    "pivot_meaning": "bottom centre of forearm stub",
+    "visible_bbox_alpha_gt_25": [
+      453,
+      390,
+      817,
+      942
+    ]
+  },
+  {
+    "file": "greeting/mouth-talk-o.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 65,
+    "visible_bbox_alpha_gt_25": [
+      578,
+      602,
+      676,
+      715
+    ]
+  },
+  {
+    "file": "greeting/mouth-talk-e.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 110,
+    "visible_bbox_alpha_gt_25": [
+      468,
+      570,
+      786,
+      742
+    ]
+  },
+  {
+    "file": "success/eye-happy-closed-left.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 140,
+    "visible_bbox_alpha_gt_25": [
+      522,
+      597,
+      733,
+      683
+    ]
+  },
+  {
+    "file": "success/eye-happy-closed-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 120,
+    "visible_bbox_alpha_gt_25": [
+      508,
+      577,
+      746,
+      687
+    ]
+  },
+  {
+    "file": "success/mouth-big-laugh.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 110,
+    "visible_bbox_alpha_gt_25": [
+      506,
+      550,
+      751,
+      704
+    ]
+  },
+  {
+    "file": "success/hand-fist-up.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 175,
+    "pivot_px": [
+      717,
+      860
+    ],
+    "pivot_meaning": "bottom centre of forearm stub",
+    "visible_bbox_alpha_gt_25": [
+      487,
+      447,
+      765,
+      894
+    ]
+  },
+  {
+    "file": "success/brow-happy-left.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 90,
+    "visible_bbox_alpha_gt_25": [
+      527,
+      588,
+      736,
+      695
+    ]
+  },
+  {
+    "file": "success/brow-happy-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 85,
+    "visible_bbox_alpha_gt_25": [
+      525,
+      581,
+      730,
+      686
+    ]
+  },
+  {
+    "file": "concern/mouth-frown.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 90,
+    "visible_bbox_alpha_gt_25": [
+      478,
+      584,
+      776,
+      695
+    ]
+  },
+  {
+    "file": "worried/mouth-worried-wavy.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 90,
+    "visible_bbox_alpha_gt_25": [
+      504,
+      610,
+      750,
+      674
+    ]
+  },
+  {
+    "file": "alarmed/brow-alarmed-left.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 90,
+    "visible_bbox_alpha_gt_25": [
+      529,
+      578,
+      740,
+      703
+    ]
+  },
+  {
+    "file": "alarmed/brow-alarmed-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 85,
+    "visible_bbox_alpha_gt_25": [
+      539,
+      583,
+      717,
+      677
+    ]
+  },
+  {
+    "file": "alarmed/mouth-alarmed-open.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 62,
+    "visible_bbox_alpha_gt_25": [
+      566,
+      553,
+      689,
+      729
+    ]
+  },
+  {
+    "file": "alarmed/hand-up-alarmed.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 170,
+    "pivot_px": [
+      700,
+      862
+    ],
+    "pivot_meaning": "bottom centre of forearm stub",
+    "visible_bbox_alpha_gt_25": [
+      460,
+      405,
+      799,
+      900
+    ]
+  },
+  {
+    "file": "alarmed/magnifier-front-tilted.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate. Glass opacity does not reliably meet 55-75%; requires correction.",
+    "intended_width_on_850px_torso": 440,
+    "pivot_px": [
+      345,
+      830
+    ],
+    "pivot_meaning": "wrist stub at lower-left beside hand",
+    "visible_bbox_alpha_gt_25": [
+      315,
+      357,
+      1012,
+      957
+    ]
+  },
+  {
+    "file": "relieved/mouth-relieved-exhale.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 65,
+    "visible_bbox_alpha_gt_25": [
+      557,
+      602,
+      697,
+      689
+    ]
+  },
+  {
+    "file": "relieved/sweat-drop.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 45,
+    "visible_bbox_alpha_gt_25": [
+      571,
+      553,
+      683,
+      728
+    ]
+  },
+  {
+    "file": "six-seven/hand-palm-up-left.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 320,
+    "pivot_px": [
+      938,
+      596
+    ],
+    "pivot_meaning": "shoulder stub at far right",
+    "visible_bbox_alpha_gt_25": [
+      313,
+      539,
+      970,
+      762
+    ]
+  },
+  {
+    "file": "six-seven/hand-palm-up-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 320,
+    "pivot_px": [
+      327,
+      616
+    ],
+    "pivot_meaning": "shoulder stub at far left",
+    "visible_bbox_alpha_gt_25": [
+      299,
+      543,
+      961,
+      790
+    ]
+  },
+  {
+    "file": "six-seven/mouth-smirk.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 95,
+    "visible_bbox_alpha_gt_25": [
+      498,
+      581,
+      757,
+      695
+    ]
+  },
+  {
+    "file": "six-seven/brow-cocky-right.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified.",
+    "intended_width_on_850px_torso": 90,
+    "visible_bbox_alpha_gt_25": [
+      530,
+      578,
+      796,
+      723
+    ]
+  },
+  {
+    "file": "shared/hand-right-relaxed.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "Anatomical scale target, not achieved consistently in generated pixels; uniform calibration required. Colour and halo gates not certified. Pivot is a visual estimate.",
+    "intended_width_on_850px_torso": 220,
+    "pivot_px": [
+      440,
+      483
+    ],
+    "pivot_meaning": "shoulder stub at top-left",
+    "visible_bbox_alpha_gt_25": [
+      414,
+      430,
+      841,
+      872
+    ]
+  },
+  {
+    "file": "relieved/state-reference-end.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      162,
+      177,
+      1188,
+      1117
+    ]
+  },
+  {
+    "file": "greeting/state-reference.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      93,
+      277,
+      1214,
+      1061
+    ]
+  },
+  {
+    "file": "success/state-reference.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      98,
+      151,
+      1200,
+      1146
+    ]
+  },
+  {
+    "file": "concern/state-reference.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      227,
+      191,
+      1156,
+      1157
+    ]
+  },
+  {
+    "file": "worried/state-reference.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      169,
+      195,
+      1062,
+      1134
+    ]
+  },
+  {
+    "file": "alarmed/state-reference.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      200,
+      196,
+      1212,
+      1127
+    ]
+  },
+  {
+    "file": "six-seven/state-reference.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification.",
+    "visible_bbox_alpha_gt_25": [
+      63,
+      195,
+      1234,
+      1097
+    ]
+  },
+  {
+    "file": "relieved/state-reference-start.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "background": "alpha",
+    "notes": "REJECTED AS PRECISE REGISTRATION TARGET: illustrative full-character draft; parts and body were redrawn and are not exact layer matches. Framing margin can be below specification. Exact byte copy of alarmed/state-reference.png.",
+    "visible_bbox_alpha_gt_25": [
+      200,
+      196,
+      1212,
+      1127
+    ]
+  }
+]

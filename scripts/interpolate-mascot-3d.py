@@ -49,7 +49,7 @@ SHEETS = {
 # States rebuilt as rigid cut-out rigs (scripts/mascot_rig/). Their atlases are
 # owned by that builder: the morph below is what made the body stretch, so it
 # must never write over them again. Frames are still made here for previews.
-RIGGED = {'scan'}
+RIGGED = {'scan', 'greeting', 'success', 'concern'}
 USE_SHEET = {'success': True, 'concern': True, 'scan': False, 'greeting': False}
 
 #: What each state falls back to: the four approved 320px rows, and the cycles

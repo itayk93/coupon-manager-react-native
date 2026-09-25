@@ -15,26 +15,44 @@ The opaque source draft and old preview are not referenced by the application.
 Reference: user-provided `original_app_mascot.png`.
 Generated using the built-in image generation tool on 2026-09-10.
 
-## Scan is a rigid rig now (2026-09-25)
+## Every state is a rigid rig now (2026-09-25)
 
-`scan-smooth.webp` (`scanning` and `calm`) is no longer morphed. The optical-flow
-interpolation below, and the breathing field on top of it, warped the body
-between separately drawn keyframes, so on screen he stretched and shrank like
-dough. Scan is now built by `scripts/mascot_rig/build_scan.py` from separate
-generated layers in `rig/scan/` (body, eye whites, pupil, lids, brows, mouth,
-resting arm, hand-and-magnifier) placed by `rig/scan/rig.json` in the pixel
-grid of `original_app_mascot.png`.
+All eight `*-smooth.webp` atlases are built by `scripts/mascot_rig/build.py`
+from separate generated layers in `rig/`. The optical-flow interpolation,
+the breathing field and the six-seven deformation field described further
+down warped the body between separately drawn keyframes, so on screen he
+stretched and shrank like dough. Those sections are history; the scripts that
+implement them no longer write production atlases.
 
-Each layer is scaled once, uniformly. After that a frame can only translate or
-turn it, so the body is the same pixels in all 36 frames. The builder checks
-that before writing: body area and principal-axis spread must not change by
-0.2%, the 35 -> 0 step must not exceed an ordinary step by half, and no frame
-may touch its cell edge. Cells are 320px; the loop is 36 frames at 18fps (2s).
-`interpolate-mascot-3d.py` skips writing any state listed in its `RIGGED`
-set. The other seven atlases are still the morphs described below until
-their layers exist.
+- `rig/scan/`: the first kit (body, eye whites, pupil, lids, brows, smile,
+  resting arm, hand-and-magnifier) and `rig.json`, its placement.
+- `rig/shared/`, `rig/<state>/`: the second kit, imported and cleaned by
+  `scripts/mascot_rig/prepare_parts.py` (stray specks dropped; magnifier
+  lenses remapped into 55-75% opacity; no pixel moved or rescaled). Its own
+  notes are kept as `rig/states-READ-ME.txt`, `states-manifest.json` and
+  `states-PROMPTS.md`. That kit was delivered as a draft: parts at mixed
+  scales, pivots estimated, and full-character references that redrew the
+  body. The references were not imported and nothing was matched to them.
+- `scripts/mascot_rig/states.py`: where each part of each state sits.
+  Coordinates are the pixel grid of `original_app_mascot.png`. Every state
+  stands on the one `rig/scan/canonical-body.png`, with its face parts
+  where scan puts them. Each part gets one uniform scale, chosen by eye
+  against the body; hands are placed by their wrist or shoulder stub.
 
-    python3 scripts/mascot_rig/build_scan.py --preview /tmp/kuponi-review
+Each layer is scaled once, uniformly. A frame can only translate a layer,
+turn it about its pivot, or swap it for another whole part (a mouth shape on
+a talking beat, an expression while the eyes are shut). The builder refuses
+to write an atlas if the body's area or principal axes change by 0.2% in any
+frame, if a loop's 35 -> 0 step is larger than its largest ordinary step, or
+if any frame comes within 3% of its cell edge.
+
+Cells are 320px, 36 frames in a 6x6 grid. Every state except six-seven uses
+the same 1100-point window, so switching state never resizes him; six-seven
+uses 1320 points to fit both outstretched arms. Rates: scan/calm 18fps,
+concern 16fps, worried 18fps, the rest 24fps. `relieved` plays once and holds
+its last frame.
+
+    python3 scripts/mascot_rig/build.py --preview /tmp/kuponi-review
 
 ## New keyframe sheets: two of four earned the swap
 
