@@ -63,6 +63,12 @@ HAND_LEFT_RELAXED = {"name": "hand-left", "file": "scan/hand-left-relaxed.png", 
 HAND_RIGHT_RELAXED = {"name": "hand-right", "file": "shared/hand-right-relaxed.png", "width": 136,
                       "pivot_src": [440, 483], "anchor": [1000, 585]}
 
+# One straight arm that turns about the shoulder: raised in alarm, and in
+# `relieved` the same piece comes down to hang at his side. The kit draws it at
+# the scale of canonical-body.png, 780 px of torso to our 671.
+ARM_SWING = {"name": "arm", "file": "alarmed/arm-left-swing.png", "width": 143 * 671 / 780,
+             "pivot_src": [628, 852], "anchor": [403, 543], "angle": -15}
+
 FACE_LAYERS = {"eye-left", "eye-right", "pupil-left", "pupil-right", *LID_NAMES}
 
 
@@ -97,8 +103,9 @@ SPECS = {
         *EYES, *pupils(look=(-4, 0)), *LIDS,
         *brows("shared/brow-worried-left.png", "shared/brow-worried-right.png", 76, 70, 4),
         mouth("concern/mouth-frown.png", 78, dy=6),
-        {"name": "hand-fist", "file": "shared/hand-fist-chest-left.png", "width": 175,
-         "pivot_src": [488, 634], "anchor": [420, 650]},
+        # The chest fist's short wrist stub stood out of the body edge like a cut-off
+        # arm; the whole resting arm from the shoulder reads as a hand, not a stump.
+        HAND_LEFT_RELAXED,
         {"name": "magnifier", "file": "shared/magnifier-raised.png", "width": 235,
          "pivot_src": [520, 830], "anchor": [1005, 600]},
     ),
@@ -106,8 +113,9 @@ SPECS = {
         *EYES, *pupils("shared/pupil-small.png", 58, 48), *LIDS,
         *brows("shared/brow-worried-left.png", "shared/brow-worried-right.png", 76, 70, 4),
         mouth("worried/mouth-worried-wavy.png", 82, dy=6),
-        {"name": "hand-fist", "file": "shared/hand-fist-chest-left.png", "width": 175,
-         "pivot_src": [488, 634], "anchor": [420, 650]},
+        # The chest fist's short wrist stub stood out of the body edge like a cut-off
+        # arm; the whole resting arm from the shoulder reads as a hand, not a stump.
+        HAND_LEFT_RELAXED,
         {"name": "magnifier", "file": "scan/magnifier-front.png", "width": 555, "centre": [913, 573],
          "pivot": [749, 684]},
     ),
@@ -115,8 +123,7 @@ SPECS = {
         *EYES, *pupils("shared/pupil-small.png", 58, 48), *LIDS,
         *brows("alarmed/brow-alarmed-left.png", "alarmed/brow-alarmed-right.png", 80, 70, 22),
         mouth("alarmed/mouth-alarmed-open.png", 40, dy=12),
-        {"name": "hand-up", "file": "alarmed/hand-up-alarmed.png", "width": 175,
-         "pivot_src": [700, 862], "anchor": [470, 640]},
+        ARM_SWING,
         {"name": "magnifier", "file": "alarmed/magnifier-front-tilted.png", "width": 400,
          "pivot_src": [345, 830], "anchor": [820, 700]},
     ),
@@ -143,8 +150,7 @@ SPECS["relieved"] = spec(
     mouth("alarmed/mouth-alarmed-open.png", 40, "mouth-alarmed", 12),
     mouth("relieved/mouth-relieved-exhale.png", 50, "mouth-exhale", 10),
     mouth("scan/mouth-smile-small.png", 82, "mouth-smile"),
-    {"name": "hand-up", "file": "alarmed/hand-up-alarmed.png", "width": 175,
-     "pivot_src": [700, 862], "anchor": [470, 640]},
+    ARM_SWING,
     {"name": "magnifier", "file": "alarmed/magnifier-front-tilted.png", "width": 400,
      "pivot_src": [345, 830], "anchor": [820, 700]},
 )

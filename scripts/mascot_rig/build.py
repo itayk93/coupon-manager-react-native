@@ -145,23 +145,25 @@ def success(rig, frame):
 
 
 def concern(rig, frame):
-    p = Pose(rig, frame, BASE | {"mouth", "hand-fist", "magnifier"})
+    p = Pose(rig, frame, BASE | {"mouth", "hand-left", "magnifier"})
     t = p.t
     p.move(p.face(), dx=2.5 * wave(t, 1, 0.5))
     p.move(["pupil-left", "pupil-right"], dx=7.0 * glance(t))
-    p.move("hand-fist", dx=7.0 * (bump(t, 0.22, 0.07) + bump(t, 0.72, 0.07)))
+    # Two nervous twitches of the resting arm, turned about the shoulder so it
+    # stays attached; a slow sway underneath keeps it from ever freezing.
+    p.move("hand-left", deg=2.5 * wave(t, 1, -0.9) - 6.0 * (bump(t, 0.22, 0.07) + bump(t, 0.72, 0.07)))
     p.move("magnifier", deg=5.0 * wave(t, 1, -0.8))
     p.blink(20)
     return p.done(deg=1.5 * wave(t, 1))
 
 
 def worried(rig, frame):
-    p = Pose(rig, frame, BASE | {"mouth", "hand-fist", "magnifier"})
+    p = Pose(rig, frame, BASE | {"mouth", "hand-left", "magnifier"})
     t = p.t
     p.move(p.face(), dx=3.0 * wave(t, 1, 0.5))
     p.move(["pupil-left", "pupil-right"], dx=6.0 * glance(t, 2, 2.5))
     taps = sum(bump(t, c, 0.06) for c in (0.15, 0.48, 0.81))
-    p.move("hand-fist", dx=6.0 * taps)
+    p.move("hand-left", deg=3.0 * wave(t, 1, -0.9) - 5.0 * taps)
     p.move("magnifier", 6.0 * wave(t, 1, -0.6), 0.0, 3.0 * wave(t, 1, -0.6))
     p.blink(26)
     return p.done(dx=2.5 * wave(t, 4), deg=2.0 * wave(t, 1))
@@ -172,10 +174,10 @@ def tremble(t: float) -> tuple[float, float]:
 
 
 def alarmed(rig, frame):
-    p = Pose(rig, frame, BASE | {"mouth", "hand-up", "magnifier"})
+    p = Pose(rig, frame, BASE | {"mouth", "arm", "magnifier"})
     t = p.t
     p.move(["pupil-left", "pupil-right"], dx=1.5 * wave(t, 6, -0.4))
-    p.move("hand-up", deg=4.0 * wave(t, 6, -0.5))
+    p.move("arm", deg=3.0 * wave(t, 6, -0.5))
     p.move("magnifier", deg=3.0 * wave(t, 6, -0.7))
     dx, deg = tremble(t)
     return p.done(dx=dx, deg=deg)
@@ -184,7 +186,7 @@ def alarmed(rig, frame):
 def relieved(rig, frame):
     """One-shot: starts on alarmed frame 0, ends calm and holds frame 35."""
     calm = frame >= 11  # the expression swaps while his eyes are shut (10-12)
-    visible = {"body", "eye-left", "eye-right", "hand-up", "magnifier"}
+    visible = {"body", "eye-left", "eye-right", "arm", "magnifier"}
     if calm:
         visible |= {"brow-left", "brow-right", "pupil-left-calm", "pupil-right-calm",
                     "mouth-exhale" if frame < 24 else "mouth-smile"}
@@ -201,7 +203,10 @@ def relieved(rig, frame):
     # Hand and magnifier come down together, easing in and out, with a small
     # settle past the rest pose at the end.
     down = ease((frame - 12) / 16) + 0.04 * math.sin(math.pi * ease((frame - 26) / 9))
-    p.move("hand-up", dx=-22.0 * down, dy=70.0 * down, deg=-24.0 * down)
+    # The raised arm swings down across his front to hang at his side, a "phew"
+    # past the cheek. Outward would leave the frame: the arm is longer than the
+    # room left of the body.
+    p.move("arm", deg=175.0 * down)
     p.move("magnifier", dx=-6.0 * down, dy=55.0 * down, deg=22.0 * down)
     # The exhale: a slow lean forward and back.
     lean = 2.0 * math.sin(math.pi * ease((frame - 10) / 20))

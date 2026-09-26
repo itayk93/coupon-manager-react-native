@@ -39,6 +39,17 @@ implement them no longer write production atlases.
   where scan puts them. Each part gets one uniform scale, chosen by eye
   against the body; hands are placed by their wrist or shoulder stub.
 
+Two later fixes. `rig/alarmed/arm-left-swing.png` (a straight arm drawn at
+the scale of `canonical-body.png`, so it is scaled by exactly 671/780) replaces
+the raised hand in `alarmed` and `relieved`: it turns about the shoulder, so in
+`relieved` the same piece swings down across his front and ends hanging at his
+side, where the old hand still read as a wave. It swings inward because the arm
+is longer than the room to the left of the body. `concern` and `worried` use
+scan's full resting arm instead of the chest fist, whose short wrist stub stood
+out of the body edge like a cut-off arm and crowded the magnifier hand. A
+hip-clutch hand was generated for `worried` but read as a thumbs-up, so it is
+not used.
+
 Each layer is scaled once, uniformly. A frame can only translate a layer,
 turn it about its pivot, or swap it for another whole part (a mouth shape on
 a talking beat, an expression while the eyes are shut). The builder refuses
