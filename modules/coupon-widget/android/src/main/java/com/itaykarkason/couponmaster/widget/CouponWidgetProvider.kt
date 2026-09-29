@@ -179,7 +179,7 @@ class CouponWidgetProvider : AppWidgetProvider() {
     val amount = java.text.NumberFormat.getNumberInstance(java.util.Locale.US).apply {
       maximumFractionDigits = 2
     }.format(coupon?.remainingValue ?: 0.0)
-    setTextViewText(R.id.mascot_company, "$companyName · יתרה \u2066₪$amount\u2069")
+    setTextViewText(R.id.mascot_company, coupon?.purpose?.let { "$companyName · $it" } ?: "$companyName · יתרה \u2066₪$amount\u2069")
     setViewVisibility(R.id.mascot_company, if (isExpiring && companyName.isNotEmpty()) View.VISIBLE else View.GONE)
     val target = if (isExpiring && coupon != null) {
       "couponmaster:///coupons/${coupon.publicId ?: coupon.id}"
@@ -231,11 +231,8 @@ class CouponWidgetProvider : AppWidgetProvider() {
         coupon.cvv?.takeIf { it.isNotBlank() }?.let { add("CVV: $it") }
       }.joinToString(" • ")
 
-      val balanceText = if (extraDetails.isNotBlank()) {
-        "יתרה: ${formatShekels(coupon.remainingValue)} | $extraDetails"
-      } else {
-        "יתרה: " + formatShekels(coupon.remainingValue)
-      }
+      val worth = coupon.purpose ?: ("יתרה: " + formatShekels(coupon.remainingValue))
+      val balanceText = if (extraDetails.isNotBlank()) "$worth | $extraDetails" else worth
       setTextViewText(cardId.balance, balanceText)
       setTextViewText(cardId.code, formatCouponCode(coupon.code))
 

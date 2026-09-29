@@ -17,6 +17,12 @@ struct WidgetCoupon: Codable, Identifiable {
     let logoFile: String?
     let cardExp: String?
     let cvv: String?
+    /// One-time coupons only: shown instead of the amount.
+    let purpose: String?
+
+    /// What the widget prints as the coupon's worth: its purpose when it has
+    /// one, otherwise the remaining balance.
+    var worthText: String? { purpose.flatMap { $0.isEmpty ? nil : $0 } }
 
     /// A date-only voucher is read on the local calendar: "2026-09-30" is
     /// September 30 here, whatever UTC says.

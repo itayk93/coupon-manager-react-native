@@ -19,6 +19,8 @@ export type WidgetCouponPayload = {
   /** Optional prepaid card details */
   cardExp?: string | null;
   cvv?: string | null;
+  /** One-time coupons only: what the coupon is for, shown instead of the amount. */
+  purpose?: string | null;
 };
 
 /**

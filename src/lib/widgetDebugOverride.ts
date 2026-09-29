@@ -11,10 +11,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  */
 const KEY = "widget_debug_state";
 
+/** A forgotten override must not hide real expiring coupons for days. */
+const MAX_AGE_MS = 30 * 60 * 1000;
+
 export async function loadWidgetDebugOverride(): Promise<string | null> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    return raw && raw.length > 0 ? raw : null;
+    if (!raw) return null;
+    const [token, at] = raw.split("@");
+    if (!token || !(Date.now() - Number(at) < MAX_AGE_MS)) {
+      await AsyncStorage.removeItem(KEY);
+      return null;
+    }
+    return token;
   } catch {
     return null;
   }
@@ -22,7 +31,7 @@ export async function loadWidgetDebugOverride(): Promise<string | null> {
 
 export async function setWidgetDebugOverride(token: string): Promise<void> {
   try {
-    await AsyncStorage.setItem(KEY, token);
+    await AsyncStorage.setItem(KEY, `${token}@${Date.now()}`);
   } catch {
     // Non-fatal: the widget was already updated in memory for this session.
   }
