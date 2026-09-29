@@ -596,6 +596,11 @@ export function QuickUsageModal({
           <ChevronDown size={18} color={theme.textMuted} />
           {selectedCoupon ? (
             <View style={styles.selectedCouponRow}>
+              <Image
+                source={getCompanyLogoSource(selectedCoupon.company)}
+                style={styles.logo}
+                resizeMode="contain"
+              />
               <View style={styles.selectedTextGroup}>
                 <Text
                   numberOfLines={1}
@@ -607,11 +612,6 @@ export function QuickUsageModal({
                   יתרה: {formatIls(remaining)}
                 </Text>
               </View>
-              <Image
-                source={getCompanyLogoSource(selectedCoupon.company)}
-                style={styles.logo}
-                resizeMode="contain"
-              />
             </View>
           ) : (
             <Text style={[styles.placeholderText, { color: theme.textMuted }]}>
@@ -893,14 +893,14 @@ export function QuickUsageModal({
           accessibilityLabel="פרטים ומיקום, אופציונלי"
           style={[styles.accordionHeader, { borderColor: theme.border }]}
         >
+          <Text style={[styles.accordionTitle, { color: theme.text }]}>
+            פרטים ומיקום (אופציונלי)
+          </Text>
           <ChevronDown
             size={18}
             color={theme.textMuted}
             style={{ transform: [{ rotate: isDetailsOpen ? "180deg" : "0deg" }] }}
           />
-          <Text style={[styles.accordionTitle, { color: theme.text }]}>
-            פרטים ומיקום (אופציונלי)
-          </Text>
         </TouchableOpacity>
 
         {isDetailsOpen ? (
