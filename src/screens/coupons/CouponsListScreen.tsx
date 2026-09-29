@@ -7,13 +7,13 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   I18nManager,
   Image,
   ActivityIndicator,
   Keyboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   LayoutWidth,
@@ -476,7 +476,9 @@ export function CouponsListScreen() {
   }, [companyChips]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    // Top only: the bottom nav sits under the screen and already clears the
+    // home indicator, so a bottom inset here is a dead band above it.
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={split ? [styles.duo, { gap }] : styles.solo}>
         <ListPane width={split ? listWidth : null}>
           <View style={[styles.titleRow, contentStyle]}>
