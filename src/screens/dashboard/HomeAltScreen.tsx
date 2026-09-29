@@ -88,8 +88,10 @@ export function HomeAltScreen() {
   // A grid column: this screen is cards filling their width, not a form.
   const contentStyle = useContentStyle("grid");
 
-  // Stable across renders so the gesture is not rebuilt mid-drag.
-  const addCoupon = useCallback(() => router.push("/coupons/add"), [router]);
+  // Stable across renders so the gesture is not rebuilt mid-drag. Same place
+  // and same call as the bottom bar's + , so both ways of adding a coupon land
+  // on the scanner — which has its own way through to typing one in.
+  const addCoupon = useCallback(() => router.navigate("/scanner"), [router]);
   const pullUp = usePullUpAction({ onTrigger: addCoupon });
 
   // Same ordering the dashboard uses: most recently used first, then most
