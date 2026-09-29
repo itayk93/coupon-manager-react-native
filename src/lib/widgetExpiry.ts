@@ -1,6 +1,6 @@
 /** Date-only vouchers expire at the end of their local calendar day. */
 export function expiringWidgetCoupons<T extends { id: number; expiration?: string | null }>(
-  coupons: T[], now = new Date(),
+  coupons: T[], now = new Date(), withinDays = 7,
 ): { coupon: T; days: number }[] {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   return coupons.flatMap((coupon) => {
@@ -10,7 +10,7 @@ export function expiringWidgetCoupons<T extends { id: number; expiration?: strin
     if (!Number.isFinite(end.getTime()) || end.getTime() <= now.getTime()) return [];
     const day = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
     const days = Math.round((day - today) / 86400000);
-    return days >= 0 && days <= 7 ? [{ coupon, days, deadline: end.getTime() }] : [];
+    return days >= 0 && days <= withinDays ? [{ coupon, days, deadline: end.getTime() }] : [];
   }).sort((a, b) => a.deadline - b.deadline || a.coupon.id - b.coupon.id)
     .map(({ coupon, days }) => ({ coupon, days }));
 }

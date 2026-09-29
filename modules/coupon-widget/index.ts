@@ -33,6 +33,12 @@ export type WidgetPayload = {
   coupons: WidgetCouponPayload[];
   urgentCoupon?: WidgetCouponPayload | null;
   urgentDaysRemaining?: number | null;
+  /**
+   * Spendable coupons expiring within the next month, soonest first. The widget
+   * derives its scene from these dates at render time, so it stays right on
+   * days the app is not opened.
+   */
+  upcoming?: WidgetCouponPayload[];
   mascotTier?: number;
   /** How many coupons expire within the week. */
   expiringCount?: number;
@@ -64,6 +70,7 @@ export const EMPTY_WIDGET_PAYLOAD: WidgetPayload = {
   coupons: [],
   urgentCoupon: null,
   urgentDaysRemaining: null,
+  upcoming: [],
   mascotTier: 1,
   expiringCount: 0,
   expiringIds: [],

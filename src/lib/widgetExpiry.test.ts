@@ -26,4 +26,9 @@ describe("widget expiry selection", () => {
       { id: 2, expiration: "2026-09-09" },
     ], now).map(e => e.coupon.id)).toEqual([2, 8]);
   });
+  it("widens the window for the widget's own look-ahead list", () => {
+    const coupons = [{ id: 1, expiration: "2026-09-17" }, { id: 2, expiration: "2026-10-11" }];
+    expect(expiringWidgetCoupons(coupons, now)).toEqual([]);
+    expect(expiringWidgetCoupons(coupons, now, 31).map(e => [e.coupon.id, e.days])).toEqual([[1, 8]]);
+  });
 });

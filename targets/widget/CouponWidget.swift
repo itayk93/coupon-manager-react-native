@@ -127,6 +127,16 @@ struct CouponProvider: TimelineProvider {
         if payload.celebration != nil, let end = payload.celebrationEndDate, end > now {
             entries.append(CouponEntry(date: end, payload: payload))
         }
+        // The scene is derived from expiry dates, so give each coming midnight
+        // its own entry: "tomorrow" becomes "today" even if the app stays shut
+        // and WidgetKit's reload budget runs out.
+        let calendar = Calendar.current
+        var midnight = calendar.startOfDay(for: now)
+        for _ in 0..<8 {
+            midnight = calendar.date(byAdding: .day, value: 1, to: midnight)!
+            entries.append(CouponEntry(date: midnight, payload: payload))
+        }
+        entries.sort { $0.date < $1.date }
         let next = Calendar.current.date(byAdding: .minute, value: refreshIntervalMinutes, to: now)!
         completion(Timeline(entries: entries, policy: .after(next)))
     }
@@ -300,24 +310,16 @@ enum MascotScene {
 }
 
 private extension WidgetPayload {
-    var mostUrgentCoupon: WidgetCoupon? {
-        if let urgent = urgentCoupon {
-            return urgent
-        }
-        return coupons
-            .filter { coupon in
-                guard let days = coupon.daysUntilExpiration else { return false }
-                return days >= 0 && days <= 7
+    /// The soonest coupon still inside the week at `date`, with its days left.
+    /// `urgentCoupon` covers payloads written before `upcoming` existed; the
+    /// picked coupons are checked too, as before.
+    func mostUrgent(at date: Date) -> (coupon: WidgetCoupon, days: Int)? {
+        let candidates = (upcoming ?? []) + [urgentCoupon].compactMap { $0 } + coupons
+        return candidates
+            .compactMap { coupon in
+                coupon.daysUntilExpiration(from: date).flatMap { $0 <= 7 ? (coupon, $0) : nil }
             }
-            .sorted { (c1, c2) in
-                (c1.daysUntilExpiration ?? 999) < (c2.daysUntilExpiration ?? 999)
-            }
-            .first
-    }
-
-    /// Days until the most urgent coupon expires, or nil when nothing is close.
-    var daysUntilMostUrgent: Int? {
-        urgentDaysRemaining ?? mostUrgentCoupon?.daysUntilExpiration
+            .min { $0.1 < $1.1 }
     }
 }
 
@@ -329,11 +331,16 @@ private extension WidgetPayload {
 
 struct CouponMascotSmallView: View {
     let payload: WidgetPayload
+    let date: Date
 
     @Environment(\.widgetRenderingMode) private var renderingMode
 
+    private var urgent: (coupon: WidgetCoupon, days: Int)? {
+        payload.mostUrgent(at: date)
+    }
+
     private var daysLeft: Int? {
-        payload.daysUntilMostUrgent
+        urgent?.days
     }
 
     private var isCalm: Bool {
@@ -353,7 +360,7 @@ struct CouponMascotSmallView: View {
     /// Opens the coupons list filtered to exactly the expiring coupons — all of
     /// them when several are close, just the one when only one is.
     private var destinationURL: URL {
-        if let days = daysLeft, days >= 0 && days <= 7, let coupon = payload.mostUrgentCoupon {
+        if let coupon = urgent?.coupon {
             return URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))")
                 ?? URL(string: "couponmaster:///coupons")!
         }
@@ -382,7 +389,7 @@ struct CouponMascotSmallView: View {
                     }
                     .padding(.top, isExtendedDays ? 10.5 : 8.5)
                     Spacer()
-                    if let coupon = payload.mostUrgentCoupon {
+                    if let coupon = urgent?.coupon {
                         let company = coupon.company.trimmingCharacters(in: .whitespacesAndNewlines)
                         let amount = coupon.remainingValue.formatted(.number.precision(.fractionLength(0...2)))
                         Text("\(company) · יתרה \u{2066}₪\(amount)\u{2069}")
@@ -414,11 +421,13 @@ struct CouponMascotSmallView: View {
                 }
                 .edgesIgnoringSafeArea(.bottom)
 
-                VStack(alignment: .center, spacing: 1) {
+                // Kept tight to the top edge: the calm mascot's head sits just
+                // below, and the balance must not touch it.
+                VStack(alignment: .center, spacing: -2) {
                     AppLogoView(height: 15)
                         .opacity(0.95)
                     Text(formatShekels(payload.totalRemainingValue))
-                        .couponFont(24, .medium)
+                        .couponFont(21, .medium)
                         .foregroundColor(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
@@ -426,7 +435,7 @@ struct CouponMascotSmallView: View {
                 .shadow(color: .black.opacity(0.55), radius: 3, x: 0, y: 1)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 14)
-                .padding(.top, 12)
+                .padding(.top, 7)
 
                 VStack {
                     Spacer()
@@ -708,7 +717,7 @@ struct CouponWidgetEntryView: View {
                 if entry.payload.activeCelebration(at: entry.date) != nil {
                     CouponCelebrationSmallView(payload: entry.payload)
                 } else {
-                    CouponMascotSmallView(payload: entry.payload)
+                    CouponMascotSmallView(payload: entry.payload, date: entry.date)
                 }
             }
         }
@@ -724,7 +733,7 @@ struct CouponMascotEntryView: View {
             if entry.payload.activeCelebration(at: entry.date) != nil {
                 CouponCelebrationSmallView(payload: entry.payload)
             } else {
-                CouponMascotSmallView(payload: entry.payload)
+                CouponMascotSmallView(payload: entry.payload, date: entry.date)
             }
         }
         .environment(\.layoutDirection, .rightToLeft)

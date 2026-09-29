@@ -18,21 +18,35 @@ struct WidgetCoupon: Codable, Identifiable {
     let cardExp: String?
     let cvv: String?
 
+    /// A date-only voucher is read on the local calendar: "2026-09-30" is
+    /// September 30 here, whatever UTC says.
     var expirationDate: Date? {
         guard let expiration else { return nil }
         if expiration.contains("T") {
             return ISO8601DateFormatter().date(from: expiration)
         }
-        return ISO8601DateFormatter().date(from: expiration + "T00:00:00Z")
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: String(expiration.prefix(10)))
     }
 
-    var daysUntilExpiration: Int? {
+    /// Whole days from `now` to expiry, 0 on the last day, nil once it has passed.
+    /// Takes the timeline entry's date, not `Date()`: WidgetKit renders future
+    /// entries ahead of time.
+    func daysUntilExpiration(from now: Date) -> Int? {
         guard let expirationDate else { return nil }
+        if expiration?.contains("T") == true, expirationDate <= now { return nil }
         let calendar = Calendar.current
-        let startOfToday = calendar.startOfDay(for: Date())
-        let startOfExp = calendar.startOfDay(for: expirationDate)
-        let components = calendar.dateComponents([.day], from: startOfToday, to: startOfExp)
-        return components.day
+        let days = calendar.dateComponents(
+            [.day],
+            from: calendar.startOfDay(for: now),
+            to: calendar.startOfDay(for: expirationDate)
+        ).day
+        guard let days, days >= 0 else { return nil }
+        return days
     }
 }
 
@@ -43,6 +57,9 @@ struct WidgetPayload: Codable {
     let coupons: [WidgetCoupon]
     let urgentCoupon: WidgetCoupon?
     let urgentDaysRemaining: Int?
+    /// Coupons expiring within the month, soonest first. The scene is derived
+    /// from their dates at render time, so it moves on without the app.
+    let upcoming: [WidgetCoupon]?
     let mascotTier: Int?
     let expiringCount: Int?
     /// publicIds of every coupon expiring within the week — the widget tap opens
@@ -77,6 +94,7 @@ struct WidgetPayload: Codable {
         coupons: [],
         urgentCoupon: nil,
         urgentDaysRemaining: nil,
+        upcoming: [],
         mascotTier: 1,
         expiringCount: 0,
         expiringIds: [],

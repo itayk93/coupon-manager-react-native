@@ -13,6 +13,24 @@ import {
 
 export { MAX_WIDGET_COUPONS } from "@/lib/widgetSelection";
 
+const UPCOMING_WINDOW_DAYS = 31;
+const MAX_UPCOMING = 8;
+
+function toWidgetCoupon(coupon: DecryptedCoupon): WidgetCouponPayload {
+  const remaining = couponRemainingValue(coupon);
+  return {
+    id: coupon.id,
+    publicId: coupon.public_id ?? null,
+    company: coupon.company || "קופון",
+    code: coupon.code || "",
+    remainingValue: Number.isFinite(remaining) ? remaining : 0,
+    expiration: coupon.expiration ?? null,
+    logoFile: null,
+    cardExp: coupon.card_exp ?? null,
+    cvv: coupon.cvv ?? null,
+  };
+}
+
 /**
  * Precomputes everything the native widgets render, so neither platform has to
  * know about coupon business rules, encryption, or logo resolution.
@@ -25,41 +43,22 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
 
   const chosen = widgetSelection(spendable).slice(0, MAX_WIDGET_COUPONS);
 
-  const selected: WidgetCouponPayload[] = chosen.map((coupon) => {
-    const remaining = couponRemainingValue(coupon);
-    return {
-      id: coupon.id,
-      publicId: coupon.public_id ?? null,
-      company: coupon.company || "קופון",
-      code: coupon.code || "",
-      remainingValue: Number.isFinite(remaining) ? remaining : 0,
-      expiration: coupon.expiration ?? null,
-      logoFile: null,
-      cardExp: coupon.card_exp ?? null,
-      cvv: coupon.cvv ?? null,
-    };
-  });
+  const selected = chosen.map(toWidgetCoupon);
 
   // Every spendable coupon expiring within the week, soonest first. Drives the
   // mascot scene and the "show me what's expiring" tap target.
   const expiring = expiringWidgetCoupons(spendable);
 
   const minDays = expiring.length ? expiring[0].days : null;
-  const urgentCoupon: WidgetCouponPayload | null = expiring.length
-    ? {
-        id: expiring[0].coupon.id,
-        publicId: expiring[0].coupon.public_id ?? null,
-        company: expiring[0].coupon.company || "קופון",
-        code: expiring[0].coupon.code || "",
-        remainingValue: Number.isFinite(couponRemainingValue(expiring[0].coupon))
-          ? couponRemainingValue(expiring[0].coupon)
-          : 0,
-        expiration: expiring[0].coupon.expiration ?? null,
-        logoFile: null,
-        cardExp: expiring[0].coupon.card_exp ?? null,
-        cvv: expiring[0].coupon.cvv ?? null,
-      }
-    : null;
+  const urgentCoupon = expiring.length ? toWidgetCoupon(expiring[0].coupon) : null;
+
+  // The widget recomputes the scene from these dates at every midnight, so it
+  // walks from "7 days" down to "today" without the app being opened. A month
+  // ahead covers a phone that sits untouched for weeks; the cap keeps the
+  // shared payload tiny.
+  const upcoming = expiringWidgetCoupons(spendable, new Date(), UPCOMING_WINDOW_DAYS)
+    .slice(0, MAX_UPCOMING)
+    .map((e) => toWidgetCoupon(e.coupon));
 
   // Tapping the widget opens the coupons list filtered to exactly these.
   // Swift decodes this as [String]. Never let an absent legacy public_id
@@ -91,6 +90,7 @@ export function buildWidgetPayload(coupons: DecryptedCoupon[]): WidgetPayload {
     coupons: selected,
     urgentCoupon,
     urgentDaysRemaining: minDays,
+    upcoming,
     mascotTier,
     expiringCount: expiring.length,
     expiringIds,
@@ -146,6 +146,7 @@ export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon
     celebrationText: null,
     urgentCoupon: days === null ? null : { ...sample, expiration },
     urgentDaysRemaining: days,
+    upcoming: days === null ? [] : [{ ...sample, expiration }],
     expiringCount: days === null ? 0 : 1,
     expiringIds: days === null || !sample.publicId ? [] : [sample.publicId],
     mascotTier: days === null ? 1 : days <= 0 ? 5 : days === 1 ? 4 : days <= 4 ? 3 : 2,
