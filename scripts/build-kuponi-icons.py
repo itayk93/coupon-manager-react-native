@@ -97,7 +97,7 @@ export('assets/notification-icon.png',512,'notification')
 export('public/notification-badge.png',96,'notification')
 face.resize((64,64),Image.Resampling.LANCZOS).save(ROOT/'public/favicon.ico',sizes=[(16,16),(32,32),(48,48),(64,64)])
 # Checked-in native projects must agree with Expo's next prebuild.
-for p in list((ROOT/'ios').glob('**/AppIcon.appiconset/*.png')) + list((ROOT/'targets').glob('**/AppIcon.appiconset/*.png')):
+for p in list((ROOT/'ios').glob('**/AppIcon.appiconset/*.png')):  # share-extension targets keep their own action icons
     with Image.open(p) as old: size=old.size
     export(p,size)
 for p in (ROOT/'android/app/src/main/res').glob('mipmap-*/*.webp'):
