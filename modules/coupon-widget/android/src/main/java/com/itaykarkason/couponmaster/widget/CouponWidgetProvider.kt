@@ -71,9 +71,11 @@ class CouponWidgetProvider : AppWidgetProvider() {
 
   private fun smallViews(context: Context, payload: WidgetPayload): RemoteViews {
     payload.activeCelebration()?.let { return celebrationViews(context, it, payload.celebrationText) }
-    val days = payload.urgentDaysRemaining
-    return if (days != null && days in 0..7) {
-      mascotViews(context, payload.expiringIds, days, payload.urgentCoupon)
+    // Derived from the expiry dates on every render (updatePeriodMillis), so the
+    // scene walks down to "today" even when the app is not opened.
+    val urgent = payload.mostUrgent()
+    return if (urgent != null) {
+      mascotViews(context, payload.expiringIds, urgent.second, urgent.first)
     } else {
       statsViews(context, payload)
     }
