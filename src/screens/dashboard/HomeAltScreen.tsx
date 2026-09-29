@@ -19,7 +19,6 @@ import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
-import { AddCouponFab, FAB_CLEARANCE } from "@/components/ui/AddCouponFab";
 import { PullUpIndicator, usePullUpAction } from "@/components/ui/PullUpAction";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -290,14 +289,9 @@ export function HomeAltScreen() {
         </Animated.ScrollView>
       </GestureDetector>
 
-      {/* Under the page and behind the button, so the pull draws it out of the
-          bottom edge instead of dropping it on top of the content. */}
+      {/* Under the page, so the pull draws it out of the bottom edge instead
+          of dropping it on top of the content. */}
       <PullUpIndicator travel={pullUp.travel} armed={pullUp.armed} label="קופון חדש" />
-
-      {/* Outside the ScrollView so it stays put while the page moves under it:
-          adding a coupon is the one thing this screen is for that is not about
-          a coupon already in the wallet. */}
-      <AddCouponFab />
 
       <CompanySheet
         company={sheetCompany}
@@ -328,9 +322,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    // Enough that the last thing on the page can be scrolled clear of the
-    // button rather than ending underneath it.
-    paddingBottom: FAB_CLEARANCE + 16,
+    // Adding a coupon lives in the bottom bar's centre button, so nothing
+    // floats over the end of the page any more.
+    paddingBottom: 32,
   },
   skeletons: {
     marginTop: 4,
