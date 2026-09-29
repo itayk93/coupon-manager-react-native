@@ -125,7 +125,7 @@ export function usePullUpAction({
       // Dragging up makes `translationY` more negative, so the distance past
       // the end is the anchor minus where the finger is now.
       travel.value = pullTravel(anchor.value - event.translationY);
-      const next = pullArmed(travel.value) ? 1 : 0;
+      const next = pullArmed(travel.value, armed.value === 1) ? 1 : 0;
       if (next !== armed.value) {
         armed.value = next;
         if (next) runOnJS(press)();
@@ -201,7 +201,7 @@ export function PullUpIndicator({
 
 /** Tall enough to read at a glance, short enough that the threshold sits above
  *  it rather than off the screen. */
-const HEIGHT = 56;
+const HEIGHT = TRAVEL_AT_ARM;
 
 const styles = StyleSheet.create({
   dock: {

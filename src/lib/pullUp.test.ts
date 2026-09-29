@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DISARM_AT,
   FINGER_TO_ARM,
   MAX_TRAVEL,
   TRAVEL_AT_ARM,
@@ -27,17 +28,26 @@ describe("pullTravel", () => {
     }
   });
 
-  it("gets heavier the further it goes, which is what makes the line deliberate", () => {
-    // The first half of the finger travel buys far more than the second: that
-    // asymmetry is the resistance. Equal halves would mean no resistance at all.
-    const firstHalf = pullTravel(FINGER_TO_ARM / 2);
-    const secondHalf = pullTravel(FINGER_TO_ARM) - firstHalf;
-    expect(firstHalf).toBeGreaterThan(secondHalf * 2);
+  it("tracks the finger one to one up to the line, so the tab is never behind it", () => {
+    const half = pullTravel(FINGER_TO_ARM / 2);
+    expect(half).toBeCloseTo(TRAVEL_AT_ARM / 2, 6);
+  });
+
+  it("gets heavier past the line", () => {
+    const first = pullTravel(FINGER_TO_ARM + 20) - pullTravel(FINGER_TO_ARM);
+    const second = pullTravel(FINGER_TO_ARM + 40) - pullTravel(FINGER_TO_ARM + 20);
+    expect(second).toBeLessThan(first);
+  });
+
+  it("arms within a short, deliberate pull", () => {
+    // The old 120pt pull was never reached in practice; keep it under a thumb's
+    // easy reach past the end of the page.
+    expect(FINGER_TO_ARM).toBeLessThanOrEqual(64);
   });
 
   it("stops rising once there is nothing further to reach", () => {
-    expect(pullTravel(10_000)).toBe(MAX_TRAVEL);
-    expect(pullTravel(FINGER_TO_ARM * 4)).toBe(MAX_TRAVEL);
+    expect(pullTravel(10_000)).toBeCloseTo(MAX_TRAVEL, 6);
+    expect(pullTravel(10_000)).toBeLessThanOrEqual(MAX_TRAVEL);
   });
 
   it("keeps registering a little past the line, then stops", () => {
@@ -63,5 +73,11 @@ describe("pullArmed", () => {
   it("agrees with the curve about where the line is", () => {
     expect(pullArmed(pullTravel(FINGER_TO_ARM - 1))).toBe(false);
     expect(pullArmed(pullTravel(FINGER_TO_ARM + 1))).toBe(true);
+  });
+
+  it("stays armed through a small wobble back, then lets go", () => {
+    expect(pullArmed(DISARM_AT + 1, true)).toBe(true);
+    expect(pullArmed(DISARM_AT - 1, true)).toBe(false);
+    expect(pullArmed(DISARM_AT + 1, false)).toBe(false);
   });
 });
