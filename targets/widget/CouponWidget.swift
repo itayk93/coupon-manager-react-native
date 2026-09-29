@@ -221,7 +221,7 @@ private struct CouponCardView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
 
-                    Text("יתרה: " + formatShekels(coupon.remainingValue))
+                    Text(coupon.worthText ?? "יתרה: " + formatShekels(coupon.remainingValue))
                         .couponFont(compact ? 10 : 12, .bold)
                         .foregroundColor(.white)
 
@@ -392,7 +392,7 @@ struct CouponMascotSmallView: View {
                     if let coupon = urgent?.coupon {
                         let company = coupon.company.trimmingCharacters(in: .whitespacesAndNewlines)
                         let amount = coupon.remainingValue.formatted(.number.precision(.fractionLength(0...2)))
-                        Text("\(company) · יתרה \u{2066}₪\(amount)\u{2069}")
+                        Text(coupon.worthText.map { "\(company) · \($0)" } ?? "\(company) · יתרה \u{2066}₪\(amount)\u{2069}")
                             .couponFont(12, .medium)
                             .foregroundColor(.white)
                             .lineLimit(1)

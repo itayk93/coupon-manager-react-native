@@ -28,6 +28,7 @@ function toWidgetCoupon(coupon: DecryptedCoupon): WidgetCouponPayload {
     logoFile: null,
     cardExp: coupon.card_exp ?? null,
     cvv: coupon.cvv ?? null,
+    purpose: coupon.is_one_time ? coupon.purpose?.trim() || null : null,
   };
 }
 

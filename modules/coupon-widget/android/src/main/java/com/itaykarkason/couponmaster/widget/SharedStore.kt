@@ -46,6 +46,7 @@ object SharedStore {
             logoFile = null,
             cardExp = obj.optString("cardExp", "").ifBlank { null },
             cvv = obj.optString("cvv", "").ifBlank { null },
+            purpose = obj.optString("purpose", "").ifBlank { null },
           )
         },
         upcoming = root.optJSONArray("upcoming").toCoupons(),
@@ -79,6 +80,7 @@ object SharedStore {
         logoFile = item.optString("logoFile", "").ifBlank { null },
         cardExp = item.optString("cardExp", "").ifBlank { null },
         cvv = item.optString("cvv", "").ifBlank { null },
+        purpose = item.optString("purpose", "").ifBlank { null },
       )
     }
   }
@@ -98,6 +100,7 @@ data class WidgetCoupon(
   val logoFile: String?,
   val cardExp: String? = null,
   val cvv: String? = null,
+  val purpose: String? = null,
 ) {
   /**
    * Whole days from `nowMs` to expiry, 0 on the last day, null once it has
