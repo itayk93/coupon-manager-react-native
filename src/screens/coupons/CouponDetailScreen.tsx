@@ -8,12 +8,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   Switch,
   Linking,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -163,6 +163,10 @@ type Props = {
   onDismiss?: () => void;
 };
 
+function NoInsetShell(props: React.ComponentProps<typeof View>) {
+  return <SafeAreaView edges={[]} {...props} />;
+}
+
 export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismiss }: Props = {}) {
   const router = useRouter();
   const { id, highlightUsage } = useLocalSearchParams<{ id: string; highlightUsage?: string }>();
@@ -175,7 +179,8 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
   const dismiss = onDismiss ?? (() => router.back());
   // A pane sits inside a window that has already taken the notch into account,
   // so a second SafeAreaView would inset it twice.
-  const Shell = embedded ? View : SafeAreaView;
+  // The Header pays the top inset and the bottom nav pays the bottom one.
+  const Shell = embedded ? View : NoInsetShell;
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const queryClient = useQueryClient();

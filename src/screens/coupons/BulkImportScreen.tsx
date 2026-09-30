@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Layers, Plus, Building2, ChevronLeft } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -96,7 +96,7 @@ export function BulkImportScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="ייבוא קופונים מרובה" showBack onBack={() => router.back()} />
 
       <ScrollView

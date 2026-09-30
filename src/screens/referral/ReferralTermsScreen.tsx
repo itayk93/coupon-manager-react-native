@@ -1,5 +1,6 @@
 import React from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
@@ -71,7 +72,7 @@ export function ReferralTermsScreen() {
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="תנאי התחרות" showBack />
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
         <Text style={[styles.docTitle, { color: theme.text }]}>

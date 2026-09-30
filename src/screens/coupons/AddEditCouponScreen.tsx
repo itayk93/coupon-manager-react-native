@@ -5,12 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Switch,
   Image,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Building2, ChevronDown, ChevronLeft, Plus, X } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -74,7 +74,7 @@ export function AddEditCouponScreen() {
 
   if (isEditing && (isLoading || (!existingCoupon && !isError))) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="עריכת קופון" showBack onBack={() => router.back()} />
         <View style={styles.stateContainer}>
           <Text style={{ color: theme.textMuted }}>טוען נתוני קופון...</Text>
@@ -85,7 +85,7 @@ export function AddEditCouponScreen() {
 
   if (isEditing && !existingCoupon) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="עריכת קופון" showBack onBack={() => router.back()} />
         <View style={styles.stateContainer}>
           <Text style={{ color: theme.danger }}>לא ניתן לטעון את הקופון לעריכה</Text>
@@ -188,7 +188,7 @@ function CouponForm({
   });
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
         title={isEditing ? "עריכת קופון" : "הוספת קופון"}
         showBack

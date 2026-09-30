@@ -4,8 +4,8 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Sparkles, ShieldCheck, Zap, Heart } from "lucide-react-native";
 import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
@@ -19,7 +19,7 @@ export function AboutScreen() {
   const contentStyle = useContentStyle("reading");
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ContentHeader />
 
       <ScrollView

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   CheckCircle,
   ChevronLeft,
@@ -66,7 +66,7 @@ export function ReferralProgramScreen() {
   const wasApproved = application?.status === "approved";
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="תוכנית השותפים" showBack />
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
 

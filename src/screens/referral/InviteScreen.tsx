@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  SafeAreaView,
   ScrollView,
   Share,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
 import { Copy, Share2 } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -38,7 +38,7 @@ export function InviteScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="הזמנת חברים" />
         <KuponiLoading title="טוען את תוכנית ההזמנות" subtitle="בודק את הקישור וההתקדמות שלך" />
       </SafeAreaView>
@@ -47,7 +47,7 @@ export function InviteScreen() {
 
   if (!status) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="הזמנת חברים" />
         <View style={styles.center}>
           <Text style={[styles.muted, { color: theme.textMuted }]}>
@@ -69,7 +69,7 @@ export function InviteScreen() {
   const link = referralUrl(APP_BASE_URL, status.code);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="הזמנת חברים" />
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

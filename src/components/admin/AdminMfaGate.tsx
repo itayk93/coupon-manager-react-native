@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import QRCodeSVG from "react-native-qrcode-svg";
@@ -49,7 +49,7 @@ export function AdminMfaGate({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="אימות דו-שלבי" showBack onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Header } from "@/components/ui/Header";
 import { Kuponi } from "@/components/ui/Kuponi";
@@ -132,7 +133,7 @@ export function AtRiskScreen() {
   const speaking = spokenLine !== line;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <Header title="מה בסכנה" showBack onBack={() => router.back()} />
       {isLoading ? (
         <KuponiLoading title="בודק מה עומד לפוג" subtitle="עובר על התאריכים בארנק" />

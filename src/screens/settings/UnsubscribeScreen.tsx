@@ -5,10 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Mail, Megaphone, CircleCheck, TriangleAlert } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -95,7 +95,7 @@ export function UnsubscribeScreen() {
   // that already edits the same preferences behind a session.
   if (!token) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ניהול התראות" />
         <View style={styles.centered}>
           <TriangleAlert size={40} color={theme.warning} />
@@ -120,7 +120,7 @@ export function UnsubscribeScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ניהול התראות" />
         <View style={styles.centered}>
           <TriangleAlert size={40} color={theme.danger} />
@@ -139,7 +139,7 @@ export function UnsubscribeScreen() {
 
   if (!state) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ניהול התראות" />
         <KuponiLoading title="טוען את הגדרות הדיוור" subtitle="בודק את ההעדפות השמורות שלך" />
       </SafeAreaView>
@@ -147,7 +147,7 @@ export function UnsubscribeScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="ניהול התראות" />
 
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>

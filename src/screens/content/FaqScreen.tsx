@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ChevronDown, ChevronUp, HelpCircle } from "lucide-react-native";
 import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
@@ -44,7 +44,7 @@ export function FaqScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ContentHeader />
 
       <ScrollView

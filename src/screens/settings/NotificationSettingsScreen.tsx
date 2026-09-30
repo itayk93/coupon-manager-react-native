@@ -8,8 +8,8 @@ import {
   ScrollView,
   Switch,
   TouchableOpacity,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Bell, HelpCircle, Mail, Megaphone, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
 import {
   NOTIFICATION_TYPES,
@@ -185,7 +185,7 @@ export function NotificationSettingsScreen() {
 
   if (prefsLoading || !prefs || marketing.isLoading) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ההתראות שלי" />
         <KuponiLoading title="טוען את ההתראות שלך" subtitle="מתאים את ההעדפות לחשבון" />
       </SafeAreaView>
@@ -267,7 +267,7 @@ export function NotificationSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="ההתראות שלי" />
 
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>

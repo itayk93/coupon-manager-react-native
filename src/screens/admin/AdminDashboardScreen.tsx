@@ -5,11 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
   TextInput,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Search, Plus, Trash2, Send } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -125,7 +125,7 @@ export function AdminDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="פאנל ניהול" showBack onBack={() => router.back()} />
 
       <View style={[styles.container, contentStyle]}>

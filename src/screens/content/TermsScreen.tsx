@@ -1,5 +1,6 @@
 import React from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { FileCheck2 } from "lucide-react-native";
 import { ContentHeader, contentStyles } from "@/components/layout/ContentHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -63,7 +64,7 @@ export function TermsScreen() {
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ContentHeader />
       <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, contentStyle]} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

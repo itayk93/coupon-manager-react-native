@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { RotateCcw, Trash2, Sparkles, FileText } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { Header } from "@/components/ui/Header";
@@ -66,7 +66,7 @@ export function RecentlyDeletedScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="נמחקו לאחרונה" />
 
       {isLoading ? (

@@ -1,5 +1,6 @@
 import React from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/ui/Header";
 import { useRouter } from "expo-router";
 import { useContentStyle } from "@/hooks/useResponsive";
@@ -20,7 +21,7 @@ export function SoldCouponsScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: sales = [], isLoading } = useCouponSales();
-  return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+  return <SafeAreaView edges={[]} style={[styles.safe, { backgroundColor: theme.background }]}>
     <Header title="קופונים שמכרתי" showBack onBack={() => router.back()} />
     {isLoading ? <KuponiLoading title="טוען מכירות" subtitle="אוסף את כל מה שמכרת" /> : <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
       {sales.length === 0 ? (

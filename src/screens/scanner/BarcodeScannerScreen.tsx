@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   TextInput,
   Platform,
   ActivityIndicator,
@@ -13,6 +12,7 @@ import {
   Modal,
   Keyboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
@@ -273,7 +273,7 @@ export function BarcodeScannerScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
         title="קופון חדש בקליק"
         subtitle="טקסט, תמונה או סריקה — מה שנוח"

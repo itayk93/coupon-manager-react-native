@@ -5,10 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Plus, Trash2 } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
@@ -119,7 +119,7 @@ export function SharingScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={styles.titleRow}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>שיתופים</Text>
         <TouchableOpacity

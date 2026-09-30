@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   TrendingUp,
@@ -156,7 +156,7 @@ export function StatisticsScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={styles.titleRow}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>על מה חסכת</Text>
       </View>

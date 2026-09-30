@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { Bell, AlertTriangle, CheckCheck, ChevronLeft, Share2, Trash2, WalletCards } from "lucide-react-native";
@@ -227,7 +227,7 @@ export function NotificationsScreen() {
     ) : null;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
         title="מרכז התראות"
         showBack

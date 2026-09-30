@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -55,7 +56,7 @@ export function ReferralLandingScreen() {
 
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <KuponiLoading title={message ?? "רק רגע, אני פותח לך"} subtitle="מכין את ההזמנה שלך" />
     </SafeAreaView>
   );

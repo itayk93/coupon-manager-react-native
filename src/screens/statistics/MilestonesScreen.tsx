@@ -3,12 +3,12 @@ import {
   Animated,
   Easing,
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Check, Lock, Sparkles, Ticket } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -132,7 +132,7 @@ export function MilestonesScreen() {
   const [openStone, setOpenStone] = useState<{ rung: Ladder; step: LadderStep } | null>(null);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <Header title="אבני הדרך שלי" showBack onBack={() => router.back()} />
       {isLoading || !data ? (
         <KuponiLoading title="אוסף את אבני הדרך" subtitle="עובר על מה שכבר עברת" />

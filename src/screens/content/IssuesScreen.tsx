@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TextInput,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { AlertCircle, Send } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -47,7 +47,7 @@ export function IssuesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="דיווח על תקלה" showBack onBack={() => router.back()} />
 
       <ScrollView

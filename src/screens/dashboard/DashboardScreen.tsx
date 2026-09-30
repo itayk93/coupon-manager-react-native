@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Sparkles, ChevronLeft, X } from "lucide-react-native";
 import { WalletHeroCard } from "@/components/dashboard/WalletHeroCard";
@@ -141,7 +141,7 @@ export function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* Our own ask, before the OS spends its one permission dialog. */}
       <PushPrimer />
 

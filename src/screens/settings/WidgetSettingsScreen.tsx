@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronDown, ChevronUp, LayoutGrid, Minus, Plus } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -107,7 +107,7 @@ export function WidgetSettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+      <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
         <Header title="ווידג'ט מסך הבית" />
         <WidgetLoadingState />
       </SafeAreaView>
@@ -115,7 +115,7 @@ export function WidgetSettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.screen, { backgroundColor: theme.background }]}>
       <Header title="ווידג'ט מסך הבית" />
 
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>

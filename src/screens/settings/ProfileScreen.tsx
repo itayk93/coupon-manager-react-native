@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { Camera, Check, User, Lock, Mail, Shield } from "lucide-react-native";
@@ -162,7 +162,7 @@ export function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="פרופיל אישי" showBack onBack={() => router.back()} />
 
       <ScrollView

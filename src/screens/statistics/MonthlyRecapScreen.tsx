@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -42,7 +43,7 @@ export function MonthlyRecapScreen() {
       : `${recap.lostCount} קופונים פגו החודש עם יתרה עליהם.`;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <Header title="החודש שלי" showBack onBack={() => router.back()} />
       {isLoading || savingsLoading ? (
         <KuponiLoading title="מסכם לך את החודש" subtitle="עובר על מה שנוצל ומה שפג" />

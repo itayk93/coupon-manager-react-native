@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   RefreshControl,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
@@ -181,7 +181,7 @@ export function HomeAltScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <GestureDetector gesture={pullUp.gesture}>
         <Animated.ScrollView
           ref={pullUp.scrollRef}

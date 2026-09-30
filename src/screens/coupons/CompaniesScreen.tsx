@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { RefreshControl, SafeAreaView, ScrollView, StyleSheet } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Store } from "lucide-react-native";
 import { Header } from "@/components/ui/Header";
@@ -47,7 +48,7 @@ export function CompaniesScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <Header title="חברות" showBack onBack={() => router.back()} />
       {isLoading && coupons.length === 0 ? (
         <KuponiLoading title="אוסף את החנויות" subtitle="עובר על הקופונים בארנק" />

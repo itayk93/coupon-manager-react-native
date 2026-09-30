@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import {
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Gift, TriangleAlert } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
@@ -172,7 +172,7 @@ export function ClaimShareScreen() {
   })();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="קופון בשבילך" showBack />
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>{body}</ScrollView>
     </SafeAreaView>
