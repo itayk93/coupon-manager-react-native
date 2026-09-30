@@ -57,6 +57,9 @@ export function StatisticsScreen() {
   const [selectedMonth, setSelectedMonth] = useState<KpiMonthSelection | null>(null);
 
   const handleOpenCoupon = (coupon: DecryptedCoupon) => {
+    // The sheet belongs to this screen; leaving it open would sit over the
+    // coupon once it is pushed.
+    setActiveKpi(null);
     router.push(`/coupons/${couponRouteId(coupon)}`);
   };
 
