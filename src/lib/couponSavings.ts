@@ -23,6 +23,19 @@ export function isGiftCoupon(coupon: { value?: number | null; cost?: number | nu
   return (coupon.cost ?? 0) <= 0 && (coupon.value ?? 0) > 0;
 }
 
+/**
+ * Received rather than bought: cost nothing and is worth money, or is a
+ * one-time coupon (which has no face value to speak of).
+ */
+export function isReceivedCoupon(coupon: {
+  value?: number | null;
+  cost?: number | null;
+  is_one_time?: boolean | null;
+}): boolean {
+  if ((coupon.cost ?? 0) > 0) return false;
+  return (coupon.value ?? 0) > 0 || coupon.is_one_time === true;
+}
+
 /** Share of every shekel spent that was saved: (value - cost) / value. */
 export function savingsRate(coupon: SavingsCoupon): number {
   const value = coupon.value ?? 0;

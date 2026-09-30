@@ -4,14 +4,14 @@ import { CalendarDays, ChevronDown, ChevronRight } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRemainingValue } from "@/lib/couponTotals";
-import { realizedSavings } from "@/lib/couponSavings";
+import { isReceivedCoupon, realizedSavings } from "@/lib/couponSavings";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 
-export type KpiMetric = "remaining" | "savings" | "used" | "value";
+export type KpiMetric = "remaining" | "savings" | "used" | "value" | "gift";
 
 export type KpiConfig = {
   key: KpiMetric;
@@ -23,7 +23,21 @@ export const KPI_DESCRIPTIONS: Record<KpiMetric, string> = {
   savings: "כמה כסף חסכת בפועל: ההפרש בין השווי למחיר ששילמת, רק על מה שכבר מימשת. קופונים שקיבלת בחינם לא נספרים כחיסכון.",
   used: "סך כל הסכום שכבר מימשת וקנית איתו עד היום.",
   value: "השווי הכולל של כל הקופונים שנוספו לחשבון שלך במצטבר.",
+  gift: "קופונים שקיבלת במתנה: לא עלו לך כסף והם שווים כסף, או קופונים חד־פעמיים.",
 };
+
+const YEAR_CAPTIONS: Record<KpiMetric, string> = {
+  remaining: "סכום זמין שנשאר מאז",
+  savings: "חיסכון שנצבר מאז",
+  used: "סכום שנוצל מאז",
+  value: "שווי קופונים שנוספו מאז",
+  gift: "קופונים שהתקבלו במתנה מאז",
+};
+
+/** Whether a coupon counts toward this figure at all. */
+function countsFor(coupon: DecryptedCoupon, metric: KpiMetric): boolean {
+  return metric === "gift" ? isReceivedCoupon(coupon) : metricValue(coupon, metric) > 0;
+}
 
 export type KpiMonthSelection = {
   key: string;
@@ -41,6 +55,8 @@ function metricValue(coupon: DecryptedCoupon, metric: KpiMetric): number {
       return coupon.used_value || 0;
     case "value":
       return coupon.value || 0;
+    case "gift":
+      return isReceivedCoupon(coupon) ? coupon.value || 0 : 0;
   }
 }
 
@@ -56,24 +72,26 @@ type YearBucket = {
   key: string;
   label: string;
   value: number;
+  count: number;
   months: MonthBucket[];
 };
 
 const MISSING_DATE_KEY = "__missing__";
 
 function buildYearBuckets(coupons: DecryptedCoupon[], metric: KpiMetric): YearBucket[] {
-  const yearMap = new Map<string, { yearKey: string; label: string; total: number; months: Map<string, MonthBucket> }>();
+  const yearMap = new Map<string, { yearKey: string; label: string; total: number; count: number; months: Map<string, MonthBucket> }>();
 
   const addCoupon = (bucketKey: string, label: string, coupon: DecryptedCoupon, monthKey: string, monthLabel: string, monthIndex: number) => {
     const value = metricValue(coupon, metric);
-    if (value <= 0) return;
+    if (!countsFor(coupon, metric)) return;
 
     let bucket = yearMap.get(bucketKey);
     if (!bucket) {
-      bucket = { yearKey: bucketKey, label, total: 0, months: new Map() };
+      bucket = { yearKey: bucketKey, label, total: 0, count: 0, months: new Map() };
       yearMap.set(bucketKey, bucket);
     }
     bucket.total += value;
+    bucket.count += 1;
 
     let month = bucket.months.get(monthKey);
     if (!month) {
@@ -102,6 +120,7 @@ function buildYearBuckets(coupons: DecryptedCoupon[], metric: KpiMetric): YearBu
       key: bucket.yearKey,
       label: bucket.label,
       value: bucket.total,
+      count: bucket.count,
       months: Array.from(bucket.months.values()).sort((a, b) => b.index - a.index),
     }))
     .sort((a, b) => {
@@ -145,11 +164,12 @@ export function KpiDrilldownModal({
   const monthCoupons = useMemo(() => {
     if (!selectedMonth) return [];
     return coupons.filter((coupon) => {
+      if (config?.key === "gift" && !isReceivedCoupon(coupon)) return false;
       const date = coupon.date_added ? new Date(coupon.date_added) : null;
       if (!date || Number.isNaN(date.getTime())) return false;
       return `${date.getFullYear()}-${date.getMonth()}` === selectedMonth.key;
     });
-  }, [coupons, selectedMonth]);
+  }, [coupons, selectedMonth, config]);
 
   const total = years.reduce((sum, year) => sum + year.value, 0);
 
@@ -291,9 +311,10 @@ export function KpiDrilldownModal({
                       >
                         {formatIls(year.value)}
                       </Text>
-                      {config?.key === "remaining" ? (
+                      {config ? (
                         <Text style={[styles.yearCount, { color: theme.textMuted }]}>
-                          סכום זמין שנשאר מאז {year.label}
+                          {config.key === "gift" ? `${year.count} ${YEAR_CAPTIONS.gift}` : YEAR_CAPTIONS[config.key]}{" "}
+                          {year.label}
                         </Text>
                       ) : null}
                     </View>

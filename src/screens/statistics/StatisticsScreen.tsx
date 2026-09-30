@@ -35,7 +35,7 @@ import { couponRouteId } from "@/lib/couponId";
 import { useCouponSales } from "@/hooks/useCouponSales";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { useSavingsByMonth } from "@/hooks/useCouponUsage";
-import { totalGiftValueUsed, totalRealizedSavings } from "@/lib/couponSavings";
+import { isReceivedCoupon, totalRealizedSavings } from "@/lib/couponSavings";
 
 /** Space between the four figures at the top, in points. */
 const KPI_GAP = 10;
@@ -74,7 +74,8 @@ export function StatisticsScreen() {
   // Saved = bought below face value, on the part actually spent. Coupons that
   // cost nothing are money received, shown on their own (see couponSavings).
   const totalSavings = useMemo(() => totalRealizedSavings(coupons), [coupons]);
-  const giftValue = useMemo(() => totalGiftValueUsed(coupons), [coupons]);
+  const gifts = useMemo(() => coupons.filter(isReceivedCoupon), [coupons]);
+  const giftValue = useMemo(() => gifts.reduce((sum, c) => sum + (c.value || 0), 0), [gifts]);
   const { data: savingsMonths = {} } = useSavingsByMonth(coupons);
   const remainingValue = Math.max(0, totalValue - usedValue);
   const saleStats = useMemo(() => {
@@ -156,6 +157,7 @@ export function StatisticsScreen() {
     { key: "savings", title: "חיסכון מצטבר" },
     { key: "used", title: "סך הכל נוצל" },
     { key: "value", title: "סך שווי קופונים" },
+    { key: "gift", title: "קופונים שקיבלת במתנה" },
   ];
 
   return (
@@ -229,13 +231,19 @@ export function StatisticsScreen() {
           ))}
         </View>
 
-        {giftValue > 0 ? (
-          <View style={[styles.giftRow, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+        {gifts.length > 0 ? (
+          <PressableScale
+            haptic
+            accessibilityRole="button"
+            accessibilityLabel="קופונים שקיבלת במתנה"
+            onPress={() => setActiveKpi(kpiConfigs[4])}
+            style={[styles.giftRow, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+          >
             <Text style={[styles.giftLabel, { color: theme.textMuted }]}>
-              קיבלת במתנה · מקופונים שלא עלו לך כסף
+              קיבלת במתנה · {gifts.length} קופונים שלא עלו לך כסף
             </Text>
             <IlsAmount value={giftValue} style={[styles.giftValue, { color: theme.text }]} maxFontSizeMultiplier={1.3} />
-          </View>
+          </PressableScale>
         ) : null}
 
         {/* Monthly savings */}
