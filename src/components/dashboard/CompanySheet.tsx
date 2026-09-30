@@ -224,8 +224,9 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
         onPanResponderRelease: (_evt, g) => {
           const far = g.dy > 120 || g.vy > 0.8;
           if (far) {
+            // Keep the offset: the exit slide continues from where the finger
+            // left the sheet instead of snapping it back up first.
             onClose();
-            drag.setValue(0);
           } else {
             Animated.spring(drag, {
               toValue: 0,

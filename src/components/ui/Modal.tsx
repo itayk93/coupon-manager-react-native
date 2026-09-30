@@ -137,8 +137,11 @@ export function Modal({
               setExpanded(false);
               drag.setValue(0);
             } else {
+              // Leave the drag offset where the finger left it: the exit
+              // animation adds to it, so the sheet carries on down from there.
+              // Zeroing it here snapped the sheet back to full height and only
+              // then slid it away. It is reset the next time the sheet opens.
               onClose();
-              drag.setValue(0);
             }
           } else {
             Animated.spring(drag, {
