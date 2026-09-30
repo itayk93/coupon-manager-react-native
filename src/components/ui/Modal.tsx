@@ -282,7 +282,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     maxHeight: "90%",
     minHeight: "40%",
-    paddingBottom: Platform.OS === "ios" ? 20 : 12,
+    // iOS: the SafeAreaView inside already pays the home-indicator inset.
+    paddingBottom: Platform.OS === "ios" ? 0 : 12,
   },
   sheetTablet: {
     maxWidth: 560,
