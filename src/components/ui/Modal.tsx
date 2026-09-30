@@ -238,6 +238,11 @@ export function Modal({
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              // The sheet is pinned to the bottom edge, so the rubber band
+              // stretches the content away from it and snaps back: the jump
+              // seen when scrolling a long list.
+              bounces={false}
+              overScrollMode="never"
             >
               <SheetExpandedContext.Provider value={expandable && expanded}>
                 {children}
