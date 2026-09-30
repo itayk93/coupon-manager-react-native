@@ -62,6 +62,14 @@ export function Modal({
   expandable = false,
   onClosed,
 }: ModalProps) {
+  // Callers close a sheet by clearing whatever it shows (a selected company, a
+  // filter, a form), but it stays on screen for the exit animation. Rendering
+  // the cleared state then flashes an empty sheet mid-slide, so while it is
+  // leaving it keeps drawing what it last showed open.
+  const live = { title, subtitle, titleIcon, headerAction, children, footer };
+  const lastOpen = React.useRef(live);
+  if (visible) lastOpen.current = live;
+  ({ title, subtitle, titleIcon, headerAction, children, footer } = visible ? live : lastOpen.current);
   const { theme } = useAppTheme();
   // On an iPad a sheet the width of the screen is a wall. It becomes a card
   // that floats above the bottom edge instead, which is what iPadOS does with
