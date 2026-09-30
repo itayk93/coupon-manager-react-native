@@ -291,9 +291,11 @@ export function KpiDrilldownModal({
                       >
                         {formatIls(year.value)}
                       </Text>
-                      <Text style={[styles.yearCount, { color: theme.textMuted }]}>
-                        {year.months.length} חודשים
-                      </Text>
+                      {config?.key === "remaining" ? (
+                        <Text style={[styles.yearCount, { color: theme.textMuted }]}>
+                          סכום זמין שנשאר מאז {year.label}
+                        </Text>
+                      ) : null}
                     </View>
                   </Pressable>
 
