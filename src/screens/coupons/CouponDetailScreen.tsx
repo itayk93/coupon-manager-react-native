@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   Switch,
   Linking,
@@ -173,9 +172,10 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
   // route that is still `router.back`; in a pane it is "clear the selection",
   // because there is nothing to pop.
   const dismiss = onDismiss ?? (() => router.back());
-  // A pane sits inside a window that has already taken the notch into account,
-  // so a second SafeAreaView would inset it twice.
-  const Shell = embedded ? View : SafeAreaView;
+  // The notch is already paid for: by the window around a pane, and on a route
+  // by the Header's own top inset on iOS. A SafeAreaView here would pay it a
+  // second time and leave a blank band above the header.
+  const Shell = View;
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const queryClient = useQueryClient();
