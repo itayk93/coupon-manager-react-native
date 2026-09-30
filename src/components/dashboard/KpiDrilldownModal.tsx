@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRemainingValue } from "@/lib/couponTotals";
 import { isReceivedCoupon, realizedSavings } from "@/lib/couponSavings";
+import { useLastNonNull } from "@/hooks/useLastNonNull";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
@@ -145,7 +146,7 @@ type KpiDrilldownModalProps = {
 export function KpiDrilldownModal({
   visible,
   onClose,
-  config,
+  config: liveConfig,
   coupons,
   onOpenCoupon,
   expandedYear,
@@ -154,6 +155,7 @@ export function KpiDrilldownModal({
   onSelectedMonthChange,
 }: KpiDrilldownModalProps) {
   const { theme } = useAppTheme();
+  const config = useLastNonNull(liveConfig);
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
 
   const years = useMemo(

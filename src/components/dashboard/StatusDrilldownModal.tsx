@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useLastNonNull } from "@/hooks/useLastNonNull";
 import { useRouter } from "expo-router";
 import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
@@ -53,11 +54,12 @@ export function filterCouponsByStatus(
 export function StatusDrilldownModal({
   visible,
   onClose,
-  filter,
+  filter: liveFilter,
   coupons,
 }: StatusDrilldownModalProps) {
   const { theme } = useAppTheme();
   const router = useRouter();
+  const filter = useLastNonNull(liveFilter);
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
 
   const filtered = useMemo(
