@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { BellRing, Check } from "lucide-react-native";
+import { Check } from "lucide-react-native";
+import { MascotAnimation } from "@/components/ui/MascotAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useNativeNotifications } from "@/hooks/useNativeNotifications";
@@ -90,11 +91,9 @@ export function PushPrimer() {
     <Modal transparent animationType="fade" visible onRequestClose={close}>
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <View style={styles.iconCircle}>
-            <BellRing size={26} color="#fff" />
-          </View>
+          <MascotAnimation size={118} state="talking" accessibilityLabel="קופוני" />
 
-          <Text style={[styles.title, { color: theme.text }]}>שנשמור לך על הקופונים?</Text>
+          <Text style={[styles.title, { color: theme.text }]}>היי, אני קופוני! שאשמור לך על הקופונים?</Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>
             הדבר היחיד שגרוע יותר מלשכוח קופון הוא לגלות את זה יום אחרי
           </Text>
@@ -150,21 +149,13 @@ const styles = StyleSheet.create({
     padding: 22,
     alignItems: "center",
   },
-  iconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: palette.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   title: {
     fontFamily: fonts.display,
     fontSize: 22,
     fontWeight: "800",
     textAlign: "center",
     writingDirection: "rtl",
-    marginTop: 14,
+    marginTop: 6,
   },
   subtitle: {
     fontFamily: fonts.body,

@@ -18,6 +18,7 @@ import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
+import { PushPrimer } from "@/components/layout/PushPrimer";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { PullUpIndicator, usePullUpAction } from "@/components/ui/PullUpAction";
 import { useContentStyle } from "@/hooks/useResponsive";
@@ -290,6 +291,10 @@ export function HomeAltScreen() {
           {onboardingPending ? null : <PushNudgeBanner hasCoupons={coupons.length > 0} />}
         </Animated.ScrollView>
       </GestureDetector>
+      {/* The first thing a new install is asked, once onboarding is out of the
+          way: our own warm ask, and only a yes on it reaches the system
+          dialog. Home is the routed screen, so it lives here. */}
+      {onboardingPending ? null : <PushPrimer />}
 
       {/* Under the page, so the pull draws it out of the bottom edge instead
           of dropping it on top of the content. */}
