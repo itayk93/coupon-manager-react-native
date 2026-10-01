@@ -20,7 +20,6 @@ import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireAdmin, requireSameUser, requireUser, isServiceRoleCall, isAdminIpAllowed } from '../_shared/auth.ts';
 import { buildUnsubscribeUrl, buildUnsubscribeHeaders } from '../_shared/unsubscribe.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
-import { deliver, type DeliveryPrefs } from '../_shared/deliver.ts';
 import { multipassSummaryEmailHtml, newsletterTeaserEmailHtml, type MultipassSummaryItem } from '../_shared/emailTemplate.ts';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
@@ -189,62 +188,9 @@ async function handleUpdateSummary(
     }),
   );
 
-  // The summary used to be an email and nothing else, so a balance that moved
-  // overnight never buzzed the phone. It now goes out as the same
-  // kind of message as any other usage the app spots. Email is switched off
-  // here because the summary above is that email.
-  if (items.length > 0) {
-    try {
-      await pushSummary(supabase, userId, items, runDate);
-    } catch (e) {
-      console.error('[send-emails] summary push failed:', e);
-    }
-  }
-
   return result.ok
     ? jsonResponse({ sent: 1 })
     : jsonResponse({ error: 'שליחת המייל נכשלה', detail: result.error }, 502);
-}
-
-async function pushSummary(supabase: any, userId: number, items: MultipassSummaryItem[], runDate: string) {
-  const [{ data: recipient }, { data: prefRow }, { data: subscriptions }] = await Promise.all([
-    supabase.from('users').select('id, public_id, email, first_name').eq('id', userId).maybeSingle(),
-    supabase.from('notification_preferences')
-      .select('email, push, in_app, quiet_until, timezone, type_channels')
-      .eq('user_id', userId).maybeSingle(),
-    supabase.from('push_subscriptions')
-      .select('endpoint, subscription, kind, expo_token')
-      .eq('user_id', userId),
-  ]);
-  if (!recipient) return;
-
-  const prefs: DeliveryPrefs = {
-    email: false,
-    push: prefRow?.push ?? true,
-    in_app: prefRow?.in_app ?? true,
-    quiet_until: prefRow?.quiet_until ?? null,
-    timezone: prefRow?.timezone || 'Asia/Jerusalem',
-    type_channels: prefRow?.type_channels ?? null,
-  };
-  const lead = items[0];
-  await deliver(supabase, {
-    user: recipient,
-    prefs,
-    subscriptions: (subscriptions || []) as any,
-    type: 'usage_detected',
-    payload: {
-      // Multipass is where the balance was read from, not the coupon's brand;
-      // with no brand on the item the title just drops the name.
-      company: lead.company || '',
-      drop: Math.round(Number(lead.delta || 0) * 100) / 100,
-      balance: Number(lead.remaining_value || 0),
-      couponId: lead.coupon_id,
-      extra: items.length - 1,
-    },
-    // One summary a day; a re-sent run for the same date stays quiet.
-    dedupeKey: `multipass-summary:${userId}:${runDate || new Date().toISOString().slice(0, 10)}`,
-    respectQuietHours: true,
-  });
 }
 
 Deno.serve(async (req: Request) => {
