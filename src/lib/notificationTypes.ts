@@ -24,7 +24,8 @@ export type NotificationTypeId =
   | "coupon_milestone"
   | "expired_unused"
   | "weekly_pick"
-  | "unrecorded_usage";
+  | "unrecorded_usage"
+  | "usage_detected";
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -76,6 +77,18 @@ export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
       what: "הקופון שמפסיד הכי הרבה מכל יום המתנה — היתרה שנשארה חלקי הימים עד שהוא פג.",
       when: "ביום ראשון בבוקר, אם יש קופון עם 20 ש״ח ומעלה שפג בעוד 8 עד 60 ימים.",
       where: "הקופון שנבחר.",
+    },
+  },
+  {
+    id: "usage_detected",
+    label: "זוהה שימוש בקופון",
+    description: "כשהבדיקה היומית מוצאת שהשתמשו בקופון",
+    sample: "זוהה שימוש בקופון של Multipass: ירדו 60.56 ש״ח, נשארו 113.98 ש״ח",
+    defaults: { email: false, push: true, in_app: true },
+    explanation: {
+      what: "הבדיקה היומית של Multipass מצאה שירד כסף מהקופון, עם הסכום שירד וכמה נשאר.",
+      when: "מיד אחרי הבדיקה היומית, אם משהו התעדכן.",
+      where: "הקופון שהתעדכן.",
     },
   },
   {

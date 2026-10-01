@@ -191,7 +191,7 @@ async function handleUpdateSummary(
 
   // The summary used to be an email and nothing else, so a balance that moved
   // overnight never buzzed the phone. It now goes out as the same
-  // `balance_updated` message the in-app refresh sends. Email is switched off
+  // kind of message as any other usage the app spots. Email is switched off
   // here because the summary above is that email.
   if (items.length > 0) {
     try {
@@ -231,9 +231,10 @@ async function pushSummary(supabase: any, userId: number, items: MultipassSummar
     user: recipient,
     prefs,
     subscriptions: (subscriptions || []) as any,
-    type: 'balance_updated',
+    type: 'usage_detected',
     payload: {
       company: lead.company || 'Multipass',
+      drop: Math.round(Number(lead.delta || 0) * 100) / 100,
       balance: Number(lead.remaining_value || 0),
       couponId: lead.coupon_id,
       extra: items.length - 1,

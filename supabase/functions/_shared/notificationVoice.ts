@@ -42,6 +42,9 @@ const SYSTEM_PROMPT = `אתה כותב את ההתראות של "קופון מא
 
 החזר JSON בלבד: {"title": "...", "body": "..."}`;
 
+/** Kinds sent exactly as the catalogue writes them. */
+const FIXED_WORDING: ReadonlySet<NotificationTypeId> = new Set<NotificationTypeId>(['usage_detected']);
+
 /** What the model may say about each kind, in a line it cannot contradict. */
 const INTENT: Record<NotificationTypeId, string> = {
   expiry: 'קופון עומד לפוג בקרוב. התזכורת דחופה אבל לא מלחיצה — יש עוד זמן לפעול.',
@@ -53,6 +56,7 @@ const INTENT: Record<NotificationTypeId, string> = {
   coupon_milestone: 'הארנק הגיע למספר עגול של קופונים. עידוד.',
   expired_unused: 'קופון פג בלי שנוצל וכסף התפספס. אמפתי, בלי להאשים, ומציע לתזכר מוקדם יותר בפעם הבאה.',
   weekly_pick: 'המלצה שבועית: עם איזה קופון כדאי להתחיל השבוע, לפי כמה כסף נשאר עליו ובעוד כמה ימים הוא פג. תכנון רגוע, לא אזעקה.',
+  usage_detected: 'זוהה שימוש בקופון בבדיקה היומית. עובדה קצרה עם סכום.',
   unrecorded_usage: 'בבדיקת יתרה אוטומטית התברר שירד מהקופון יותר ממה שנרשם באפליקציה. ייתכן שהמשתמש פשוט שכח לרשום — ענייני ורגוע, בלי להפחיד, ומציע לבדוק את הקופון.',
 };
 
@@ -69,6 +73,8 @@ export async function phrase(
   options: { supabase?: any; userId?: number } = {},
 ): Promise<NotificationCopy> {
   const written = copyFor(type, payload);
+  // Kinds whose wording was chosen by hand are never rewritten.
+  if (FIXED_WORDING.has(type)) return written;
   const apiKey = Deno.env.get('OPENAI_API_KEY_V2') || Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) return written;
 

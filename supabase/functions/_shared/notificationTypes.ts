@@ -22,7 +22,8 @@ export type NotificationTypeId =
   | 'coupon_milestone'
   | 'expired_unused'
   | 'weekly_pick'
-  | 'unrecorded_usage';
+  | 'unrecorded_usage'
+  | 'usage_detected';
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -91,6 +92,13 @@ export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta
   },
   // Money that left a coupon without a record may not have been the user's
   // doing. Every channel, like the expiry reminder.
+  // The daily Multipass run found that a coupon was used. A fact worth a buzz:
+  // it is money that just left, and the user may want to check it.
+  usage_detected: {
+    id: 'usage_detected',
+    label: 'זוהה שימוש בקופון',
+    defaults: { email: false, push: true, in_app: true },
+  },
   unrecorded_usage: {
     id: 'unrecorded_usage',
     label: 'היתרה ירדה בלי שימוש רשום',
@@ -223,6 +231,22 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         title: 'עם איזה קופון להתחיל השבוע',
         body: `${payload.company}: נשארו ${money(payload.remaining)} והוא פג בעוד ${payload.daysLeft} ימים.${next}`,
         link: payload.couponPublicId ? `/coupons/${payload.couponPublicId}` : '/coupons',
+      };
+    }
+    case 'usage_detected': {
+      const drop = Number(payload.drop || 0);
+      const others = Number(payload.extra || 0);
+      const alsoOthers = others > 0
+        ? ` ועוד ${others === 1 ? 'קופון אחד' : `${others} קופונים`} התעדכנו.`
+        : '';
+      return {
+        title: `זוהה שימוש בקופון של ${payload.company}`,
+        body: drop > 0
+          ? `ירדו ${money(drop)}, נשארו ${money(payload.balance)}.${alsoOthers}`
+          : `נשארו ${money(payload.balance)}.${alsoOthers}`,
+        link: others > 0 || (!payload.couponPublicId && !payload.couponId)
+          ? '/coupons'
+          : `/coupons/${payload.couponPublicId || payload.couponId}`,
       };
     }
     case 'unrecorded_usage':

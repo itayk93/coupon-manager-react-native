@@ -66,6 +66,7 @@ const BY_TYPE: Record<Exclude<NotificationTypeId, 'expiry'>, NotificationIconKey
   // No faces of their own yet; the nearest drawn ones say the same thing.
   weekly_pick: 'expiry-week',
   unrecorded_usage: 'balance-updated',
+  usage_detected: 'balance-updated',
 };
 
 export function iconKeyFor(type: NotificationTypeId, days?: number): NotificationIconKey {

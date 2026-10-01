@@ -113,6 +113,15 @@ describe("copy", () => {
     expect(copy.link).toBe("/coupons/xyz");
   });
 
+  it("names the company in the title and what left and what is left in the body", () => {
+    const copy = copyFor("usage_detected", { company: "Multipass", drop: 60.56, balance: 113.98, couponId: 4, extra: 0 });
+    expect(copy.title).toBe("זוהה שימוש בקופון של Multipass");
+    expect(copy.body).toContain("60.56 ש״ח");
+    expect(copy.body).toContain("113.98 ש״ח");
+    expect(copy.link).toBe("/coupons/4");
+    expect(copyFor("usage_detected", { company: "X", drop: 0, balance: 5, extra: 2 }).body).toContain("ועוד 2 קופונים");
+  });
+
   it("writes every kind in Hebrew", () => {
     for (const id of Object.keys(SERVER_TYPES) as Array<keyof typeof SERVER_TYPES>) {
       const copy = copyFor(id, {
