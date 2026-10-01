@@ -233,7 +233,9 @@ async function pushSummary(supabase: any, userId: number, items: MultipassSummar
     subscriptions: (subscriptions || []) as any,
     type: 'usage_detected',
     payload: {
-      company: lead.company || 'Multipass',
+      // Multipass is where the balance was read from, not the coupon's brand;
+      // with no brand on the item the title just drops the name.
+      company: lead.company || '',
       drop: Math.round(Number(lead.delta || 0) * 100) / 100,
       balance: Number(lead.remaining_value || 0),
       couponId: lead.coupon_id,

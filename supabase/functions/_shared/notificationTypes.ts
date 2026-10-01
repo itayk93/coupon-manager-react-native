@@ -240,7 +240,7 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
         ? ` ועוד ${others === 1 ? 'קופון אחד' : `${others} קופונים`} התעדכנו.`
         : '';
       return {
-        title: `זוהה שימוש בקופון של ${payload.company}`,
+        title: payload.company ? `זוהה שימוש בקופון של ${payload.company}` : 'זוהה שימוש בקופון',
         body: drop > 0
           ? `ירדו ${money(drop)}, נשארו ${money(payload.balance)}.${alsoOthers}`
           : `נשארו ${money(payload.balance)}.${alsoOthers}`,

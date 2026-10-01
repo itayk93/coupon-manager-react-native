@@ -119,6 +119,7 @@ describe("copy", () => {
     expect(copy.body).toContain("60.56 ש״ח");
     expect(copy.body).toContain("113.98 ש״ח");
     expect(copy.link).toBe("/coupons/4");
+    expect(copyFor("usage_detected", { company: "", drop: 1, balance: 5, extra: 0 }).title).toBe("זוהה שימוש בקופון");
     expect(copyFor("usage_detected", { company: "X", drop: 0, balance: 5, extra: 2 }).body).toContain("ועוד 2 קופונים");
   });
 
