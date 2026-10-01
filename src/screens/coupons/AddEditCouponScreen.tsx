@@ -340,6 +340,9 @@ function CouponForm({
                   })
                 }
               />
+              {onNext ? (
+                <Button title="דלג לקופון הבא" onPress={onNext} />
+              ) : null}
             </View>
           ) : null}
 
