@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decryptCouponValue } from '../_shared/encryption.ts';
 import { corsHeadersFor, jsonResponseFor } from '../_shared/cors.ts';
-import { deliver, type DeliveryPrefs } from '../_shared/deliver.ts';
 
 const TOKEN_SHA256 = '1a0a0f98c12e7e45bd4876fbc8c399861ee4fdbb17c3350bd47a45f15d3d1303';
 const GOOGLE_GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
@@ -175,7 +174,6 @@ async function processScrapeResults(body: Record<string, unknown>) {
         longitude: place?.longitude ?? null,
       });
       if (usageError) throw usageError;
-      await notifyUsage({ user_id: coupon.user_id, coupon_id: coupon.id, company: coupon.company, delta }).catch(() => null);
       items.push({
         coupon_id: coupon.id,
         company: coupon.company,
@@ -317,71 +315,6 @@ async function geocodeAddress(query: string) {
   return place;
 }
 
-async function notifyUsage(body: Record<string, unknown>) {
-  const userId = Number(body.user_id);
-  const delta = Number(body.delta || 0);
-  const couponId = Number(body.coupon_id);
-  const company = String(body.company || 'קופון').trim();
-  if (
-    !Number.isSafeInteger(userId) || userId <= 0 ||
-    !Number.isSafeInteger(couponId) || couponId <= 0 ||
-    delta <= 0
-  ) throw new Error('INVALID_INPUT');
-
-  const db = adminClient();
-  const { data: coupon, error: couponError } = await db
-    .from('coupon')
-    .select('public_id, value, used_value')
-    .eq('id', couponId)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (couponError || !coupon?.public_id) throw new Error('COUPON_NOT_FOUND');
-
-  // Routed through deliver() like every other kind, so the user's switches and
-  // quiet hours apply and the in-app row and the push share one wording. This
-  // used to write its own row and push by hand, which ignored preferences and
-  // said the same thing a second time next to the summary.
-  const [{ data: recipient }, { data: prefRow }, { data: subscriptions }] = await Promise.all([
-    db.from('users').select('id, public_id, email, first_name').eq('id', userId).maybeSingle(),
-    db.from('notification_preferences')
-      .select('email, push, in_app, quiet_until, timezone, type_channels')
-      .eq('user_id', userId).maybeSingle(),
-    db.from('push_subscriptions')
-      .select('endpoint, subscription, kind, expo_token')
-      .eq('user_id', userId),
-  ]);
-  if (!recipient) throw new Error('USER_NOT_FOUND');
-
-  const prefs: DeliveryPrefs = {
-    // The daily summary email is the email for this run.
-    email: false,
-    push: prefRow?.push ?? true,
-    in_app: prefRow?.in_app ?? true,
-    quiet_until: prefRow?.quiet_until ?? null,
-    timezone: prefRow?.timezone || 'Asia/Jerusalem',
-    type_channels: prefRow?.type_channels ?? null,
-  };
-  const balance = Math.max(0, Number(coupon.value || 0) - Number(coupon.used_value || 0));
-  const result = await deliver(db, {
-    user: recipient,
-    prefs,
-    subscriptions: (subscriptions || []) as any,
-    type: 'usage_detected',
-    payload: {
-      company: company === 'קופון' ? '' : company,
-      drop: Math.round(delta * 100) / 100,
-      balance,
-      couponId,
-      couponPublicId: coupon.public_id,
-    },
-    // One message per coupon per balance it ended on, so a re-run of the same
-    // scrape stays quiet and a further use later still speaks.
-    dedupeKey: `usage-detected:${couponId}:${coupon.used_value}`,
-    respectQuietHours: false,
-  });
-  return { result };
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) });
   try {
@@ -392,9 +325,6 @@ Deno.serve(async (req: Request) => {
       const query = String(body.query || '').trim().slice(0, 200);
       if (query.length < 3) return jsonResponseFor(req, { result: null });
       return jsonResponseFor(req, { result: await geocodeAddress(query) });
-    }
-    if (action === 'notify') {
-      return jsonResponseFor(req, { result: await notifyUsage(body) });
     }
     if (action === 'process_results') {
       return jsonResponseFor(req, { result: await processScrapeResults(body) });
