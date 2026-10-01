@@ -154,6 +154,11 @@ else
   rm -rf "$DERIVED/Build/Intermediates.noindex/CouponMaster.build/Release-iphoneos/CouponWidget.build" \
          "$DERIVED/Build/Products/Release-iphoneos/CouponWidget.appex" \
          "$APP_PATH/PlugIns/CouponWidget.appex" 2>/dev/null || true
+
+  # Xcode copies bundled assets into the .app but never deletes the ones that
+  # have since left the project, so a reused build kept ~9MB of old mascot and
+  # logo files that no source references. The bundler rewrites this folder.
+  rm -rf "$APP_PATH/assets" 2>/dev/null || true
 fi
 
 mkdir -p "$DERIVED"
