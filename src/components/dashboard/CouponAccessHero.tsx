@@ -151,8 +151,10 @@ export function CouponAccessHero({ coupons, isLoading }: CouponAccessHeroProps) 
               <Text
                 style={[styles.amount, { color: theme.text }]}
                 numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
+                // No adjustsFontSizeToFit: measured before the bubble has its
+                // width (flex:1 beside the mascot slot) iOS shrinks the figure
+                // to a few points and never grows it back. 30pt fits any
+                // balance this bubble will hold.
               >
                 {formatIls(remaining)}
               </Text>
