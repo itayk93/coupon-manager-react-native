@@ -36,7 +36,7 @@ export function parsedCouponIsland(first: ParsedCoupon, found = 1): IslandCopy {
     const opened = [company, details(first)].filter(Boolean).join(" · ");
     return {
       title: `זיהינו ${found} קופונים`,
-      message: opened ? `פתחנו את הראשון: ${opened}` : "פתחנו את הראשון לבדיקה",
+      message: opened ? `נעבור עליהם אחד אחד. הראשון: ${opened}` : "נעבור עליהם אחד אחד",
     };
   }
 

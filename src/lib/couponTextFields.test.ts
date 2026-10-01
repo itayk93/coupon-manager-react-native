@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   cardExpiryToExpiration,
+  extractAllCardExpiries,
+  extractAllVerificationCodes,
+  extractAllVoucherCodes,
   extractCardExpiry,
   extractRedemptionUrl,
   extractRelativeExpiration,
@@ -71,5 +74,22 @@ describe("coupon text card fields", () => {
     const sms = `יום הולדת שמח מ-Babka. מתנה תקף בחודש הקלנדרי של יום ההולדת. להסרה יש לשלוח 508 למספר 0529990043`;
     expect(isActivationOffer(sms)).toBe(true);
     expect(extractRelativeExpiration(sms, new Date("2026-09-01T07:00:00+03:00"))).toBe("2026-09-30");
+  });
+});
+
+describe("messages with several coupons", () => {
+  const twoCoupons = `הקוד למימוש ההטבה תו קנייה בשווי 100 ₪ לרשת חנויות גוד פארם הינו:
+קוד: 9376-7601-9795-4478,
+קוד אימות: 523,
+תוקף: 10/31
+
+קוד: 9376-7601-9798-4475,
+קוד אימות: 310,
+תוקף: 10/31`;
+
+  it("reads every code block in order", () => {
+    expect(extractAllVoucherCodes(twoCoupons)).toEqual(["9376-7601-9795-4478", "9376-7601-9798-4475"]);
+    expect(extractAllVerificationCodes(twoCoupons)).toEqual(["523", "310"]);
+    expect(extractAllCardExpiries(twoCoupons)).toEqual(["10/31", "10/31"]);
   });
 });

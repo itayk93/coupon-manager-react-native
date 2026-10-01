@@ -22,7 +22,32 @@ export function extractVerificationCode(text: string): string | null {
 }
 
 export function extractVoucherCode(text: string): string | null {
-  return searchableText(text).match(/\b(?:\d{7,12}-\d{4}|\d{4}(?:-\d{4}){3})\b/)?.[0] || null;
+  return extractAllVoucherCodes(text)[0] ?? null;
+}
+
+/**
+ * Every labeled field, in message order. Messages that carry several coupons
+ * repeat the same block (code, CVV, expiry) per coupon, so the n-th match
+ * belongs to the n-th coupon.
+ */
+export function extractAllVoucherCodes(text: string): string[] {
+  return [...searchableText(text).matchAll(/\b(?:\d{7,12}-\d{4}|\d{4}(?:-\d{4}){3})\b/g)].map((m) => m[0]);
+}
+
+export function extractAllVerificationCodes(text: string): string[] {
+  return [
+    ...searchableText(text).matchAll(
+      /(?:קוד\s*(?:אימות|בטחון|ביטחון)|CVV|CVC)\s*[:：-]?\s*([A-Z0-9]{3,4})\b/gi
+    ),
+  ].map((m) => m[1]);
+}
+
+export function extractAllCardExpiries(text: string): string[] {
+  return [
+    ...searchableText(text).matchAll(
+      /(?:תוקף|תאריך\s+תוקף|expiry|exp(?:iration)?)\s*[:：-]?\s*(0[1-9]|1[0-2])\s*\/\s*(\d{2})\b/gi
+    ),
+  ].map((m) => `${m[1]}/${m[2]}`);
 }
 
 /** Converts MM/YY card expiry to the coupon's last valid calendar day. */

@@ -30,6 +30,8 @@ export type UseCouponFormArgs = {
   /** Return to the interrupted screen after a share-sheet import is saved. */
   returnAfterSave?: boolean;
   allowEmptyCode?: boolean;
+  /** Set while a multi-coupon import still has coupons left to review. */
+  onSavedGoToNext?: () => void;
 };
 
 /**
@@ -53,6 +55,7 @@ export function useCouponForm({
   initialRedemptionUrl,
   returnAfterSave = false,
   allowEmptyCode = false,
+  onSavedGoToNext,
 }: UseCouponFormArgs) {
   const router = useRouter();
   const isEditing = existingCoupon !== undefined;
@@ -294,6 +297,12 @@ export function useCouponForm({
 
     if (!tagsApplied) {
       notify.error("הקופון נשמר", "התגיות לא נשמרו. אפשר להוסיף אותן בעריכה.");
+    }
+
+    // A message with several coupons: move on to the next one in the batch.
+    if (onSavedGoToNext) {
+      onSavedGoToNext();
+      return;
     }
 
     // A share-sheet import is a temporary detour over the current task. Pop it

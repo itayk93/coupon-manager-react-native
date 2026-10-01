@@ -24,7 +24,7 @@ import { AUTO_PROVIDERS } from "@/lib/couponForm";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
-import { getSharedCouponImport } from "@/lib/sharedCouponImport";
+import { getSharedCouponImport, getSharedCouponImportCount } from "@/lib/sharedCouponImport";
 
 type CouponFormProps = {
   existingCoupon?: DecryptedCoupon;
@@ -39,6 +39,9 @@ type CouponFormProps = {
   initialRedemptionUrl?: string;
   returnAfterSave?: boolean;
   allowEmptyCode?: boolean;
+  /** 1-based position and total when reviewing a multi-coupon import. */
+  batchPosition?: { index: number; total: number };
+  onNext?: () => void;
 };
 
 /**
@@ -62,13 +65,27 @@ export function AddEditCouponScreen() {
     initialCvv?: string;
     initialCardExp?: string;
     initialImportId?: string;
+    initialImportIndex?: string;
     initialRedemptionUrl?: string;
     returnToPrevious?: string;
   }>();
 
   const couponIdentifier = params.couponId;
   const isEditing = couponIdentifier !== undefined;
-  const importedCoupon = getSharedCouponImport(params.initialImportId);
+  const importIndex = Number(params.initialImportIndex ?? 0) || 0;
+  const importedCoupon = getSharedCouponImport(params.initialImportId, importIndex);
+  const importTotal = getSharedCouponImportCount(params.initialImportId);
+  const hasNextImport = importIndex + 1 < importTotal;
+  // Replace rather than push so back still leaves the whole batch, not one coupon.
+  const goToNextImport = () =>
+    router.replace({
+      pathname: "/coupons/add",
+      params: {
+        initialImportId: params.initialImportId,
+        initialImportIndex: String(importIndex + 1),
+        ...(params.returnToPrevious ? { returnToPrevious: params.returnToPrevious } : {}),
+      },
+    });
 
   const { data: existingCoupon, isLoading, isError } = useCoupon(couponIdentifier);
 
@@ -96,7 +113,7 @@ export function AddEditCouponScreen() {
 
   return (
     <CouponForm
-      key={params.initialImportId || couponIdentifier || "new-coupon"}
+      key={params.initialImportId ? `${params.initialImportId}-${importIndex}` : couponIdentifier || "new-coupon"}
       existingCoupon={existingCoupon}
       initialCompany={importedCoupon?.company || params.initialCompany}
       initialCode={importedCoupon?.code || params.initialCode}
@@ -109,6 +126,8 @@ export function AddEditCouponScreen() {
       initialRedemptionUrl={importedCoupon?.redemption_url || params.initialRedemptionUrl}
       returnAfterSave={params.returnToPrevious === "1"}
       allowEmptyCode={Boolean(importedCoupon && !importedCoupon.code)}
+      batchPosition={importTotal > 1 ? { index: importIndex + 1, total: importTotal } : undefined}
+      onNext={hasNextImport ? goToNextImport : undefined}
     />
   );
 }
@@ -126,6 +145,8 @@ function CouponForm({
   initialRedemptionUrl,
   returnAfterSave,
   allowEmptyCode,
+  batchPosition,
+  onNext,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
@@ -185,14 +206,28 @@ function CouponForm({
     initialRedemptionUrl,
     returnAfterSave,
     allowEmptyCode,
+    onSavedGoToNext: onNext,
   });
 
   return (
     <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
         title={isEditing ? "עריכת קופון" : "הוספת קופון"}
+        subtitle={batchPosition ? `קופון ${batchPosition.index} מתוך ${batchPosition.total}` : undefined}
         showBack
         onBack={() => router.back()}
+        rightAction={
+          onNext ? (
+            <TouchableOpacity
+              onPress={onNext}
+              style={[styles.skipButton, { backgroundColor: theme.surfaceAlt }]}
+              accessibilityRole="button"
+              accessibilityLabel="דילוג לקופון הבא בלי לשמור"
+            >
+              <Text style={[styles.skipButtonText, { color: theme.primary }]}>דלג</Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
       />
 
       {/* iOS adjusts the ScrollView inset natively below. Android instead
@@ -509,7 +544,7 @@ function CouponForm({
           </> : null}
 
           <Button
-            title={isEditing ? "שמור שינויים" : "הוסף קופון לארנק"}
+            title={isEditing ? "שמור שינויים" : onNext ? "שמור והמשך לקופון הבא" : "הוסף קופון לארנק"}
             onPress={handleSubmit}
             loading={isSaving}
             disabled={!canSubmit || isSaving}
@@ -529,6 +564,15 @@ function CouponForm({
 }
 
 const styles = StyleSheet.create({
+  skipButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
   safeArea: {
     flex: 1,
   },

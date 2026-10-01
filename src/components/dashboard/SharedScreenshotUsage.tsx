@@ -73,7 +73,7 @@ export function SharedScreenshotUsage() {
       completeSharedImport();
       setPendingImport(null);
       setMode(null);
-      storeSharedCouponImport(pendingImport.id, parsed);
+      storeSharedCouponImport(pendingImport.id, results);
       router.push({
         pathname: "/coupons/add",
         params: {

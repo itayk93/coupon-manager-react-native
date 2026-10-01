@@ -38,7 +38,7 @@ describe("parsedCouponIsland", () => {
   it("says how many were found when only the first is opened", () => {
     expect(parsedCouponIsland(coupon({ expiration: null }), 3)).toEqual({
       title: "זיהינו 3 קופונים",
-      message: "פתחנו את הראשון: שופרסל · ⁦₪ 200⁩",
+      message: "נעבור עליהם אחד אחד. הראשון: שופרסל · ⁦₪ 200⁩",
     });
   });
 });
