@@ -256,16 +256,10 @@ export function useCouponForm({
       return;
     }
 
-    // A code the user already holds is almost always a re-scan, not a second
-    // coupon. Match ignores dashes and spaces, so "9376-1104" and "93761104"
-    // count as the same code.
-    const duplicates = findDuplicateCoupons(payload.code, allCoupons);
-    if (duplicates.length > 0) {
-      const finishedBefore = duplicates.some((c) => c.status === "נוצל");
-      const message = finishedBefore
-        ? "כבר השתמשת בקופון עם הקוד הזה וסיימת אותו. להוסיף אותו שוב?"
-        : "כבר יש לך קופון עם הקוד הזה. להוסיף אותו שוב?";
-      notify.confirm("קופון כפול", message, () => void finishAdd(payload), "הוסף בכל זאת");
+    // A code the user already holds is never added twice; the screen hides the
+    // form for it, this is the backstop. Match ignores dashes and spaces.
+    if (findDuplicateCoupons(payload.code, allCoupons).length > 0) {
+      notify.error("הקופון כבר קיים", "מחק את הקופון הקיים כדי להוסיף אותו מחדש.");
       return;
     }
 

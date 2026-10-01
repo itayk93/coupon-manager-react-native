@@ -210,6 +210,10 @@ function CouponForm({
     onSavedGoToNext: onNext,
   });
 
+  // A code the user already holds cannot be added again: the form is hidden
+  // until the existing coupon is deleted.
+  const blocked = duplicates.length > 0;
+
   return (
     <SafeAreaView edges={[]} style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header
@@ -255,6 +259,8 @@ function CouponForm({
             },
           ]}
         >
+          {!blocked ? (
+            <>
           {/* Company Picker */}
           <Text style={[styles.fieldLabel, { color: theme.text }]}>
             חברה / רשת *
@@ -297,6 +303,9 @@ function CouponForm({
             </Text>
           ) : null}
 
+            </>
+          ) : null}
+
           {/* Code */}
           <Input
             label={allowEmptyCode ? "קוד הקופון (עדיין לא התקבל)" : "קוד הקופון *"}
@@ -318,6 +327,9 @@ function CouponForm({
                   ? "כבר השתמשת בקופון עם הקוד הזה"
                   : "כבר יש לך את הקופון הזה במערכת"}
               </Text>
+              <Text style={[styles.duplicateHint, { color: theme.textMuted }]}>
+                אי אפשר להוסיף קופון עם אותו קוד. כדי להוסיף אותו מחדש, קודם מוחקים את הקיים.
+              </Text>
               <Button
                 title="עבור לקופון"
                 variant="outline"
@@ -328,12 +340,11 @@ function CouponForm({
                   })
                 }
               />
-              {onNext ? (
-                <Button title="דלג לקופון הבא" variant="outline" onPress={onNext} />
-              ) : null}
             </View>
           ) : null}
 
+          {!blocked ? (
+            <>
           {/* Value & Cost */}
           <View style={styles.row}>
             <View style={styles.halfCol}>
@@ -579,6 +590,8 @@ function CouponForm({
             disabled={!canSubmit || isSaving}
             style={{ marginTop: 18 }}
           />
+            </>
+          ) : null}
         </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -663,6 +676,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: -8,
     marginBottom: 12,
+  },
+  duplicateHint: {
+    fontSize: 13,
+    textAlign: "right",
   },
   duplicateTitle: {
     fontSize: 14,
