@@ -192,6 +192,9 @@ CURRENT_PHASE="deploy"
 # 4. Install and launch -------------------------------------------------------
 # CoreDevice is flaky when multiple device installs run at once, so install
 # serially and retry transient connection resets.
+# Exit code deploy_device uses for "device locked": a warning, not a failure.
+LOCKED_STATUS=100
+
 deploy_device() {
   local device_name="$1"
   local device_id="$2"
@@ -211,6 +214,11 @@ deploy_device() {
     fi
 
     case "$install_out" in
+      *kAMDMobileImageMounterDeviceLocked*|*"device is locked"*)
+        # A locked phone is not a broken build: it only needs unlocking.
+        echo "🔒 [$device_name] נעול. פתח את המסך והרץ שוב כדי להתקין עליו."
+        return $LOCKED_STATUS
+        ;;
       *"Connection reset by peer"*|*"Connection was invalidated"*|*"could not be established"*)
         if [ $install_attempt -lt $max_install_attempts ]; then
           echo "🔁 [$device_name] החיבור ל-Xcode נפל. מנתק רגע ומנסה שוב בעוד 5 שניות..."
@@ -248,7 +256,8 @@ deploy_device() {
           launch_attempt=$((launch_attempt + 1))
           continue
         fi
-        echo "❌ [$device_name] נשאר נעול במשך דקה. האפליקציה מותקנת, אך לא הופעלה."
+        echo "🔒 [$device_name] נשאר נעול במשך דקה. האפליקציה מותקנת, אך לא הופעלה."
+        return $LOCKED_STATUS
         ;;
       *"not been explicitly trusted"*|*"invalid code signature"*)
         echo "👉 [$device_name] אשר את המפתח תחת VPN & Device Management."
@@ -261,6 +270,8 @@ deploy_device() {
 
 echo "📲 מתקין ומפעיל לפי סדר..."
 DEPLOY_STATUS=0
+DEPLOYED_COUNT=0
+LOCKED_DEVICES=""
 while IFS=$'\t' read -r DEVICE_NAME DEVICE_ID; do
   [ -z "$DEVICE_ID" ] && continue
   DEVICE_LOG="$DERIVED/deploy-$DEVICE_ID.log"
@@ -268,7 +279,12 @@ while IFS=$'\t' read -r DEVICE_NAME DEVICE_ID; do
   deploy_device "$DEVICE_NAME" "$DEVICE_ID" 2>&1 | tee "$DEVICE_LOG"
   STATUS=$?
   set -e
-  if [ $STATUS -ne 0 ]; then
+  if [ $STATUS -eq 0 ]; then
+    DEPLOYED_COUNT=$((DEPLOYED_COUNT + 1))
+  elif [ $STATUS -eq $LOCKED_STATUS ]; then
+    echo "⚠️  $DEVICE_NAME נעול — דולג (לא נחשב כישלון)."
+    LOCKED_DEVICES="${LOCKED_DEVICES:+$LOCKED_DEVICES, }$DEVICE_NAME"
+  else
     echo "❌ $DEVICE_NAME נכשל (קוד $STATUS)."
     echo "   לוג התקנה: $DEVICE_LOG"
     DEPLOY_STATUS=$STATUS
@@ -276,10 +292,17 @@ while IFS=$'\t' read -r DEVICE_NAME DEVICE_ID; do
 done <<< "$MATCHES"
 [ $DEPLOY_STATUS -ne 0 ] && exit $DEPLOY_STATUS
 
+# Every target locked means nothing was installed; that is still a failure.
+if [ $DEPLOYED_COUNT -eq 0 ] && [ -n "$LOCKED_DEVICES" ]; then
+  echo "❌ אף מכשיר לא קיבל את האפליקציה (נעולים: $LOCKED_DEVICES)."
+  exit 1
+fi
+
 trap - EXIT
 echo ""
 echo "================================================="
 echo "  ✅ ההתקנה וההפעלה הסתיימו בהצלחה!"
 echo "  📱 האפליקציה פועלת במצב Standalone עצמאי."
+[ -n "$LOCKED_DEVICES" ] && echo "  ⚠️  דולגו מכשירים נעולים: $LOCKED_DEVICES"
 echo "  🔌 ניתן לנתק את הכבל בכל עת."
 echo "================================================="
