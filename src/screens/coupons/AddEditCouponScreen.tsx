@@ -18,9 +18,9 @@ import { Input } from "@/components/ui/input";
 import { DateField } from "@/components/ui/DateField";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
-import { useCoupon, DecryptedCoupon } from "@/hooks/useCoupons";
+import { useCoupon, useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { useCouponForm } from "@/hooks/useCouponForm";
-import { AUTO_PROVIDERS } from "@/lib/couponForm";
+import { AUTO_PROVIDERS, findDuplicateCoupons } from "@/lib/couponForm";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
@@ -43,6 +43,8 @@ type CouponFormProps = {
   batchPosition?: { index: number; total: number };
   onNext?: () => void;
   onPrev?: () => void;
+  /** Set only when every coupon in the import is already held. */
+  onFinish?: () => void;
 };
 
 /**
@@ -91,6 +93,14 @@ export function AddEditCouponScreen() {
   const goToPrevImport = () => goToImport(importIndex - 1);
 
   const { data: existingCoupon, isLoading, isError } = useCoupon(couponIdentifier);
+  const { data: allCoupons = [] } = useCoupons();
+  // "Done" is only offered when there is nothing left to add: every coupon in
+  // the message is already in the wallet.
+  const allImportsHeld =
+    importTotal > 0 &&
+    Array.from({ length: importTotal }, (_, i) => getSharedCouponImport(params.initialImportId, i)).every(
+      (c) => Boolean(c?.code) && findDuplicateCoupons(c!.code!, allCoupons).length > 0
+    );
 
   if (isEditing && (isLoading || (!existingCoupon && !isError))) {
     return (
@@ -132,6 +142,7 @@ export function AddEditCouponScreen() {
       batchPosition={importTotal > 1 ? { index: importIndex + 1, total: importTotal } : undefined}
       onNext={hasNextImport ? goToNextImport : undefined}
       onPrev={importIndex > 0 ? goToPrevImport : undefined}
+      onFinish={allImportsHeld ? () => router.replace("/(tabs)") : undefined}
     />
   );
 }
@@ -152,6 +163,7 @@ function CouponForm({
   batchPosition,
   onNext,
   onPrev,
+  onFinish,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
@@ -365,6 +377,7 @@ function CouponForm({
               {onPrev ? (
                 <Button title="חזרה לקופון הקודם" variant="outline" onPress={onPrev} />
               ) : null}
+              {onFinish ? <Button title="סיום" onPress={onFinish} /> : null}
             </View>
           ) : null}
 
