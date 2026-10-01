@@ -42,6 +42,7 @@ type CouponFormProps = {
   /** 1-based position and total when reviewing a multi-coupon import. */
   batchPosition?: { index: number; total: number };
   onNext?: () => void;
+  onPrev?: () => void;
 };
 
 /**
@@ -77,15 +78,17 @@ export function AddEditCouponScreen() {
   const importTotal = getSharedCouponImportCount(params.initialImportId);
   const hasNextImport = importIndex + 1 < importTotal;
   // Replace rather than push so back still leaves the whole batch, not one coupon.
-  const goToNextImport = () =>
+  const goToImport = (index: number) =>
     router.replace({
       pathname: "/coupons/add",
       params: {
         initialImportId: params.initialImportId,
-        initialImportIndex: String(importIndex + 1),
+        initialImportIndex: String(index),
         ...(params.returnToPrevious ? { returnToPrevious: params.returnToPrevious } : {}),
       },
     });
+  const goToNextImport = () => goToImport(importIndex + 1);
+  const goToPrevImport = () => goToImport(importIndex - 1);
 
   const { data: existingCoupon, isLoading, isError } = useCoupon(couponIdentifier);
 
@@ -128,6 +131,7 @@ export function AddEditCouponScreen() {
       allowEmptyCode={Boolean(importedCoupon && !importedCoupon.code)}
       batchPosition={importTotal > 1 ? { index: importIndex + 1, total: importTotal } : undefined}
       onNext={hasNextImport ? goToNextImport : undefined}
+      onPrev={importIndex > 0 ? goToPrevImport : undefined}
     />
   );
 }
@@ -147,6 +151,7 @@ function CouponForm({
   allowEmptyCode,
   batchPosition,
   onNext,
+  onPrev,
 }: CouponFormProps) {
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
@@ -222,15 +227,29 @@ function CouponForm({
         showBack
         onBack={() => router.back()}
         rightAction={
-          onNext ? (
-            <TouchableOpacity
-              onPress={onNext}
-              style={[styles.skipButton, { backgroundColor: theme.surfaceAlt }]}
-              accessibilityRole="button"
-              accessibilityLabel="דילוג לקופון הבא בלי לשמור"
-            >
-              <Text style={[styles.skipButtonText, { color: theme.primary }]}>דלג</Text>
-            </TouchableOpacity>
+          onNext || onPrev ? (
+            <View style={styles.batchNav}>
+              {onPrev ? (
+                <TouchableOpacity
+                  onPress={onPrev}
+                  style={[styles.skipButton, { backgroundColor: theme.surfaceAlt }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="חזרה לקופון הקודם"
+                >
+                  <Text style={[styles.skipButtonText, { color: theme.primary }]}>הקודם</Text>
+                </TouchableOpacity>
+              ) : null}
+              {onNext ? (
+                <TouchableOpacity
+                  onPress={onNext}
+                  style={[styles.skipButton, { backgroundColor: theme.surfaceAlt }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="דילוג לקופון הבא בלי לשמור"
+                >
+                  <Text style={[styles.skipButtonText, { color: theme.primary }]}>דלג</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
           ) : undefined
         }
       />
@@ -342,6 +361,9 @@ function CouponForm({
               />
               {onNext ? (
                 <Button title="דלג לקופון הבא" onPress={onNext} />
+              ) : null}
+              {onPrev ? (
+                <Button title="חזרה לקופון הקודם" variant="outline" onPress={onPrev} />
               ) : null}
             </View>
           ) : null}
@@ -609,6 +631,10 @@ function CouponForm({
 }
 
 const styles = StyleSheet.create({
+  batchNav: {
+    flexDirection: "row",
+    gap: 8,
+  },
   skipButton: {
     paddingHorizontal: 14,
     paddingVertical: 8,
