@@ -5,6 +5,7 @@ import {
   getDefaultAutoProvider,
   normalizeAutoProvider,
   normalizeCouponCode,
+  splitNewCodes,
   validateCouponForm,
   type CouponFormFields,
 } from "./couponForm";
@@ -207,5 +208,16 @@ describe("buildCouponPayload", () => {
       auto_download_details: null,
       auto_update: false,
     });
+  });
+});
+
+describe("splitNewCodes", () => {
+  const wallet = [{ code: "ABC-123", company: "Max", status: "פעיל" }];
+
+  it("skips held codes and repeats inside the list", () => {
+    const r = splitNewCodes(["abc123", "X1", "x1", "Y2", ""], wallet);
+    expect(r.fresh).toEqual(["X1", "Y2"]);
+    expect(r.alreadyHeld.map((h) => h.code)).toEqual(["abc123"]);
+    expect(r.repeated).toEqual(["x1"]);
   });
 });

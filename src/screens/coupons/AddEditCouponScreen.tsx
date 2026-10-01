@@ -155,6 +155,7 @@ function CouponForm({
 
   const {
     isEditing,
+    duplicates,
     showAutoUsageUpdater,
     isSaving,
     canSubmit,
@@ -304,6 +305,34 @@ function CouponForm({
             onChangeText={setCode}
             error={errors.code}
           />
+
+          {duplicates.length > 0 ? (
+            <View
+              style={[
+                styles.duplicateBanner,
+                { backgroundColor: theme.surfaceAlt, borderColor: theme.warning },
+              ]}
+            >
+              <Text style={[styles.duplicateTitle, { color: theme.text }]}>
+                {duplicates.some((c) => c.status === "נוצל")
+                  ? "כבר השתמשת בקופון עם הקוד הזה"
+                  : "כבר יש לך את הקופון הזה במערכת"}
+              </Text>
+              <Button
+                title="עבור לקופון"
+                variant="outline"
+                onPress={() =>
+                  router.push({
+                    pathname: "/coupons/[id]",
+                    params: { id: String(duplicates[0].id) },
+                  })
+                }
+              />
+              {onNext ? (
+                <Button title="דלג לקופון הבא" variant="outline" onPress={onNext} />
+              ) : null}
+            </View>
+          ) : null}
 
           {/* Value & Cost */}
           <View style={styles.row}>
@@ -626,6 +655,19 @@ const styles = StyleSheet.create({
   companySelectorText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  duplicateBanner: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    marginTop: -8,
+    marginBottom: 12,
+  },
+  duplicateTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "right",
   },
   errorText: {
     fontSize: 12,

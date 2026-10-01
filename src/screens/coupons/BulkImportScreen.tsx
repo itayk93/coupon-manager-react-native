@@ -14,7 +14,8 @@ import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
-import { useAddCoupon } from "@/hooks/useCoupons";
+import { useAddCoupon, useCoupons } from "@/hooks/useCoupons";
+import { splitNewCodes } from "@/lib/couponForm";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { notify } from "@/lib/notify";
@@ -28,6 +29,7 @@ export function BulkImportScreen() {
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
   const addCoupon = useAddCoupon();
+  const { data: allCoupons = [] } = useCoupons();
 
   const [company, setCompany] = useState("");
   const [value, setValue] = useState("");
@@ -42,13 +44,23 @@ export function BulkImportScreen() {
       notify.error("יש לבחור חברה");
       return;
     }
-    const lines = bulkCodes
+    const pasted = bulkCodes
       .split(/[\n,]+/)
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
 
-    if (lines.length === 0) {
+    if (pasted.length === 0) {
       notify.error("יש להזין לפחות קוד קופון אחד");
+      return;
+    }
+
+    // Codes the vault already holds, or that appear twice in the box, are
+    // skipped rather than stored as a second coupon.
+    const { fresh: lines, alreadyHeld, repeated } = splitNewCodes(pasted, allCoupons);
+    const skipped = alreadyHeld.length + repeated.length;
+    if (lines.length === 0) {
+      setBulkCodes("");
+      notify.warning("כל הקודים כבר קיימים", `${skipped} קודים כבר במערכת, לא נוסף דבר.`);
       return;
     }
 
@@ -81,6 +93,10 @@ export function BulkImportScreen() {
           `${lines.length - failed.length} מתוך ${lines.length} קודים יובאו. נכשלו: ${failed.join(", ")}${firstError instanceof Error ? ` (${firstError.message})` : ""}`
         );
         return;
+      }
+
+      if (skipped > 0) {
+        notify.warning("חלק מהקודים דולגו", `נוספו ${lines.length}, ${skipped} כבר קיימים.`);
       }
 
       // Nothing in the app links here, so the screen is usually opened from a

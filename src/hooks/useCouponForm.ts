@@ -327,6 +327,8 @@ export function useCouponForm({
 
   return {
     isEditing,
+    /** Coupons already held with this code; empty while editing. */
+    duplicates: isEditing ? [] : findDuplicateCoupons(code, allCoupons),
     showAutoUsageUpdater,
     isSaving: addCoupon.isPending || updateCoupon.isPending,
     canSubmit: Object.keys(validateCouponForm(currentFields(), { allowEmptyCode })).length === 0,

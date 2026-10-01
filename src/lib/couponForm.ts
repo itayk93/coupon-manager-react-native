@@ -92,6 +92,33 @@ export function findDuplicateCoupons<T extends DuplicateCandidate>(
   return coupons.filter((coupon) => couponCodeKey(coupon.code) === key);
 }
 
+/**
+ * Splits a pasted list of codes into the ones worth adding and the ones to
+ * skip: codes the user already holds, and repeats within the list itself.
+ */
+export function splitNewCodes<T extends DuplicateCandidate>(
+  codes: readonly string[],
+  coupons: readonly T[]
+): { fresh: string[]; alreadyHeld: { code: string; coupon: T }[]; repeated: string[] } {
+  const fresh: string[] = [];
+  const alreadyHeld: { code: string; coupon: T }[] = [];
+  const repeated: string[] = [];
+  const seen = new Set<string>();
+  for (const code of codes) {
+    const key = couponCodeKey(code);
+    if (!key) continue;
+    if (seen.has(key)) {
+      repeated.push(code);
+      continue;
+    }
+    seen.add(key);
+    const held = findDuplicateCoupons(code, coupons)[0];
+    if (held) alreadyHeld.push({ code, coupon: held });
+    else fresh.push(code);
+  }
+  return { fresh, alreadyHeld, repeated };
+}
+
 export function validateCouponForm(
   fields: CouponFormFields,
   options: { allowEmptyCode?: boolean } = {}
