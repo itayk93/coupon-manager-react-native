@@ -329,12 +329,6 @@ async function main() {
             typeof place?.latitude === "number" ? place.latitude : null,
             typeof place?.longitude === "number" ? place.longitude : null,
           ]);
-          await callProductionAction("notify", {
-            user_id: coupon.user_id,
-            coupon_id: coupon.id,
-            company: coupon.company,
-            delta,
-          }).catch(() => null);
           positiveItems.push({
             coupon_id: coupon.id,
             company: coupon.company,
