@@ -178,7 +178,6 @@ export function NotificationsScreen() {
               event.stopPropagation();
               hideItem(item);
             }}
-            disabled={hideNotification.isPending}
             style={styles.removeButton}
           >
             <Trash2 size={17} color={theme.textSubtle} />

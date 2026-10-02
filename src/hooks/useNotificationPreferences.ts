@@ -70,11 +70,23 @@ export function useUpdateNotificationPreferences() {
       if (error) throw error;
       return data as NotificationPreferences;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notification_preferences"] });
+    // The switch flips at once; a failure flips it back.
+    onMutate: async (updates) => {
+      const key = ["notification_preferences", user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<NotificationPreferences>(key);
+      if (previous) queryClient.setQueryData<NotificationPreferences>(key, { ...previous, ...updates });
+      return { previous };
     },
-    onError: (error: any) => {
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["notification_preferences", user?.id], saved);
+    },
+    onError: (error: any, _updates, context) => {
+      if (context?.previous) queryClient.setQueryData(["notification_preferences", user?.id], context.previous);
       notify.error("שגיאה בעדכון העדפות ההתראות", error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification_preferences"] });
     },
   });
 }

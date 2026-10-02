@@ -47,11 +47,20 @@ export function useUpdateProfile() {
       if (error) throw error;
       return data;
     },
+    // The profile shows the change at once; a failure restores it.
+    onMutate: async (updates) => {
+      const key = ["profile", user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<UserRow>(key);
+      if (previous) queryClient.setQueryData<UserRow>(key, { ...previous, ...updates });
+      return { previous };
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(["profile", user?.id], data);
       refreshUser?.();
     },
-    onError: (error: any) => {
+    onError: (error: any, _updates, context) => {
+      if (context?.previous) queryClient.setQueryData(["profile", user?.id], context.previous);
       notify.error("שגיאה בעדכון הפרופיל", error.message);
     },
   });
