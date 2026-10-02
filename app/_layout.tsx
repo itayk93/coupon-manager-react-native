@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 20,
+    paddingVertical: 8,
   },
   shell: {
     flex: 1,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   webFooterText: {
     fontSize: 12,
     fontFamily: fonts.body,
-    marginTop: 10,
+    marginTop: 4,
     opacity: 0.7,
   },
 });
