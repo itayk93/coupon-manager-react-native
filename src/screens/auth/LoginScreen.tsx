@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -92,6 +92,24 @@ export function LoginScreen() {
     }
   };
 
+  /**
+   * iOS Password AutoFill drops the whole saved password in at once; a typed
+   * one grows a character at a time. A jump of several characters means the
+   * user picked a saved login, so sign straight in rather than make them tap
+   * the button too.
+   */
+  const autofilled = useRef(false);
+  const onPasswordChange = (next: string) => {
+    if (next.length - password.length >= 4) autofilled.current = true;
+    setPassword(next);
+  };
+  useEffect(() => {
+    if (!autofilled.current || !email.trim() || !password) return;
+    autofilled.current = false;
+    void handleLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, password]);
+
   const handleLogin = async () => {
     if (loading) return;
     if (!validate()) return;
@@ -154,6 +172,8 @@ export function LoginScreen() {
                 placeholder="you@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                textContentType="username"
+                autoComplete="email"
                 value={email}
                 onChangeText={setEmail}
                 error={errors.email}
@@ -164,8 +184,10 @@ export function LoginScreen() {
                 label="סיסמה"
                 testID="login-password"
                 isPassword
+                textContentType="password"
+                autoComplete="current-password"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={onPasswordChange}
                 returnKeyType="done"
                 enablesReturnKeyAutomatically
                 onSubmitEditing={() => void handleLogin()}
