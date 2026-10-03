@@ -321,6 +321,14 @@ private extension WidgetPayload {
             }
             .min { $0.1 < $1.1 }
     }
+
+    /// A celebration yields to a coupon expiring within two days, matching
+    /// `pickScene` in the app. Checked at render time too: a scene written days
+    /// ago must not hide "tomorrow" once the date has caught up with it.
+    func showsCelebration(at date: Date) -> Bool {
+        guard activeCelebration(at: date) != nil else { return false }
+        return (mostUrgent(at: date)?.days ?? Int.max) > 2
+    }
 }
 
 // MARK: - Small Mascot View
@@ -714,7 +722,7 @@ struct CouponWidgetEntryView: View {
             case .systemMedium: CouponMediumView(payload: entry.payload)
             case .systemLarge: CouponLargeView(payload: entry.payload)
             default:
-                if entry.payload.activeCelebration(at: entry.date) != nil {
+                if entry.payload.showsCelebration(at: entry.date) {
                     CouponCelebrationSmallView(payload: entry.payload)
                 } else {
                     CouponMascotSmallView(payload: entry.payload, date: entry.date)
@@ -730,7 +738,7 @@ struct CouponMascotEntryView: View {
 
     var body: some View {
         Group {
-            if entry.payload.activeCelebration(at: entry.date) != nil {
+            if entry.payload.showsCelebration(at: entry.date) {
                 CouponCelebrationSmallView(payload: entry.payload)
             } else {
                 CouponMascotSmallView(payload: entry.payload, date: entry.date)

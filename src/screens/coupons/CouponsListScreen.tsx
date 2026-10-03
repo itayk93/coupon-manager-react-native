@@ -12,6 +12,7 @@ import {
   Image,
   ActivityIndicator,
   Keyboard,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -1136,7 +1137,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    // iOS Safari zooms the page on focus when an input is under 16px.
+    fontSize: Platform.OS === "web" ? 16 : 14,
     textAlign: "right",
     writingDirection: "rtl",
   },
