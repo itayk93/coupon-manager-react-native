@@ -100,7 +100,6 @@ export function QuickUsageModal({
   const [usedAtDrafts, setUsedAtDrafts] = useState<Record<string, string>>({});
   const [savingDetected, setSavingDetected] = useState(false);
   const [detectedCouponCode, setDetectedCouponCode] = useState<string | null>(null);
-  const [detectedCompany, setDetectedCompany] = useState<string | null>(null);
   const [detectionWarnings, setDetectionWarnings] = useState<string[]>([]);
   const [matchState, setMatchState] = useState<"idle" | "matched" | "not-found" | "ambiguous">("idle");
   const resolvedPlaceQuery = useRef("");
@@ -130,7 +129,6 @@ export function QuickUsageModal({
     setDetectedUsages([]);
     setUsedAtDrafts({});
     setDetectedCouponCode(null);
-    setDetectedCompany(null);
     setDetectionWarnings([]);
     setMatchState("idle");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -390,7 +388,6 @@ export function QuickUsageModal({
     setDetectedUsages(parsed.usages);
     setUsedAtDrafts({});
     setDetectedCouponCode(parsed.couponCode);
-    setDetectedCompany(parsed.companyName);
     setDetectionWarnings(parsed.warnings);
     const match = matchCouponCode(parsed.couponCode, coupons);
     if (match.kind === "exact") {
@@ -562,15 +559,9 @@ export function QuickUsageModal({
         ) : null}
 
         {matchState === "not-found" ? (
-          <View style={[styles.notFoundCard, { borderColor: theme.warning, backgroundColor: theme.surfaceAlt }]}>
-            <Text style={[styles.notFoundTitle, { color: theme.text }]}>הקופון לא נמצא</Text>
-            <Text style={[styles.notFoundText, { color: theme.textMuted }]}>הקוד {detectedCouponCode || "לא זוהה"} לא קיים בקופונים שלך. יכול להיות שעדיין לא הכנסת אותו?</Text>
-            <Button title="הוספת הקופון" onPress={() => {
-              onImportPaused?.();
-              router.push({ pathname: "/coupons/add", params: { initialCode: detectedCouponCode || "", initialCompany: detectedCompany || "", returnToUsageImport: "1" } });
-            }} />
-            <Button title="בחירת קופון קיים" variant="secondary" onPress={() => setIsPickerOpen(true)} />
-          </View>
+          <Text style={[styles.matchWarning, { color: theme.warning }]}>
+            הקופון לא נמצא. הקוד {detectedCouponCode || "לא זוהה"} לא קיים בקופונים שלך.
+          </Text>
         ) : null}
 
         {matchState === "ambiguous" ? (
@@ -579,7 +570,7 @@ export function QuickUsageModal({
         {detectionWarnings.map((warning) => <Text key={warning} style={[styles.matchWarning, { color: theme.warning }]}>{warning}</Text>)}
 
         {/* Coupon Selector — the review screen and the form both need it */}
-        {isReviewing || showForm ? (
+        {(isReviewing || showForm) && matchState !== "not-found" ? (
           <>
         <Text style={[styles.label, { color: theme.text }]}>בחר קופון</Text>
         <TouchableOpacity
@@ -741,13 +732,13 @@ export function QuickUsageModal({
               }
               onPress={saveDetectedUsages}
               loading={savingDetected}
-              disabled={savingDetected || detectedUsages.length === duplicateCount}
+              disabled={savingDetected || matchState === "not-found" || detectedUsages.length === duplicateCount}
             />
           </View>
         ) : null}
 
         {/* Dropdown list if opened */}
-        {isPickerOpen ? (
+        {isPickerOpen && matchState !== "not-found" ? (
           <View
             style={[
               styles.dropdown,
@@ -998,9 +989,6 @@ const styles = StyleSheet.create({
   processingCard: { borderWidth: 1.5, borderRadius: 18, padding: 22, alignItems: "center", gap: 10, marginBottom: 16 },
   processingTitle: { fontSize: 18, fontWeight: "800", textAlign: "center" },
   processingText: { fontSize: 14, textAlign: "center" },
-  notFoundCard: { borderWidth: 1.5, borderRadius: 18, padding: 16, gap: 10, marginBottom: 16 },
-  notFoundTitle: { fontSize: 18, fontWeight: "800", textAlign: "right" },
-  notFoundText: { fontSize: 14, lineHeight: 21, textAlign: "right" },
   matchWarning: { fontSize: 14, fontWeight: "700", textAlign: "right", marginBottom: 10 },
   coordinates: {
     fontSize: 12,
