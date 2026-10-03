@@ -158,10 +158,7 @@ export function SharedScreenshotUsage() {
       coupons={coupons}
       initialScreenshotBase64={pendingImport.imageBase64!}
       importId={pendingImport.id}
-      onImportPaused={() => {
-        setPendingImport(null);
-        setMode(null);
-      }}
+      onImportPaused={closeImport}
       onImportCompleted={() => {
         completeSharedImport();
         setPendingImport(null);

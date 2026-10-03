@@ -31,6 +31,7 @@ import { formatIls } from "@/lib/formatIls";
 import { matchCouponCode } from "@/lib/couponCodeMatch";
 import { cacheParsedUsage, getCachedParsedUsage } from "@/lib/usageParseCache";
 import { useRouter } from "expo-router";
+import { notify } from "@/lib/notify";
 
 type QuickUsageModalProps = {
   visible: boolean;
@@ -382,6 +383,13 @@ export function QuickUsageModal({
     parsed: Awaited<ReturnType<typeof parseUsage.mutateAsync>>,
     sourceImageBase64?: string | null
   ) => {
+    // Coupon screenshots can be mistaken for usage. A shared image without a
+    // positive usage amount must not open a review with a fabricated zero row.
+    if (importId && parsed.usages.every((usage) => usage.amount <= 0)) {
+      notify.warning("לא זוהה שימוש בתמונה", "לא נרשם שימוש בקופון.");
+      onImportCompleted?.();
+      return;
+    }
     setError("");
     setAmountError("");
     setAiError("");
