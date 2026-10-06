@@ -9,3 +9,5 @@ updates:
         versions: [">=0.87.0"]
       - dependency-name: "react-native-worklets"
         versions: [">=0.11.0"]
+      - dependency-name: "@babel/*"
+        update-types: ["version-update:semver-major"]
