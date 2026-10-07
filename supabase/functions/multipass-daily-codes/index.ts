@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decryptCouponValue } from '../_shared/encryption.ts';
 import { corsHeadersFor, jsonResponseFor } from '../_shared/cors.ts';
+import { deliver, type DeliveryPrefs } from '../_shared/deliver.ts';
+import { type PushSubscriptionRow } from '../_shared/push.ts';
 
 const TOKEN_SHA256 = '1a0a0f98c12e7e45bd4876fbc8c399861ee4fdbb17c3350bd47a45f15d3d1303';
 const GOOGLE_GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
@@ -162,7 +164,7 @@ async function processScrapeResults(body: Record<string, unknown>) {
     if (delta > 0) {
       const location = String(newestUsage?.location || '').trim();
       const place = location ? await geocodeAddress(location).catch(() => null) : null;
-      const { error: usageError } = await db.from('coupon_usage').insert({
+      const { data: usageRow, error: usageError } = await db.from('coupon_usage').insert({
         coupon_id: coupon.id,
         used_amount: delta,
         action: 'Multipass',
@@ -172,8 +174,36 @@ async function processScrapeResults(body: Record<string, unknown>) {
         place_address: place?.place_address || null,
         latitude: place?.latitude ?? null,
         longitude: place?.longitude ?? null,
-      });
+      }).select('id').single();
       if (usageError) throw usageError;
+      try {
+        const [{ data: user }, { data: preference }, { data: subscriptions }] = await Promise.all([
+          db.from('users').select('id,public_id,email,first_name').eq('id', coupon.user_id).single(),
+          db.from('notification_preferences').select('email,push,in_app,quiet_until,timezone,type_channels').eq('user_id', coupon.user_id).maybeSingle(),
+          db.from('push_subscriptions').select('endpoint,subscription,kind,expo_token').eq('user_id', coupon.user_id),
+        ]);
+        if (user) {
+          const prefs: DeliveryPrefs = {
+            email: preference?.email ?? true,
+            push: preference?.push ?? true,
+            in_app: preference?.in_app ?? true,
+            quiet_until: preference?.quiet_until ?? null,
+            timezone: preference?.timezone || 'Asia/Jerusalem',
+            type_channels: preference?.type_channels ?? null,
+          };
+          await deliver(db, {
+            user,
+            prefs,
+            subscriptions: (subscriptions || []) as PushSubscriptionRow[],
+            type: 'usage_detected',
+            payload: { company: coupon.company, drop: delta, balance: Math.max(0, newValue - newUsed), couponId: coupon.id },
+            dedupeKey: `multipass-usage-${usageRow.id}`,
+            respectQuietHours: false,
+          });
+        }
+      } catch (notificationError) {
+        console.error('[multipass-daily-codes] usage notification failed:', notificationError);
+      }
       items.push({
         coupon_id: coupon.id,
         company: coupon.company,
@@ -208,6 +238,7 @@ function shouldUpdateCoupon(coupon: CouponRow): boolean {
   if (coupon.auto_download_details !== 'Multipass') return false;
   if (!coupon.last_scraped) return true;
   const lastScraped = Date.parse(coupon.last_scraped);
+  if (!Number.isFinite(lastScraped) || Date.now() - lastScraped >= 24 * 60 * 60 * 1000) return true;
   const views = [coupon.last_detail_view, coupon.last_company_view, coupon.last_code_view]
     .filter(Boolean)
     .map((value) => Date.parse(value as string))

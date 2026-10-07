@@ -245,6 +245,8 @@ Deno.serve(async (req: Request) => {
 
     const eligibleCoupons = (coupons || []).filter((coupon) => {
       if (!coupon.last_scraped) return true;
+      const lastScraped = Date.parse(coupon.last_scraped);
+      if (!Number.isFinite(lastScraped) || Date.now() - lastScraped >= 24 * 60 * 60 * 1000) return true;
       const views = [coupon.last_detail_view, coupon.last_company_view, coupon.last_code_view]
         .filter(Boolean)
         .map((value) => Date.parse(value));
