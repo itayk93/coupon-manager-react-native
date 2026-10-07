@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Switch,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
@@ -16,6 +15,7 @@ import { KuponiLoading } from "@/components/ui/KuponiLoading";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
@@ -234,11 +234,9 @@ function PreferenceRow({
       {busy ? (
         <ActivityIndicator color={theme.primary} />
       ) : (
-        <Switch
+        <AppSwitch
           value={value}
           onValueChange={onChange}
-          trackColor={{ false: theme.inputBorder, true: theme.primary }}
-          thumbColor="#ffffff"
         />
       )}
       <View style={styles.rowText}>

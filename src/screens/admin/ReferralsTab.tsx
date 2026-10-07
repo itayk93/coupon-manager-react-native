@@ -5,7 +5,6 @@ import {
   I18nManager,
   Share,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -39,6 +38,7 @@ import {
 } from "@/hooks/useReferralAdmin";
 import { referralShareMessage, referralUrl } from "@/lib/referral";
 import { fonts, radii } from "@/lib/theme";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
 
 /**
@@ -576,7 +576,7 @@ function PartnerDetail({ campaignId, onBack }: { campaignId: number; onBack: () 
                 <Text style={[styles.activeLabel, { color: theme.textMuted }]}>
                   קישור פעיל — כיבוי עוצר שיוך של אנשים חדשים, ולא מוחק את מי שכבר נספר
                 </Text>
-                <Switch
+                <AppSwitch
                   value={Boolean(partner?.active)}
                   onValueChange={(value) => setActive.mutate({ id: campaignId, active: value })}
                 />

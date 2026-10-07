@@ -8,7 +8,6 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
-  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, palette, radii } from "@/lib/theme";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 
@@ -196,11 +196,9 @@ export function RegisterScreen() {
             />
 
             <View style={styles.termsRow}>
-              <Switch
+              <AppSwitch
                 value={agreeTerms}
                 onValueChange={setAgreeTerms}
-                trackColor={{ false: theme.inputBorder, true: theme.primary }}
-                thumbColor="#ffffff"
               />
               <Text style={[styles.termsText, { color: theme.textMuted }]}>
                 אני מאשר/ת את תנאי השימוש
@@ -208,11 +206,9 @@ export function RegisterScreen() {
             </View>
 
             <View style={styles.termsRow}>
-              <Switch
+              <AppSwitch
                 value={newsletterOptIn}
                 onValueChange={setNewsletterOptIn}
-                trackColor={{ false: theme.inputBorder, true: theme.primary }}
-                thumbColor="#ffffff"
               />
               <Text style={[styles.termsText, { color: theme.textMuted }]}>
                 אני רוצה לקבל עדכונים והטבות באימייל (לא חובה)

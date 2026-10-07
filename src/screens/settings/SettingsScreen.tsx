@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -37,6 +36,7 @@ import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { useExportAccount, useDeleteAccount } from "@/hooks/useConsent";
 import { useMyReferralStatus } from "@/hooks/useReferral";
 import { fonts, radii, shadows } from "@/lib/theme";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
 import { useProfile } from "@/hooks/useProfile";
@@ -188,11 +188,9 @@ export function SettingsScreen() {
 
             {biometric.isAvailable ? (
               <View style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}>
-                <Switch
+                <AppSwitch
                   value={biometric.isEnabled}
                   onValueChange={handleToggleBiometric}
-                  trackColor={{ false: theme.inputBorder, true: theme.primary }}
-                  thumbColor="#ffffff"
                 />
                 <View style={styles.menuItemLabelGroup}>
                   <Text style={[styles.menuItemText, { color: theme.text }]}>

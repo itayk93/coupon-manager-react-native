@@ -6,7 +6,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Switch,
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,6 +21,7 @@ import { Header } from "@/components/ui/Header";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii } from "@/lib/theme";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
 import {
   useNotificationPreferences,
@@ -52,11 +52,9 @@ function ToggleRow({
 }) {
   return (
     <View style={styles.row}>
-      <Switch
+      <AppSwitch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: theme.inputBorder, true: theme.primary }}
-        thumbColor="#ffffff"
       />
       <View style={styles.rowLabel}>
         {icon}
@@ -107,22 +105,18 @@ function TypeCard({
       </View>
       <View style={styles.channelRow}>
         <View style={styles.channelToggle}>
-          <Switch
+          <AppSwitch
             value={pushAvailable && isTypeChannelOn(typeChannels, meta.id, "push")}
             disabled={!pushAvailable}
             onValueChange={(next) => onChange(meta.id, "push", next)}
-            trackColor={{ false: theme.inputBorder, true: theme.primary }}
-            thumbColor="#ffffff"
           />
           <Text style={[styles.channelLabel, { color: theme.textMuted }]}>פוש</Text>
         </View>
         <View style={styles.channelToggle}>
-          <Switch
+          <AppSwitch
             value={emailAvailable && isTypeChannelOn(typeChannels, meta.id, "email")}
             disabled={!emailAvailable}
             onValueChange={(next) => onChange(meta.id, "email", next)}
-            trackColor={{ false: theme.inputBorder, true: theme.primary }}
-            thumbColor="#ffffff"
           />
           <Text style={[styles.channelLabel, { color: theme.textMuted }]}>מייל</Text>
         </View>

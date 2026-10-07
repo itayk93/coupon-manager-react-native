@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +15,7 @@ import { Building2, ChevronDown, ChevronLeft, Plus, X } from "lucide-react-nativ
 import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { DateField } from "@/components/ui/DateField";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { Button } from "@/components/ui/button";
 import { CompanyPickerModal } from "@/components/dashboard/CompanyPickerModal";
 import { useCoupon, useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
@@ -424,14 +424,12 @@ function CouponForm({
               },
             ]}
           >
-            <Switch
+            <AppSwitch
               value={isOneTime}
               onValueChange={(enabled) => {
                 setIsOneTime(enabled);
                 if (!enabled) setPurpose("");
               }}
-              trackColor={{ false: theme.inputBorder, true: theme.primary }}
-              thumbColor="#ffffff"
             />
             <View style={styles.switchLabelContainer}>
               <Text style={[styles.switchLabel, { color: theme.text }]}>קופון חד־פעמי</Text>
@@ -495,11 +493,9 @@ function CouponForm({
               },
             ]}
           >
-            <Switch
+            <AppSwitch
               value={includeCardInfo}
               onValueChange={setIncludeCardInfo}
-              trackColor={{ false: theme.inputBorder, true: theme.primary }}
-              thumbColor="#ffffff"
             />
             <View style={styles.switchLabelContainer}>
               <Text style={[styles.switchLabel, { color: theme.text }]}>

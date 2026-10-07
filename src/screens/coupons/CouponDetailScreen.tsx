@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Switch,
   Linking,
   Platform,
 } from "react-native";
@@ -63,6 +62,7 @@ import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
+import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
@@ -637,12 +637,10 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
               },
             ]}
           >
-            <Switch
+            <AppSwitch
               value={widget.inWidget}
               onValueChange={widget.toggle}
               disabled={!widget.canToggle && !widget.inWidget}
-              trackColor={{ false: theme.inputBorder, true: theme.primary }}
-              thumbColor="#ffffff"
             />
             <View style={styles.widgetCardContent}>
               <View style={styles.widgetCardHeader}>
