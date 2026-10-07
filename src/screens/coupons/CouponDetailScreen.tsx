@@ -690,7 +690,7 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
                     { backgroundColor: theme.surfaceAlt },
                   ]}
                 >
-                  <Text style={[styles.tagBubbleText, { color: theme.primary }]}>
+                  <Text style={[styles.tagBubbleText, { color: theme.text }]}>
                     #{t.name}
                   </Text>
                 </View>

@@ -356,7 +356,7 @@ export function SharingScreen() {
                           </Text>
                           <Text
                             numberOfLines={1}
-                            style={[styles.sharedWithText, { color: theme.primary }]}
+                            style={[styles.sharedWithText, { color: theme.label }]}
                           >
                             {item.status === "pending"
                               ? `ממתין לאישור · ${item.share_type === "transfer" ? "העברת בעלות" : "שימוש משותף"}`

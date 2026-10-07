@@ -306,7 +306,7 @@ function ChoiceCard({ label, hint, Icon, selected, onPress, index, reduceMotion 
 function CouponSummary({ coupon }: { coupon: ParsedCoupon }) {
   return <View style={styles.couponSummary}><View style={styles.check}><Check size={18} color="#fff" /></View><View style={styles.summaryCopy}><Text style={styles.company}>{coupon.company || "חברה לא זוהתה"}</Text><Text style={styles.details}>קוד {coupon.code || "חסר"} · שווי {coupon.value != null ? formatIls(Number(coupon.value)) : "חסר"}{coupon.cost != null ? ` · עלה ${formatIls(Number(coupon.cost))}` : ""}</Text></View></View>;
 }
-function Field(props: React.ComponentProps<typeof TextInput> & { label: string }) { return <View style={styles.field}><Text style={styles.fieldLabel}>{props.label}</Text><TextInput {...props} placeholderTextColor="#8993A4" style={styles.fieldInput} /></View>; }
+function Field(props: React.ComponentProps<typeof TextInput> & { label: string }) { return <View style={styles.field}><Text style={styles.fieldLabel}>{props.label}</Text><TextInput {...props} placeholderTextColor={palette.lightTextSubtle} style={styles.fieldInput} /></View>; }
 function PrimaryButton({ label, onPress, disabled, loading }: { label: string; onPress: () => void; disabled?: boolean; loading?: boolean }) { return <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.primaryButton, disabled && styles.primaryButtonDisabled, pressed && styles.pressed]}>{loading ? <ActivityIndicator color="#fff" /> : <><Sparkles size={19} color="#fff" /><Text style={styles.primaryButtonText}>{label}</Text></>}</Pressable>; }
 
 const styles = StyleSheet.create({

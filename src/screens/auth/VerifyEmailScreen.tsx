@@ -108,7 +108,7 @@ export function VerifyEmailScreen() {
             autoFocus
             maxLength={CODE_LENGTH}
             placeholder="------"
-            placeholderTextColor="#C3CBD8"
+            placeholderTextColor={palette.lightTextSubtle}
             accessibilityLabel="קוד אימות"
           />
 

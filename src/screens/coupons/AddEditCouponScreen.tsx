@@ -292,6 +292,8 @@ function CouponForm({
         >
           {!blocked ? (
             <>
+          <SectionTitle>הקופון</SectionTitle>
+
           {/* Company Picker */}
           <Text style={[styles.fieldLabel, { color: theme.text }]}>
             חברה / רשת *
@@ -312,7 +314,7 @@ function CouponForm({
               <Text
                 style={[
                   styles.companySelectorText,
-                  { color: company ? theme.text : theme.textMuted },
+                  { color: company ? theme.text : theme.textSubtle },
                 ]}
               >
                 {company || "בחר חברה מרשימה..."}
@@ -383,17 +385,10 @@ function CouponForm({
 
           {!blocked ? (
             <>
+          <SectionTitle>כסף</SectionTitle>
+
           {/* Value & Cost */}
           <View style={styles.row}>
-            <View style={styles.halfCol}>
-              <Input
-                label="עלות הקנייה (₪)"
-                placeholder="0.00"
-                keyboardType="numeric"
-                value={cost}
-                onChangeText={setCost}
-              />
-            </View>
             <View style={styles.halfCol}>
               <Input
                 label="שווי הקופון (₪) *"
@@ -404,7 +399,18 @@ function CouponForm({
                 error={errors.value}
               />
             </View>
+            <View style={styles.halfCol}>
+              <Input
+                label="עלות הקנייה (₪)"
+                placeholder="0.00"
+                keyboardType="numeric"
+                value={cost}
+                onChangeText={setCost}
+              />
+            </View>
           </View>
+
+          <SectionTitle>תוקף ומימוש</SectionTitle>
 
           {/* Expiration */}
           <DateField
@@ -606,10 +612,15 @@ function CouponForm({
                   { backgroundColor: theme.surfaceAlt },
                 ]}
               >
-                <TouchableOpacity onPress={() => handleRemoveTag(t)}>
-                  <X size={14} color={theme.textMuted} />
+                <TouchableOpacity
+                  onPress={() => handleRemoveTag(t)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`הסרת התגית ${t}`}
+                  hitSlop={8}
+                >
+                  <X size={14} color={theme.primary} />
                 </TouchableOpacity>
-                <Text style={[styles.tagBadgeText, { color: theme.primary }]}>
+                <Text style={[styles.tagBadgeText, { color: theme.text }]}>
                   #{t}
                 </Text>
               </View>
@@ -766,8 +777,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   switchSub: {
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 2,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    textAlign: "right",
+    marginTop: 8,
+    marginBottom: 10,
   },
   autoProviderCard: {
     padding: 12,
@@ -824,3 +844,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+function SectionTitle({ children }: { children: string }) {
+  const { theme } = useAppTheme();
+  return (
+    <Text accessibilityRole="header" style={[styles.sectionTitle, { color: theme.label }]}>
+      {children}
+    </Text>
+  );
+}

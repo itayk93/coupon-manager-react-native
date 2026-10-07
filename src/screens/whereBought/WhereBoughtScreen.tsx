@@ -21,6 +21,7 @@ import { ArrowRight, Crosshair, MapPin, Search } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useWhereBought, type BoughtPlace } from "@/hooks/useWhereBought";
 import { formatIls } from "@/lib/formatIls";
+import { palette } from "@/lib/theme";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useResponsive } from "@/hooks/useResponsive";
 
@@ -699,7 +700,7 @@ export function WhereBoughtScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder="חפש מקום או עיר"
-              placeholderTextColor="#9aa1ac"
+              placeholderTextColor={palette.lightTextSubtle}
               style={S.search}
             />
 
@@ -860,11 +861,11 @@ export function WhereBoughtScreen() {
 
               {correctionOpen ? (
                 <View style={S.correctionForm}>
-                  <TextInput value={editName} onChangeText={setEditName} placeholder="שם המקום" placeholderTextColor="#9aa1ac" style={S.correctionInput} />
-                  <TextInput value={editCity} onChangeText={setEditCity} placeholder="עיר" placeholderTextColor="#9aa1ac" style={S.correctionInput} />
+                  <TextInput value={editName} onChangeText={setEditName} placeholder="שם המקום" placeholderTextColor={palette.lightTextSubtle} style={S.correctionInput} />
+                  <TextInput value={editCity} onChangeText={setEditCity} placeholder="עיר" placeholderTextColor={palette.lightTextSubtle} style={S.correctionInput} />
                   <View style={S.correctionCoords}>
-                    <TextInput value={editLat} onChangeText={setEditLat} keyboardType="decimal-pad" placeholder="קו רוחב" placeholderTextColor="#9aa1ac" style={[S.correctionInput, S.correctionCoordInput]} />
-                    <TextInput value={editLng} onChangeText={setEditLng} keyboardType="decimal-pad" placeholder="קו אורך" placeholderTextColor="#9aa1ac" style={[S.correctionInput, S.correctionCoordInput]} />
+                    <TextInput value={editLat} onChangeText={setEditLat} keyboardType="decimal-pad" placeholder="קו רוחב" placeholderTextColor={palette.lightTextSubtle} style={[S.correctionInput, S.correctionCoordInput]} />
+                    <TextInput value={editLng} onChangeText={setEditLng} keyboardType="decimal-pad" placeholder="קו אורך" placeholderTextColor={palette.lightTextSubtle} style={[S.correctionInput, S.correctionCoordInput]} />
                   </View>
                   <View style={S.correctionButtons}>
                     <TouchableOpacity onPress={() => setCorrectionOpen(false)} style={S.correctionCancel}>
