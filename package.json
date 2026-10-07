@@ -114,7 +114,10 @@
   },
   "overrides": {
     "@xmldom/xmldom": "0.8.15",
-    "uuid": "11.1.1"
+    "uuid": "11.1.1",
+    "plist": {
+      "@xmldom/xmldom": "0.9.12"
+    }
   },
   "expo": {
     "autolinking": {
