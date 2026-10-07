@@ -69,11 +69,23 @@ export function useSetOptOut() {
         await updateSubscription();
       }
     },
+    // Optimistic: the switch moves now, not after two writes and a refetch.
+    // The write order above still fails closed; on error the cache rolls back.
+    onMutate: async (optedOut) => {
+      const key = ['opt_out', user?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ marketing_enabled: boolean }>(key);
+      if (previous) queryClient.setQueryData(key, { ...previous, marketing_enabled: !optedOut });
+      return { previous };
+    },
     onSuccess: (_d, optedOut) => {
       notify.success(optedOut ? 'ביטלת קבלת דיוור' : 'הצטרפת חזרה לדיוור');
-      queryClient.invalidateQueries({ queryKey: ['opt_out'] });
     },
-    onError: (e: any) => notify.error('שגיאה', e.message),
+    onError: (e: any, _optedOut, context) => {
+      if (context?.previous) queryClient.setQueryData(['opt_out', user?.id], context.previous);
+      notify.error('שגיאה', e.message);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['opt_out'] }),
   });
 }
 

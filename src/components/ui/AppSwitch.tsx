@@ -26,6 +26,8 @@ import { useAppTheme } from "@/contexts/ThemeContext";
  * - Drag off before releasing: nothing changes and the knob slides back. You
  *   can change your mind halfway.
  *
+ * On is the left side, matching iOS in Hebrew.
+ *
  * Reduce Motion drops the stretch and the spring for a short plain slide.
  *
  * RN `Animated` on the JS driver, because width can't run on the native
@@ -142,7 +144,10 @@ export function AppSwitch({
     onValueChange?.(!value);
   };
 
-  const dir = I18nManager.isRTL ? -1 : 1;
+  // Hebrew app: on is the left side, as iOS draws it in Hebrew. The knob is
+  // anchored with `right`, which RN mirrors under native RTL, so the travel
+  // direction mirrors with it.
+  const dir = I18nManager.isRTL ? 1 : -1;
   // At the far end the stretched knob would overrun the track, so the extra
   // width is paid for by travelling less.
   const translateX = Animated.multiply(
@@ -184,7 +189,7 @@ const styles = StyleSheet.create({
   },
   knob: {
     position: "absolute",
-    start: PAD,
+    right: PAD,
     height: KNOB,
     borderRadius: KNOB / 2,
     backgroundColor: "#ffffff",
