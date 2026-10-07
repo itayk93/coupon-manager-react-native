@@ -14,6 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
+import { isOverDailyLimit } from '../_shared/aiQuota.ts';
 import { combineCouponInput } from './input.ts';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -275,36 +276,6 @@ async function readPublicWebPage(rawUrl: string): Promise<string> {
     return htmlToReadableText(body);
   }
   throw new Error('לא הצלחנו לקרוא את האתר');
-}
-
-/** Parses per user per rolling 24h. Generous for real use, fatal for a script. */
-const MAX_PARSES_PER_DAY = 60;
-
-function serviceClient() {
-  return createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  );
-}
-
-/**
- * Fails open: if the usage table cannot be read the parse still runs, because
- * losing the feature entirely is worse than allowing an occasional extra call.
- */
-async function isOverDailyLimit(userId: number): Promise<boolean> {
-  try {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count, error } = await serviceClient()
-      .from('gpt_usage')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created', since);
-
-    if (error) return false;
-    return (count ?? 0) >= MAX_PARSES_PER_DAY;
-  } catch {
-    return false;
-  }
 }
 
 Deno.serve(async (req: Request) => {

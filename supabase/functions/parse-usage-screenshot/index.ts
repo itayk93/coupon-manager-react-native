@@ -1,7 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeadersFor, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
 import { safeFetch } from "../_shared/ssrf.ts";
+import { isOverDailyLimit, recordAiUsage } from "../_shared/aiQuota.ts";
 
 const MAX_IMAGE_CHARS = 8 * 1024 * 1024;
 /** A pasted SMS thread, not a document. Well past the longest real one. */
@@ -65,6 +65,10 @@ Deno.serve(async (req: Request) => {
 
     const apiKey = Deno.env.get("OPENAI_API_KEY_V2") || Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) return jsonResponse({ error: "שירות AI אינו מוגדר" }, 503);
+    // Every call below spends money on the operator's OpenAI key.
+    if (await isOverDailyLimit(caller.id)) {
+      return jsonResponse({ error: "הגעת למכסת הפענוחים היומית. נסה שוב מחר." }, 429);
+    }
 
     if (mode === "verify-code") {
       if (typeof candidateCouponCode !== "string" || candidateCouponCode.length < 4 || candidateCouponCode.length > 128) {
@@ -87,6 +91,7 @@ Deno.serve(async (req: Request) => {
       const verificationRaw = await verificationResponse.text();
       if (!verificationResponse.ok) return jsonResponse({ error: "אימות הקוד נכשל" }, 502);
       const verificationPayload = JSON.parse(verificationRaw);
+      await recordAiUsage(caller.id, MODEL, verificationPayload.usage);
       const verification = JSON.parse(verificationPayload.choices?.[0]?.message?.content || "{}");
       return jsonResponse({
         matches: verification.matches === true,
@@ -146,12 +151,7 @@ Deno.serve(async (req: Request) => {
     }
     const missingAmount = usages.filter((u: any) => u.amount === 0).length;
 
-    try {
-      await createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!)
-        .from("gpt_usage").insert({ user_id: caller.id, created: new Date().toISOString(), model: MODEL,
-          prompt_tokens: payload.usage?.prompt_tokens ?? null, completion_tokens: payload.usage?.completion_tokens ?? null,
-          total_tokens: payload.usage?.total_tokens ?? null });
-    } catch { /* logging must not break parsing */ }
+    await recordAiUsage(caller.id, MODEL, payload.usage);
     return jsonResponse({
       couponCode: typeof output.couponCode === "string" ? output.couponCode.trim() : null,
       couponCodeConfidence: Math.max(0, Math.min(1, Number(output.couponCodeConfidence) || 0)),
