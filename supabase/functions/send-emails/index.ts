@@ -169,6 +169,9 @@ async function handleUpdateSummary(
   failures: string[] = [],
   runDate = '',
 ) {
+  // Nothing changed and nothing failed: no mail. Failures still get reported.
+  if (items.length === 0 && failures.length === 0) return jsonResponse({ sent: 0, skipped: 'no_changes' });
+
   const supabase = supa();
   const { data: user } = await supabase.from('users').select('email, first_name').eq('id', userId).single();
   if (!user?.email) return jsonResponse({ error: 'כתובת אימייל לא נמצאה' }, 404);
