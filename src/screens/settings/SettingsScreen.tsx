@@ -38,6 +38,7 @@ import { useMyReferralStatus } from "@/hooks/useReferral";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
+import { useNearbyEnabled } from "@/lib/nearbyPreference";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
 import { useProfile } from "@/hooks/useProfile";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
@@ -69,6 +70,8 @@ export function SettingsScreen() {
       "מחק את החשבון",
     );
   };
+
+  const [nearbyEnabled, setNearbyEnabled] = useNearbyEnabled();
 
   const handleToggleBiometric = async (next: boolean) => {
     if (!next) {
@@ -200,6 +203,16 @@ export function SettingsScreen() {
                 </View>
               </View>
             ) : null}
+
+            <View style={[styles.menuItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}>
+              <AppSwitch value={nearbyEnabled} onValueChange={setNearbyEnabled} />
+              <View style={styles.menuItemLabelGroup}>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>
+                  תזכורת כשאני ליד חנות
+                </Text>
+                <MapPinned size={20} color={theme.textMuted} />
+              </View>
+            </View>
 
             {/* The screens people navigate to deliberately, grouped: they are
                 destinations someone chooses, not places passed through on the

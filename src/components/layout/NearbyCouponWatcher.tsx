@@ -7,6 +7,7 @@ import { useCoupons } from "@/hooks/useCoupons";
 import { useWhereBought } from "@/hooks/useWhereBought";
 import { nearbyCoupon, nearbyCouponIsland } from "@/lib/nearbyCoupon";
 import { pushIsland } from "@/components/ui/Island";
+import { useNearbyEnabled } from "@/lib/nearbyPreference";
 
 const SHOWN_KEY = "nearby-coupon:shown:v1";
 
@@ -36,6 +37,7 @@ async function readShown(): Promise<Record<string, string>> {
  */
 export function NearbyCouponWatcher({ enabled }: { enabled: boolean }) {
   const [granted, setGranted] = useState(false);
+  const [allowed] = useNearbyEnabled();
 
   useEffect(() => {
     if (Platform.OS === "web" || !enabled) return;
@@ -51,7 +53,7 @@ export function NearbyCouponWatcher({ enabled }: { enabled: boolean }) {
     return () => subscription.remove();
   }, [enabled]);
 
-  return enabled && granted ? <NearbyCouponCheck /> : null;
+  return enabled && granted && allowed ? <NearbyCouponCheck /> : null;
 }
 
 function NearbyCouponCheck() {
