@@ -147,9 +147,11 @@ async function processScrapeResults(body: Record<string, unknown>) {
     if (totalsError) throw totalsError;
     const usedTotal = (allTransactions || []).reduce((sum, tx) => sum + Number(tx.usage_amount || 0), 0);
     const rechargeTotal = (allTransactions || []).reduce((sum, tx) => sum + Number(tx.recharge_amount || 0), 0);
-    const newValue = rechargeTotal > 0 ? rechargeTotal : Number(coupon.value || 0);
+    // Round to agorot: float sums can land on 99.99999999999999 and never reach `>= value`.
+    const roundMoney = (n: number) => Math.round(n * 100) / 100;
+    const newValue = roundMoney(rechargeTotal > 0 ? rechargeTotal : Number(coupon.value || 0));
     const oldUsed = Number(coupon.used_value || 0);
-    const newUsed = Math.max(0, Math.min(newValue, usedTotal));
+    const newUsed = Math.max(0, Math.min(newValue, roundMoney(usedTotal)));
     const delta = Math.max(0, newUsed - oldUsed);
     const status = newUsed >= newValue ? 'נוצל' : 'פעיל';
     const { error: updateError } = await db.from('coupon').update({

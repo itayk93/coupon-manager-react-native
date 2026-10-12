@@ -298,8 +298,11 @@ async function main() {
           where coupon_id = $1 and source = 'Multipass'
         `, [coupon.id])).rows[0];
         const rechargeTotal = Number(totals.recharged || 0);
-        const newValue = rechargeTotal > 0 ? rechargeTotal : Number(coupon.value || 0);
-        const newUsed = Math.max(0, Math.min(newValue, Number(totals.used || 0)));
+        // Round to agorot: float sums like 33+37.8+17.9+11.3 land on 99.99999999999999
+        // and would never reach `>= value`, leaving a fully used card "פעיל".
+        const roundMoney = (n) => Math.round(n * 100) / 100;
+        const newValue = roundMoney(rechargeTotal > 0 ? rechargeTotal : Number(coupon.value || 0));
+        const newUsed = Math.max(0, Math.min(newValue, roundMoney(Number(totals.used || 0))));
         const oldUsed = Number(coupon.used_value || 0);
         const delta = Math.max(0, newUsed - oldUsed);
         const status = newUsed >= newValue ? "נוצל" : "פעיל";
