@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Coupon Master - גישת API</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 760px; margin: 24px auto; padding: 0 16px; }
+  label { display: block; margin: 12px 0 4px; font-weight: 600; }
+  input, select, button { font: inherit; padding: 10px; width: 100%; box-sizing: border-box; }
+  input { direction: ltr; text-align: left; }
+  button { margin-top: 16px; cursor: pointer; }
+  pre { direction: ltr; text-align: left; white-space: pre-wrap; word-break: break-word; background: #f4f4f4; padding: 12px; border-radius: 8px; }
+  #status { margin-top: 16px; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>גישת API לקריאה בלבד</h1>
+<p>הדף מקבל מפתח API, שולח בקשת GET אחת ל-Coupon Master ומציג את ה-JSON שחזר. המפתח לא נשמר ולא נשלח לשום כתובת אחרת.</p>
+<form id="f" autocomplete="on">
+  <label for="apikey">מפתח API</label>
+  <input id="apikey" name="apikey" type="password" autocomplete="current-password" required>
+  <label for="path">נתיב</label>
+  <select id="path" name="path">
+    <option>schema</option><option>summary</option><option selected>coupon</option><option>coupon_usage</option>
+    <option>coupon_transaction</option><option>coupon_tags</option><option>companies</option>
+    <option>users</option><option>coupon_alerts</option><option>notification_preferences</option>
+  </select>
+  <label for="query">פרמטרים (למשל status=eq.פעיל&amp;select=id,company,code,remaining_value&amp;limit=50)</label>
+  <input id="query" name="query" type="text" autocomplete="off">
+  <button type="submit">שליחה</button>
+</form>
+<div id="status" role="status"></div>
+<pre id="out" aria-live="polite"></pre>
+<script>
+(function () {
+  var BASE = 'https://dugjsiyenazpsoiyduuz.supabase.co/functions/v1/instinct-api';
+  var q = new URLSearchParams(location.search);
+  if (q.get('path')) document.getElementById('path').value = q.get('path');
+  if (q.get('query')) document.getElementById('query').value = q.get('query');
+  document.getElementById('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var key = document.getElementById('apikey').value.trim();
+    var path = document.getElementById('path').value;
+    var query = document.getElementById('query').value.trim().replace(/^[?&]/, '');
+    var status = document.getElementById('status'), out = document.getElementById('out');
+    status.textContent = 'טוען...'; out.textContent = '';
+    fetch(BASE + '/' + encodeURIComponent(path) + (query ? '?' + query : ''), {
+      headers: { Authorization: 'Bearer ' + key }, cache: 'no-store', referrerPolicy: 'no-referrer'
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        status.textContent = 'סטטוס ' + r.status;
+        try { out.textContent = JSON.stringify(JSON.parse(t), null, 2); } catch (_) { out.textContent = t; }
+      });
+    }).catch(function (err) { status.textContent = 'הבקשה נכשלה'; out.textContent = String(err); });
+  });
+})();
+</script>
+</body>
+</html>
