@@ -77,10 +77,11 @@ export function InstinctApiTab() {
     </View>
     {issued ? <View style={card}>
       <Text style={[styles.title, { color: theme.text }]}>המפתח נוצר עבור {issued.email}</Text>
-      <Text style={muted}>המפתח מוצג עכשיו בלבד. יש להעתיק אותו ולמסור ל-Instinct יחד עם המדריך. לאחר סגירת התיבה לא ניתן לשחזר אותו.</Text>
+      <Text style={muted}>המפתח מוצג עכשיו בלבד. Instinct לא יכול לקרוא מפתח שנשמר בכספת שלו לצורך קריאת API, לכן יש להעתיק את ״מדריך עם המפתח״ ולהדביק אותו ל-Instinct כהוראה. לאחר סגירת התיבה לא ניתן לשחזר אותו.</Text>
       <Text selectable style={[styles.key, { color: theme.text }]}>{issued.key}</Text>
       <View style={styles.actions}>
         <Button title="העתקת המפתח" onPress={() => void copy(issued.key)} />
+        <Button title="העתקת מדריך עם המפתח" onPress={() => void copy(instinctGuide(baseUrl, issued.key))} />
         <Button title="בדיקת חיבור" variant="outline" onPress={() => test.mutate()} loading={test.isPending} />
         <Button title="המפתח נשמר - סגירה" variant="ghost" onPress={() => { setIssued(null); create.reset(); test.reset(); setTestResult(''); }} />
       </View>
@@ -90,7 +91,7 @@ export function InstinctApiTab() {
     <View style={card}>
       <Text style={[styles.title, { color: theme.text }]}>מה לשלוח ל-Instinct</Text>
       <Text style={text}>1. הורדת המדריך והעלאת הקובץ ל-Instinct.</Text>
-      <Text style={text}>2. העתקת המפתח החדש ושליחתו ל-Instinct בנפרד.</Text>
+      <Text style={text}>2. אחרי יצירת מפתח: ״העתקת מדריך עם המפתח״ והדבקה ב-Instinct (לא בכספת).</Text>
       <Text style={text}>3. בקשה לדוגמה: ״בדוק את הקופונים שלי וסכם יתרות וקופונים שעומדים לפוג״.</Text>
       <Text style={muted}>המדריך כולל את כתובת החיבור, כל אפשרויות השאילתות ודוגמאות. הוא אינו מכיל מפתח סודי.</Text>
       <View style={styles.actions}><Button title={Platform.OS === 'web' ? 'הורדת מדריך ל-Instinct' : 'העתקת מדריך ל-Instinct'} onPress={download} /><Button title="העתקת המדריך" variant="outline" onPress={() => void copy(guide)} /></View>

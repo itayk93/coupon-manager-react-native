@@ -24,4 +24,11 @@ describe('Instinct request boundary', () => {
     expect(guide).toContain('coupon_transaction');
     expect(guide).not.toContain('cm_instinct_');
   });
+  it('embeds the literal key when given, with no placeholders left', () => {
+    const key = `cm_instinct_${'a'.repeat(64)}`;
+    const guide = instinctGuide('https://example.com/functions/v1/instinct-api', key);
+    expect(guide).toContain(`/schema?apikey=${key}`);
+    expect(guide).not.toContain('<KEY>');
+    expect(guide).not.toContain('נמסר בנפרד');
+  });
 });

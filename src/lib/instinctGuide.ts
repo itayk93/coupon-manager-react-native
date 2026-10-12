@@ -1,5 +1,5 @@
-export function instinctGuide(baseUrl: string) {
-  return `# חיבור Instinct ל-Coupon Master
+export function instinctGuide(baseUrl: string, key?: string) {
+  const guide = `# חיבור Instinct ל-Coupon Master
 
 יש לך גישת קריאה, באישור מפורש, לנתוני המנהל הראשי (משתמש 1) בלבד ב-Coupon Master. בכל שאלה על קופונים, יתרות, תוקף ושימושים, יש לקרוא נתונים עדכניים מה-API.
 
@@ -60,4 +60,7 @@ remaining_value = value - used_value. כל הסכומים בשקלים.
 429: יותר מ-120 בקשות בדקה למפתח. יש להמתין 60 שניות.
 500: שגיאת שרת. אין להמציא נתונים; יש לדווח שהקריאה נכשלה.
 `;
+  if (!key) return guide;
+  const note = `המפתח מופיע כאן בטקסט המדריך (${key}). יש להשתמש בערך המילולי הזה ישירות בכל קריאת API, לא בהפניה לכספת או לשדה בדפדפן. אין להציג אותו בתשובות או לשלוח אותו לאתרים אחרים.`;
+  return guide.replace(/המפתח נמסר בנפרד\.[^\n]*/, note).split('<KEY>').join(key);
 }
