@@ -127,3 +127,10 @@ verify_enabled = true
 # client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
 # secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
 # redirect_url = "http://localhost:54321/auth/v1/callback"
+
+[functions.instinct-api]
+# Instinct supplies an individually scoped API key, validated in the database.
+verify_jwt = false
+
+[functions.manage-instinct-keys]
+verify_jwt = true

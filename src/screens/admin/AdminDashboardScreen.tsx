@@ -16,6 +16,7 @@ import { Header } from "@/components/ui/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/Modal";
+import { InstinctApiTab } from "@/screens/admin/InstinctApiTab";
 import { ReferralsTab } from "@/screens/admin/ReferralsTab";
 import { GeoAnalyticsTab } from "@/screens/admin/GeoAnalyticsTab";
 import { NewslettersTab } from "@/screens/admin/NewslettersTab";
@@ -31,12 +32,14 @@ import {
 } from "@/hooks/useAdminManagement";
 import { useAdminTags, useRenameTag, useDeleteTag } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle, useResponsive } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
 
 type AdminTab =
+  | "instinct"
   | "users"
   | "companies"
   | "tags"
@@ -48,6 +51,7 @@ type AdminTab =
   | "homealt";
 
 const TAB_KEYS: AdminTab[] = [
+  "instinct",
   "users",
   "companies",
   "tags",
@@ -60,6 +64,8 @@ const TAB_KEYS: AdminTab[] = [
 ];
 
 export function AdminDashboardScreen() {
+  const { user, isAdmin } = useAuth();
+  const instinctAllowed = isAdmin && user?.id === 1;
   const contentStyle = useContentStyle("grid");
   const { gutter } = useResponsive();
   const router = useRouter();
@@ -142,6 +148,7 @@ export function AdminDashboardScreen() {
           >
             {(
               [
+                { key: "instinct", label: "חיבור API" },
                 { key: "users", label: "משתמשים" },
                 { key: "companies", label: "חברות" },
                 { key: "tags", label: "תגיות" },
@@ -152,7 +159,7 @@ export function AdminDashboardScreen() {
                 { key: "widget", label: "🐞 ווידג'ט" },
                 { key: "homealt", label: "🏠 בית (ניסוי)" },
               ] as const
-            ).map((tab) => {
+            ).filter(tab => tab.key !== "instinct" || instinctAllowed).map((tab) => {
               const isCurrent = activeTab === tab.key;
               return (
                 <TouchableOpacity
@@ -186,6 +193,7 @@ export function AdminDashboardScreen() {
         {/* Tab 5: Referrals — the pilot dashboard. Everything it reads is
             gated by is_app_admin() inside the database, so this tab being
             hidden is a convenience and not the permission. */}
+        {activeTab === "instinct" && instinctAllowed ? <InstinctApiTab /> : null}
         {activeTab === "referrals" ? <ReferralsTab /> : null}
 
         {/* Tab 6: Geo — city/region breakdown of activity. is_app_admin() gates
