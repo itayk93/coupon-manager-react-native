@@ -108,7 +108,7 @@
     "@types/react": "~19.2.2",
     "babel-preset-expo": "~57.0.7",
     "patch-package": "^8.0.1",
-    "pg": "^8.23.0",
+    "pg": "^8.23.1",
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
   },
