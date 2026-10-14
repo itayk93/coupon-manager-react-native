@@ -420,9 +420,9 @@ Deno.serve(async (req: Request) => {
               appUrl: appBaseUrl
                 ? couponsUrl(appBaseUrl, emailClaimed.map((c) => c.public_id))
                 : null,
-              unsubscribeUrl: await buildUnsubscribeUrl(user.public_id, user.email),
+              unsubscribeUrl: await buildUnsubscribeUrl(user.public_id, user.email, 'expiry'),
             }),
-            await buildUnsubscribeHeaders(user.public_id, user.email),
+            await buildUnsubscribeHeaders(user.public_id, user.email, 'expiry'),
           );
           if (ok) emailCount += 1;
           await settle('email', days, emailClaimed, ok);

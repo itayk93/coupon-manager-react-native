@@ -56,6 +56,7 @@ export function expiryIconKey(days: number): NotificationIconKey {
 }
 
 const BY_TYPE: Record<Exclude<NotificationTypeId, 'expiry'>, NotificationIconKey> = {
+  multipass_summary: 'balance-updated',
   monthly_summary: 'monthly-summary',
   idle_money: 'idle-money',
   share_received: 'share-received',

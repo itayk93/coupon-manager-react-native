@@ -23,7 +23,8 @@ export type NotificationTypeId =
   | 'expired_unused'
   | 'weekly_pick'
   | 'unrecorded_usage'
-  | 'usage_detected';
+  | 'usage_detected'
+  | 'multipass_summary';
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -43,6 +44,11 @@ export type NotificationTypeMeta = {
  * message that carries bad news, and bad news should not vibrate.
  */
 export const NOTIFICATION_TYPES: Record<NotificationTypeId, NotificationTypeMeta> = {
+  multipass_summary: {
+    id: 'multipass_summary',
+    label: 'סיכום עדכון Multipass',
+    defaults: { email: true, push: false, in_app: false },
+  },
   expiry: {
     id: 'expiry',
     label: 'רגע לפני שקופון פג',

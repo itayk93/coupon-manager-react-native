@@ -305,8 +305,9 @@ export function multipassSummaryEmailHtml(options: {
   items: MultipassSummaryItem[];
   failures: string[];
   appUrl: string;
+  unsubscribeUrl: string | null;
 }): string {
-  const { firstName, runDate, scanned, failed, skipped, items, failures, appUrl } = options;
+  const { firstName, runDate, scanned, failed, skipped, items, failures, appUrl, unsubscribeUrl } = options;
   const totalDelta = items.reduce((sum, item) => sum + Number(item.delta || 0), 0);
   const totalRemaining = items.reduce((sum, item) => sum + Number(item.remaining_value || 0), 0);
   const headline = items.length > 0
@@ -350,6 +351,7 @@ export function multipassSummaryEmailHtml(options: {
         </td></tr>
         <tr><td dir="rtl" align="right" style="${RTL};background:${COLOR.surface};border-radius:0 0 20px 20px;border-top:1px solid ${COLOR.divider};padding:17px 24px">
           <p style="margin:0;font-family:${FONT};font-size:12px;color:${COLOR.textMuted}">העדכון בוצע אוטומטית. נסרקו ${scanned} · דולגו ${skipped} · נכשלו ${failed}</p>
+          ${unsubscribeUrl ? `<p style="margin:12px 0 0;font-family:${FONT};font-size:13px;color:${COLOR.textSecondary}">לא רוצה לקבל סיכומי Multipass במייל? <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLOR.primary};font-weight:700;text-decoration:underline">הפסקת המיילים האלה</a></p>` : ''}
         </td></tr>
       </table>
     </td></tr>

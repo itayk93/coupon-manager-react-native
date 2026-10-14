@@ -233,9 +233,9 @@ export async function deliver(
         highlight,
         ctaLabel,
         appUrl: appBase ? notificationUrl(appBase, copy.link) : null,
-        unsubscribeUrl: await buildUnsubscribeUrl(user.public_id, user.email),
+        unsubscribeUrl: await buildUnsubscribeUrl(user.public_id, user.email, type),
       }),
-      await buildUnsubscribeHeaders(user.public_id, user.email),
+      await buildUnsubscribeHeaders(user.public_id, user.email, type),
     );
   }
 

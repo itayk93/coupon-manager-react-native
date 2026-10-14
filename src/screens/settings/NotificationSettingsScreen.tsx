@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Linking,
   Modal,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import { Bell, HelpCircle, Mail, Megaphone, MessageSquare, Smartphone, Clock, CalendarClock } from "lucide-react-native";
 import {
   NOTIFICATION_TYPES,
@@ -36,6 +37,8 @@ import {
 } from "@/lib/notificationWindows";
 import { logActivity } from "@/lib/activityLog";
 import { useOptOut, useSetOptOut } from "@/hooks/useConsent";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 function ToggleRow({
   label,
@@ -104,14 +107,16 @@ function TypeCard({
         <Text style={[styles.sampleText, { color: theme.textSecondary }]}>{meta.sample}</Text>
       </View>
       <View style={styles.channelRow}>
-        <View style={styles.channelToggle}>
-          <AppSwitch
-            value={pushAvailable && isTypeChannelOn(typeChannels, meta.id, "push")}
-            disabled={!pushAvailable}
-            onValueChange={(next) => onChange(meta.id, "push", next)}
-          />
-          <Text style={[styles.channelLabel, { color: theme.textMuted }]}>פוש</Text>
-        </View>
+        {meta.id !== "multipass_summary" ? (
+          <View style={styles.channelToggle}>
+            <AppSwitch
+              value={pushAvailable && isTypeChannelOn(typeChannels, meta.id, "push")}
+              disabled={!pushAvailable}
+              onValueChange={(next) => onChange(meta.id, "push", next)}
+            />
+            <Text style={[styles.channelLabel, { color: theme.textMuted }]}>פוש</Text>
+          </View>
+        ) : null}
         <View style={styles.channelToggle}>
           <AppSwitch
             value={emailAvailable && isTypeChannelOn(typeChannels, meta.id, "email")}
@@ -165,6 +170,14 @@ export function NotificationSettingsScreen() {
   const contentStyle = useContentStyle("reading");
   const { data: prefs, isLoading: prefsLoading } = useNotificationPreferences();
   const updatePrefs = useUpdateNotificationPreferences();
+  const { user } = useAuth();
+  const { unsubscribe_type: unsubscribeType, token } = useLocalSearchParams<{
+    unsubscribe_type?: string;
+    token?: string;
+  }>();
+  const handledLink = useRef<string | null>(null);
+  const [unsubscribeMessage, setUnsubscribeMessage] = useState<string | null>(null);
+  const [unsubscribeError, setUnsubscribeError] = useState(false);
 
   const pwa = usePwaNotifications();
   const native = useNativeNotifications();
@@ -176,6 +189,38 @@ export function NotificationSettingsScreen() {
   const setMarketingOptOut = useSetOptOut();
 
   const [windowError, setWindowError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !prefs || !token || !unsubscribeType || handledLink.current === token) return;
+    const meta = NOTIFICATION_TYPES.find((item) => item.id === unsubscribeType);
+    if (!meta) return;
+    handledLink.current = token;
+    const unsubscribe = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          `manage-unsubscribe?token=${encodeURIComponent(token)}`,
+          { method: "GET" },
+        );
+        if (error) throw new Error("הקישור להסרת ההרשמה אינו תקין או שפג תוקפו.");
+        if (data?.error) throw new Error(data.error);
+        if (data?.email?.toLowerCase() !== user.email.toLowerCase()) {
+          throw new Error("הקישור שייך לחשבון אחר. צריך להתחבר לכתובת שאליה נשלח המייל.");
+        }
+        if (data?.notification_type !== meta.id) {
+          throw new Error("הקישור אינו מתאים לסוג המייל הזה.");
+        }
+        await updatePrefs.mutateAsync({
+          type_channels: withTypeChannel(prefs.type_channels, meta.id, "email", false),
+        });
+        setUnsubscribeError(false);
+        setUnsubscribeMessage(`סיימנו - לא יישלחו יותר מיילים מסוג "${meta.label}". אפשר לשנות את הבחירה כאן בכל רגע.`);
+      } catch (error) {
+        setUnsubscribeError(true);
+        setUnsubscribeMessage(error instanceof Error ? error.message : "לא הצלחנו לעדכן את ההעדפה. אפשר לכבות את המתג כאן.");
+      }
+    };
+    void unsubscribe();
+  }, [user, prefs, token, unsubscribeType, updatePrefs]);
 
   if (prefsLoading || !prefs || marketing.isLoading) {
     return (
@@ -265,6 +310,11 @@ export function NotificationSettingsScreen() {
       <Header title="ההתראות שלי" />
 
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
+        {unsubscribeMessage ? (
+          <View style={[styles.group, { backgroundColor: unsubscribeError ? theme.dangerBg : theme.successBg, borderColor: unsubscribeError ? theme.dangerBorder : theme.cardBorder }]}>
+            <Text style={[styles.rowText, { color: unsubscribeError ? theme.dangerText : theme.successText, textAlign: "right" }]}>{unsubscribeMessage}</Text>
+          </View>
+        ) : null}
         <View style={[styles.group, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <Text style={[styles.groupTitle, { color: theme.textMuted }]}>ערוצי התראות</Text>
 

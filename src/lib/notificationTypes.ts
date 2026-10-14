@@ -25,7 +25,8 @@ export type NotificationTypeId =
   | "expired_unused"
   | "weekly_pick"
   | "unrecorded_usage"
-  | "usage_detected";
+  | "usage_detected"
+  | "multipass_summary";
 
 export type NotificationTypeMeta = {
   id: NotificationTypeId;
@@ -43,6 +44,18 @@ export type NotificationTypeMeta = {
 };
 
 export const NOTIFICATION_TYPES: NotificationTypeMeta[] = [
+  {
+    id: "multipass_summary",
+    label: "סיכום עדכון Multipass",
+    description: "מייל על שימוש חדש שנמצא בבדיקה היומית",
+    sample: "קופון אחד עודכן - נוספו 11.23 ₪ לשימוש",
+    defaults: { email: true, push: false, in_app: false },
+    explanation: {
+      what: "סיכום שימוש חדש בקופוני Multipass, כולל יתרה מעודכנת.",
+      when: "אחרי הבדיקה היומית, רק אם נמצא שינוי או כשל.",
+      where: "רשימת הקופונים.",
+    },
+  },
   {
     id: "expiry",
     label: "רגע לפני שקופון פג",

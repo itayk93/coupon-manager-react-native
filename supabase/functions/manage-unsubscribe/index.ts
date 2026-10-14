@@ -10,10 +10,11 @@
 //
 // `scope` separates the two kinds of mail so a user can stop expiry reminders
 // without also losing product news, or the reverse. One-click has no UI to ask
-// in, so per RFC 8058 it takes the safest reading and stops everything.
+// in. Typed links stop that email kind; legacy links stop all email.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
+import { NOTIFICATION_TYPES } from '../_shared/notificationTypes.ts';
 
 /** 'expiry' = coupon reminders, 'marketing' = newsletters, 'all' = both. */
 type Scope = 'expiry' | 'marketing' | 'all';
@@ -89,10 +90,12 @@ async function parseToken(payloadPart: string, signaturePart: string, secret: st
     user_id?: number;
     email?: string;
     type?: string;
+    notification_type?: string;
   };
   const hasIdentity = /^usr_[0-9a-f]{20}$/.test(parsed.user_public_id || '')
     || (Number.isSafeInteger(parsed.user_id) && Number(parsed.user_id) > 0);
   if (!hasIdentity || !parsed.email || parsed.type !== 'unsubscribe') return null;
+  if (parsed.notification_type && !(parsed.notification_type in NOTIFICATION_TYPES)) return null;
   return parsed;
 }
 
@@ -148,6 +151,7 @@ Deno.serve(async (req: Request) => {
       ]);
       return {
         email: user.email,
+        notification_type: tokenPayload.notification_type || null,
         // Operational expiry email defaults to on. Marketing requires both an
         // explicit subscription flag and no later opt-out.
         expiry_email: prefs?.email ?? true,
@@ -158,6 +162,26 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET') return jsonResponse(await readState());
 
     const stamp = new Date().toISOString();
+
+    if (isOneClick && tokenPayload.notification_type) {
+      const { data: current, error: readError } = await supabase.from('notification_preferences')
+        .select('type_channels').eq('user_id', user.id).maybeSingle();
+      if (readError) throw readError;
+      const typeChannels = current?.type_channels || {};
+      const { error } = await supabase.from('notification_preferences').upsert({
+        user_id: user.id,
+        type_channels: {
+          ...typeChannels,
+          [tokenPayload.notification_type]: {
+            ...(typeChannels[tokenPayload.notification_type] || {}),
+            email: false,
+          },
+        },
+        updated_at: stamp,
+      }, { onConflict: 'user_id' });
+      if (error) throw error;
+      return new Response('OK', { status: 200, headers: corsHeadersFor(req) });
+    }
 
     if (scope === 'marketing' || scope === 'all') {
       const { error: subscriptionError } = await supabase.from('users')

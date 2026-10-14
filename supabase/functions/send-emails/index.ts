@@ -173,8 +173,16 @@ async function handleUpdateSummary(
   if (items.length === 0 && failures.length === 0) return jsonResponse({ sent: 0, skipped: 'no_changes' });
 
   const supabase = supa();
-  const { data: user } = await supabase.from('users').select('email, first_name').eq('id', userId).single();
+  const { data: user } = await supabase.from('users').select('email, first_name, public_id').eq('id', userId).single();
   if (!user?.email) return jsonResponse({ error: 'כתובת אימייל לא נמצאה' }, 404);
+  const { data: prefs, error: prefsError } = await supabase.from('notification_preferences')
+    .select('email, type_channels').eq('user_id', userId).maybeSingle();
+  if (prefsError) throw prefsError;
+  if (prefs?.email === false || prefs?.type_channels?.multipass_summary?.email === false) {
+    return jsonResponse({ sent: 0, skipped: 'email_preference' });
+  }
+
+  const unsubscribeUrl = await buildUnsubscribeUrl(user.public_id, user.email, 'multipass_summary');
 
   const result = await sendEmailDetailed(
     user.email,
@@ -188,7 +196,9 @@ async function handleUpdateSummary(
       items: items.slice(0, 100),
       failures: failures.slice(0, 100),
       appUrl: 'https://coupons.itaykarkason.com/coupons',
+      unsubscribeUrl,
     }),
+    await buildUnsubscribeHeaders(user.public_id, user.email, 'multipass_summary'),
   );
 
   return result.ok
