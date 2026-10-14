@@ -45,7 +45,7 @@
     "@expo-google-fonts/heebo": "^0.4.2",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@expo/metro-runtime": "~57.0.10",
-    "@noble/hashes": "^2.2.0",
+    "@noble/hashes": "^2.4.0",
     "@opentelemetry/api": "^1.9.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
