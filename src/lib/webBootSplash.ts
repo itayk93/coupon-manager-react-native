@@ -1,20 +1,12 @@
 /**
  * The launch screen of the installed web app, and how it ends.
  *
- * Native has two layers here: `expo-splash-screen` holds the window while the
- * bundle loads, and `BrandLaunchAnimation` takes over from it so the app is
- * never briefly visible unauthenticated. The web build has neither — React is
- * the thing being waited for, so it cannot draw the wait. `launchVisible` is
- * `Platform.OS !== "web"` for exactly that reason.
+ * The document splash covers bundle loading. Once fonts settle, the React
+ * launch overlay takes over and plays the silent video once on web and native.
+ * Reduced motion uses a static wordmark instead. Both wait for auth readiness
+ * before revealing navigation.
  *
- * So the web launch screen lives in the document instead: iOS draws the
- * `apple-touch-startup-image` that matches the device from the tap until first
- * paint, and `injectBootSplash` puts the same wordmark, tint and 240pt geometry
- * into `dist/index.html` to carry it from there until the app is ready. Every
- * other browser gets the second half alone, which is still the whole wait.
- *
- * This is the end of it. It fades rather than cuts, over the same 220ms the
- * native launch animation exits in.
+ * The document layer fades over the same 220ms as the React launch overlay.
  */
 
 /** Idempotent, and a no-op anywhere the document has no launch screen in it —

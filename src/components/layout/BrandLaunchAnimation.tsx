@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, ActivityIndicator, Animated, Easing, StyleSheet, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, ActivityIndicator, Animated, StyleSheet, useWindowDimensions } from "react-native";
+import { useVideoPlayer, VideoView } from "expo-video";
 import * as SplashScreen from "expo-splash-screen";
 
 type Props = { appReady: boolean; canReveal: boolean; onFinish: () => void };
@@ -10,7 +11,6 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
   const [imageReady, setImageReady] = useState(false);
   const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
   const [introDone, setIntroDone] = useState(false);
-  const progress = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const finishRef = useRef(onFinish);
   useEffect(() => { finishRef.current = onFinish; }, [onFinish]);
@@ -35,15 +35,12 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
   useEffect(() => {
     if (!canReveal || !imageReady || reduceMotion === null) return;
     let active = true;
-    const intro = Animated.timing(progress, {
-      toValue: 1, duration: reduceMotion ? 0 : 720,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true,
-    });
-    void SplashScreen.hideAsync().catch(() => {}).then(() => {
-      if (active) intro.start(({ finished }) => { if (finished && active) setIntroDone(true); });
-    });
-    return () => { active = false; intro.stop(); };
-  }, [canReveal, imageReady, reduceMotion, progress]);
+    void SplashScreen.hideAsync().catch((error) => console.warn("Launch splash hide failed", error));
+    if (reduceMotion) setIntroDone(true);
+    // A failed load or blocked autoplay must never trap users on the launch screen.
+    const timeout = setTimeout(() => { if (active) setIntroDone(true); }, 6500);
+    return () => { active = false; clearTimeout(timeout); };
+  }, [canReveal, imageReady, reduceMotion]);
 
   useEffect(() => {
     if (!appReady || !introDone) return;
@@ -57,20 +54,48 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
   const size = Math.min(width * 0.72, height * 0.48, 340);
   return (
     <Animated.View style={[styles.overlay, { opacity }]} accessibilityViewIsModal>
-      <Animated.Image
-        source={require("../../../assets/branding/kuponi-wordmark/color-stacked.png")}
-        accessibilityLabel="קופון מאסטר"
-        resizeMode="contain"
-        onLoad={() => setImageReady(true)}
-        onError={() => setImageReady(true)}
-        style={{ width: size, height: size, opacity: progress, transform: [
-          { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) },
-          { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
-        ] }}
-      />
+      {reduceMotion === false && canReveal ? (
+        <SilentLaunchVideo onReady={() => setImageReady(true)} onDone={() => setIntroDone(true)} />
+      ) : (
+        <Animated.Image
+          source={require("../../../assets/branding/kuponi-wordmark/color-stacked.png")}
+          accessibilityLabel="קופון מאסטר"
+          resizeMode="contain"
+          onLoad={() => setImageReady(true)}
+          onError={() => setImageReady(true)}
+          style={{ width: size, height: size }}
+        />
+      )}
       {introDone && !appReady ? <ActivityIndicator accessibilityLabel="טוען את האפליקציה" style={styles.loader} color="#1f6fd1" /> : null}
     </Animated.View>
   );
+}
+
+function SilentLaunchVideo({ onReady, onDone }: { onReady: () => void; onDone: () => void }) {
+  const player = useVideoPlayer(require("../../../assets/branding/opening-screen-silent.mp4"), (instance) => {
+    instance.muted = true;
+    instance.volume = 0;
+    instance.audioMixingMode = "mixWithOthers";
+    instance.showNowPlayingNotification = false;
+  });
+  useEffect(() => {
+    player.play();
+  }, [player]);
+  useEffect(() => {
+    const ended = player.addListener("playToEnd", onDone);
+    const status = player.addListener("statusChange", ({ status, error }) => {
+      if (status === "error") {
+        console.warn("Launch video failed", error);
+        onReady();
+        onDone();
+      }
+    });
+    return () => { ended.remove(); status.remove(); };
+  }, [player, onReady, onDone]);
+  return <VideoView player={player} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%" }]} contentFit="contain"
+    nativeControls={false} playsInline allowsPictureInPicture={false}
+    fullscreenOptions={{ enable: false }} onFirstFrameRender={onReady}
+    accessibilityLabel="קופון מאסטר" />;
 }
 
 const styles = StyleSheet.create({

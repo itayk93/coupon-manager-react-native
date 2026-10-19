@@ -170,7 +170,7 @@ function RootLayoutNav() {
   useScreenTracking();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width > DESKTOP_WEB_MIN_WIDTH;
-  const [launchVisible, setLaunchVisible] = useState(Platform.OS !== "web" && !peekSharedImport());
+  const [launchVisible, setLaunchVisible] = useState(!peekSharedImport());
 
   // Heebo carries the Hebrew body text; Outfit is the Latin display face used
   // for headings and figures in the redesign.
@@ -202,17 +202,14 @@ function RootLayoutNav() {
     }
   }, [fontsSettled, launchVisible]);
 
-  // Web has no native splash to hide and no launch animation to play: its
-  // launch screen is in the document, painted before this bundle existed. It
-  // stays up until the tree on screen is the one the session calls for, so the
-  // wait reads as one screen rather than a logo, a flash and a spinner.
+  // Hand the document splash over to the React launch video once fonts settle.
   useEffect(() => {
-    if (Platform.OS !== "web" || !isReady) return;
+    if (Platform.OS !== "web" || !fontsSettled) return;
     hideWebBootSplash();
     // The document was painted the launch screen's tint; from here the app's
     // own surface owns it, in whichever theme is running.
     paintWebBackground(theme.background);
-  }, [isReady, theme.background]);
+  }, [fontsSettled, theme.background]);
 
   const navigationBaseTheme = NavigationDefaultTheme;
 
