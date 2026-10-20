@@ -112,3 +112,7 @@ create table if not exists public.security_incidents (
   created_at             timestamptz not null default now()
 );
 alter table public.security_incidents enable row level security;
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.security_incidents TO anon, authenticated, service_role;

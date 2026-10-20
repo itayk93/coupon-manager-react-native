@@ -109,3 +109,8 @@ end;
 $$;
 
 grant execute on function public.referral_review_application(bigint, text, text) to authenticated;
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+GRANT SELECT, UPDATE, DELETE ON TABLE public.referral_applications TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.referral_applications TO service_role;

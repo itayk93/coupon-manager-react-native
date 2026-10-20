@@ -113,3 +113,8 @@ begin
     return query select v_share.id,'accepted'::text,v_share.coupon_id,v_share.share_type;
   end if;
 end $$;
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+GRANT SELECT ON TABLE public.coupon_sales TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coupon_sales TO service_role;

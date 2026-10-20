@@ -88,3 +88,8 @@ $$;
 
 revoke execute on function public.record_coupon_usage_batch(integer, jsonb, text) from public, anon;
 grant execute on function public.record_coupon_usage_batch(integer, jsonb, text) to authenticated;
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.coupon_usage_imports FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coupon_usage_imports TO service_role;

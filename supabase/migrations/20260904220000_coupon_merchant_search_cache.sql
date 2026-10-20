@@ -14,3 +14,8 @@ revoke all on table public.coupon_merchant_search_cache from public, anon, authe
 
 comment on table public.coupon_merchant_search_cache is
   'Server-only GPT web-search results for the maintainer coupon wallet.';
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.coupon_merchant_search_cache FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coupon_merchant_search_cache TO service_role;

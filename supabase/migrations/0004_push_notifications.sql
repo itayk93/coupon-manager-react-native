@@ -39,3 +39,10 @@ for all
 to anon, authenticated
 using (false)
 with check (false);
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.push_system_config FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.push_system_config TO authenticated, service_role;
+REVOKE ALL ON TABLE public.push_subscriptions FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.push_subscriptions TO authenticated, service_role;

@@ -137,3 +137,8 @@ select cron.schedule(
   '30 * * * *',
   $$select public.trigger_send_engagement_alerts();$$
 );
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.notification_events FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.notification_events TO service_role;

@@ -29,3 +29,9 @@ create policy coupon_places_authenticated_update on public.coupon_places for upd
 insert into public.coupon_places (normalized_name, place_name, place_address, source)
 values ('גוד פארם כיכר רבין', 'גוד פארם כיכר רבין', 'רחוב בלוך 2, תל אביב', 'verified_web_search')
 on conflict (normalized_name) do update set place_address = excluded.place_address, updated_at = now();
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.coupon_places FROM anon;
+GRANT SELECT ON TABLE public.coupon_places TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coupon_places TO service_role;

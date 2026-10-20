@@ -51,3 +51,8 @@ end
 $$;
 
 select cron.schedule('login-attempts-purge', '0 3 * * *', $$select public.prune_login_attempts();$$);
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.auth_login_attempts FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.auth_login_attempts TO service_role;

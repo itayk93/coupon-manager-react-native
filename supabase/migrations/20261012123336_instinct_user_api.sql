@@ -126,3 +126,8 @@ as $$ select exists(select 1 from auth.sessions s join public.users u on u.auth_
  and (s.not_after is null or s.not_after>now())); $$;
 revoke all on function public.instinct_admin_session_valid(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.instinct_admin_session_valid(uuid,uuid) to service_role;
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.instinct_api_keys FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.instinct_api_keys TO service_role;

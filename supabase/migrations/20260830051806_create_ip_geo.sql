@@ -37,3 +37,7 @@ as $$
 $$;
 
 revoke all on function public.ip_geo_pending(int) from public, anon, authenticated;
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.ip_geo TO anon, authenticated, service_role;

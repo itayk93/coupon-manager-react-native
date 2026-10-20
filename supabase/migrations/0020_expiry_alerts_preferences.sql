@@ -209,3 +209,11 @@ drop trigger if exists notification_preferences_touch on public.notification_pre
 create trigger notification_preferences_touch
   before update on public.notification_preferences
   for each row execute function public.touch_notification_preferences();
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+REVOKE ALL ON TABLE public.notification_preferences FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.notification_preferences TO authenticated, service_role;
+REVOKE ALL ON TABLE public.coupon_alerts FROM anon;
+GRANT SELECT ON TABLE public.coupon_alerts TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coupon_alerts TO service_role;

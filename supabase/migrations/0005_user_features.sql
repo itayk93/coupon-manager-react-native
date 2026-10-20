@@ -39,3 +39,9 @@ create index if not exists user_feature_overrides_user_id_idx
 
 create index if not exists user_feature_overrides_feature_key_idx
   on public.user_feature_overrides (feature_key);
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+ALTER TABLE public.user_feature_overrides ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.user_feature_overrides FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.user_feature_overrides TO authenticated, service_role;

@@ -149,3 +149,22 @@ drop trigger if exists referrals_attribution_immutable on public.referrals;
 create trigger referrals_attribution_immutable
   before update on public.referrals
   for each row execute function public.guard_referral_attribution();
+
+-- Explicit Data API access: preserve role access without automatic grants.
+-- RLS continues to control which rows each role can access.
+ALTER TABLE public.referral_campaigns ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.referral_campaigns FROM anon;
+GRANT SELECT ON TABLE public.referral_campaigns TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.referral_campaigns TO service_role;
+ALTER TABLE public.referral_codes ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.referral_codes FROM anon;
+GRANT SELECT ON TABLE public.referral_codes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.referral_codes TO service_role;
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.referrals FROM anon;
+GRANT SELECT ON TABLE public.referrals TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.referrals TO service_role;
+ALTER TABLE public.referral_rewards ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.referral_rewards FROM anon;
+GRANT SELECT ON TABLE public.referral_rewards TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.referral_rewards TO service_role;
