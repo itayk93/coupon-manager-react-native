@@ -5,10 +5,11 @@ iOS is the only platform that will not draw a PWA's launch screen from the web
 app manifest: with no `apple-touch-startup-image` to match the device, tapping
 the home-screen icon opens a white page and holds it until the bundle has
 booted. So this is the native `expo-splash-screen` launch, redrawn as a PNG per
-device: the stacked wordmark at 240pt on the brand tint, the same artwork,
-width and background `app.json` gives the native builds.
+device: the launch poster at 240pt on the brand tint, the same artwork, width
+and background `app.json` gives the native builds. The poster is the launch
+video's first frame, so the handover to the video is seamless too.
 
-Artwork edits belong in the wordmark masters; this script only sizes them.
+The poster comes from `scripts/build-launch-video.py`; this script only sizes it.
 It writes `public/splash/`, and `src/lib/webHeadStartupImages.json` — the link
 tags `webDocumentHead.ts` and `inject-web-head.mjs` put in the served HTML.
 """
@@ -51,7 +52,7 @@ DEVICES = [
     ("iPad Pro 13\" (M4)", 1032, 1376, 2),
 ]
 
-wordmark = Image.open(ROOT / "assets/branding/kuponi-wordmark/color-stacked.png").convert("RGBA")
+wordmark = Image.open(ROOT / "assets/branding/launch/launch-poster.png").convert("RGBA")
 out_dir = ROOT / "public/splash"
 out_dir.mkdir(parents=True, exist_ok=True)
 

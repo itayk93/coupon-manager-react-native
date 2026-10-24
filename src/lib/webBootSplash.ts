@@ -3,8 +3,9 @@
  *
  * The document splash covers bundle loading. Once fonts settle, the React
  * launch overlay takes over and plays the silent video once on web and native.
- * Reduced motion uses a static wordmark instead. Both wait for auth readiness
- * before revealing navigation.
+ * The video starts on the same poster the document splash draws, so the
+ * handover has no cut. Reduced motion keeps the poster still. Both wait for
+ * auth readiness before revealing navigation.
  *
  * The document layer fades over the same 220ms as the React launch overlay.
  */

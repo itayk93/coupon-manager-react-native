@@ -82,8 +82,8 @@ export function injectWebHead(html, head = webHead) {
 /**
  * The launch screen, in the document itself.
  *
- * Deliberately static: it is the same wordmark on the same tint at the same
- * 240pt the iOS launch image and the native splash draw, so the handover from
+ * Deliberately static: it is the same launch poster on the same tint at the
+ * same 240pt the iOS launch image and the native splash draw, so the handover from
  * one to the other is invisible. The spinner only fades in once the wait is
  * long enough to be worth admitting to, which is what the native launch does.
  *

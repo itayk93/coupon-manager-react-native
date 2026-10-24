@@ -3,7 +3,7 @@
 Approved transparent artwork: color / white, horizontal / stacked. Source PNGs retain the original generated artwork. Run `python3 scripts/build-kuponi-wordmarks.py` (Pillow) to export trimmed, padded assets without changing artwork or stretching its proportions.
 
 - Authentication screens and public content header: color horizontal.
-- Native splash, BrandLaunchAnimation and the PWA launch screens: color stacked, on #e8f2fd.
+- Native splash, BrandLaunchAnimation and the PWA launch screens: the launch poster in `assets/branding/launch/` (the launch video's first frame), on #e8f2fd. See "Launch video" below.
 - Public logo and newsletter logo endpoint: color horizontal.
 - iOS AppLogoView and Android widget layouts: white horizontal. iOS uses a new KuponiWordmarkWhite image set; Android a new kuponi_wordmark_white drawable. White stacked remains available for future taller layouts.
 - Launcher, PWA and favicon keep the approved face-only icon for legibility at small sizes.
@@ -27,11 +27,11 @@ there until the bundle has booted — the one moment the app is most obviously
 not the native one.
 
 `python3 scripts/build-pwa-splash.py` (or `npm run pwa-splash`) draws them: the
-stacked wordmark at 240pt on #e8f2fd, the same artwork, width and background
+launch poster at 240pt on #e8f2fd, the same artwork, width and background
 `app.json` hands `expo-splash-screen`, at every iPhone and iPad size in both
 orientations. It writes `public/splash/` and `src/lib/webHeadStartupImages.json`,
 the links `inject-web-head.mjs` puts in the served HTML and
-`applyWebDocumentHead` adds at runtime. Rerun it after changing the wordmark,
+`applyWebDocumentHead` adds at runtime. Rerun it after changing the poster,
 and add a row to its `DEVICES` table when Apple ships a new screen size — a
 size that is missing is a white launch, not a wrong one.
 
@@ -43,3 +43,23 @@ screen — which is most of the wait on a cold start, and all of it on Android
 and the desktop. `hideWebBootSplash` fades it out once the app is ready.
 `src/lib/webDocumentHead.test.ts` checks that every link names a file the site
 serves, at exactly the pixel size its media query claims.
+
+## Launch video
+
+`python3 scripts/build-launch-video.py` (or `npm run launch-video`; needs
+ffmpeg, Pillow and numpy) cuts `assets/branding/launch/launch-video.mp4` and
+`launch-poster.png` from the source clip in `assets/branding/launch/source/`.
+It keeps only the 1.5s where the mascot faces the viewer and smiles (the source
+also has a close-up stare through the magnifier and a morphing squint, which
+read as unsettling), crops a square around the logo with the logo centred, and
+puts it on #e8f2fd with no visible edge, so it plays as part of the launch
+screen rather than as a clip on top of it. The poster is the video's first
+frame as decoded, which is what makes the native splash, the poster under the
+video, and the video's first frame the same picture.
+
+On iOS and web the splash already shows the poster, the overlay draws it in the
+same place, and the video starts from it; when it ends the logo eases forward
+as the overlay fades. Android 12+ masks the splash icon to a circle, so the
+script also writes transparent `splashscreen_logo.png` drawables and Android's
+splash is the tint alone; the overlay fades the logo in over it. Run
+`npm run pwa-splash` after it so the web launch screens get the new poster.

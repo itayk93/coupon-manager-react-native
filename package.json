@@ -8,6 +8,7 @@
     "postinstall": "patch-package",
     "logo-colors": "python3 scripts/generate-logo-colors.py",
     "pwa-splash": "python3 scripts/build-pwa-splash.py",
+    "launch-video": "python3 scripts/build-launch-video.py",
     "milestone-badges": "python3 scripts/build-milestone-badges.py",
     "mascot-atlases": "python3 scripts/mascot_rig/build.py",
     "start": "expo start --dev-client",

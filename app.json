@@ -130,10 +130,16 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/branding/kuponi-wordmark/color-stacked.png",
+          "image": "./assets/branding/launch/launch-poster.png",
           "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#e8f2fd"
+          "backgroundColor": "#e8f2fd",
+          "android": {
+            "image": "./assets/branding/launch/android-splash-blank.png",
+            "imageWidth": 240,
+            "resizeMode": "contain",
+            "backgroundColor": "#e8f2fd"
+          }
         }
       ],
       [
