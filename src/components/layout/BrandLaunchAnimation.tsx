@@ -81,7 +81,7 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
           resizeMode="contain"
           onLoad={() => setPosterReady(true)}
           onError={() => setPosterReady(true)}
-          style={StyleSheet.absoluteFill}
+          style={styles.logoMedia}
         />
         {reduceMotion === false ? <SilentLaunchVideo play={started} onDone={() => setIntroDone(true)} /> : null}
       </Animated.View>
@@ -112,7 +112,7 @@ function SilentLaunchVideo({ play, onDone }: { play: boolean; onDone: () => void
     });
     return () => { ended.remove(); status.remove(); };
   }, [player, onDone]);
-  return <VideoView player={player} style={[StyleSheet.absoluteFill, { opacity: frameShown ? 1 : 0 }]} contentFit="contain"
+  return <VideoView player={player} style={[styles.logoMedia, { opacity: frameShown ? 1 : 0 }]} contentFit="contain"
     nativeControls={false} playsInline allowsPictureInPicture={false}
     fullscreenOptions={{ enable: false }} onFirstFrameRender={() => setFrameShown(true)}
     accessible={false} />;
@@ -122,5 +122,7 @@ const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFill, zIndex: 1000, elevation: 1000,
     alignItems: "center", justifyContent: "center", backgroundColor: "#e8f2fd" },
   logo: { width: LOGO_SIZE, height: LOGO_SIZE },
+  // Image assets have intrinsic dimensions; offsets alone do not constrain them.
+  logoMedia: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
   loader: { position: "absolute", bottom: 96, alignSelf: "center" },
 });
