@@ -55,7 +55,7 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
     if (reduceMotion) setIntroDone(true);
     else setStarted(true);
     // A failed load or blocked autoplay must never trap users on the launch screen.
-    const timeout = setTimeout(() => { if (active) setIntroDone(true); }, 4000);
+    const timeout = setTimeout(() => { if (active) setIntroDone(true); }, 8000);
     return () => { active = false; clearTimeout(timeout); };
   }, [canReveal, posterReady, reduceMotion, logoOpacity]);
 
@@ -90,9 +90,8 @@ export function BrandLaunchAnimation({ appReady, canReveal, onFinish }: Props) {
   );
 }
 
-/** Loads paused behind the poster and only shows once a frame is drawn, so a slow decoder never blanks the logo. */
+/** Loads paused over the poster. Keep the native video surface visible so its frames can render. */
 function SilentLaunchVideo({ play, onDone }: { play: boolean; onDone: () => void }) {
-  const [frameShown, setFrameShown] = useState(false);
   const player = useVideoPlayer(VIDEO, (instance) => {
     instance.muted = true;
     instance.volume = 0;
@@ -112,9 +111,9 @@ function SilentLaunchVideo({ play, onDone }: { play: boolean; onDone: () => void
     });
     return () => { ended.remove(); status.remove(); };
   }, [player, onDone]);
-  return <VideoView player={player} style={[styles.logoMedia, { opacity: frameShown ? 1 : 0 }]} contentFit="contain"
+  return <VideoView player={player} style={styles.logoMedia} contentFit="contain"
     nativeControls={false} playsInline allowsPictureInPicture={false}
-    fullscreenOptions={{ enable: false }} onFirstFrameRender={() => setFrameShown(true)}
+    fullscreenOptions={{ enable: false }}
     accessible={false} />;
 }
 

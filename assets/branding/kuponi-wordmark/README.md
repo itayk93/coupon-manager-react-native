@@ -49,9 +49,8 @@ serves, at exactly the pixel size its media query claims.
 `python3 scripts/build-launch-video.py` (or `npm run launch-video`; needs
 ffmpeg, Pillow and numpy) cuts `assets/branding/launch/launch-video.mp4` and
 `launch-poster.png` from the source clip in `assets/branding/launch/source/`.
-It keeps only the 1.5s where the mascot faces the viewer and smiles (the source
-also has a close-up stare through the magnifier and a morphing squint, which
-read as unsettling), crops a square around the logo with the logo centred, and
+It preserves the full 5.04s animation, including the magnifier movement,
+crops a square around the logo with the logo centred, and
 puts it on #e8f2fd with no visible edge, so it plays as part of the launch
 screen rather than as a clip on top of it. The poster is the video's first
 frame as decoded, which is what makes the native splash, the poster under the

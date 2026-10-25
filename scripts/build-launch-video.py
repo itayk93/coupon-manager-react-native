@@ -2,13 +2,10 @@
 Run from any directory: python3 scripts/build-launch-video.py
 
 The source is a 716x1280 portrait clip with the mascot and wordmark in its
-upper half, a backdrop a few shades darker than the brand tint, a generator
-watermark in the corner, and a stretch in the middle where the mascot stares
-into the magnifier and morphs through a squint. Played full screen it read as
-a different screen from the splash, and an unsettling one.
+upper half, a backdrop a few shades darker than the brand tint, and a generator
+watermark in the corner.
 
-So this keeps only the friendly beat (mascot facing the viewer, smiling,
-bobbing gently), crops to a square around the logo with the logo centred,
+This preserves the full animation, crops to a square around the logo with the logo centred,
 and puts it on #e8f2fd: away from the logo the backdrop becomes the tint
 outright (it carries the generator's compression blocks, which show on a flat
 colour), and in a soft halo around the logo it is shifted onto the tint by a
@@ -34,9 +31,8 @@ SOURCE = ROOT / "assets/branding/launch/source/opening-screen-silent.mp4"
 OUT = ROOT / "assets/branding/launch"
 BG = (0xE8, 0xF2, 0xFD)  # #e8f2fd, the brand tint the native splash uses.
 
-# Source frames 61-95 (24fps, 1.46s): eyes open and smiling throughout. Before
-# it is the magnifier stare and the squint; after it the eyes start to close.
-FIRST_FRAME, LAST_FRAME = 61, 95
+# Preserve all 121 source frames (24fps, 5.04s), including the magnifier motion.
+FIRST_FRAME, LAST_FRAME = 0, 120
 FPS = 24
 # The logo's bounding box over those frames, in source pixels.
 LOGO_BOX = (40, 137, 690, 796)
@@ -141,6 +137,13 @@ def main() -> None:
         )
         poster = Image.open(tmp / "poster.png").convert("RGB")
         poster.save(OUT / "launch-poster.png", optimize=True)
+        # Keep the checked-in iOS launch artwork aligned without a full prebuild.
+        ios_images = ROOT / "ios/CouponMaster/Images.xcassets/SplashScreenLogo.imageset"
+        for scale in (1, 2, 3):
+            suffix = "" if scale == 1 else f"@{scale}x"
+            poster.resize((240 * scale, 240 * scale), Image.Resampling.LANCZOS).save(
+                ios_images / f"image{suffix}.png", optimize=True
+            )
         # The corners have to land on the tint itself, or the square shows.
         corner = poster.getpixel((0, 0))
         assert max(abs(a - b) for a, b in zip(corner, BG)) <= 2, f"poster corner {corner} is off the tint"
