@@ -393,9 +393,9 @@ function CouponForm({
               <Input
                 label="שווי הקופון (₪) *"
                 placeholder="0.00"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={value}
-                onChangeText={setValue}
+                onChangeText={(v) => setValue(v.replace(",", "."))}
                 error={errors.value}
               />
             </View>
@@ -403,9 +403,9 @@ function CouponForm({
               <Input
                 label="עלות הקנייה (₪)"
                 placeholder="0.00"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={cost}
-                onChangeText={setCost}
+                onChangeText={(v) => setCost(v.replace(",", "."))}
               />
             </View>
           </View>

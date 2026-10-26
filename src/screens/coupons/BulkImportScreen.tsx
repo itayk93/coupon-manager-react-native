@@ -149,18 +149,18 @@ export function BulkImportScreen() {
               <Input
                 label="עלות ליחידה (₪)"
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={cost}
-                onChangeText={setCost}
+                onChangeText={(v) => setCost(v.replace(",", "."))}
               />
             </View>
             <View style={styles.halfCol}>
               <Input
                 label="שווי ליחידה (₪) *"
                 placeholder="100"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={value}
-                onChangeText={setValue}
+                onChangeText={(v) => setValue(v.replace(",", "."))}
               />
             </View>
           </View>
