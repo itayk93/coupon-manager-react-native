@@ -820,10 +820,10 @@ export function QuickUsageModal({
             <Input
               label="סכום השימוש (₪) *"
               placeholder="0.00"
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               value={amount}
               onChangeText={(val) => {
-                setAmount(val);
+                setAmount(val.replace(",", "."));
                 setAmountError("");
               }}
               error={amountError}
