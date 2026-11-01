@@ -14,6 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
 import { requireUser } from '../_shared/auth.ts';
 import { safeFetch } from '../_shared/ssrf.ts';
+import { alertOwnerQuotaExhausted } from '../_shared/ownerAlert.ts';
 import { isOverDailyLimit } from '../_shared/aiQuota.ts';
 import { combineCouponInput } from './input.ts';
 
@@ -421,6 +422,7 @@ Deno.serve(async (req: Request) => {
         message = 'שירות פענוח הקופונים אינו מחובר למפתח OpenAI תקין.';
       } else if (openaiResp.status === 429 && /insufficient_quota/.test(rawText ?? '')) {
         console.error('OpenAI quota exhausted - top up billing');
+        await alertOwnerQuotaExhausted('parse-coupon');
         message = 'שירות פענוח הקופונים אינו זמין זמנית. אנחנו מטפלים בזה.';
       } else if (openaiResp.status === 429) {
         message = 'שירות פענוח הקופונים עמוס כרגע. נסה שוב בעוד רגע.';

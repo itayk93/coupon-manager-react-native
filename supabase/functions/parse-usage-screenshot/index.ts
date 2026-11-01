@@ -1,6 +1,7 @@
 import { corsHeadersFor, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
 import { safeFetch } from "../_shared/ssrf.ts";
+import { alertOwnerQuotaExhausted, isQuotaExhausted } from "../_shared/ownerAlert.ts";
 import { isOverDailyLimit, recordAiUsage } from "../_shared/aiQuota.ts";
 
 const MAX_IMAGE_CHARS = 8 * 1024 * 1024;
@@ -122,6 +123,7 @@ Deno.serve(async (req: Request) => {
       }),
     });
     const raw = await response.text();
+    if (!response.ok && isQuotaExhausted(response.status, raw)) await alertOwnerQuotaExhausted("parse-usage-screenshot");
     if (!response.ok) return jsonResponse({ error: isTextParse ? "פענוח הטקסט נכשל" : "פענוח התמונה נכשל" }, 502);
     const payload = JSON.parse(raw);
     const output = JSON.parse(payload.choices?.[0]?.message?.content || "{}");
