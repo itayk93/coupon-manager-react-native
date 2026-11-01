@@ -250,7 +250,7 @@ private struct CouponCardView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(1)
                     .padding(.horizontal, compact ? 8 : 10)
-                    .padding(.vertical, compact ? 12 : 8)
+                    .padding(.vertical, compact ? 6 : 8)
                     .background(
                         RoundedRectangle(cornerRadius: 15)
                             .fill(WidgetStyle.codeFill)

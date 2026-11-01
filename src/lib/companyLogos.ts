@@ -176,6 +176,10 @@ export function resolveCompanyLogo(company: string, dbImagePath?: string | null)
     }
 
     if (cleanPath.includes("/")) {
+      // `companies.image_path` stores `images/<file>`. The legacy host now
+      // redirects to the new site, so a curated file must come from the bucket.
+      const file = cleanPath.replace(/^images\//, "");
+      if (STORAGE_FILES.has(file)) return storageUrl(file);
       return `${LEGACY_IMAGE_ROOT}/${cleanPath}`;
     }
 
