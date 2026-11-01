@@ -381,11 +381,28 @@ Deno.serve(async (req: Request) => {
       { role: 'user', content },
     ];
 
-    let { response: openaiResp, rawText } = await callOpenAI(apiKey, messages, true);
+    // Transient provider errors (rate limit / 5xx) get a short backoff retry.
+    // Hammering the provider again immediately (e.g. via the fallback schema)
+    // only makes a 429 worse.
+    const callWithRetry = async (strict: boolean) => {
+      let result = await callOpenAI(apiKey, messages, strict);
+      for (const delayMs of [1500, 3500]) {
+        const s = result.response.status;
+        if (result.response.ok || !(s === 429 || s >= 500)) break;
+        if (/insufficient_quota/.test(result.rawText)) break;
+        console.error('OpenAI transient error, retrying', s, result.rawText);
+        await new Promise((r) => setTimeout(r, delayMs));
+        result = await callOpenAI(apiKey, messages, strict);
+      }
+      return result;
+    };
 
-    if (!openaiResp.ok) {
+    let { response: openaiResp, rawText } = await callWithRetry(true);
+
+    // Fallback schema only helps when the strict schema was rejected (400).
+    if (!openaiResp.ok && openaiResp.status === 400) {
       console.error('OpenAI API strict-schema error', openaiResp.status, rawText);
-      const fallbackResult = await callOpenAI(apiKey, messages, false);
+      const fallbackResult = await callWithRetry(false);
       openaiResp = fallbackResult.response;
       rawText = fallbackResult.rawText;
     }
@@ -402,6 +419,9 @@ Deno.serve(async (req: Request) => {
       }
       if (openaiResp.status === 401) {
         message = 'שירות פענוח הקופונים אינו מחובר למפתח OpenAI תקין.';
+      } else if (openaiResp.status === 429 && /insufficient_quota/.test(rawText ?? '')) {
+        console.error('OpenAI quota exhausted - top up billing');
+        message = 'שירות פענוח הקופונים אינו זמין זמנית. אנחנו מטפלים בזה.';
       } else if (openaiResp.status === 429) {
         message = 'שירות פענוח הקופונים עמוס כרגע. נסה שוב בעוד רגע.';
       } else if (openaiResp.status === 400) {
