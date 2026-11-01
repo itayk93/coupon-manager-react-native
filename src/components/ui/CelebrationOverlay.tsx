@@ -7,6 +7,7 @@ import { IlsAmount } from "@/components/ui/IlsAmount";
 import { Kuponi, type KuponiState } from "@/components/ui/Kuponi";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
+import type { RedemptionCelebration } from "@/lib/celebrationTrigger";
 
 /**
  * The shape every "you just did something with money" moment takes: a scrim, a
@@ -97,6 +98,45 @@ export function CelebrationOverlay({
         {subtitle ? <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text> : null}
       </Animated.View>
     </Animated.View>
+  );
+}
+
+let redemptionListener: ((scene: RedemptionCelebration) => void) | null = null;
+
+/**
+ * Plays the finished-coupon moment from wherever the usage was recorded. The
+ * record-usage mutation calls this on success only, so a failed write never
+ * celebrates, and the quick-usage sheet — which closes itself on save — does
+ * not need a screen behind it to own the overlay.
+ */
+export function pushRedemptionCelebration(scene: RedemptionCelebration) {
+  redemptionListener?.(scene);
+}
+
+/** Mounted once at the root, next to ToastHost. One scene at a time. */
+export function RedemptionCelebrationHost() {
+  const [scene, setScene] = useState<RedemptionCelebration | null>(null);
+  const clear = React.useCallback(() => setScene(null), []);
+
+  useEffect(() => {
+    redemptionListener = (next) => setScene((current) => current ?? next);
+    return () => {
+      redemptionListener = null;
+    };
+  }, []);
+
+  if (!scene) return null;
+  return (
+    <CelebrationOverlay
+      title={scene.headline}
+      subtitle={scene.amount > 0 ? undefined : "היתרה בארנק כבר מעודכנת."}
+      amount={scene.amount}
+      amountCaption={scene.kind === "rescue" ? "הצלת" : "חסכת"}
+      // A rescue is the one moment he has something to let go of: he has been
+      // worried about this coupon's date, and it just stopped being a problem.
+      intro={scene.kind === "rescue" ? "relieved" : undefined}
+      onDone={clear}
+    />
   );
 }
 

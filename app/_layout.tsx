@@ -44,6 +44,7 @@ import { ToastHost } from "@/components/ui/Toast";
 import { useNotificationRouting } from "@/hooks/useNotificationRouting";
 import { NearbyCouponWatcher } from "@/components/layout/NearbyCouponWatcher";
 import { IslandHost } from "@/components/ui/Island";
+import { RedemptionCelebrationHost } from "@/components/ui/CelebrationOverlay";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { applyWebDocumentHead } from "@/lib/webDocumentHead";
 import { hideWebBootSplash, paintWebBackground } from "@/lib/webBootSplash";
@@ -277,6 +278,7 @@ function RootLayoutNav() {
           <ConfirmHost />
           <ToastHost />
           <IslandHost />
+          <RedemptionCelebrationHost />
           <NearbyCouponWatcher enabled={isReady && !launchVisible} />
 
           {launchVisible ? (

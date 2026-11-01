@@ -15,6 +15,7 @@ import { logActivity } from "@/lib/activityLog";
 import { notifyEvent } from "@/lib/notifyEvent";
 import { redemptionCelebration } from "@/lib/celebrationTrigger";
 import { rememberRedemption } from "@/lib/celebrationMemory";
+import { pushRedemptionCelebration } from "@/components/ui/CelebrationOverlay";
 import {
   savingsByMonth,
   savingsRate,
@@ -32,13 +33,16 @@ async function celebrateRedemption(
   couponId: number,
   rescuedAmount: number
 ): Promise<void> {
+  const coupon = queryClient
+    .getQueriesData<DecryptedCoupon[]>({ queryKey: ["coupons"] })
+    .flatMap(([, list]) => (Array.isArray(list) ? list : []))
+    .find((item) => item?.id === couponId);
+  // Not in the list cache (e.g. opened from a deep link): still celebrate, just
+  // without the company name or rescue framing.
+  const scene = redemptionCelebration(coupon ?? ({ id: couponId } as DecryptedCoupon), rescuedAmount);
+  pushRedemptionCelebration(scene);
+  if (!coupon) return;
   try {
-    const coupon = queryClient
-      .getQueriesData<DecryptedCoupon[]>({ queryKey: ["coupons"] })
-      .flatMap(([, list]) => (Array.isArray(list) ? list : []))
-      .find((item) => item?.id === couponId);
-    if (!coupon) return;
-    const scene = redemptionCelebration(coupon, rescuedAmount);
     await rememberRedemption(scene.kind, scene.text, scene.until);
   } catch (error) {
     console.warn("[widget] failed to record redemption scene", error);
