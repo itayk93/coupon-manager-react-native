@@ -10,6 +10,7 @@ import {
   Linking,
 } from "react-native";
 import { CheckCheck, Check, ChevronDown, MapPin, ImagePlus, Sparkles, Trash2, AlertTriangle, ChevronLeft, Map, MessageSquareText } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/input";
@@ -242,6 +243,7 @@ export function QuickUsageModal({
       latitude: location?.latitude,
       longitude: location?.longitude,
     });
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setAmount("");
     setDetails("");
     setPlaceName("");
@@ -260,28 +262,33 @@ export function QuickUsageModal({
       await submitUsage(remaining, details.trim() || "סימון הקופון כנוצל");
       setIsConfirmingFullUse(false);
     } catch (e) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(e);
     }
   };
 
   const handleSubmit = async () => {
     if (!selectedCouponId) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError("יש לבחור קופון לדיווח");
       setAmountError("");
       return;
     }
     if (isOneTimeCoupon) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError("קופון חד־פעמי ניתן לסמן רק כנוצל במלואו");
       setAmountError("");
       return;
     }
     const numAmount = Number(amount);
     if (!amount.trim() || isNaN(numAmount) || numAmount <= 0) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError("");
       setAmountError("יש להזין סכום שימוש חיובי");
       return;
     }
     if (numAmount > remaining) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError("");
       setAmountError(`הסכום שהוזן (${formatIls(numAmount)}) גבוה מהיתרה (${formatIls(remaining)})`);
       return;
@@ -290,6 +297,7 @@ export function QuickUsageModal({
     try {
       await submitUsage(numAmount, details.trim() || "שימוש מהיר באפליקציה");
     } catch (e) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(e);
     }
   };
@@ -442,11 +450,15 @@ export function QuickUsageModal({
   };
 
   const saveDetectedUsages = async () => {
-    if (!selectedCouponId) return setError("יש לבחור קופון");
+    if (!selectedCouponId) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      return setError("יש לבחור קופון");
+    }
     const valid = detectedUsages.filter(
       (item) => item.amount > 0 && !duplicateMatches[item.id]
     );
     if (!valid.length) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       return setError(
         duplicateCount
           ? "כל השימושים שזוהו כבר קיימים בקופון לפי סכום ומועד."
@@ -459,9 +471,11 @@ export function QuickUsageModal({
     try {
       const result = await recordUsage.mutateBatchAsync({ couponId: selectedCouponId, usages: valid, importId: importId || undefined });
       if (result.insertedCount === 0) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         setError("כל השימושים האלה כבר דווחו לפי סכום ומועד.");
         return;
       }
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       const savedCoupon = coupons.find((c) => c.id === selectedCouponId);
       setDetectedUsages([]);
       setUsedAtDrafts({});
@@ -479,6 +493,7 @@ export function QuickUsageModal({
         }));
       }
     } catch (e) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(e);
     } finally {
       setSavingDetected(false);
