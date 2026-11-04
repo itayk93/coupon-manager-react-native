@@ -168,7 +168,16 @@ function CouponForm({
   const { theme } = useAppTheme();
   const contentStyle = useContentStyle("reading");
   const router = useRouter();
-  const [showAdvanced, setShowAdvanced] = React.useState(Boolean(existingCoupon));
+  const [showAdvanced, setShowAdvanced] = React.useState(
+    Boolean(
+      existingCoupon ||
+        (initialCost && initialCost !== "0") ||
+        initialDescription ||
+        initialCvv ||
+        initialCardExp ||
+        initialRedemptionUrl
+    )
+  );
 
   const {
     isEditing,
@@ -385,32 +394,17 @@ function CouponForm({
 
           {!blocked ? (
             <>
-          <SectionTitle>כסף</SectionTitle>
+          <SectionTitle>פרטי השובר</SectionTitle>
 
-          {/* Value & Cost */}
-          <View style={styles.row}>
-            <View style={styles.halfCol}>
-              <Input
-                label="שווי הקופון (₪) *"
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                value={value}
-                onChangeText={(v) => setValue(v.replace(",", "."))}
-                error={errors.value}
-              />
-            </View>
-            <View style={styles.halfCol}>
-              <Input
-                label="עלות הקנייה (₪)"
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                value={cost}
-                onChangeText={(v) => setCost(v.replace(",", "."))}
-              />
-            </View>
-          </View>
-
-          <SectionTitle>תוקף ומימוש</SectionTitle>
+          {/* Value */}
+          <Input
+            label="שווי הקופון (₪) *"
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            value={value}
+            onChangeText={(v) => setValue(v.replace(",", "."))}
+            error={errors.value}
+          />
 
           {/* Expiration */}
           <DateField
@@ -421,6 +415,38 @@ function CouponForm({
             helperText="בחירה מלוח השנה (פורמט: שנה-חודש-יום)"
           />
 
+          <TouchableOpacity
+            onPress={() => setShowAdvanced((value) => !value)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showAdvanced }}
+            style={[styles.advancedToggle, { backgroundColor: theme.surfaceAlt, borderColor: theme.border }]}
+          >
+            <ChevronDown
+              size={18}
+              color={theme.primary}
+              style={{ transform: [{ rotate: showAdvanced ? "180deg" : "0deg" }] }}
+            />
+            <View style={styles.switchLabelContainer}>
+              <Text style={[styles.switchLabel, { color: theme.text }]}>פרטים נוספים</Text>
+              <Text style={[styles.switchSub, { color: theme.textMuted }]}>
+                עלות, קופון חד־פעמי, הערות, קישור, פרטי כרטיס ותגיות
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {showAdvanced ? <>
+
+          {/* Cost */}
+          <Input
+            label="עלות הקנייה (₪)"
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            value={cost}
+            onChangeText={(v) => setCost(v.replace(",", "."))}
+            helperText="כמה שילמת בפועל (לחישוב חיסכון)"
+          />
+
+          {/* One-time coupon switch */}
           <View
             style={[
               styles.switchRow,
@@ -452,25 +478,6 @@ function CouponForm({
               autoFocus
             />
           ) : null}
-
-          <TouchableOpacity
-            onPress={() => setShowAdvanced((value) => !value)}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: showAdvanced }}
-            style={[styles.advancedToggle, { backgroundColor: theme.surfaceAlt, borderColor: theme.border }]}
-          >
-            <ChevronDown
-              size={18}
-              color={theme.primary}
-              style={{ transform: [{ rotate: showAdvanced ? "180deg" : "0deg" }] }}
-            />
-            <View style={styles.switchLabelContainer}>
-              <Text style={[styles.switchLabel, { color: theme.text }]}>פרטים נוספים</Text>
-              <Text style={[styles.switchSub, { color: theme.textMuted }]}>הערות, קישור, פרטי כרטיס, עדכון אוטומטי ותגיות</Text>
-            </View>
-          </TouchableOpacity>
-
-          {showAdvanced ? <>
 
           {/* Description */}
           <Input
