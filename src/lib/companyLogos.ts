@@ -32,6 +32,8 @@ const remoteLogoByCompany: Record<string, string> = {
   "תו הזהב": "tav-hazahav.png",
   "תן ביס": "tenbis.png",
   "10bis": "tenbis.png",
+  "טיב טעם": "tiv-taam.png",
+  "tiv taam": "tiv-taam.png",
 };
 
 const logoByCompany: Record<string, string> = {
@@ -228,6 +230,8 @@ const colorOverrideByCompany: Record<string, string> = {
   "itay brands": "#1f6fd1",
   "אצה": "#0ea472",
   atza: "#0ea472",
+  "טיב טעם": "#2f6637",
+  "tiv taam": "#2f6637",
 };
 
 /** Companies with no logo colour and no override fall back to the app blue. */
@@ -270,7 +274,7 @@ export function getCompanyLogoSource(
 const categoryByCompany: Record<string, string> = {
   carrefour: "סופר", "קרפור": "סופר",
   "רמי לוי": "סופר", "שופרסל": "סופר", shufersal: "סופר",
-  "ויקטורי": "סופר", victory: "סופר", "יוחננוף": "סופר", "אושר עד": "סופר",
+  "ויקטורי": "סופר", victory: "סופר", "טיב טעם": "סופר", "tiv taam": "סופר", "יוחננוף": "סופר", "אושר עד": "סופר",
   kfc: "מסעדות", "קנטקי": "מסעדות", mcdonalds: "מסעדות", "מקדונלדס": "מסעדות",
   benedict: "מסעדות", "בנדיקט": "מסעדות", "קפה קפה": "מסעדות",
   "קפה עלית": "מסעדות", golda: "מסעדות", "גולדה": "מסעדות",
