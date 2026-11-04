@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { Search, Plus } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useCompanies } from "@/hooks/useAdminManagement";
 
 const POPULAR_COMPANIES = [
   "BuyMe",
@@ -63,10 +64,29 @@ export function CompanyPickerModal({
 }: CompanyPickerModalProps) {
   const { theme } = useAppTheme();
   const [search, setSearch] = useState("");
+  const { data: companies } = useCompanies();
 
-  const filtered = POPULAR_COMPANIES.filter((comp) =>
-    comp.toLowerCase().includes(search.toLowerCase().trim())
-  );
+  // Curated favourites first, then every other company in the catalogue
+  // (already ordered by how many coupons use it). The hardcoded list alone
+  // hid most of the companies people actually have.
+  const allCompanies = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const name of [...POPULAR_COMPANIES, ...(companies ?? []).map((c) => c.name)]) {
+      const trimmed = name?.trim();
+      if (!trimmed) continue;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(trimmed);
+    }
+    return out;
+  }, [companies]);
+
+  const query = search.toLowerCase().trim();
+  const filtered = query
+    ? allCompanies.filter((comp) => comp.toLowerCase().includes(query))
+    : allCompanies;
 
   const handleSelect = (companyName: string) => {
     onSelect(companyName);
@@ -80,7 +100,7 @@ export function CompanyPickerModal({
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title="בחירת חברה / מותג">
+    <Modal visible={visible} onClose={onClose} title="בחירת חברה / מותג" expandable>
       <View style={styles.container}>
         {/* Search Input */}
         <View
@@ -181,6 +201,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     textAlign: "right",
+    // Without it the field runs LTR on web: the "..." of the placeholder and
+    // the caret land on the wrong side of the Hebrew text.
+    writingDirection: "rtl",
   },
   customCompanyBtn: {
     flexDirection: "row-reverse",
