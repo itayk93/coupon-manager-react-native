@@ -33,7 +33,7 @@ const STATUS_DESCRIPTIONS: Record<CouponStatusFilter, string> = {
   expired: "קופונים שעבר תאריך התוקף שלהם לפני שנוצלו במלואם.",
 };
 
-export function filterCouponsByStatus(
+function filterCouponsByStatus(
   coupons: DecryptedCoupon[],
   filter: CouponStatusFilter
 ): DecryptedCoupon[] {

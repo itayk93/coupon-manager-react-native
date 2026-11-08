@@ -1,4 +1,4 @@
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import { couponRemainingValue, isSpendableCoupon } from "./couponTotals";
 
 /** The home-screen widget never shows more than this many cards, even on Large. */

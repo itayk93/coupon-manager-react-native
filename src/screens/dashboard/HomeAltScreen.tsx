@@ -81,7 +81,6 @@ export function HomeAltScreen() {
   const { data: usageStats } = useCouponUsageStats(coupons);
   const { data: tagsMap = {} } = useCouponTagsMap();
   const [isUsageOpen, setIsUsageOpen] = useState(false);
-  // Set when a card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   // Which company's coupons are open in the sheet — the screen's fast path.
   const [sheetCompany, setSheetCompany] = useState<string | null>(null);

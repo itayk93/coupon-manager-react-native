@@ -1,6 +1,6 @@
 import { baselineCelebrationTokens, lifetimeSavings, COUNT_STEPS, SAVINGS_STEPS } from "./celebrationTrigger";
 import { isSpendableCoupon } from "./couponTotals";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 /**
  * What the stored celebration tokens add up to.

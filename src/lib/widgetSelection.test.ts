@@ -6,7 +6,7 @@ import {
   nextWidgetOrder,
   widgetSelection,
 } from "./widgetSelection";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 function coupon(overrides: Partial<DecryptedCoupon>): DecryptedCoupon {
   return {

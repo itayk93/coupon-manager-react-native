@@ -252,7 +252,6 @@ export function CouponsListScreen() {
     Boolean(params.initialFilterTag || asFilterStatus(params.initialStatus))
   );
   const [companyFilterOpen, setCompanyFilterOpen] = useState(false);
-  // Set when a coupon card is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   const [isMerchantResultsOpen, setIsMerchantResultsOpen] = useState(false);
 

@@ -16,7 +16,7 @@ export type DateFieldProps = {
   minimumDate?: Date;
 };
 
-export function toIsoDay(date: Date) {
+function toIsoDay(date: Date) {
   // Local getters, not toISOString(): the UTC shift would roll the day back for
   // Israel-time midnight picks.
   const m = `${date.getMonth() + 1}`.padStart(2, "0");

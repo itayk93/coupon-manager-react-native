@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import { isSpendableCoupon, couponRemainingValue } from "@/lib/couponTotals";
 import { DAILY_REMINDER_DAYS } from "@/lib/notificationWindows";
 import {

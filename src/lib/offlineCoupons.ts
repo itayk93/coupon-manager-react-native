@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import { isSpendableCoupon } from "@/lib/couponTotals";
 
 const KEY = "offline:coupons:v1";

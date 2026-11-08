@@ -1,15 +1,11 @@
 // Explicit Supabase columns for queries that previously used select('*').
 // Keeping these as const string literals preserves supabase-js row typing.
 
-export const COUPON_COLUMNS = 'id,user_id,company,code,description,value,cost,used_value,status,expiration,date_added,is_one_time,purpose,cvv,card_exp,buyme_coupon_url,strauss_coupon_url,xgiftcard_coupon_url,xtra_coupon_url,auto_download_details,auto_update,last_scraped,last_detail_view,last_company_view,last_code_view,show_in_widget,widget_display_order,source' as const;
-
 export const COMPANIES_COLUMNS = 'id,name,image_path,company_count' as const;
 
 export const NEWSLETTERS_COLUMNS = 'id,created_at,created_by,title,newsletter_type,is_published,is_sent,sent_count,bundle_path,web_url,email_subject,hero_image_url,preview_text' as const;
 
 export const ADMIN_MESSAGES_COLUMNS = 'id,created_at,message_text,link_url,link_text' as const;
-
-export const AUTO_UPDATE_RUNS_COLUMNS = 'id,user_id,run_type,triggered_by_user_id,status,started_at,finished_at,updated_count,failed_count,skipped_count,message,job_id' as const;
 
 export const TAG_COLUMNS = 'id,name,count' as const;
 
@@ -17,16 +13,8 @@ export const COUPON_USAGE_COLUMNS = 'id,coupon_id,used_amount,action,details,tim
 
 export const COUPON_TRANSACTION_COLUMNS = 'id,coupon_id,usage_amount,recharge_amount,transaction_date,source,location,reference_number' as const;
 
-export const FEATURE_ACCESS_COLUMNS = 'id,feature_name,access_mode' as const;
-
-export const USER_FEATURE_OVERRIDES_COLUMNS = 'id,user_id,feature_key,is_enabled,created_at,updated_at' as const;
-
-export const ADMIN_SETTINGS_COLUMNS = 'id,setting_key,setting_value,description,created_at,updated_at' as const;
-
 export const OPT_OUTS_COLUMNS = 'user_id,opted_out,timestamp' as const;
 
 export const NOTIFICATIONS_COLUMNS = 'id,user_id,type,title,message,link,shown,viewed,hide_from_view,timestamp' as const;
 
 export const NOTIFICATION_PREFERENCES_COLUMNS = 'user_id,email,push,in_app,windows,quiet_until,timezone,daily_within,type_channels' as const;
-
-export const COUPON_ALERTS_COLUMNS = 'id,coupon_id,user_id,window_days,channel,sent_at,status' as const;

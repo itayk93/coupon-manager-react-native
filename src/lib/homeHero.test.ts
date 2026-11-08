@@ -5,7 +5,7 @@ import {
   homeHeroSummary,
   topCouponTags,
 } from "./homeHero";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 const NOW = new Date(2026, 8, 11, 9, 30);
 

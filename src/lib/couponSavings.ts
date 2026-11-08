@@ -1,4 +1,4 @@
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import {
   isHiddenLedgerRow,
   ledgerAmountFromTransaction,

@@ -167,22 +167,3 @@ export const shadows = {
   },
 };
 
-export const globalStyles = StyleSheet.create({
-  rtlRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-  },
-  rtlRowBetween: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rtlText: {
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

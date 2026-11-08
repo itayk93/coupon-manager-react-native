@@ -1,4 +1,4 @@
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 /**
  * One definition of "a coupon that still counts", shared by the dashboard, the

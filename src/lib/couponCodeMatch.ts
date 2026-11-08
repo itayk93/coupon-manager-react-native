@@ -1,4 +1,4 @@
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 export const normalizeCouponCode = (value: string) =>
   value.normalize("NFKC").toLocaleUpperCase("he-IL").replace(/[^\p{L}\p{N}]/gu, "");

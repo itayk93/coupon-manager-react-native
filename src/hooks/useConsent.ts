@@ -89,15 +89,6 @@ export function useSetOptOut() {
   });
 }
 
-// Record a privacy-policy consent event (audit row + version stamp on the user).
-export function useRecordConsent() {
-  return useMutation({
-    mutationFn: async (version: string = CONSENT_VERSION) => {
-      await couponVault({ action: 'record_consent', version });
-    },
-  });
-}
-
 // GDPR art. 15 + 20 / חוק הגנת הפרטיות ס' 13 — provide an account-data copy
 // through the OS share sheet. The cache file is destroyed when sharing ends.
 export function useExportAccount() {

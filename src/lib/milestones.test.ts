@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { milestonesFor, summariseMilestones } from "./milestones";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 describe("summariseMilestones", () => {
   it("reads nothing out of an empty history", () => {

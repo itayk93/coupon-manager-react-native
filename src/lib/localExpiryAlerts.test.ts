@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 vi.mock("expo-notifications", () => ({
   SchedulableTriggerInputTypes: { DATE: "date" },

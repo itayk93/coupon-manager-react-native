@@ -1,4 +1,4 @@
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import { companyKey } from "./companyName";
 
 /** One company tile: the name as the user wrote it, and how many it holds. */

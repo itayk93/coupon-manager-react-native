@@ -10,7 +10,7 @@ import {
   seedCelebrationBaseline,
   toCelebrationState,
 } from "./celebrationMemory";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import { isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 
 /**

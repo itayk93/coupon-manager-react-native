@@ -1,7 +1,7 @@
 import { expiringWidgetCoupons } from "./widgetExpiry";
 import { loadWidgetDebugOverride } from "./widgetDebugOverride";
 import { celebrationHeadline, currentCelebration } from "./celebrationScene";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 import { prepareWidgetLogos } from "@/lib/widgetLogos";
 import { couponRemainingValue, isSpendableCoupon, totalRemainingValue } from "@/lib/couponTotals";
 import { MAX_WIDGET_COUPONS, widgetSelection } from "@/lib/widgetSelection";
@@ -120,7 +120,7 @@ export const WIDGET_DEBUG_STATES: { state: number; label: string; days: number |
  * near its expiry. The real payload is restored on the next coupon change, or
  * immediately via `syncWidget`.
  */
-export function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon[]): void {
+function previewWidgetState(stateNumber: number, coupons: DecryptedCoupon[]): void {
   const base = buildWidgetPayload(coupons);
   const found = WIDGET_DEBUG_STATES.find((s) => s.state === stateNumber);
   const days = found ? found.days : null;
@@ -170,7 +170,7 @@ export const WIDGET_DEBUG_CELEBRATIONS: { kind: string; label: string }[] = [
 ];
 
 /** DEBUG (admin only). Forces a celebration scene onto the small widget. */
-export function previewWidgetCelebration(kind: string, coupons: DecryptedCoupon[]): void {
+function previewWidgetCelebration(kind: string, coupons: DecryptedCoupon[]): void {
   const base = buildWidgetPayload(coupons);
   setWidgetData({
     ...base,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { monthlyRecap } from "./monthlyRecap";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 const now = new Date(2026, 8, 15); // 15 September 2026
 const SEPT = "2026-8";

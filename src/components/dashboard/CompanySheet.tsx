@@ -153,7 +153,6 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   const headText = getContrastText(brand);
   const headTextSoft =
     headText === "#ffffff" ? "rgba(255,255,255,0.8)" : "rgba(31,41,55,0.7)";
-  // Set when a row is held: the usage modal opens on that coupon.
   const [usageCoupon, setUsageCoupon] = React.useState<DecryptedCoupon | null>(null);
 
   const handleOpenCode = (coupon: DecryptedCoupon) => {

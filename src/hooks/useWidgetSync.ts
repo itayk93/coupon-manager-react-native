@@ -3,7 +3,7 @@ import { AppState } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
-import { useCompanies } from "@/hooks/useAdminManagement";
+import { useCompanies } from "@/hooks/useCompanies";
 import { useProfile } from "@/hooks/useProfile";
 import { syncWidget } from "@/lib/widgetSync";
 import { clearWidgetData, isWidgetSupported } from "../../modules/coupon-widget";

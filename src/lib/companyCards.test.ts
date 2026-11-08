@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { companyCards } from "./companyCards";
-import type { DecryptedCoupon } from "@/hooks/useCoupons";
+import type { DecryptedCoupon } from "@/types/coupon";
 
 let nextId = 1;
 function coupon(company: string | null): DecryptedCoupon {

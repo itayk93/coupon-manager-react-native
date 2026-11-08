@@ -12,7 +12,7 @@ import { Search, Plus } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { useCompanies } from "@/hooks/useAdminManagement";
+import { useCompanies } from "@/hooks/useCompanies";
 
 const POPULAR_COMPANIES = [
   "BuyMe",
@@ -84,8 +84,14 @@ export function CompanyPickerModal({
   }, [companies]);
 
   const query = search.toLowerCase().trim();
-  const filtered = query
-    ? allCompanies.filter((comp) => comp.toLowerCase().includes(query))
+  // Every typed word must appear somewhere in the name, so "love card" finds
+  // "Love Gift Card".
+  const words = query.split(/\s+/).filter(Boolean);
+  const filtered = words.length
+    ? allCompanies.filter((comp) => {
+        const lower = comp.toLowerCase();
+        return words.every((w) => lower.includes(w));
+      })
     : allCompanies;
 
   const handleSelect = (companyName: string) => {
