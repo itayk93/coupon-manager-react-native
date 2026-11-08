@@ -1,4 +1,4 @@
-import type { ParsedCoupon } from "@/hooks/useCouponAI";
+import type { ParsedCoupon } from "@/types/coupon";
 
 const imports = new Map<string, ParsedCoupon[]>();
 

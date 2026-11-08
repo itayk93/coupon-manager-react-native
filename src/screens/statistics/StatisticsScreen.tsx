@@ -31,7 +31,8 @@ import { CompanySavingsBreakdown } from "@/components/dashboard/CompanySavingsBr
 import { StatusDrilldownModal } from "@/components/dashboard/StatusDrilldownModal";
 import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownModal";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
+import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
 import { useCouponSales } from "@/hooks/useCouponSales";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { useSavingsByMonth } from "@/hooks/useCouponUsage";
@@ -92,13 +93,11 @@ export function StatisticsScreen() {
     let active = 0;
     let fullyUsed = 0;
     let expired = 0;
-    const now = Date.now();
 
     coupons.forEach((c) => {
-      const rem = (c.value || 0) - (c.used_value || 0);
-      if (c.status === "נוצל" || rem <= 0) {
+      if (isCouponUsed(c)) {
         fullyUsed++;
-      } else if (c.expiration && new Date(c.expiration).getTime() < now) {
+      } else if (isCouponExpired(c)) {
         expired++;
       } else {
         active++;

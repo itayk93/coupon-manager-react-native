@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify } from "@/lib/notify";
-import { publicUserId } from "@/lib/userId";
+import { publicUserId } from "@/lib/entityId";
 
 export function useTriggerAutoUpdate() {
   const queryClient = useQueryClient();

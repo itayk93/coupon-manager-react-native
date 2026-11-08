@@ -247,7 +247,6 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
       const rows: ConsolidatedRow[] = [];
       const ledgerAmounts: number[] = [];
 
-      // Map coupon_usage
       (usageData || []).forEach((u) => {
         const details = u.details || u.action || "שימוש בקופון";
         if (isHiddenLedgerRow(details)) return;
@@ -267,7 +266,6 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
         });
       });
 
-      // Map coupon_transaction
       (txData || []).forEach((t) => {
         const amount = ledgerAmountFromTransaction(t.recharge_amount, t.usage_amount);
         const details = t.location || t.source || "עסקת קופון";
@@ -313,7 +311,6 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
         });
       }
 
-      // Sort rows ascending by timestamp (earliest to latest)
       rows.sort((a, b) => {
         if (!a.timestamp) return 1;
         if (!b.timestamp) return -1;

@@ -17,6 +17,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { notify } from "@/lib/notify";
+import { supabase } from "@/integrations/supabase/client";
 
 export function IssuesScreen() {
   const router = useRouter();
@@ -36,8 +37,18 @@ export function IssuesScreen() {
     setLoading(true);
 
     try {
-      // Simulate submission / send
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const { data, error } = await supabase.functions.invoke("send-emails", {
+        body: {
+          mode: "issue_report",
+          subject: subject.trim(),
+          details: description.trim(),
+          email: user?.email || "",
+          page_url: "app:/issues",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      notify.success("הפנייה נשלחה בהצלחה");
       router.back();
     } catch (e: any) {
       notify.error("שגיאה בשליחת הפנייה", e.message);

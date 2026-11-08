@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companyKey, groupCouponsByCompany } from "./companyName";
+import { companyKey } from "./companyName";
 
 describe("companyKey", () => {
   it("folds case and whitespace", () => {
@@ -22,36 +22,3 @@ describe("companyKey", () => {
   });
 });
 
-describe("groupCouponsByCompany", () => {
-  it("merges case variants into one group and keeps the first display name", () => {
-    const groups = groupCouponsByCompany([
-      { company: "GoodPharm" },
-      { company: "goodpharm" },
-      { company: "Wolt" },
-    ]);
-    expect(groups).toHaveLength(2);
-    expect(groups[0].company).toBe("GoodPharm");
-    expect(groups[0].items).toHaveLength(2);
-  });
-
-  it("merges known Hebrew and English brand names", () => {
-    const groups = groupCouponsByCompany([
-      { company: "GoodPharm" },
-      { company: "גוד פארם" },
-    ]);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].items).toHaveLength(2);
-  });
-
-  it("merges XTRA and Mishloha aliases", () => {
-    const groups = groupCouponsByCompany([
-      { company: "XTRA" },
-      { company: "אקסטרה" },
-      { company: "משלוחה" },
-      { company: "משלוחה-ארצי" },
-    ]);
-    expect(groups).toHaveLength(2);
-    expect(groups[0].items).toHaveLength(2);
-    expect(groups[1].items).toHaveLength(2);
-  });
-});

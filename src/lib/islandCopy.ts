@@ -1,4 +1,4 @@
-import type { ParsedCoupon } from "@/hooks/useCouponAI";
+import type { ParsedCoupon } from "@/types/coupon";
 import { formatDateShort } from "@/lib/formatDate";
 import { formatIls, formatIlsCompact } from "@/lib/formatIls";
 

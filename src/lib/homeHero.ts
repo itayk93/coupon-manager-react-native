@@ -1,4 +1,5 @@
 import type { DecryptedCoupon } from "@/types/coupon";
+import { daysUntil } from "./formatDate";
 import { couponRemainingValue, isSpendableCoupon } from "./couponTotals";
 
 /**
@@ -31,21 +32,7 @@ export type HomeHeroSummary = {
   linksToExpiring: boolean;
 };
 
-/**
- * Whole calendar days from today to the expiry date, both read as dates rather
- * than instants, so a coupon expiring tonight is 0 and not a fraction of a day.
- */
-export function daysUntilExpiry(
-  expiration: string | null | undefined,
-  now: Date = new Date()
-): number | null {
-  if (!expiration) return null;
-  const target = new Date(expiration);
-  if (Number.isNaN(target.getTime())) return null;
-  const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
-}
+export const daysUntilExpiry = daysUntil;
 
 export type ExpiringCoupon = { coupon: DecryptedCoupon; days: number };
 

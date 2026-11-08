@@ -23,13 +23,15 @@ import { NewslettersTab } from "@/screens/admin/NewslettersTab";
 import { WidgetDebugPanel } from "@/components/WidgetDebugPanel";
 import {
   useManageUsers,
-  useCompanies,
-  useUpsertCompany,
-  useDeleteCompany,
   useAdminMessages,
   useCreateAdminMessage,
   useDeleteAdminMessage,
 } from "@/hooks/useAdminManagement";
+import {
+  useCompanies,
+  useUpsertCompany,
+  useDeleteCompany,
+} from "@/hooks/useCompanies";
 import { useAdminTags, useRenameTag, useDeleteTag } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,11 +84,9 @@ export function AdminDashboardScreen() {
     if (TAB_KEYS.includes(tabParam as AdminTab)) setActiveTab(tabParam as AdminTab);
   }, [tabParam]);
 
-  // Users
   const [userSearch, setUserSearch] = useState("");
   const { data: users = [], isLoading: loadingUsers } = useManageUsers(userSearch);
 
-  // Companies
   const { data: companies = [], isLoading: loadingCompanies } = useCompanies();
   const upsertCompany = useUpsertCompany();
   const deleteCompany = useDeleteCompany();
@@ -94,12 +94,10 @@ export function AdminDashboardScreen() {
   const [newCompanyLogo, setNewCompanyLogo] = useState("");
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
 
-  // Tags
   const { data: tags = [], isLoading: loadingTags } = useAdminTags();
   const renameTag = useRenameTag();
   const deleteTag = useDeleteTag();
 
-  // Messages
   const { data: messages = [], isLoading: loadingMessages } = useAdminMessages();
   const createMessage = useCreateAdminMessage();
   const deleteMessage = useDeleteAdminMessage();

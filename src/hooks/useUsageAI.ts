@@ -1,25 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
-
-export type ParsedUsage = {
-  id: string;
-  amount: number;
-  placeName: string;
-  usedAt: string | null;
-  details: string;
-  placeAddress: string;
-  latitude: number | null;
-  longitude: number | null;
-};
-
-export type ParsedUsageScreenshot = {
-  couponCode: string | null;
-  couponCodeConfidence: number;
-  companyName: string | null;
-  warnings: string[];
-  usages: ParsedUsage[];
-};
+import type { ParsedUsage, ParsedUsageScreenshot } from "@/types/coupon";
+export type { ParsedUsage, ParsedUsageScreenshot };
 
 export async function verifyCouponCodeInScreenshot(imageBase64: string, candidateCouponCode: string): Promise<boolean> {
   const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {

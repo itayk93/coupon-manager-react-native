@@ -62,10 +62,6 @@ export function totalRealizedSavings(coupons: SavingsCoupon[]): number {
   return coupons.reduce((sum, coupon) => sum + realizedSavings(coupon), 0);
 }
 
-export function totalGiftValueUsed(coupons: SavingsCoupon[]): number {
-  return coupons.reduce((sum, coupon) => sum + giftValueUsed(coupon), 0);
-}
-
 // ------------------------------------------------------------ by usage date
 
 export type UsageLedgerRow = {

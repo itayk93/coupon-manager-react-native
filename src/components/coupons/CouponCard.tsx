@@ -19,7 +19,8 @@ import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
+import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
 
 
 type CouponCardProps = {
@@ -34,27 +35,7 @@ type CouponCardProps = {
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 import { formatIls } from "@/lib/formatIls";
-
-function formatDateShort(dateStr: string | null) {
-  if (!dateStr) return null;
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  } catch {
-    return dateStr;
-  }
-}
-
-function daysUntil(expiration: string | null) {
-  if (!expiration) return null;
-  const ms = new Date(expiration).getTime() - Date.now();
-  if (Number.isNaN(ms)) return null;
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
-}
+import { formatDateShort, daysUntil } from "@/lib/formatDate";
 
 /**
  * Coupon card from the redesign: a brand-coloured header with the company logo
@@ -79,8 +60,8 @@ export function CouponCard({
   const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
 
   const days = daysUntil(coupon.expiration);
-  const isFullyUsed = coupon.status === "נוצל" || remaining <= 0;
-  const isExpired = days !== null && days < 0;
+  const isFullyUsed = isCouponUsed(coupon);
+  const isExpired = isCouponExpired(coupon);
   const isExpiringSoon = days !== null && days >= 0 && days <= 14;
 
   const brand = getCompanyColor(coupon.company || "");

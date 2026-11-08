@@ -27,6 +27,13 @@ describe("daysUntil", () => {
     expect(daysUntil("2000-01-01")).toBeLessThan(0);
   });
 
+  it("calculates exact calendar days with a reference date", () => {
+    const base = new Date(2026, 8, 10, 12, 0);
+    expect(daysUntil("2026-09-10", base)).toBe(0);
+    expect(daysUntil("2026-09-11", base)).toBe(1);
+    expect(daysUntil("2026-09-08", base)).toBe(-2);
+  });
+
   it("returns null for missing or invalid dates", () => {
     expect(daysUntil(null)).toBeNull();
     expect(daysUntil("garbage")).toBeNull();

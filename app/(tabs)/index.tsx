@@ -1,1 +1,1 @@
-export { HomeAltScreen as default } from "@/screens/dashboard/HomeAltScreen";
+export { HomeScreen as default } from "@/screens/dashboard/HomeScreen";

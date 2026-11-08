@@ -33,48 +33,19 @@ import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
 import { expiringSoon } from "@/lib/homeHero";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
 
 /**
  * The home screen.
  *
- * It spent a while behind an admin gate and then behind a settings switch,
- * which is why the file is still called `HomeAltScreen` — the name is the only
- * thing left of that. `DashboardScreen` is what it replaced; that file stays in
- * the tree, unreferenced, so the old screen can be read and lifted from rather
- * than reconstructed from git.
- *
- * What it is testing: a home screen that answers "how much do I have, what is
- * about to expire, and what do I reach for" in one glance, and gets out of the
- * way. The mascot holds the balance, the search field is the primary action,
- * and the coupons sit below in two short sections, a card per row.
- *
- * The sections are short on purpose. An earlier version drew them as small
- * tiles in horizontal rails, which gave the screen a shape of its own but cost
- * the card's code, progress bar, copy button and usage button — most of what
- * you open a coupon for. So the card here is `CouponCard`, the one the coupons
- * list and the dashboard render, and what keeps this screen from being the list
- * is the shortlist: `MAX_SECTION_CARDS` a section, not the whole wallet.
- *
- * `ExpiringCouponsBanner` is deliberately absent: the hero already says how
- * many coupons are close, from the same `homeHero` numbers. The banner is
- * untouched and still used by the current dashboard.
- *
- * The end of the page is also a way out of it. Keep dragging once the last
- * section has run out and a tab rises out of the bottom edge offering a new
- * coupon — the one thing this screen is about that is not already on it. See
- * `PullUpAction`; the button in the corner does the same job for anyone who
- * never pulls, so the gesture is only ever a shortcut, never the only door.
- */
-
-/**
- * Cards per section. A full-width card is taller than the tile it replaced, and
- * a home screen you have to scroll to read is the coupons list with extra
- * steps — the link at the foot of the screen is what the rest is for.
+ * Answers "how much do I have, what is about to expire, and what do I reach for"
+ * in one glance, and gets out of the way. The mascot holds the balance, the
+ * search field is the primary action, and the coupons sit below in two short
+ * sections, a card per row.
  */
 const MAX_SECTION_CARDS = 4;
 
-export function HomeAltScreen() {
+export function HomeScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { data: coupons = [], isLoading, refetch, isRefetching } = useCoupons();
@@ -372,3 +343,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+

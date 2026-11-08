@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { USER_COLUMNS } from "@/lib/userColumns";
+import { USER_COLUMNS } from "@/lib/tableColumns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { User as UserRow } from "@/integrations/supabase";

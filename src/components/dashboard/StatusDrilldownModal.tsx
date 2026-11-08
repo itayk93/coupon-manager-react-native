@@ -4,13 +4,13 @@ import { useLastNonNull } from "@/hooks/useLastNonNull";
 import { useRouter } from "expo-router";
 import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { couponRemainingValue } from "@/lib/couponTotals";
+import { couponRemainingValue, isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { formatIls } from "@/lib/formatIls";
 import { CouponCard } from "@/components/coupons/CouponCard";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
 
 export type CouponStatusFilter = "active" | "used" | "expired";
 
@@ -37,13 +37,9 @@ function filterCouponsByStatus(
   coupons: DecryptedCoupon[],
   filter: CouponStatusFilter
 ): DecryptedCoupon[] {
-  const now = Date.now();
-
   return coupons.filter((coupon) => {
-    const remaining = (coupon.value || 0) - (coupon.used_value || 0);
-    const isUsed = coupon.status === "נוצל" || remaining <= 0;
-    const isExpired =
-      coupon.expiration && new Date(coupon.expiration).getTime() < now;
+    const isUsed = isCouponUsed(coupon);
+    const isExpired = isCouponExpired(coupon);
 
     if (filter === "used") return isUsed;
     if (filter === "expired") return !isUsed && isExpired;

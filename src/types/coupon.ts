@@ -21,3 +21,36 @@ export type DecryptedCoupon = Omit<
   card_exp: string | null;
   is_shared_with_me?: boolean;
 };
+
+export type ParsedCoupon = {
+  company: string | null;
+  code: string | null;
+  value: number | null;
+  cost: number | null;
+  expiration: string | null;
+  description: string | null;
+  cvv: string | null;
+  card_exp: string | null;
+  redemption_url?: string | null;
+};
+
+export type ParsedUsage = {
+  id: string;
+  amount: number;
+  placeName: string;
+  usedAt: string | null;
+  details: string;
+  placeAddress: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export type ParsedUsageScreenshot = {
+  couponCode: string | null;
+  couponCodeConfidence: number;
+  companyName: string | null;
+  warnings: string[];
+  usages: ParsedUsage[];
+};
+
+

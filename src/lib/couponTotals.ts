@@ -1,4 +1,5 @@
 import type { DecryptedCoupon } from "@/types/coupon";
+import { daysUntil } from "./formatDate";
 
 /**
  * One definition of "a coupon that still counts", shared by the dashboard, the
@@ -17,6 +18,16 @@ export function couponRemainingValue(coupon: DecryptedCoupon): number {
   return (coupon.value ?? 0) - (coupon.used_value ?? 0);
 }
 
+export function isCouponUsed(coupon: DecryptedCoupon): boolean {
+  return coupon.status === "נוצל" || couponRemainingValue(coupon) <= 0;
+}
+
+export function isCouponExpired(coupon: DecryptedCoupon, now = new Date()): boolean {
+  if (!coupon.expiration) return false;
+  const days = daysUntil(coupon.expiration, now);
+  return days !== null && days < 0;
+}
+
 /**
  * Total still available to spend. One-time coupons are included: their whole
  * face value is spendable until they are marked used, which is exactly what the
@@ -25,3 +36,4 @@ export function couponRemainingValue(coupon: DecryptedCoupon): number {
 export function totalRemainingValue(coupons: DecryptedCoupon[]): number {
   return coupons.filter(isSpendableCoupon).reduce((sum, c) => sum + couponRemainingValue(c), 0);
 }
+

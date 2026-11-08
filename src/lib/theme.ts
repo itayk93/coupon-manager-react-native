@@ -8,7 +8,6 @@ import { Platform, StyleSheet } from "react-native";
  * still works) and re-derived from the same brand blue rather than dropped.
  */
 export const palette = {
-  // Brand
   primary: "#1f6fd1",
   primaryDark: "#154a8f",
   primaryDeep: "#1a5fc0",
@@ -23,7 +22,6 @@ export const palette = {
   coralBg: "#fff0eb",
   coralBorder: "#f7c2b3",
 
-  // Status
   success: "#16a34a",
   successBg: "#dcfce7",
   successText: "#15803d",
@@ -97,7 +95,6 @@ export function getTheme(_mode: ThemeMode) {
   return {
     isDark: false,
 
-    // Surfaces
     background: palette.lightBg,
     shell: palette.lightShell,
     card: palette.lightCard,
@@ -110,14 +107,12 @@ export function getTheme(_mode: ThemeMode) {
     inputBorder: palette.lightInputBorder,
     headerBg: palette.headerBg,
 
-    // Type
     text: palette.lightText,
     textSecondary: palette.lightTextSecondary,
     textMuted: palette.lightTextMuted,
     textSubtle: palette.lightTextSubtle,
     label: palette.lightLabel,
 
-    // Brand
     primary: palette.primary,
     primaryDark: palette.primaryDark,
     primaryDeep: palette.primaryDeep,
@@ -131,7 +126,6 @@ export function getTheme(_mode: ThemeMode) {
     coralBg: palette.coralBg,
     coralBorder: palette.coralBorder,
 
-    // Status
     success: palette.success,
     successBg: palette.successBg,
     successText: palette.successText,

@@ -13,17 +13,8 @@ import {
   isActivationOffer,
 } from "@/lib/couponTextFields";
 
-export type ParsedCoupon = {
-  company: string | null;
-  code: string | null;
-  value: number | null;
-  cost: number | null;
-  expiration: string | null;
-  description: string | null;
-  cvv: string | null;
-  card_exp: string | null;
-  redemption_url?: string | null;
-};
+import type { ParsedCoupon } from "@/types/coupon";
+export type { ParsedCoupon };
 
 function isLikelyCoupon(candidate: ParsedCoupon): boolean {
   const hasCode = Boolean(candidate.code && candidate.code.trim().length >= 4);

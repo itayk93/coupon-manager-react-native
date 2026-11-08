@@ -15,7 +15,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { expiringSoon } from "@/lib/homeHero";
 import { EXPIRY_PERFORMANCE, expiryLevel, type ExpiryLevel } from "@/lib/expiryUrgency";
 import { couponRemainingValue } from "@/lib/couponTotals";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
 import { formatIls } from "@/lib/formatIls";
 import { fonts } from "@/lib/theme";
 

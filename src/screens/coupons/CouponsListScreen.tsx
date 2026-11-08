@@ -48,7 +48,9 @@ import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
+import { daysUntil } from "@/lib/formatDate";
+import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
 import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
@@ -365,7 +367,6 @@ export function CouponsListScreen() {
     return coupons.filter((coupon) => {
       if (focusIds && !focusIds.includes(coupon.public_id) && !focusIds.includes(String(coupon.id))) return false;
 
-      // Search
       if (
         !matchesCouponSearch(coupon, search) &&
         !(currentSearchHasMerchantResults && merchantResultIds.has(coupon.id))
@@ -373,7 +374,6 @@ export function CouponsListScreen() {
 
       if (!isCompanyFiltered(coupon)) return false;
 
-      // Tag filter
       if (selectedTag) {
         const cTags = tagsMap[coupon.id] || [];
         if (!cTags.includes(selectedTag)) return false;
@@ -390,14 +390,10 @@ export function CouponsListScreen() {
     const couponUsage = usageStats?.usageCountByCoupon || {};
 
     for (const coupon of matchedCoupons) {
-      const remaining = (coupon.value || 0) - (coupon.used_value || 0);
-      const isExpired =
-        coupon.expiration && new Date(coupon.expiration).getTime() < Date.now();
-      const isUsed = coupon.status === "נוצל" || remaining <= 0;
+      const isUsed = isCouponUsed(coupon);
+      const isExpired = isCouponExpired(coupon);
 
-      const daysLeft = coupon.expiration
-        ? Math.ceil((new Date(coupon.expiration).getTime() - Date.now()) / 86400000)
-        : null;
+      const daysLeft = daysUntil(coupon.expiration);
       const matchesExpiring = daysLeft !== null && daysLeft >= 0 && daysLeft <= 14;
 
       if (statusFilter === "expiring" && !matchesExpiring) continue;
@@ -411,7 +407,6 @@ export function CouponsListScreen() {
       }
     }
 
-    // Sort coupons in each section descending by latest usage timestamp, then usage frequency, then date_added
     const sortByUsage = (a: DecryptedCoupon, b: DecryptedCoupon) => {
       const latestA = usageStats?.latestUsageByCoupon?.[a.id] || 0;
       const latestB = usageStats?.latestUsageByCoupon?.[b.id] || 0;

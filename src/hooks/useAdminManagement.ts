@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { USER_COLUMNS } from "@/lib/userColumns";
 import {
   ADMIN_MESSAGES_COLUMNS,
   NEWSLETTERS_COLUMNS,
+  USER_COLUMNS,
 } from "@/lib/tableColumns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +17,6 @@ function useAdminGuard() {
   return isAdmin;
 }
 
-// ---------- Users ----------
 export function useManageUsers(search = "") {
   const isAdmin = useAdminGuard();
   return useQuery({
@@ -33,10 +32,6 @@ export function useManageUsers(search = "") {
   });
 }
 
-// ---------- Companies / Logos ----------
-export { useCompanies, useUpsertCompany, useDeleteCompany } from "./useCompanies";
-
-// ---------- Newsletters ----------
 export function useNewsletters() {
   const isAdmin = useAdminGuard();
   return useQuery({
@@ -100,7 +95,6 @@ export function useDeleteNewsletter() {
   });
 }
 
-// ---------- Admin broadcast messages ----------
 export function useAdminMessages() {
   return useQuery({
     queryKey: ["admin_messages"],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ParsedCoupon } from "@/hooks/useCouponAI";
+import type { ParsedCoupon } from "@/types/coupon";
 import { parsedCouponIsland, recordedUsageIsland } from "./islandCopy";
 
 const coupon = (overrides: Partial<ParsedCoupon> = {}): ParsedCoupon => ({

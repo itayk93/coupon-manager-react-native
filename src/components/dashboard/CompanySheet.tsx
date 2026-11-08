@@ -32,7 +32,8 @@ import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateShort, daysUntil } from "@/lib/formatDate";
 import { companyKey } from "@/lib/companyName";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
+import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -314,8 +315,8 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
               const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
 
               const days = daysUntil(c.expiration);
-              const isFullyUsed = c.status === "נוצל" || remaining <= 0;
-              const isExpired = days !== null && days < 0;
+              const isFullyUsed = isCouponUsed(c);
+              const isExpired = isCouponExpired(c);
               const isExpiringSoon = days !== null && days >= 0 && days <= 14;
 
               const formattedExpiry = formatDateShort(c.expiration);

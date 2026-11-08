@@ -7,7 +7,8 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { isSpendableCoupon } from "@/lib/couponTotals";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
+import { daysUntil } from "@/lib/formatDate";
 import { EXPIRY_PERFORMANCE, daysPhrase, expiryEmphasis, expiryLevel } from "@/lib/expiryUrgency";
 import { fitFontSize } from "@/lib/fitText";
 import { ExpiryGlow } from "@/components/dashboard/ExpiryGlow";
@@ -45,18 +46,6 @@ function localToday(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-/**
- * Whole days from today to the expiry date, both read as calendar dates so a
- * coupon expiring tonight reads as 0 rather than a fraction of a day.
- */
-function daysUntil(expiration: string): number | null {
-  const target = new Date(expiration);
-  if (Number.isNaN(target.getTime())) return null;
-  const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
-}
 
 type Tone = { bg: string; border: string; text: string; icon: string };
 

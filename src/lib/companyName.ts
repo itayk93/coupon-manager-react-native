@@ -23,25 +23,3 @@ export function companyKey(name: string | null | undefined): string {
   return COMPANY_ALIASES[normalized] || normalized;
 }
 
-/**
- * Group coupons by company while keeping the display name the user typed.
- * Returns entries ordered by first appearance in the input list.
- */
-export function groupCouponsByCompany<T extends { company?: string | null }>(
-  coupons: T[],
-): Array<{ company: string; items: T[] }> {
-  const byKey = new Map<string, { company: string; items: T[] }>();
-  for (const coupon of coupons) {
-    const key = companyKey(coupon.company);
-    const entry = byKey.get(key);
-    if (entry) {
-      entry.items.push(coupon);
-    } else {
-      byKey.set(key, {
-        company: (coupon.company || "ללא חברה").trim(),
-        items: [coupon],
-      });
-    }
-  }
-  return Array.from(byKey.values());
-}

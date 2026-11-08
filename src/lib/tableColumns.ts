@@ -18,3 +18,6 @@ export const OPT_OUTS_COLUMNS = 'user_id,opted_out,timestamp' as const;
 export const NOTIFICATIONS_COLUMNS = 'id,user_id,type,title,message,link,shown,viewed,hide_from_view,timestamp' as const;
 
 export const NOTIFICATION_PREFERENCES_COLUMNS = 'user_id,email,push,in_app,windows,quiet_until,timezone,daily_within,type_channels' as const;
+
+export const USER_COLUMNS = 'id,public_id,email,first_name,last_name,gender,is_confirmed,is_admin,slots,slots_automatic_coupons,created_at,profile_description,profile_image,is_deleted,google_id,newsletter_subscription,telegram_monthly_summary,allow_widget_access,push_token,auth_user_id' as const;
+

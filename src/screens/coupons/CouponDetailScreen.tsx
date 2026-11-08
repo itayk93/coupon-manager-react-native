@@ -66,13 +66,12 @@ import { AppSwitch } from "@/components/ui/AppSwitch";
 import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
-import { formatDateHebrew } from "@/lib/formatDate";
+import { formatDateHebrew, daysUntil } from "@/lib/formatDate";
 import { effectiveUsedValue } from "@/lib/couponLedger";
 import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { SaleForm } from "@/components/coupons/SaleForm";
-import { SaleCelebration } from "@/components/coupons/SaleCelebration";
-import { pushRedemptionCelebration } from "@/components/ui/CelebrationOverlay";
+import { CelebrationOverlay, pushRedemptionCelebration } from "@/components/ui/CelebrationOverlay";
 import { redemptionCelebration } from "@/lib/celebrationTrigger";
 import { useRecordManualSale } from "@/hooks/useCouponSales";
 import { useCouponMerchantDirectory } from "@/hooks/useCouponMerchantSearch";
@@ -276,9 +275,7 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
       typeof row.longitude === "number"
   );
 
-  const daysLeft = coupon.expiration
-    ? Math.ceil((new Date(coupon.expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    : null;
+  const daysLeft = daysUntil(coupon.expiration);
 
   const handleDelete = () => {
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
@@ -1056,7 +1053,13 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
         />
       </Modal>
 
-      {isCelebrating ? <SaleCelebration onDone={() => router.replace("/coupons")} /> : null}
+      {isCelebrating ? (
+        <CelebrationOverlay
+          title="מכרת קופון!"
+          subtitle="נרשם אצלך בקופונים שמכרתי"
+          onDone={() => router.replace("/coupons")}
+        />
+      ) : null}
 
       <Modal
         visible={selectedMapLocation !== null}

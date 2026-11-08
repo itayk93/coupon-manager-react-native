@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cacheParsedUsage, clearParsedUsageCache, getCachedParsedUsage } from "./usageParseCache";
-import type { ParsedUsageScreenshot } from "@/hooks/useUsageAI";
+import type { ParsedUsageScreenshot } from "@/types/coupon";
 
 const parsed = (code: string | null): ParsedUsageScreenshot => ({
   couponCode: code,

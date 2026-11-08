@@ -25,7 +25,7 @@ import {
 } from "@/hooks/useSharing";
 import { useCoupons } from "@/hooks/useCoupons";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
-import { couponRouteId } from "@/lib/couponId";
+import { couponRouteId } from "@/lib/entityId";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useContentStyle } from "@/hooks/useResponsive";
 import { ResponsiveGrid } from "@/components/layout/ResponsiveGrid";

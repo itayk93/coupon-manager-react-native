@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { publicUserId } from "@/lib/userId";
+import { publicUserId } from "@/lib/entityId";
 
 export type PageTutorialKey = "coupon_import";
 

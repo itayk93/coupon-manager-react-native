@@ -29,12 +29,20 @@ export function formatDateHebrew(value: string | null | undefined): string {
   });
 }
 
-/** Whole days from now until `value`; negative when already past. */
-export function daysUntil(value: string | null | undefined): number | null {
+/**
+ * Whole calendar days from today until `value`; negative when already past.
+ * 0 is today, 1 is tomorrow.
+ */
+export function daysUntil(
+  value: string | null | undefined,
+  now: Date = new Date()
+): number | null {
   if (!value) return null;
-  const ms = new Date(value).getTime() - Date.now();
-  if (Number.isNaN(ms)) return null;
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+  const target = new Date(value);
+  if (Number.isNaN(target.getTime())) return null;
+  const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((startOfTarget.getTime() - startOfToday.getTime()) / 86400000);
 }
 
 /**

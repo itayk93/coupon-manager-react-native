@@ -1,4 +1,4 @@
-import type { ParsedUsageScreenshot } from "@/hooks/useUsageAI";
+import type { ParsedUsageScreenshot } from "@/types/coupon";
 
 /**
  * In-memory cache of screenshot parse results, keyed by the shared-import id.

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { CouponCard } from "@/components/coupons/CouponCard";
-import { useContentWidth } from "@/hooks/useContentWidth";
+import { useResponsive } from "@/hooks/useResponsive";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
@@ -41,7 +41,8 @@ export function CouponSection({
   keyPrefix,
 }: CouponSectionProps) {
   const { theme } = useAppTheme();
-  const isTablet = useContentWidth() >= TABLET_MIN_WIDTH;
+  const { width } = useResponsive();
+  const isTablet = width >= TABLET_MIN_WIDTH;
 
   if (coupons.length === 0) return null;
 
