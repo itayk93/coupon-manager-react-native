@@ -208,9 +208,16 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
           link: '/coupons',
         };
       }
+      // Spell out the arithmetic: "saved 21" alone says nothing about what the
+      // coupon was worth or what it cost. Older rows without the figures keep
+      // the short sentence.
+      const hasBreakdown = Number(payload.value) > 0 && Number(payload.paid) > 0
+        && Number(payload.saved) > 0;
       return {
         title: 'הקופון נוצל עד הסוף 💪',
-        body: `${payload.company} נסגר עם חיסכון של ${money(payload.saved)}.`,
+        body: hasBreakdown
+          ? `קופון של ${money(payload.value)} ב${payload.company}, ששילמת עליו ${money(payload.paid)}. חסכת ${money(payload.saved)}.`
+          : `${payload.company} נסגר עם חיסכון של ${money(payload.saved)}.`,
         link: '/statistics',
       };
     }
