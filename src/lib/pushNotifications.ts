@@ -197,8 +197,8 @@ export async function sendTestPushToUser(userEmail: string) {
     action: 'test-user',
     user_email: userEmail,
     payload: {
-      title: rtlText('הקופון נוצל עד הסוף 💪'),
-      body: rtlText('קופון של 100.00 ש״ח ב־Wolt, ששילמת עליו 79.00 ש״ח. חסכת 21.00 ש״ח.'),
+      title: rtlText('סחטת אותו עד הטיפה האחרונה 💪'),
+      body: rtlText('Wolt: שילמת 79.00 ש״ח, קיבלת 100.00 ש״ח. נשארו לך 21.00 ש״ח בכיס 😉'),
       dir: 'rtl',
       url: '/notifications',
       tag: 'coupon-master-test',
