@@ -214,9 +214,9 @@ export function copyFor(type: NotificationTypeId, payload: Record<string, any>):
       const hasBreakdown = Number(payload.value) > 0 && Number(payload.paid) > 0
         && Number(payload.saved) > 0;
       return {
-        title: 'סחטת אותו עד הטיפה האחרונה 💪',
+        title: hasBreakdown ? `חסכת ${money(payload.saved)} 🎉` : 'הקופון נוצל עד הסוף 💪',
         body: hasBreakdown
-          ? `${payload.company}: שילמת ${money(payload.paid)}, קיבלת ${money(payload.value)}. נשארו לך ${money(payload.saved)} בכיס 😉`
+          ? `הקופון של ${payload.company} נוצל עד הסוף. שילמת ${money(payload.paid)} וקיבלת ${money(payload.value)}.`
           : `${payload.company} נסגר עם חיסכון של ${money(payload.saved)}.`,
         link: '/statistics',
       };
