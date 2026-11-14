@@ -40,17 +40,21 @@ export async function requireAdmin(req: Request) {
  */
 export function extractClientIp(req: Request): string {
   // The hosted platform sits behind Cloudflare, which overwrites
-  // cf-connecting-ip with the real client IP. A client can prepend any value
-  // to x-forwarded-for, so the left-most XFF entry is attacker-controlled and
-  // must not be trusted for the admin allowlist or audit records.
+  // cf-connecting-ip with the real client IP. This is only as trustworthy as
+  // the ingress path: if an origin were reachable without Cloudflare in
+  // front, this header would also be client-controlled. The admin IP
+  // allowlist therefore stays an advisory layer on top of the JWT check,
+  // never proof of origin.
   const cfIp = req.headers.get('cf-connecting-ip')?.trim();
   if (cfIp) return cfIp;
-  // Self-host / local fallback: without Cloudflare in front the left-most XFF
-  // entry is still client-controlled, so this is best-effort only.
+  // Fallback (self-host / local): proxies APPEND to x-forwarded-for, so the
+  // right-most entry is the one the nearest proxy vouches for; the left-most
+  // is whatever the client claimed. Best-effort only.
   const forwarded = req.headers.get('x-forwarded-for');
   if (forwarded) {
-    const first = forwarded.split(',')[0]?.trim();
-    if (first) return first;
+    const entries = forwarded.split(',').map((entry) => entry.trim()).filter(Boolean);
+    const last = entries[entries.length - 1];
+    if (last) return last;
   }
   const realIp = req.headers.get('x-real-ip');
   if (realIp) return realIp.trim();
@@ -100,4 +104,4 @@ export function isServiceRoleCall(req: Request): boolean {
   let mismatch = 0;
   for (let i = 0; i < token.length; i += 1) mismatch |= token.charCodeAt(i) ^ serviceKey.charCodeAt(i);
   return mismatch === 0;
-                                     }
+}
