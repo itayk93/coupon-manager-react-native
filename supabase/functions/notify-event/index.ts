@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
         // A one-time coupon has no meaningful balance: its face value is usually
         // exactly its cost, so "saved" would read as 0. The message for it names
         // the action instead of an amount.
-        payload: isOneTime ? { company: coupon.company, isOneTime: true } : { company: coupon.company, saved },
+        payload: isOneTime ? { company: coupon.company, isOneTime: true } : { company: coupon.company, saved, value: coupon.value || 0, paid: coupon.cost || 0 },
         dedupeKey: String(coupon.id),
         // They are looking at the screen right now. Holding this until nine in
         // the morning would celebrate something they had forgotten about.
