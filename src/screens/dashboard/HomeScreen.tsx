@@ -31,6 +31,7 @@ import { isSpendableCoupon } from "@/lib/couponTotals";
 import { onTabRetap } from "@/lib/tabBarRetap";
 import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
+import { dashboardVisibleCoupons } from "@/lib/dashboardCouponOrder";
 import { widgetSelection } from "@/lib/widgetSelection";
 import { expiringSoon } from "@/lib/homeHero";
 import { couponRouteId } from "@/lib/entityId";
@@ -80,23 +81,10 @@ export function HomeScreen() {
   // Same ordering the dashboard uses: most recently used first, then most
   // often used, then newest. Imported rather than re-invented so a coupon can
   // never be "recent" on one screen and buried on the other.
-  const visibleCoupons = useMemo(() => {
-    const spendable = coupons.filter(isSpendableCoupon);
-    const couponUsage = usageStats?.usageCountByCoupon || {};
-    return spendable.sort((a, b) => {
-      const latestA = usageStats?.latestUsageByCoupon?.[a.id] || 0;
-      const latestB = usageStats?.latestUsageByCoupon?.[b.id] || 0;
-      if (latestA !== latestB) return latestB - latestA;
-
-      const usageA = couponUsage[a.id] || 0;
-      const usageB = couponUsage[b.id] || 0;
-      if (usageA !== usageB) return usageB - usageA;
-
-      const dateA = a.date_added ? new Date(a.date_added).getTime() : 0;
-      const dateB = b.date_added ? new Date(b.date_added).getTime() : 0;
-      return dateB - dateA;
-    });
-  }, [coupons, usageStats]);
+  const visibleCoupons = useMemo(
+    () => dashboardVisibleCoupons(coupons, usageStats),
+    [coupons, usageStats]
+  );
 
   const expiring = useMemo(
     () => expiringSoon(coupons).slice(0, MAX_SECTION_CARDS).map((entry) => entry.coupon),
