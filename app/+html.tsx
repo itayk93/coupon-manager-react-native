@@ -15,11 +15,7 @@ export default function Root({ children }: PropsWithChildren) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
         <ScrollViewStyleReset />
-        <style
-          dangerouslySetInnerHTML={{
-            __html: "[data-headline]{text-wrap:balance}",
-          }}
-        />
+        <style>{"[data-headline]{text-wrap:balance}"}</style>
       </head>
       <body>{children}</body>
     </html>
