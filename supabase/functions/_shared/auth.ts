@@ -39,6 +39,14 @@ export async function requireAdmin(req: Request) {
  * rejected.
  */
 export function extractClientIp(req: Request): string {
+  // The hosted platform sits behind Cloudflare, which overwrites
+  // cf-connecting-ip with the real client IP. A client can prepend any value
+  // to x-forwarded-for, so the left-most XFF entry is attacker-controlled and
+  // must not be trusted for the admin allowlist or audit records.
+  const cfIp = req.headers.get('cf-connecting-ip')?.trim();
+  if (cfIp) return cfIp;
+  // Self-host / local fallback: without Cloudflare in front the left-most XFF
+  // entry is still client-controlled, so this is best-effort only.
   const forwarded = req.headers.get('x-forwarded-for');
   if (forwarded) {
     const first = forwarded.split(',')[0]?.trim();
@@ -92,4 +100,4 @@ export function isServiceRoleCall(req: Request): boolean {
   let mismatch = 0;
   for (let i = 0; i < token.length; i += 1) mismatch |= token.charCodeAt(i) ^ serviceKey.charCodeAt(i);
   return mismatch === 0;
-}
+                                     }
