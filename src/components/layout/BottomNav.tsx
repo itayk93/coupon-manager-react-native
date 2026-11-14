@@ -154,10 +154,24 @@ export function BottomNav() {
             accessibilityLabel={item.label}
             accessibilityState={{ selected: active }}
           >
-            <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
-              <item.Icon color={color} size={20} strokeWidth={1.8} />
+            {/*
+              Active tab reads as one tinted capsule wrapping the same
+              icon-over-label stack the inactive tabs use (reference: the
+              lime pill), so the label always gets its full width and the
+              pill never fights four neighbours for room.
+            */}
+            <View
+              style={[
+                active
+                  ? [styles.activePill, { backgroundColor: `${theme.primary}1F` }]
+                  : styles.itemStack,
+              ]}
+            >
+              <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
+                <item.Icon color={color} size={20} strokeWidth={1.8} />
+              </View>
+              <Text style={[styles.label, { color }]} numberOfLines={1}>{item.label}</Text>
             </View>
-            <Text style={[styles.label, { color }]}>{item.label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -169,9 +183,20 @@ const styles = StyleSheet.create({
   bar: {
     // row-reverse so the first item lands on the right.
     flexDirection: "row-reverse",
-    borderTopWidth: 1,
+    // Floating card: detached from the screen edges, rounded, lifted by a
+    // soft shadow (reference mock) rather than a docked strip with a rule.
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 24,
+    borderWidth: 1,
     paddingTop: 10,
+    paddingHorizontal: 6,
     position: "relative",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   systemNavSeparator: {
     position: "absolute",
@@ -179,8 +204,24 @@ const styles = StyleSheet.create({
     right: 0,
     height: StyleSheet.hairlineWidth,
   },
+  itemStack: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+  },
+  activePill: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
   item: {
     flex: 1,
+    // Flex children keep their content's minimum width unless told otherwise;
+    // without this the active pill's label pushes the whole slot wider.
+    minWidth: 0,
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
