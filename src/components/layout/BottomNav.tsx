@@ -155,10 +155,10 @@ export function BottomNav() {
             accessibilityState={{ selected: active }}
           >
             {/*
-              Active tab reads as one tinted capsule holding icon and label
-              together (reference: the lime pill); inactive tabs stay a plain
-              icon-over-label pair. row-reverse keeps the icon on the label's
-              right, as Hebrew expects.
+              Active tab reads as one tinted capsule wrapping the same
+              icon-over-label stack the inactive tabs use (reference: the
+              lime pill), so the label always gets its full width and the
+              pill never fights four neighbours for room.
             */}
             <View
               style={[
@@ -170,7 +170,7 @@ export function BottomNav() {
               <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
                 <item.Icon color={color} size={20} strokeWidth={1.8} />
               </View>
-              <Text style={[styles.label, { color }]}>{item.label}</Text>
+              <Text style={[styles.label, { color }]} numberOfLines={1}>{item.label}</Text>
             </View>
           </TouchableOpacity>
         );
@@ -210,16 +210,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   activePill: {
-    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
+    gap: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   item: {
     flex: 1,
+    // Flex children keep their content's minimum width unless told otherwise;
+    // without this the active pill's label pushes the whole slot wider.
+    minWidth: 0,
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
