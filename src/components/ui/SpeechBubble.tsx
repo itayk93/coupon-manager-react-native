@@ -5,6 +5,7 @@ import Svg, { Path } from "react-native-svg";
 import { useReduceMotionSetting } from "@/hooks/useReduceMotion";
 import { speechDuration, spokenSoFar } from "@/lib/speechPacing";
 import { fonts } from "@/lib/theme";
+import { webHeadlineProps } from "@/lib/webHeadline";
 
 /**
  * What Kuponi is saying.
@@ -137,6 +138,7 @@ export function SpeechBubble({
             accessibilityRole={isHeading ? "header" : undefined}
             accessibilityLabel={text}
             style={[styles.text, styles.said]}
+            {...(isHeading ? webHeadlineProps : {})}
           >
             {said}
           </Text>
@@ -145,6 +147,7 @@ export function SpeechBubble({
         <Text
           accessibilityRole={isHeading ? "header" : undefined}
           style={styles.text}
+          {...(isHeading ? webHeadlineProps : {})}
         >
           {text}
         </Text>

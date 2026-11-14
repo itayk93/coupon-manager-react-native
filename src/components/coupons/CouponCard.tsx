@@ -347,6 +347,8 @@ export function CouponCard({
 const styles = StyleSheet.create({
   card: {
     borderRadius: radii.sheet,
+    // iOS squircle: matches the system card curve.
+    borderCurve: "continuous",
     overflow: "hidden",
     marginBottom: 20,
   },
@@ -385,6 +387,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
+    borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -415,6 +418,8 @@ const styles = StyleSheet.create({
   },
   remaining: {
     fontFamily: fonts.display,
+    // Tabular figures keep the balance from jittering as it counts down.
+    fontVariant: ["tabular-nums"],
     // The balance is what the card is opened for, so it reads before anything
     // else is parsed: roughly triple the label beside it.
     fontSize: 32,
