@@ -1249,6 +1249,8 @@ const styles = StyleSheet.create({
   },
   expirationValue: {
     fontFamily: fonts.display,
+    // Tabular figures align date digits so the countdown reads cleanly.
+    fontVariant: ["tabular-nums"],
     fontSize: 22,
     fontWeight: "900",
     textAlign: "left",
