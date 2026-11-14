@@ -45,6 +45,7 @@ import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { useCouponTagsMap } from "@/hooks/useTags";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
+import { onTabRetap } from "@/lib/tabBarRetap";
 import { useTriggerAutoUpdate } from "@/hooks/useAutoUpdate";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
@@ -461,6 +462,21 @@ export function CouponsListScreen() {
 
 
 
+  // Re-tapping the קופונים tab scrolls the list back to the top, the native
+  // tab-bar convention this custom bar has to wire by hand (see tabBarRetap).
+  const listRef = React.useRef<SectionList<DecryptedCoupon[]>>(null);
+  React.useEffect(
+    () =>
+      onTabRetap("/coupons", () => {
+        listRef.current?.scrollToLocation({
+          sectionIndex: 0,
+          itemIndex: 0,
+          animated: true,
+        });
+      }),
+    []
+  );
+
   // Keep the highest-count company (the right edge of the row) in view when
   // the data first lands or changes.
   const companyScrollRef = React.useRef<ScrollView>(null);
@@ -826,6 +842,7 @@ export function CouponsListScreen() {
 
             {/* Coupons List */}
             <SectionList
+              ref={listRef}
               sections={renderedSections}
               keyExtractor={(item: DecryptedCoupon[]) => item.map((coupon) => coupon.id).join("-")}
               contentContainerStyle={styles.listContent}

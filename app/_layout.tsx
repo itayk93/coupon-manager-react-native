@@ -252,15 +252,17 @@ function RootLayoutNav() {
             <View style={styles.shellRow}>
               <SideNav />
               <View style={styles.mainColumn}>
-                {/* `animation` below is a native-stack option and does
-                    nothing on web, where screens are swapped in place; the
-                    wrapper is what moves them there, and nothing at all on
-                    native. */}
+                {/* `ScreenTransition` moves screens on web, where native-stack
+                    has no animations to give; on native the wrapper is not even
+                    in the tree. The Stack keeps the platform default animation
+                    on purpose: pinning `slide_from_right` here forced the LTR
+                    push direction on an RTL (Hebrew) phone, where the native
+                    push arrives from the left and the back gesture from the
+                    right edge. The default follows the device's RTL setting. */}
                 <ScreenTransition>
                   <Stack
                     screenOptions={{
                       headerShown: false,
-                      animation: "slide_from_right",
                       contentStyle: { backgroundColor: theme.background },
                     }}
                   />

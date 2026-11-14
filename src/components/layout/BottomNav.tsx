@@ -3,10 +3,12 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Plus, Share2, Ticket, User } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/AuthContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts } from "@/lib/theme";
+import { emitTabRetap } from "@/lib/tabBarRetap";
 
 type Item = {
   label: string;
@@ -80,6 +82,19 @@ export function BottomNav() {
   const { session } = useAuth();
   const items = buildItems();
 
+  // Native tab bars give two quiet behaviors this custom bar has to supply
+  // itself: a selection tick, and scroll-to-top when the active tab is tapped
+  // again. The haptic fires only when something actually happens — a real tab
+  // change, or the re-tap signal a list screen turns into a scroll.
+  const handlePress = (item: Item, active: boolean) => {
+    void Haptics.selectionAsync().catch(() => {});
+    if (active) {
+      emitTabRetap(item.path);
+    } else {
+      router.navigate(item.path);
+    }
+  };
+
   if (!session || segments[0] === "(auth)") return null;
 
   return (
@@ -110,7 +125,7 @@ export function BottomNav() {
             <TouchableOpacity
               key={item.path}
               activeOpacity={0.85}
-              onPress={() => router.navigate(item.path)}
+              onPress={() => handlePress(item, active)}
               style={styles.item}
               accessibilityRole="button"
               accessibilityLabel={item.label}
@@ -133,7 +148,7 @@ export function BottomNav() {
           <TouchableOpacity
             key={item.path}
             activeOpacity={0.7}
-            onPress={() => router.navigate(item.path)}
+            onPress={() => handlePress(item, active)}
             style={styles.item}
             accessibilityRole="button"
             accessibilityLabel={item.label}
