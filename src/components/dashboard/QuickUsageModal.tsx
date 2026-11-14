@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useRecordUsage, useCouponUsageHistory } from "@/hooks/useCouponUsage";
 import { findExistingUsageMatch } from "@/lib/usageDuplicateMatch";
+import { createUsageIntentKeyHolder } from "@/lib/usageImportKey";
 import { formatDateHebrew, formatIsraelDateTime, parseIsraelDateTime } from "@/lib/formatDate";
 import { mapsSearchUrl } from "@/lib/mapsUrl";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
@@ -105,6 +106,13 @@ export function QuickUsageModal({
   const [detectionWarnings, setDetectionWarnings] = useState<string[]>([]);
   const [matchState, setMatchState] = useState<"idle" | "matched" | "not-found" | "ambiguous">("idle");
   const resolvedPlaceQuery = useRef("");
+  // One idempotency key per submit intent: a retried or double-tapped submit
+  // reuses it, success or closing the modal mints the next one.
+  const usageKeyHolder = useRef(createUsageIntentKeyHolder());
+
+  useEffect(() => {
+    if (!visible) usageKeyHolder.current.reset();
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -242,7 +250,9 @@ export function QuickUsageModal({
       placeAddress,
       latitude: location?.latitude,
       longitude: location?.longitude,
+      importKey: usageKeyHolder.current.get(),
     });
+    usageKeyHolder.current.reset();
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setAmount("");
     setDetails("");
