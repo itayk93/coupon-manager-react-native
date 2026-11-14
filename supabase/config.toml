@@ -38,9 +38,8 @@ verify_jwt = true
 
 [functions.search-coupon-merchants]
 # Paid OpenAI web search. The function also enforces user_id=1 internally.
-# Matches the deployed setting (verified 2026-11-14): the gateway does not check
-# the JWT, so that internal check is the only gate.
-verify_jwt = false
+# Keep the gateway check on: a paid call should be rejected before any code runs.
+verify_jwt = true
 
 [functions.update-balance]
 verify_jwt = true
