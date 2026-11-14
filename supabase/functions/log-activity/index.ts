@@ -13,7 +13,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeadersFor, jsonResponse } from '../_shared/cors.ts';
-import { requireUser } from '../_shared/auth.ts';
+import { extractClientIp, requireUser } from '../_shared/auth.ts';
 import {
   isActivityAction,
   MAX_EVENTS_PER_REQUEST,
@@ -30,13 +30,6 @@ type IncomingEvent = {
   occurred_at?: unknown;
   metadata?: unknown;
 };
-
-function clientIp(req: Request): string | null {
-  const forwarded = req.headers.get('x-forwarded-for');
-  // The left-most entry is the original client; the rest are proxies.
-  const first = forwarded?.split(',')[0]?.trim();
-  return first || req.headers.get('cf-connecting-ip') || null;
-}
 
 /**
  * Device and app version, as the client states them in its user agent. Kept as
@@ -81,7 +74,8 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: `at most ${MAX_EVENTS_PER_REQUEST} events per request` }, 400);
     }
 
-    const ip = clientIp(req);
+    const extractedIp = extractClientIp(req);
+    const ip = extractedIp === 'unknown' ? null : extractedIp;
     const device = clientDevice(req);
     // Supabase sits behind a proxy that resolves the country for us; anything
     // finer would mean an outbound geo-IP call per event.

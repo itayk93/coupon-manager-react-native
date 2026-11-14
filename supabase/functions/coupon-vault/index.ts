@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireUser } from '../_shared/auth.ts';
+import { extractClientIp, requireUser } from '../_shared/auth.ts';
 import { corsHeadersFor, jsonResponseFor } from '../_shared/cors.ts';
 import { decryptCouponValue, encryptCouponValue } from '../_shared/encryption.ts';
 
@@ -270,7 +270,8 @@ Deno.serve(async (req) => {
     // version: re-calling with the same version just refreshes the timestamp.
     if (body.action === 'record_consent') {
       const version = typeof body.version === 'string' && body.version.trim() ? body.version.trim().slice(0, 20) : '1.0';
-      const ip = (req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip') || '').trim() || null;
+      const extractedIp = extractClientIp(req);
+      const ip = extractedIp === 'unknown' ? null : extractedIp;
       await db.from('user_consents').insert({
         user_id: user.id,
         consent_status: true,
