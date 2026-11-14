@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { extractClientIp } from './clientIp.ts';
 
 export async function requireUser(req: Request) {
   const token = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -37,29 +38,10 @@ export async function requireAdmin(req: Request) {
  * Fails open when the env var is missing, so a lost/mis-typed secret never
  * locks every admin out of production. When configured, unknown IPs are
  * rejected.
+ * The IP itself comes from ./clientIp.ts (import-free, so the vitest suite can
+ * exercise the header precedence directly).
  */
-export function extractClientIp(req: Request): string {
-  // The hosted platform sits behind Cloudflare, which overwrites
-  // cf-connecting-ip with the real client IP. This is only as trustworthy as
-  // the ingress path: if an origin were reachable without Cloudflare in
-  // front, this header would also be client-controlled. The admin IP
-  // allowlist therefore stays an advisory layer on top of the JWT check,
-  // never proof of origin.
-  const cfIp = req.headers.get('cf-connecting-ip')?.trim();
-  if (cfIp) return cfIp;
-  // Fallback (self-host / local): proxies APPEND to x-forwarded-for, so the
-  // right-most entry is the one the nearest proxy vouches for; the left-most
-  // is whatever the client claimed. Best-effort only.
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) {
-    const entries = forwarded.split(',').map((entry) => entry.trim()).filter(Boolean);
-    const last = entries[entries.length - 1];
-    if (last) return last;
-  }
-  const realIp = req.headers.get('x-real-ip');
-  if (realIp) return realIp.trim();
-  return 'unknown';
-}
+export { extractClientIp } from './clientIp.ts';
 
 function ipMatches(ip: string, entry: string): boolean {
   const normalizedEntry = entry.trim();
