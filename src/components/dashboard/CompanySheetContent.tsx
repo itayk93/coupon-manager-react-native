@@ -19,10 +19,12 @@ import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { CouponCodeBox } from "@/components/coupons/CouponCodeBox";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCouponViewTracking } from "@/hooks/useCouponViewTracking";
+import { useCouponUsageStats } from "@/hooks/useCouponUsage";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { useHoldAction } from "@/hooks/useHoldAction";
 import { logActivity } from "@/lib/activityLog";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
+import { dashboardVisibleCoupons } from "@/lib/dashboardCouponOrder";
 import { companyKey } from "@/lib/companyName";
 import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
 import { couponRouteId } from "@/lib/entityId";
@@ -104,9 +106,16 @@ export function CompanySheetContent({ company, coupons, onClose }: CompanySheetC
     if (company) void markCompanyViewed(company);
   }, [company, markCompanyViewed]);
 
+  // EXACTLY the rows the old modal sheet showed: the dashboard's spendable,
+  // usage-ordered coupon list re-filtered by company. Not the raw useCoupons()
+  // order - see dashboardCouponOrder.
+  const { data: usageStats } = useCouponUsageStats(coupons);
   const rows = React.useMemo(
-    () => coupons.filter((c) => companyKey(c.company) === companyKey(shown)),
-    [coupons, shown]
+    () =>
+      dashboardVisibleCoupons(coupons, usageStats).filter(
+        (c) => companyKey(c.company) === companyKey(shown)
+      ),
+    [coupons, usageStats, shown]
   );
 
   const total = rows.reduce(
