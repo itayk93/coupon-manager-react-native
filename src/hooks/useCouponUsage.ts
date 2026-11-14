@@ -357,6 +357,7 @@ export function useRecordUsage() {
         latitude,
         longitude,
         timestamp,
+        importKey,
       }: {
         couponId: number;
         usedAmount: number;
@@ -366,6 +367,11 @@ export function useRecordUsage() {
         latitude?: number | null;
         longitude?: number | null;
         timestamp?: string | null;
+        // One key per submit intent, minted and held by the caller
+        // (createUsageIntentKeyHolder): a retried or double-tapped
+        // submission reuses it, and the server recognises the replay.
+        // Server support: migration 20261114190000.
+        importKey: string;
     }) => {
       if (!user) throw new Error("Not authenticated");
 
@@ -382,6 +388,7 @@ export function useRecordUsage() {
         p_latitude: latitude ?? null,
         p_longitude: longitude ?? null,
         p_timestamp: timestamp ?? null,
+        p_import_key: importKey,
       });
       if (error) throw error;
 
