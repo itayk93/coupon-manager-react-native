@@ -1,0 +1,16 @@
+-- Re-create the instinct_private views with security_invoker = on. Today the
+-- only reader is the service role via instinct_private.instinct_read, which
+-- bypasses RLS either way, so this changes no live behavior. It is defense in
+-- depth: if the schema grant were ever widened by mistake, a plain view runs
+-- as its owner (a superuser that bypasses RLS) and would silently expose the
+-- underlying tables; with security_invoker the invoker's RLS applies instead.
+-- The view bodies are byte-identical to 20261012123336_instinct_user_api.sql
+-- and the coupon_alerts replacement in 20261012125353_instinct_live_mfa_guard.sql.
+create or replace view instinct_private.coupon with (security_invoker = on) as select distinct c.user_id as scope_user_id,c.id,c.public_id,c.company,c.code,c.description,c.cvv,c.card_exp,c.buyme_coupon_url,c.strauss_coupon_url,c.xgiftcard_coupon_url,c.xtra_coupon_url,c.value,c.cost,c.used_value,(c.value-c.used_value) as remaining_value,c.status,c.expiration,c.date_added,c.is_one_time,c.purpose,c.source,c.auto_update,c.last_scraped from public.coupon c where c.deleted_at is null;
+create or replace view instinct_private.coupon_usage with (security_invoker = on) as select distinct c.user_id as scope_user_id,t.id,t.coupon_id,t.action,t.details,t.timestamp,t.used_amount,t.place_name,t.place_address from public.coupon_usage t join public.coupon c on c.id=t.coupon_id where c.deleted_at is null and not public.is_hidden_ledger_row(coalesce(nullif(t.details,''),nullif(t.action,''),''));
+create or replace view instinct_private.coupon_transaction with (security_invoker = on) as select distinct c.user_id as scope_user_id,t.id,t.coupon_id,t.location,t.recharge_amount,t.reference_number,t.source,t.transaction_date,t.usage_amount from public.coupon_transaction t join public.coupon c on c.id=t.coupon_id where c.deleted_at is null and not public.is_hidden_ledger_row(coalesce(nullif(t.location,''),nullif(t.source,''),''));
+create or replace view instinct_private.coupon_tags with (security_invoker = on) as select distinct c.user_id as scope_user_id,t.coupon_id,t.tag_id,g.name from public.coupon_tags t join public.coupon c on c.id=t.coupon_id join public.tag g on g.id=t.tag_id where c.deleted_at is null;
+create or replace view instinct_private.users with (security_invoker = on) as select distinct u.id as scope_user_id,u.id,u.public_id,u.email,u.first_name,u.last_name,u.created_at,u.slots,u.slots_automatic_coupons from public.users u where not coalesce(u.is_deleted,false);
+create or replace view instinct_private.coupon_alerts with (security_invoker = on) as select distinct t.user_id as scope_user_id,t.id,t.coupon_id,t.channel,t.sent_at,t.status,t.window_days from public.coupon_alerts t join public.coupon c on c.id=t.coupon_id and c.user_id=t.user_id where c.deleted_at is null;
+create or replace view instinct_private.notification_preferences with (security_invoker = on) as select distinct t.user_id as scope_user_id,t.email,t.in_app,t.push,t.quiet_until,t.timezone,t.type_channels,t.windows,t.updated_at from public.notification_preferences t where true;
+create or replace view instinct_private.companies with (security_invoker = on) as select distinct c.user_id as scope_user_id,t.id,t.name,t.image_path from public.coupon c join public.companies t on t.name=c.company where c.deleted_at is null;
