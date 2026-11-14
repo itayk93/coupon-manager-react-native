@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated from "react-native-reanimated";
+import Animated, { scrollTo } from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Sparkles } from "lucide-react-native";
@@ -29,6 +29,7 @@ import { useCouponTagsMap } from "@/hooks/useTags";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { isSpendableCoupon } from "@/lib/couponTotals";
+import { onTabRetap } from "@/lib/tabBarRetap";
 import { companyCards } from "@/lib/companyCards";
 import { companyKey } from "@/lib/companyName";
 import { widgetSelection } from "@/lib/widgetSelection";
@@ -64,6 +65,16 @@ export function HomeScreen() {
   // on the scanner — which has its own way through to typing one in.
   const addCoupon = useCallback(() => router.navigate("/scanner"), [router]);
   const pullUp = usePullUpAction({ onTrigger: addCoupon });
+
+  // Re-tapping the דשבורד tab scrolls home back to the top, the native tab-bar
+  // convention this custom bar has to wire by hand (see tabBarRetap).
+  React.useEffect(
+    () =>
+      onTabRetap("/", () => {
+        scrollTo(pullUp.scrollRef, 0, 0, true);
+      }),
+    [pullUp.scrollRef]
+  );
 
   // Same ordering the dashboard uses: most recently used first, then most
   // often used, then newest. Imported rather than re-invented so a coupon can
@@ -343,5 +354,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
-
 
