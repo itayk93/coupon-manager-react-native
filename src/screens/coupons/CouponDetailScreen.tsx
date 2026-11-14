@@ -57,6 +57,7 @@ import {
   useDeleteTransactionRecord,
   useRecordUsage,
 } from "@/hooks/useCouponUsage";
+import { createUsageIntentKeyHolder } from "@/lib/usageImportKey";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { useWidgetToggle } from "@/hooks/useWidgetToggle";
 import { isWidgetSupported } from "../../../modules/coupon-widget";
@@ -193,6 +194,9 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
   const updateCoupon = useUpdateCoupon();
   const deleteTx = useDeleteTransactionRecord();
   const recordUsage = useRecordUsage();
+  // One idempotency key per "mark as used" confirmation, so a retried or
+  // double-tapped confirm reaches the server as a replay of the same intent.
+  const markUsedKeyHolder = useRef(createUsageIntentKeyHolder());
   const widget = useWidgetToggle(coupon);
   const recordSale = useRecordManualSale();
 
@@ -312,7 +316,9 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
             couponId: coupon.id,
             usedAmount: remaining,
             details: "סימון יתרת הקופון כנוצלה",
+            importKey: markUsedKeyHolder.current.get(),
           });
+          markUsedKeyHolder.current.reset();
           // The usage mutation plays the celebration itself once the server
           // confirms the coupon is finished.
           return;
