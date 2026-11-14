@@ -154,10 +154,24 @@ export function BottomNav() {
             accessibilityLabel={item.label}
             accessibilityState={{ selected: active }}
           >
-            <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
-              <item.Icon color={color} size={20} strokeWidth={1.8} />
+            {/*
+              Active tab reads as one tinted capsule holding icon and label
+              together (reference: the lime pill); inactive tabs stay a plain
+              icon-over-label pair. row-reverse keeps the icon on the label's
+              right, as Hebrew expects.
+            */}
+            <View
+              style={[
+                active
+                  ? [styles.activePill, { backgroundColor: `${theme.primary}1F` }]
+                  : styles.itemStack,
+              ]}
+            >
+              <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
+                <item.Icon color={color} size={20} strokeWidth={1.8} />
+              </View>
+              <Text style={[styles.label, { color }]}>{item.label}</Text>
             </View>
-            <Text style={[styles.label, { color }]}>{item.label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -169,15 +183,40 @@ const styles = StyleSheet.create({
   bar: {
     // row-reverse so the first item lands on the right.
     flexDirection: "row-reverse",
-    borderTopWidth: 1,
+    // Floating card: detached from the screen edges, rounded, lifted by a
+    // soft shadow (reference mock) rather than a docked strip with a rule.
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 24,
+    borderWidth: 1,
     paddingTop: 10,
+    paddingHorizontal: 6,
     position: "relative",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   systemNavSeparator: {
     position: "absolute",
     left: 0,
     right: 0,
     height: StyleSheet.hairlineWidth,
+  },
+  itemStack: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+  },
+  activePill: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
   },
   item: {
     flex: 1,
