@@ -66,6 +66,7 @@ export function MascotAnimation({
   const [active, setActive] = useState(AppState.currentState === "active");
   const [loadedRow, setLoadedRow] = useState<number | null>(null);
   const [step, setStep] = useState(0);
+  const [resume, setResume] = useState(0);
   const finish = useRef(onFinish);
   useEffect(() => { finish.current = onFinish; }, [onFinish]);
   const row = ROW[state];
@@ -81,7 +82,12 @@ export function MascotAnimation({
     void AccessibilityInfo.isReduceMotionEnabled().then(value => {
       if (alive && !changed) setSystemReduced(value);
     }).catch(() => { /* Keep the static accessible fallback. */ });
-    const app = AppState.addEventListener("change", value => setActive(value === "active"));
+    const app = AppState.addEventListener("change", value => {
+      setActive(value === "active");
+      // iOS can drop the huge decoded atlas while backgrounded; remounting the
+      // Image on return forces a fresh decode instead of an empty box.
+      if (value === "active") setResume(n => n + 1);
+    });
     return () => { alive = false; motion.remove(); app.remove(); };
   }, []);
 
@@ -125,7 +131,7 @@ export function MascotAnimation({
       accessibilityElementsHidden={!accessibilityLabel}
       importantForAccessibility={accessibilityLabel ? "auto" : "no-hide-descendants"}
       pointerEvents="none" style={[styles.viewport, { width: size, height: size }]}>
-      <Image key={row} source={ATLASES[row]} accessible={false} resizeMode="stretch" fadeDuration={0}
+      <Image key={`${row}-${resume}`} source={ATLASES[row]} accessible={false} resizeMode="stretch" fadeDuration={0}
         onLoad={() => setLoadedRow(row)}
         style={{ position: "absolute", width: size * GRID, height: size * GRID, start: 0, top: 0,
           transform: [{ translateX: -column * size }, { translateY: -frameRow * size }] }} />
