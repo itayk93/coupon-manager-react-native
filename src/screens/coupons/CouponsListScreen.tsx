@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   statusTab: {
-    minWidth: 92,
+    minWidth: 72,
     flexGrow: 1,
     minHeight: 44,
     paddingVertical: 8,
