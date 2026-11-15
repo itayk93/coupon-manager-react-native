@@ -688,122 +688,63 @@ export function CouponsListScreen() {
               </TouchableOpacity>
             ) : null}
 
-            {/* Company chips — ordered by coupon count, most on the right */}
-            <ScrollView
-              ref={companyScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.chipRow}
-              contentContainerStyle={styles.companyChipRowContent}
-            >
-              <TouchableOpacity
-                key="all"
-                onPress={() => setSelectedCompany(null)}
-                style={[
-                  styles.tagChip,
-                  {
-                    backgroundColor: selectedCompany === null ? theme.primary : theme.card,
-                    borderColor: selectedCompany === null ? theme.primary : theme.inputBorder,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.tagChipText, { color: selectedCompany === null ? "#ffffff" : theme.label }]}
-                >
-                  הכל
-                </Text>
-              </TouchableOpacity>
-
-              {Array.from(
-                new Set([
-                  ...companyChips.slice(-5),
-                  ...(selectedCompany ? [selectedCompany] : []),
-                ])
-              ).map((company) => {
-                const isCurrent = companyKey(selectedCompany) === companyKey(company);
-                const count = usableCoupons.filter(
-                  (coupon) => companyKey(coupon.company) === companyKey(company)
-                ).length;
+            {/* Status filter: always visible, replaces the old company chip row */}
+            <View style={styles.statusTabsRow}>
+              {(
+                [
+                  { key: "all", label: "הכל" },
+                  { key: "active", label: "לא נוצלו" },
+                  { key: "used", label: "נוצלו" },
+                  { key: "expired", label: "פגי תוקף" },
+                ] as const
+              ).map((tab) => {
+                const isCurrent = statusFilter === tab.key;
                 return (
                   <TouchableOpacity
-                    key={company}
-                    onPress={() => setSelectedCompany(isCurrent ? null : company)}
+                    key={tab.key}
+                    onPress={() => setStatusFilter(tab.key)}
                     style={[
-                      styles.companyChip,
+                      styles.statusTab,
                       {
                         backgroundColor: isCurrent ? theme.primary : theme.card,
                         borderColor: isCurrent ? theme.primary : theme.inputBorder,
                       },
                     ]}
                   >
-                    <Image
-                      source={getCompanyLogoSource(company)}
-                      style={styles.companyChipLogo}
-                      resizeMode="contain"
-                    />
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.companyChipText, { color: isCurrent ? "#ffffff" : theme.label }]}
-                    >
-                      {company}
-                    </Text>
-                    <Text
-                      style={[styles.companyChipCount, { color: isCurrent ? "rgba(255,255,255,0.85)" : theme.textMuted }]}
-                    >
-                      {count}
+                    <Text style={[styles.statusTabText, { color: isCurrent ? "#ffffff" : theme.label }]}>
+                      {tab.label}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
-              {companyChips.length > 5 ? (
+            </View>
+
+            {/* Company filter now lives behind the filter button */}
+            {showStatusRow && companyChips.length > 0 ? (
+              <View style={styles.statusTabsRow}>
                 <TouchableOpacity
                   onPress={() => setCompanyFilterOpen(true)}
-                  style={[styles.companyChip, { backgroundColor: theme.surfaceAlt, borderColor: theme.inputBorder }]}
+                  style={[
+                    styles.statusTab,
+                    {
+                      backgroundColor: selectedCompany ? theme.primary : theme.card,
+                      borderColor: selectedCompany ? theme.primary : theme.inputBorder,
+                    },
+                  ]}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.companyChipText, { color: theme.primary }]}>
-                    {`כל החברות (${companyChips.length})`}
+                  <Text style={[styles.statusTabText, { color: selectedCompany ? "#ffffff" : theme.label }]}>
+                    {selectedCompany || `חברה (${companyChips.length})`}
                   </Text>
                 </TouchableOpacity>
-              ) : null}
-            </ScrollView>
-
-            {/* Status filter, revealed from the header's filter button */}
-            {showStatusRow ? (
-              <View style={styles.statusTabsRow}>
-                {(
-                  [
-                    { key: "all", label: "הכל" },
-                    { key: "active", label: "פעילים" },
-                    { key: "expiring", label: "פגים בקרוב" },
-                    { key: "expired", label: "פגי תוקף" },
-                    { key: "used", label: "נוצלו" },
-                  ] as const
-                ).map((tab) => {
-                  const isCurrent = statusFilter === tab.key;
-                  return (
-                    <TouchableOpacity
-                      key={tab.key}
-                      onPress={() => setStatusFilter(tab.key)}
-                      style={[
-                        styles.statusTab,
-                        {
-                          backgroundColor: isCurrent ? theme.primary : theme.card,
-                          borderColor: isCurrent ? theme.primary : theme.inputBorder,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusTabText,
-                          { color: isCurrent ? "#ffffff" : theme.label },
-                        ]}
-                      >
-                        {tab.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {selectedCompany ? (
+                  <TouchableOpacity
+                    onPress={() => setSelectedCompany(null)}
+                    style={[styles.statusTab, { backgroundColor: theme.card, borderColor: theme.inputBorder }]}
+                  >
+                    <Text style={[styles.statusTabText, { color: theme.label }]}>נקה</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ) : null}
 
