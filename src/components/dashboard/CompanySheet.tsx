@@ -211,13 +211,18 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   };
 
   const drag = React.useRef(new Animated.Value(0)).current;
+  // The list's current scroll offset. A downward pull only drags the sheet when
+  // the list is already at the top — otherwise it is just scrolling back up.
+  const scrollY = React.useRef(0);
 
   const panResponder = React.useMemo(
     () =>
       PanResponder.create({
-        // Only claim clearly-downward drags, so the list keeps its own scrolling.
-        onMoveShouldSetPanResponder: (_evt, g) =>
-          g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+        // Capture phase, so the sheet can take the gesture from the ScrollView
+        // the moment a downward pull starts at the top (the iOS sheet feel).
+        // Only clearly-downward drags, so taps and sideways swipes are left alone.
+        onMoveShouldSetPanResponderCapture: (_evt, g) =>
+          scrollY.current <= 0 && g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
         onPanResponderMove: (_evt, g) => {
           if (g.dy > 0) drag.setValue(g.dy);
         },
@@ -240,7 +245,10 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   );
 
   React.useEffect(() => {
-    if (visible) drag.setValue(0);
+    if (visible) {
+      drag.setValue(0);
+      scrollY.current = 0;
+    }
   }, [visible, drag]);
 
   const enterY = progress.interpolate({
@@ -262,8 +270,9 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             isTablet && styles.sheetTablet,
             { backgroundColor: theme.card, transform: [{ translateY }] },
           ]}
+          {...panResponder.panHandlers}
         >
-          <View style={[styles.head, { backgroundColor: brand }]} {...panResponder.panHandlers}>
+          <View style={[styles.head, { backgroundColor: brand }]}>
             <View style={styles.handle} />
 
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityLabel="סגירה">
@@ -307,7 +316,14 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
             </View>
           </View>
 
-          <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body}>
+          <ScrollView
+            style={styles.bodyScroll}
+            contentContainerStyle={styles.body}
+            onScroll={(e) => {
+              scrollY.current = e.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
+          >
             {rows.map((c) => {
               const total = c.value || 0;
               const used = c.used_value || 0;
