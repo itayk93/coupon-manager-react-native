@@ -14,6 +14,7 @@ import { ChevronLeft, Sparkles } from "lucide-react-native";
 import { CouponAccessHero } from "@/components/dashboard/CouponAccessHero";
 import { CouponSection } from "@/components/dashboard/CouponSection";
 import { CompanyCardsSlider } from "@/components/dashboard/CompanyCardsSlider";
+import { CompanySheet } from "@/components/dashboard/CompanySheet";
 import { QuickUsageModal } from "@/components/dashboard/QuickUsageModal";
 import { OnboardingBanner, useOnboardingPending } from "@/components/layout/OnboardingBanner";
 import { PushNudgeBanner } from "@/components/layout/PushNudgeBanner";
@@ -55,9 +56,7 @@ export function HomeScreen() {
   const [isUsageOpen, setIsUsageOpen] = useState(false);
   const [usageCoupon, setUsageCoupon] = useState<DecryptedCoupon | null>(null);
   // Which company's coupons are open in the sheet — the screen's fast path.
-  // PILOT (formSheet): the company sheet is the /company-sheet native form
-  // sheet now. Tapping a company card pushes the route instead of opening the
-  // old hand-rolled modal; no local sheet state remains.
+  const [sheetCompany, setSheetCompany] = useState<string | null>(null);
   const onboardingPending = useOnboardingPending();
   // A grid column: this screen is cards filling their width, not a form.
   const contentStyle = useContentStyle("grid");
@@ -84,6 +83,14 @@ export function HomeScreen() {
   const visibleCoupons = useMemo(
     () => dashboardVisibleCoupons(coupons, usageStats),
     [coupons, usageStats]
+  );
+
+  const sheetCoupons = useMemo(
+    () =>
+      sheetCompany
+        ? visibleCoupons.filter((coupon) => companyKey(coupon.company) === companyKey(sheetCompany))
+        : [],
+    [visibleCoupons, sheetCompany]
   );
 
   const expiring = useMemo(
@@ -178,10 +185,8 @@ export function HomeScreen() {
               one screen and buried on the other. */}
           <CompanyCardsSlider
             companyCards={cards}
-            selectedCompany={null}
-            onSelectCompany={(name) =>
-              name ? router.push({ pathname: "/company-sheet", params: { company: name } }) : null
-            }
+            selectedCompany={sheetCompany}
+            onSelectCompany={setSheetCompany}
           />
 
           {isLoading && coupons.length === 0 ? (
@@ -265,6 +270,12 @@ export function HomeScreen() {
           of dropping it on top of the content. */}
       <PullUpIndicator travel={pullUp.travel} armed={pullUp.armed} label="קופון חדש" />
 
+
+      <CompanySheet
+        company={sheetCompany}
+        coupons={sheetCoupons}
+        onClose={() => setSheetCompany(null)}
+      />
 
       <QuickUsageModal
         visible={isUsageOpen}
