@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Plus, Share2, Ticket, User } from "lucide-react-native";
@@ -103,20 +103,13 @@ export function BottomNav() {
         styles.bar,
         {
           backgroundColor: theme.card,
-          borderTopColor: theme.cardBorder,
-          paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 18 : 10),
+          borderColor: theme.cardBorder,
+          // Pill floats just above the home indicator (iOS 26 style); the safe
+          // area is outside the card, not padding inside it.
+          marginBottom: Math.max(insets.bottom - 6, 10),
         },
       ]}
     >
-      {Platform.OS === "android" ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.systemNavSeparator,
-            { bottom: insets.bottom, backgroundColor: theme.border },
-          ]}
-        />
-      ) : null}
       {items.map((item) => {
         const active = isActive(item, pathname);
 
@@ -185,24 +178,16 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     // Floating card: detached from the screen edges, rounded, lifted by a
     // soft shadow (reference mock) rather than a docked strip with a rule.
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingTop: 10,
+    marginHorizontal: 20,
+    borderRadius: 32,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 6,
     paddingHorizontal: 6,
-    position: "relative",
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  systemNavSeparator: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   itemStack: {
     alignItems: "center",
@@ -215,14 +200,14 @@ const styles = StyleSheet.create({
     gap: 3,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 26,
   },
   item: {
     flex: 1,
     // Flex children keep their content's minimum width unless told otherwise;
     // without this the active pill's label pushes the whole slot wider.
     minWidth: 0,
-    minHeight: 48,
+    minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
@@ -231,9 +216,9 @@ const styles = StyleSheet.create({
   // top edge needs the bar to not clip, which Android does not promise.
   // Colour and shape carry the emphasis instead of geometry.
   primaryDisc: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
