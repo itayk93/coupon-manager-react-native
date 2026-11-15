@@ -161,7 +161,7 @@ export function BottomNav() {
               ]}
             >
               <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
-                <item.Icon color={color} size={20} strokeWidth={1.8} />
+                <item.Icon color={color} size={20} strokeWidth={2.2} />
               </View>
               <Text style={[styles.label, { color }]} numberOfLines={1}>{item.label}</Text>
             </View>

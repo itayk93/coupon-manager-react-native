@@ -156,7 +156,8 @@ const styles = StyleSheet.create({
   logoWrapper: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    // Nested radius: card radius (16) minus the card's side padding (6).
+    borderRadius: radii.card - 6,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -165,6 +166,8 @@ const styles = StyleSheet.create({
   logo: {
     width: "80%",
     height: "80%",
+    // Logos shot on white: multiply makes the white vanish into the card.
+    mixBlendMode: "multiply",
   },
   companyName: {
     fontFamily: fonts.bodyBold,

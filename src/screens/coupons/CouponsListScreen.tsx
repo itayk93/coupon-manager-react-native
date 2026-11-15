@@ -56,6 +56,7 @@ import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
 import { CouponCardSkeleton } from "@/components/coupons/CouponCardSkeleton";
+import { EdgeFade } from "@/components/ui/EdgeFade";
 import { useOfflineWalletStatus } from "@/hooks/useOfflineWalletStatus";
 import { WifiOff } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
@@ -750,6 +751,7 @@ export function CouponsListScreen() {
 
             {/* Tag Filter Chips (if tags exist), hidden behind the same filter button */}
             {showStatusRow && allTags.length > 0 ? (
+              <EdgeFade color="#faf9f6">
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -779,6 +781,7 @@ export function CouponsListScreen() {
                   );
                 })}
               </ScrollView>
+              </EdgeFade>
             ) : null}
 
             {/* Coupons List */}

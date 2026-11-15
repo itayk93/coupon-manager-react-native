@@ -39,13 +39,15 @@ export const palette = {
   lightShell: "#eeece5",
   lightBg: "#faf9f6",
   lightCard: "#ffffff",
-  lightCardBorder: "#e6e9ef",
+  // Alpha borders (ink at low opacity), not solid hex: they take on whatever
+  // surface sits behind them instead of looking like a grey outline on tints.
+  lightCardBorder: "rgba(16, 24, 40, 0.08)",
   lightSurface: "#f2f3fd",
   lightSurfaceAlt: "#eef0f3",
   lightTrack: "#f0f1f6",
   lightDivider: "#f0f1f4",
   lightInput: "#f4f5fd",
-  lightInputBorder: "#d7dce4",
+  lightInputBorder: "rgba(16, 24, 40, 0.16)",
   lightText: "#101828",
   lightTextSecondary: "#475467",
   lightTextMuted: "#667085",

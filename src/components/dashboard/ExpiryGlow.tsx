@@ -39,6 +39,8 @@ type Props = {
   radius: number;
 };
 
+const clearOf = (c: string) => (/^#[0-9a-f]{6}$/i.test(c) ? `${c}00` : "transparent");
+
 export function ExpiryGlow({ emphasis, color, radius }: Props) {
   const reduceMotion = useReducedMotion();
   // The travel distance comes from the window rather than the banner's own
@@ -146,7 +148,9 @@ export function ExpiryGlow({ emphasis, color, radius }: Props) {
           ]}
         >
           <LinearGradient
-            colors={["transparent", color, "transparent"]}
+            // Clear ends are the glow colour at alpha 0; "transparent" is black
+            // at alpha 0 and greys the fade.
+            colors={[clearOf(color), color, clearOf(color)]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={StyleSheet.absoluteFill}
