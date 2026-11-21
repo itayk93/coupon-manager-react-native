@@ -1,3 +1,4 @@
+import {requireAiConsent,useAiConsent} from "@/lib/aiConsent";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +40,7 @@ export function isMerchantQuery(value: string): boolean {
 }
 
 async function searchCouponMerchants(query: string): Promise<CouponMerchantSearchResult> {
+  await requireAiConsent();
   const { data, error } = await supabase.functions.invoke("search-coupon-merchants", {
     body: { query },
   });
@@ -49,17 +51,19 @@ async function searchCouponMerchants(query: string): Promise<CouponMerchantSearc
 
 export function useCouponMerchantSearch(query: string) {
   const { user } = useAuth();
+  const consent=useAiConsent();
   const normalized = query.trim();
   return useQuery({
     queryKey: ["coupon-merchant-search", user?.id, normalized.toLocaleLowerCase("he-IL")],
     queryFn: () => searchCouponMerchants(normalized),
-    enabled: user?.id === 1 && isMerchantQuery(normalized),
+    enabled: consent.allowed && user?.id === 1 && isMerchantQuery(normalized),
     staleTime: 24 * 60 * 60 * 1000,
     retry: 1,
   });
 }
 
 async function loadCouponMerchantDirectory(couponId: number): Promise<CouponMerchantDirectoryResult> {
+  await requireAiConsent();
   const { data, error } = await supabase.functions.invoke("search-coupon-merchants", {
     body: { couponId, mode: "directory" },
   });
@@ -70,11 +74,12 @@ async function loadCouponMerchantDirectory(couponId: number): Promise<CouponMerc
 
 export function useCouponMerchantDirectory(couponId: number | undefined, enabled: boolean) {
   const { user } = useAuth();
+  const consent=useAiConsent();
   return useQuery({
     queryKey: ["coupon-merchant-directory", user?.id, couponId],
     queryFn: () => loadCouponMerchantDirectory(couponId as number),
-    enabled: user?.id === 1 && typeof couponId === "number" && enabled,
+    enabled: consent.allowed && user?.id === 1 && typeof couponId === "number" && enabled,
     staleTime: 24 * 60 * 60 * 1000,
     retry: 1,
   });
-}
+                  }
