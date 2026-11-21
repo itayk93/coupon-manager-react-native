@@ -1,3 +1,4 @@
+import {hasAiConsent} from './aiConsent.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { extractClientIp } from './clientIp.ts';
 
@@ -11,7 +12,7 @@ export async function requireUser(req: Request) {
   if (result.error || !result.data || result.data.is_deleted) throw new Error('FORBIDDEN');
   // The verified token is authoritative even for an old application row that
   // predates the auth_user_id backfill.
-  return { ...result.data, auth_user_id: user.id };
+  return { ...result.data, auth_user_id: user.id, ai_consent: hasAiConsent(user) };
 }
 
 export function requireSameUser(

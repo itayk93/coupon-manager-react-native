@@ -1,3 +1,4 @@
+import {AiConsentSettings} from "@/components/settings/AiConsentSettings";
 import React from "react";
 import {
   View,
@@ -110,6 +111,7 @@ export function SettingsScreen() {
         contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
+        <AiConsentSettings/>
         {/* User Profile Card */}
         <TouchableOpacity
           activeOpacity={0.85}

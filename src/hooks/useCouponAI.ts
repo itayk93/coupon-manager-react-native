@@ -1,3 +1,4 @@
+import {requireAiConsent} from "@/lib/aiConsent";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
@@ -32,6 +33,7 @@ export function useParseCoupon() {
     mutationFn: async ({ text, imageBase64, companyNames }: { text?: string; imageBase64?: string; companyNames?: string[] }) => {
       if (!text && !imageBase64) throw new Error("צריך טקסט או תמונה");
 
+      await requireAiConsent();
       const sharedPageUrl = text ? extractSharedPageUrl(text) : null;
 
       const { data, error } = await supabase.functions.invoke("parse-coupon", {

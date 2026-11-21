@@ -1,3 +1,4 @@
+import {AiConsentSettings} from "@/components/settings/AiConsentSettings";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AccessibilityInfo, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -194,6 +195,7 @@ export function OnboardingScreen() {
   return <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={[styles.content, contentStyle]} keyboardShouldPersistTaps="handled">
+        <AiConsentSettings/>
         <View style={styles.topRow}>
           {steps.indexOf(mode) > 0
             ? <Pressable onPress={back} style={styles.iconButton} accessibilityLabel="חזרה"><ChevronRight size={24} color={theme.text} /></Pressable>

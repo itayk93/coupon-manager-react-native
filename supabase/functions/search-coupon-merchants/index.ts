@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeadersFor(req) });
   try {
     const user = await requireUser(req);
+    if (!user.ai_consent) return jsonResponseFor(req, { error: 'נדרשת הסכמה מפורשת לשיתוף עם OpenAI במסך החשבון', code: 'AI_CONSENT_REQUIRED' }, 403);
     if (user.id !== MAINTAINER_USER_ID) throw new Error('FORBIDDEN');
 
     const body = await req.json();

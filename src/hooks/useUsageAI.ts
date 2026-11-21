@@ -1,3 +1,4 @@
+import {requireAiConsent} from "@/lib/aiConsent";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
@@ -5,6 +6,7 @@ import type { ParsedUsage, ParsedUsageScreenshot } from "@/types/coupon";
 export type { ParsedUsage, ParsedUsageScreenshot };
 
 export async function verifyCouponCodeInScreenshot(imageBase64: string, candidateCouponCode: string): Promise<boolean> {
+  await requireAiConsent();
   const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
     body: { imageBase64, candidateCouponCode, mode: "verify-code" },
   });
@@ -35,6 +37,7 @@ async function readableFunctionError(error: any): Promise<string> {
 export function useParseUsageScreenshot() {
   return useMutation({
     mutationFn: async (input: ParseUsageInput): Promise<ParsedUsageScreenshot> => {
+      await requireAiConsent();
       const isText = !input.imageBase64;
       const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
         body: isText ? { text: input.text } : { imageBase64: input.imageBase64 },
@@ -81,4 +84,4 @@ export function useParseUsageScreenshot() {
     },
     onError: (error: any) => notify.error("לא הצלחנו לפענח", error.message),
   });
-}
+        }

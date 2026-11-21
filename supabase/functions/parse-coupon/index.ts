@@ -293,6 +293,8 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'נדרשת התחברות' }, 401);
     }
 
+    if (!caller.ai_consent) return jsonResponse({ error: 'נדרשת הסכמה מפורשת לשיתוף עם OpenAI במסך החשבון', code: 'AI_CONSENT_REQUIRED' }, 403);
+
     // Cap the request before anything is parsed or forwarded. Without this a
     // single caller can push an arbitrarily large payload into the function
     // (and into the OpenAI bill).
