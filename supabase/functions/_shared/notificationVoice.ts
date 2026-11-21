@@ -1,3 +1,4 @@
+import {backgroundAiAllowed} from './aiConsent.ts';
 // The wording of a notification, written fresh each time.
 //
 // The catalogue in notificationTypes.ts holds one sentence per kind. That is
@@ -75,6 +76,7 @@ export async function phrase(
   const written = copyFor(type, payload);
   // Kinds whose wording was chosen by hand are never rewritten.
   if (FIXED_WORDING.has(type)) return written;
+  if (!await backgroundAiAllowed(options.supabase, options.userId)) return written;
   const apiKey = Deno.env.get('OPENAI_API_KEY_V2') || Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) return written;
 
