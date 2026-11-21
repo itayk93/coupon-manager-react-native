@@ -51,6 +51,7 @@ Deno.serve(async (req: Request) => {
   try {
     let caller;
     try { caller = await requireUser(req); } catch { return jsonResponse({ error: "נדרשת התחברות" }, 401); }
+    if (!caller.ai_consent) return jsonResponse({error:'נדרשת הסכמה מפורשת לשיתוף עם OpenAI במסך החשבון',code:'AI_CONSENT_REQUIRED'},403);
     const { imageBase64, text, candidateCouponCode, mode } = await req.json();
     // Two sources, one parse: a screenshot to read visually, or a pasted SMS to
     // read as text. `verify-code` is image-only — it compares rendered glyphs.
