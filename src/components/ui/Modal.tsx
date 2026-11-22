@@ -1,3 +1,5 @@
+import {AiConsentHost} from '@/components/settings/AiConsentHost';
+import {dismissAiConsent} from '@/lib/aiConsentDialog';
 import { useNativeDriver } from "@/lib/animation";
 import React from "react";
 import {
@@ -168,7 +170,7 @@ export function Modal({
       visible={mounted}
       transparent
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={() => { if (!dismissAiConsent()) onClose(); }}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -268,6 +270,7 @@ export function Modal({
           </SafeAreaView>
         </Animated.View>
       </KeyboardAvoidingView>
+      <AiConsentHost inline />
     </RNModal>
   );
 }

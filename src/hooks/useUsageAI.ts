@@ -1,4 +1,4 @@
-import {requireAiConsent} from "@/lib/aiConsent";
+import {requireAiConsent, requestAiConsent, invokeAiForOwner, AiConsentCancelled} from "@/lib/aiConsent";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
@@ -37,11 +37,9 @@ async function readableFunctionError(error: any): Promise<string> {
 export function useParseUsageScreenshot() {
   return useMutation({
     mutationFn: async (input: ParseUsageInput): Promise<ParsedUsageScreenshot> => {
-      await requireAiConsent();
+      const owner = await requestAiConsent();
       const isText = !input.imageBase64;
-      const { data, error } = await supabase.functions.invoke("parse-usage-screenshot", {
-        body: isText ? { text: input.text } : { imageBase64: input.imageBase64 },
-      });
+      const { data, error } = await invokeAiForOwner("parse-usage-screenshot", isText ? { text: input.text } : { imageBase64: input.imageBase64 }, owner.id);
       if (error) throw new Error(await readableFunctionError(error));
       if (data?.error) throw new Error(data.error);
       if (!Array.isArray(data?.usages) || data.usages.length === 0) {
@@ -82,6 +80,6 @@ export function useParseUsageScreenshot() {
         usages,
       };
     },
-    onError: (error: any) => notify.error("לא הצלחנו לפענח", error.message),
+    onError: (error: any) => { if (!(error instanceof AiConsentCancelled)) notify.error("לא הצלחנו לפענח", error.message); },
   });
         }

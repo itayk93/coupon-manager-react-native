@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/ai-consent-ux-review]
   pull_request:
 
 permissions:
