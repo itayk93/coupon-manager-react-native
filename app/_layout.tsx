@@ -39,6 +39,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { SideNav } from "@/components/layout/SideNav";
 import { NativeErrorBoundary } from "@/components/layout/NativeErrorBoundary";
 import { SharedScreenshotUsage } from "@/components/dashboard/SharedScreenshotUsage";
+import { AiConsentHost } from "@/components/settings/AiConsentHost";
 import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import { ToastHost } from "@/components/ui/Toast";
 import { useNotificationRouting } from "@/hooks/useNotificationRouting";
@@ -277,6 +278,7 @@ function RootLayoutNav() {
           </SafeAreaView>
           <BiometricGate />
           <SharedScreenshotUsage />
+          <AiConsentHost />
           <ConfirmHost />
           <ToastHost />
           <IslandHost />

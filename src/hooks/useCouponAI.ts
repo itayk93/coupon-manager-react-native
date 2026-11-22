@@ -1,6 +1,5 @@
-import {requireAiConsent} from "@/lib/aiConsent";
+import {requestAiConsent, invokeAiForOwner, AiConsentCancelled} from "@/lib/aiConsent";
 import { useMutation } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import {
   cardExpiryToExpiration,
@@ -33,12 +32,10 @@ export function useParseCoupon() {
     mutationFn: async ({ text, imageBase64, companyNames }: { text?: string; imageBase64?: string; companyNames?: string[] }) => {
       if (!text && !imageBase64) throw new Error("צריך טקסט או תמונה");
 
-      await requireAiConsent();
+      const owner = await requestAiConsent();
       const sharedPageUrl = text ? extractSharedPageUrl(text) : null;
 
-      const { data, error } = await supabase.functions.invoke("parse-coupon", {
-        body: { text, imageBase64, companyNames, sourceUrl: sharedPageUrl },
-      });
+      const { data, error } = await invokeAiForOwner("parse-coupon", { text, imageBase64, companyNames, sourceUrl: sharedPageUrl }, owner.id);
 
       if (error) {
         // A non-2xx from the edge function lands here with `data` null and the
@@ -124,6 +121,7 @@ export function useParseCoupon() {
       return filteredCoupons;
     },
     onError: (error: any) => {
+      if (error instanceof AiConsentCancelled) return;
       const technicalMessage = String(error?.message || "");
       const message = /Edge Function|non-2xx|Failed to fetch|Network/i.test(technicalMessage)
         ? "לא הצלחנו להתחבר לזיהוי החכם. בדקו את הפרטים ונסו שוב."

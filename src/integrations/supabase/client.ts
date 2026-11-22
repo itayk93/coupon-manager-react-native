@@ -4,11 +4,11 @@ import { Platform } from "react-native";
 import { sessionStorage } from "@/lib/secureSessionStorage";
 import type { Database } from "./types";
 
-const SUPABASE_URL =
+export const SUPABASE_URL =
   Constants?.expoConfig?.extra?.supabaseUrl ||
   process.env.EXPO_PUBLIC_SUPABASE_URL;
 
-const SUPABASE_PUBLISHABLE_KEY =
+export const SUPABASE_PUBLISHABLE_KEY =
   Constants?.expoConfig?.extra?.supabaseAnonKey ||
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
