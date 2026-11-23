@@ -1,3 +1,4 @@
+import { SavedFeedback } from "@/components/ui/SavedFeedback";
 import { useNativeDriver } from "@/lib/animation";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -629,6 +630,8 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={widget.toggle}
+            disabled={widget.isSaving}
+            accessibilityState={{ busy: widget.isSaving }}
             style={[
               styles.widgetCard,
               {
@@ -641,7 +644,8 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
             <AppSwitch
               value={widget.inWidget}
               onValueChange={widget.toggle}
-              disabled={!widget.canToggle && !widget.inWidget}
+              disabled={widget.isSaving || (!widget.canToggle && !widget.inWidget)}
+              accessibilityLabel="הצג בווידג'ט מסך הבית"
             />
             <View style={styles.widgetCardContent}>
               <View style={styles.widgetCardHeader}>
@@ -650,7 +654,7 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
                 >
                   הצג בווידג'ט מסך הבית
                 </Text>
-                <LayoutGrid size={18} color={theme.primary} />
+                {widget.savedSequence > 0 ? <SavedFeedback sequence={widget.savedSequence} color={theme.primary} /> : <LayoutGrid size={18} color={theme.primary} />}
               </View>
               <Text
                 style={[styles.widgetCardSubtitle, { color: theme.textMuted }]}
