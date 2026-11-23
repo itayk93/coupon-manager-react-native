@@ -486,6 +486,7 @@ private struct MerchantCardView: View {
     let coupon: WidgetCoupon
     let index: Int
     let date: Date
+    var compact: Bool = false
 
     private var darkInk: Bool { index % 4 != 0 }
     private var ink: Color { darkInk ? WidgetStyle.chrome : .white }
@@ -502,27 +503,60 @@ private struct MerchantCardView: View {
             ?? URL(string: "couponmaster:///coupons")!
     }
 
+    private var codeText: String {
+        let characters = Array(coupon.code)
+        let lines = max(1, min(4, Int(ceil(Double(characters.count) / 12.0))))
+        let perLine = max(1, Int(ceil(Double(characters.count) / Double(lines))))
+        return stride(from: 0, to: characters.count, by: perLine)
+            .map { String(characters[$0..<min($0 + perLine, characters.count)]) }
+            .joined(separator: "\n")
+    }
+    private var codeSize: CGFloat {
+        coupon.code.count > 24 ? (compact ? 11 : 14) : (compact ? 14 : 16)
+    }
+
     var body: some View {
         Link(destination: destination) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    CompanyLogoView(company: coupon.company, logoFile: coupon.logoFile, size: 22)
-                    Text(coupon.company)
-                        .couponFont(12, .bold)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
-                if let purpose = coupon.worthText {
-                    Text(purpose)
-                        .couponFont(17, .bold)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
+            VStack(alignment: .leading, spacing: compact ? 2 : 3) {
+                if compact {
+                    HStack(alignment: .center, spacing: 4) {
+                        CompanyLogoView(company: coupon.company, logoFile: coupon.logoFile, size: 16)
+                        Text(coupon.company)
+                            .couponFont(11, .bold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                        Spacer(minLength: 2)
+                        if coupon.worthText == nil {
+                            Text(formatShekels(coupon.remainingValue))
+                                .couponFont(18, .extraBold)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .environment(\.layoutDirection, .leftToRight)
+                        }
+                    }
+                    if let purpose = coupon.worthText {
+                        Text(purpose).couponFont(12, .bold).lineLimit(1)
+                    }
                 } else {
-                    Text(formatShekels(coupon.remainingValue))
-                        .couponFont(27, .extraBold)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.65)
-                        .environment(\.layoutDirection, .leftToRight)
+                    HStack(spacing: 5) {
+                        CompanyLogoView(company: coupon.company, logoFile: coupon.logoFile, size: compact ? 18 : 22)
+                        Text(coupon.company)
+                            .couponFont(compact ? 11 : 12, .bold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                    }
+                    if let purpose = coupon.worthText {
+                        Text(purpose)
+                            .couponFont(17, .bold)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                    } else {
+                        Text(formatShekels(coupon.remainingValue))
+                            .couponFont(compact ? 22 : 27, .extraBold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.65)
+                            .environment(\.layoutDirection, .leftToRight)
+                    }
                 }
                 Spacer(minLength: 0)
                 if let days = coupon.daysUntilExpiration(from: date), days <= 7 {
@@ -533,12 +567,15 @@ private struct MerchantCardView: View {
                         .background(Capsule().fill(WidgetStyle.chrome))
                         .lineLimit(1)
                 }
-                Text(formatCouponCode(coupon.code))
-                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                Text(codeText)
+                    .font(.system(size: codeSize, weight: .bold, design: .monospaced))
                     .environment(\.layoutDirection, .leftToRight)
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(1)
                     .lineLimit(4)
-                    .minimumScaleFactor(0.75)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .minimumScaleFactor(0.8)
+                    .layoutPriority(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 if coupon.cardExp?.isEmpty == false || coupon.cvv?.isEmpty == false {
                     Text([coupon.cardExp.map { "תוקף: \($0)" }, coupon.cvv.map { "CVV: \($0)" }]
                         .compactMap { $0 }.joined(separator: " · "))
@@ -548,7 +585,7 @@ private struct MerchantCardView: View {
                 }
             }
             .foregroundColor(ink)
-            .padding(10)
+            .padding(compact ? 6 : 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(RoundedRectangle(cornerRadius: 17).fill(fill))
         }
@@ -563,26 +600,47 @@ private struct MerchantWidgetView: View {
 
     var body: some View {
         VStack(spacing: large ? 10 : 7) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    AppLogoView(height: 20)
-                    if large {
+            if large {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("בארנק שלך")
+                            .couponFont(14, .medium)
+                            .foregroundColor(.white.opacity(0.85))
+                        Text(formatShekels(payload.totalRemainingValue))
+                            .couponFont(30, .bold)
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .environment(\.layoutDirection, .leftToRight)
                         Text("\(payload.activeCouponsCount) קופונים")
-                            .couponFont(11)
+                            .couponFont(11, .medium)
                             .foregroundColor(WidgetStyle.textSubtle)
                     }
+                    .layoutPriority(1)
+                    Spacer(minLength: 0)
+                    AppLogoView(height: 15).opacity(0.8).padding(.top, 2)
                 }
-                Spacer(minLength: 8)
-                VStack(alignment: .trailing, spacing: 0) {
-                    if large {
-                        Text("בארנק שלך").couponFont(11).foregroundColor(WidgetStyle.textSubtle)
+            } else {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(alignment: .firstTextBaseline, spacing: 7) {
+                            Text("בארנק שלך")
+                                .couponFont(13, .medium)
+                                .foregroundColor(.white.opacity(0.85))
+                            Text(formatShekels(payload.totalRemainingValue))
+                                .couponFont(21, .bold)
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .environment(\.layoutDirection, .leftToRight)
+                        }
+                        Text("\(payload.activeCouponsCount) קופונים")
+                            .couponFont(11, .medium)
+                            .foregroundColor(WidgetStyle.textSubtle)
                     }
-                    Text((large ? "" : "בארנק: ") + formatShekels(payload.totalRemainingValue))
-                        .couponFont(large ? 32 : 12, .bold)
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                        .environment(\.layoutDirection, .leftToRight)
+                    .layoutPriority(1)
+                    Spacer(minLength: 0)
+                    AppLogoView(height: 15).opacity(0.8).padding(.top, 2)
                 }
             }
             if selected.isEmpty {
@@ -591,37 +649,29 @@ private struct MerchantWidgetView: View {
                 // Explicit rows give every card equal height, including 1/3-card selections.
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
-                        MerchantCardView(coupon: selected[0], index: 0, date: date)
+                        MerchantCardView(coupon: selected[0], index: 0, date: date, compact: !large)
                         if selected.count > 1 {
-                            MerchantCardView(coupon: selected[1], index: 1, date: date)
+                            MerchantCardView(coupon: selected[1], index: 1, date: date, compact: !large)
                         } else { placeholder }
                     }
                     if large {
                         HStack(spacing: 8) {
                             if selected.count > 2 {
-                                MerchantCardView(coupon: selected[2], index: 2, date: date)
+                                MerchantCardView(coupon: selected[2], index: 2, date: date, compact: !large)
                             } else { placeholder }
                             if selected.count > 3 {
-                                MerchantCardView(coupon: selected[3], index: 3, date: date)
+                                MerchantCardView(coupon: selected[3], index: 3, date: date, compact: !large)
                             } else { placeholder }
                         }
                     }
                 }
             }
-            if large {
-                HStack {
-                    if let days = payload.mostUrgent(at: date)?.days {
-                        Text(days == 0 ? "קופון בתוקף עד היום" : "קופון פג בשבוע הקרוב")
-                            .foregroundColor(WidgetStyle.warning)
-                    }
-                    Spacer(minLength: 4)
-                    if let updated = payload.updatedDate {
-                        Text("עודכן ") + Text(updated, style: .time)
-                    }
-                }
-                .couponFont(10)
-                .foregroundColor(WidgetStyle.textSubtle)
-                .lineLimit(1)
+            if large, let days = payload.mostUrgent(at: date)?.days {
+                Text(days == 0 ? "קופון בתוקף עד היום" : "קופון פג בשבוע הקרוב")
+                    .couponFont(10)
+                    .foregroundColor(WidgetStyle.warning)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(12)
@@ -870,3 +920,51 @@ struct CouponMascotWidget: Widget {
         }
     }
 }
+
+#if DEBUG
+/// Synthetic-only native previews. No account data or redemption secrets.
+struct MerchantWidgetVisualPreviews: PreviewProvider {
+    private static func fixture(count: Int, longText: Bool = false, stress: Bool = false) -> WidgetPayload {
+        let coupons = (0..<count).map { index in
+            WidgetCoupon(
+                id: index + 1, publicId: "preview-\(index)",
+                company: longText ? "בית עסק לדוגמה עם שם ארוך" : "דוגמה \(index + 1)",
+                code: stress ? "DEMO00000000000000000000000000000000000000" : (longText ? "DEMO00000000000000000000000000000000" : "DEMO0000DEMO0000"),
+                remainingValue: 240, expiration: stress ? "2099-01-01" : nil, logoFile: nil,
+                cardExp: stress ? "01/99" : nil, cvv: stress ? "000" : nil, purpose: nil
+            )
+        }
+        return WidgetPayload(
+            activeCouponsCount: 24, oneTimeCouponsCount: 0,
+            totalRemainingValue: longText ? 123456 : 3240,
+            coupons: coupons, urgentCoupon: nil, urgentDaysRemaining: nil,
+            upcoming: nil, mascotTier: nil, expiringCount: nil, expiringIds: nil,
+            celebration: nil, celebrationText: nil, celebrationUntil: nil
+        )
+    }
+
+    static var previews: some View {
+        Group {
+            MerchantWidgetView(payload: fixture(count: 4), date: Date(), large: true)
+                .previewContext(WidgetPreviewContext(family: .systemLarge))
+                .previewDisplayName("Large - four synthetic coupons")
+            MerchantWidgetView(payload: fixture(count: 2), date: Date(), large: false)
+                .previewContext(WidgetPreviewContext(family: .systemMedium))
+                .previewDisplayName("Medium - two synthetic coupons")
+            MerchantWidgetView(payload: fixture(count: 3, longText: true), date: Date(), large: true)
+                .previewContext(WidgetPreviewContext(family: .systemLarge))
+                .previewDisplayName("Long names and codes - three coupons")
+            MerchantWidgetView(payload: fixture(count: 2, stress: true), date: Date(timeIntervalSince1970: 4_070_916_000), large: false)
+                .previewContext(WidgetPreviewContext(family: .systemMedium))
+                .previewDisplayName("Stress - four code lines, expiry, CVV, urgency")
+            MerchantWidgetView(payload: fixture(count: 4, stress: true), date: Date(timeIntervalSince1970: 4_070_916_000), large: true)
+                .previewContext(WidgetPreviewContext(family: .systemLarge))
+                .previewDisplayName("Large stress - four code lines and metadata")
+            MerchantWidgetView(payload: fixture(count: 0), date: Date(), large: false)
+                .previewContext(WidgetPreviewContext(family: .systemMedium))
+                .previewDisplayName("Empty selection")
+        }
+        .environment(\.layoutDirection, .rightToLeft)
+    }
+}
+#endif
