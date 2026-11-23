@@ -57,6 +57,13 @@ struct WidgetCoupon: Codable, Identifiable {
 }
 
 struct WidgetPayload: Codable {
+    var updatedAt: String? = nil
+    var updatedDate: Date? {
+        guard let updatedAt else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: updatedAt) ?? ISO8601DateFormatter().date(from: updatedAt)
+    }
     let activeCouponsCount: Int
     let oneTimeCouponsCount: Int
     let totalRemainingValue: Double
