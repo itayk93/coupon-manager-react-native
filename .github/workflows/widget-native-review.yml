@@ -1,0 +1,86 @@
+name: Widget native visual review
+on:
+  push:
+    branches: [fix/widget-wallet-hierarchy-20261123]
+    paths: [targets/widget/CouponWidget.swift, .github/workflows/widget-native-review.yml]
+permissions:
+  contents: read
+jobs:
+  native-review:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and render public widget views with synthetic data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/WidgetReview.app" native-review
+          APP="$RUNNER_TEMP/WidgetReview.app"
+          SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
+          sed -e '/^@main$/d' -e 's/containerBackground(for: .widget) { backgroundView }/background(backgroundView)/' targets/widget/CouponWidget.swift > "$RUNNER_TEMP/Review.swift"
+          cat >> "$RUNNER_TEMP/Review.swift" <<'SWIFT'
+          
+          import CoreText
+          @main
+          struct NativeWidgetReviewApp: App {
+              var body: some Scene {
+                  WindowGroup { NativeWidgetReviewScreen() }
+              }
+          }
+          struct NativeWidgetReviewScreen: View {
+              @State private var rendered = false
+              var body: some View {
+                  Text(rendered ? "Synthetic widget review rendered" : "Rendering")
+                      .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { renderAll(); rendered = true } }
+              }
+              @MainActor private func renderAll() {
+                  for url in Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] { CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil) }
+                  let date = Date(timeIntervalSince1970: 4_070_916_000)
+                  let output = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                  for large in [false, true] {
+                      for stress in [false, true] {
+                          let coupons = (0..<(large ? 4 : 2)).map { index in
+                              WidgetCoupon(id: index + 1, publicId: "demo-\(index)", company: stress ? "בית עסק לדוגמה עם שם ארוך" : "דוגמה \(index + 1)", code: stress ? "DEMO00000000000000000000000000000000000000" : "DEMO0000DEMO0000", remainingValue: 240, expiration: stress ? "2099-01-01" : nil, logoFile: nil, cardExp: stress ? "01/99" : nil, cvv: stress ? "000" : nil, purpose: nil)
+                          }
+                          let payload = WidgetPayload(activeCouponsCount: 24, oneTimeCouponsCount: 0, totalRemainingValue: 3240, coupons: coupons, urgentCoupon: nil, urgentDaysRemaining: nil, upcoming: nil, mascotTier: nil, expiringCount: nil, expiringIds: nil, celebration: nil, celebrationText: nil, celebrationUntil: nil)
+                          let view = MerchantWidgetView(payload: payload, date: date, large: large)
+                              .environment(\.layoutDirection, .rightToLeft)
+                              .frame(width: 338, height: large ? 354 : 158)
+                              .background(WidgetStyle.chrome)
+                          let renderer = ImageRenderer(content: view)
+                          renderer.scale = 3
+                          if let png = renderer.uiImage?.pngData() {
+                              try? png.write(to: output.appendingPathComponent("\(large ? "large" : "medium")-\(stress ? "stress" : "normal").png"))
+                          }
+                      }
+                  }
+              }
+          }
+          SWIFT
+          xcrun swiftc -sdk "$SDK" -target "$(uname -m)-apple-ios17.0-simulator" -parse-as-library "$RUNNER_TEMP/Review.swift" targets/widget/SharedStore.swift -o "$APP/WidgetReview"
+          cat > "$APP/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>example.synthetic.widgetreview</string><key>CFBundleExecutable</key><string>WidgetReview</string><key>CFBundleName</key><string>WidgetReview</string><key>CFBundlePackageType</key><string>APPL</string><key>MinimumOSVersion</key><string>17.0</string><key>UILaunchScreen</key><dict/></dict></plist>
+          PLIST
+          cp targets/widget/fonts/*.ttf "$APP/"
+          cp targets/widget/Assets.xcassets/KuponiWordmarkWhite.imageset/KuponiWordmarkWhite.png "$APP/KuponiWordmarkWhite.png"
+          codesign --force --sign - "$APP"
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next(x["udid"] for v in d["devices"].values() for x in v if "iPhone" in x["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP"
+          xcrun simctl launch "$DEVICE" example.synthetic.widgetreview
+          CONTAINER=$(xcrun simctl get_app_container "$DEVICE" example.synthetic.widgetreview data)
+          for i in $(seq 1 30); do
+            if [ -f "$CONTAINER/Documents/large-stress.png" ]; then break; fi
+            sleep 1
+          done
+          cp "$CONTAINER/Documents/"*.png native-review/
+          xcrun simctl io "$DEVICE" screenshot native-review/simulator-screen.png
+          test "$(find native-review -name '*.png' | wc -l | tr -d ' ')" = 5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-native-widget-review
+          path: native-review/
+          retention-days: 1
