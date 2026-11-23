@@ -204,12 +204,14 @@ export async function syncWidget(
    *  that are not in the bundled `logoByCompany` map. */
   imagePathByCompany: Record<string, string | null> = {},
   /** The user's signup date, so an anniversary can be recognised. */
-  memberSince: string | null = null
+  memberSince: string | null = null,
+  mayWrite: () => boolean | Promise<boolean> = () => true
 ): Promise<void> {
   // Admin debug: a forced state pins the widget until it is cleared, so real
   // coupon changes must not overwrite it.
   const override = await loadWidgetDebugOverride();
   if (override != null) {
+    if (!await mayWrite()) return;
     applyWidgetDebugToken(override, coupons);
     return;
   }
@@ -229,6 +231,7 @@ export async function syncWidget(
       }
     : base;
 
+  if (!await mayWrite()) return;
   setWidgetData(payload);
 
   if (payload.coupons.length === 0) return;
@@ -244,6 +247,7 @@ export async function syncWidget(
 
     if (Object.keys(logos).length === 0) return;
 
+    if (!await mayWrite()) return;
     setWidgetData({
       ...payload,
       coupons: payload.coupons.map((coupon) => ({
