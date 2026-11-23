@@ -1,8 +1,4 @@
 name: Widget native visual review
-on:
-  push:
-    branches: [fix/widget-wallet-hierarchy-20261123]
-    paths: [targets/widget/CouponWidget.swift, .github/workflows/widget-native-review.yml]
 permissions:
   contents: read
 jobs:
@@ -10,79 +6,112 @@ jobs:
     runs-on: macos-15-intel
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - name: Compile and render public widget views with synthetic data
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/WidgetReview.app" native-review
-          APP="$RUNNER_TEMP/WidgetReview.app"
-          SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
-          sed -e '/^@main$/d' -e 's/containerBackground(for: .widget) { backgroundView }/background(backgroundView)/' targets/widget/CouponWidget.swift > "$RUNNER_TEMP/Review.swift"
-          cat >> "$RUNNER_TEMP/Review.swift" <<'SWIFT'
-          
-          import CoreText
-          @main
-          struct NativeWidgetReviewApp: App {
-              var body: some Scene {
-                  WindowGroup { NativeWidgetReviewScreen() }
-              }
-          }
-          struct NativeWidgetReviewScreen: View {
-              @State private var rendered = false
-              var body: some View {
-                  Text(rendered ? "Synthetic widget review rendered" : "Rendering")
-                      .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { renderAll(); rendered = true } }
-              }
-              @MainActor private func renderAll() {
-                  for url in Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] { CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil) }
-                  let date = Date(timeIntervalSince1970: 4_070_916_000)
-                  let output = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                  for large in [false, true] {
-                      for scenario in ["normal", "stress", "empty", "partial", "large-balance", "purpose"] {
-                          let stress = scenario == "stress"
-                          let count = scenario == "empty" ? 0 : (scenario == "partial" ? (large ? 3 : 1) : (large ? 4 : 2))
-                          let coupons = (0..<count).map { index in
-                              WidgetCoupon(id: index + 1, publicId: "demo-\(index)", company: stress ? "בית עסק לדוגמה עם שם ארוך" : "דוגמה \(index + 1)", code: stress ? "DEMO00000000000000000000000000000000000000" : "DEMO0000DEMO0000", remainingValue: 240, expiration: stress ? "2099-01-01" : nil, logoFile: nil, cardExp: stress ? "01/99" : nil, cvv: stress ? "000" : nil, purpose: scenario == "purpose" ? "ארוחה זוגית לדוגמה" : nil)
-                          }
-                          let payload = WidgetPayload(activeCouponsCount: 24, oneTimeCouponsCount: 0, totalRemainingValue: scenario == "large-balance" ? 123456789 : 3240, coupons: coupons, urgentCoupon: nil, urgentDaysRemaining: nil, upcoming: nil, mascotTier: nil, expiringCount: nil, expiringIds: nil, celebration: nil, celebrationText: nil, celebrationUntil: nil)
-                          let view = MerchantWidgetView(payload: payload, date: date, large: large)
-                              .environment(\.layoutDirection, .rightToLeft)
-                              .frame(width: 338, height: large ? 354 : 158)
-                              .background(WidgetStyle.chrome)
-                          let renderer = ImageRenderer(content: view)
-                          renderer.scale = 3
-                          if let png = renderer.uiImage?.pngData() {
-                              try? png.write(to: output.appendingPathComponent("\(large ? "large" : "medium")-\(scenario).png"))
-                          }
-                      }
-                  }
-              }
-          }
-          SWIFT
-          xcrun swiftc -sdk "$SDK" -target "$(uname -m)-apple-ios17.0-simulator" -parse-as-library "$RUNNER_TEMP/Review.swift" targets/widget/SharedStore.swift -o "$APP/WidgetReview"
-          cat > "$APP/Info.plist" <<'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>example.synthetic.widgetreview</string><key>CFBundleExecutable</key><string>WidgetReview</string><key>CFBundleName</key><string>WidgetReview</string><key>CFBundlePackageType</key><string>APPL</string><key>MinimumOSVersion</key><string>17.0</string><key>UILaunchScreen</key><dict/></dict></plist>
-          PLIST
-          cp targets/widget/fonts/*.ttf "$APP/"
-          cp targets/widget/Assets.xcassets/KuponiWordmarkWhite.imageset/KuponiWordmarkWhite.png "$APP/KuponiWordmarkWhite.png"
-          codesign --force --sign - "$APP"
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next(x["udid"] for v in d["devices"].values() for x in v if "iPhone" in x["name"]))')
-          xcrun simctl boot "$DEVICE"
-          xcrun simctl bootstatus "$DEVICE" -b
-          xcrun simctl install "$DEVICE" "$APP"
-          xcrun simctl launch "$DEVICE" example.synthetic.widgetreview
-          CONTAINER=$(xcrun simctl get_app_container "$DEVICE" example.synthetic.widgetreview data)
-          for i in $(seq 1 30); do
-            if [ -f "$CONTAINER/Documents/large-purpose.png" ]; then break; fi
-            sleep 1
-          done
-          cp "$CONTAINER/Documents/"*.png native-review/
-          xcrun simctl io "$DEVICE" screenshot native-review/simulator-screen.png
-          test "$(find native-review -name '*.png' | wc -l | tr -d ' ')" = 13
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: synthetic-native-widget-review
-          path: native-review/
-          retention-days: 1
+    - uses: actions/checkout@v4
+    - name: Compile and render public widget views with synthetic data
+      shell: bash
+      run: "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/WidgetReview.app\" native-review\nAPP=\"$RUNNER_TEMP/WidgetReview.app\"\nSDK=$(xcrun --sdk iphonesimulator\
+        \ --show-sdk-path)\nsed -e '/^@main$/d' -e 's/containerBackground(for: .widget) { backgroundView }/background(backgroundView)/' targets/widget/CouponWidget.swift\
+        \ > \"$RUNNER_TEMP/Review.swift\"\ncat >> \"$RUNNER_TEMP/Review.swift\" <<'SWIFT'\n\nimport CoreText\n@main\nstruct NativeWidgetReviewApp: App {\n    var\
+        \ body: some Scene {\n        WindowGroup { NativeWidgetReviewScreen() }\n    }\n}\nstruct NativeWidgetReviewScreen: View {\n    @State private var rendered\
+        \ = false\n    var body: some View {\n        Text(rendered ? \"Synthetic widget review rendered\" : \"Rendering\")\n            .onAppear { DispatchQueue.main.asyncAfter(deadline:\
+        \ .now() + 2) { renderAll(); rendered = true } }\n    }\n    @MainActor private func renderAll() {\n        for url in Bundle.main.urls(forResourcesWithExtension:\
+        \ \"ttf\", subdirectory: nil) ?? [] { CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil) }\n        let date = Date(timeIntervalSince1970: 4_070_916_000)\n\
+        \        let output = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]\n        for large in [false, true] {\n            for scenario\
+        \ in [\"normal\", \"stress\", \"empty\", \"partial\", \"large-balance\", \"purpose\"] {\n                let stress = scenario == \"stress\"\n           \
+        \     let count = scenario == \"empty\" ? 0 : (scenario == \"partial\" ? (large ? 3 : 1) : (large ? 4 : 2))\n                let coupons = (0..<count).map\
+        \ { index in\n                    WidgetCoupon(id: index + 1, publicId: \"demo-\\(index)\", company: stress ? \"בית עסק לדוגמה עם שם ארוך\" : \"דוגמה \\(index\
+        \ + 1)\", code: stress ? \"DEMO00000000000000000000000000000000000000\" : \"DEMO0000DEMO0000\", remainingValue: 240, expiration: stress ? \"2099-01-01\" :\
+        \ nil, logoFile: nil, cardExp: stress ? \"01/99\" : nil, cvv: stress ? \"000\" : nil, purpose: scenario == \"purpose\" ? \"ארוחה זוגית לדוגמה\" : nil)\n \
+        \               }\n                let payload = WidgetPayload(activeCouponsCount: 24, oneTimeCouponsCount: 0, totalRemainingValue: scenario == \"large-balance\"\
+        \ ? 123456789 : 3240, coupons: coupons, urgentCoupon: nil, urgentDaysRemaining: nil, upcoming: nil, mascotTier: nil, expiringCount: nil, expiringIds: nil,\
+        \ celebration: nil, celebrationText: nil, celebrationUntil: nil)\n                let view = MerchantWidgetView(payload: payload, date: date, large: large)\n\
+        \                    .environment(\\.layoutDirection, .rightToLeft)\n                    .frame(width: 338, height: large ? 354 : 158)\n                 \
+        \   .background(WidgetStyle.chrome)\n                let renderer = ImageRenderer(content: view)\n                renderer.scale = 3\n                if let\
+        \ png = renderer.uiImage?.pngData() {\n                    try? png.write(to: output.appendingPathComponent(\"\\(large ? \"large\" : \"medium\")-\\(scenario).png\"\
+        ))\n                }\n            }\n        }\n    }\n}\nSWIFT\nxcrun swiftc -sdk \"$SDK\" -target \"$(uname -m)-apple-ios17.0-simulator\" -parse-as-library\
+        \ \"$RUNNER_TEMP/Review.swift\" targets/widget/SharedStore.swift -o \"$APP/WidgetReview\"\ncat > \"$APP/Info.plist\" <<'PLIST'\n<?xml version=\"1.0\" encoding=\"\
+        UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><dict><key>CFBundleIdentifier</key><string>example.synthetic.widgetreview</string><key>CFBundleExecutable</key><string>WidgetReview</string><key>CFBundleName</key><string>WidgetReview</string><key>CFBundlePackageType</key><string>APPL</string><key>MinimumOSVersion</key><string>17.0</string><key>UILaunchScreen</key><dict/></dict></plist>\n\
+        PLIST\ncp targets/widget/fonts/*.ttf \"$APP/\"\ncp targets/widget/Assets.xcassets/KuponiWordmarkWhite.imageset/KuponiWordmarkWhite.png \"$APP/KuponiWordmarkWhite.png\"\
+        \ncodesign --force --sign - \"$APP\"\nDEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next(x[\"\
+        udid\"] for v in d[\"devices\"].values() for x in v if \"iPhone\" in x[\"name\"]))')\nxcrun simctl boot \"$DEVICE\"\nxcrun simctl bootstatus \"$DEVICE\" -b\n\
+        xcrun simctl install \"$DEVICE\" \"$APP\"\nxcrun simctl launch \"$DEVICE\" example.synthetic.widgetreview\nCONTAINER=$(xcrun simctl get_app_container \"$DEVICE\"\
+        \ example.synthetic.widgetreview data)\nfor i in $(seq 1 30); do\n  if [ -f \"$CONTAINER/Documents/large-purpose.png\" ]; then break; fi\n  sleep 1\ndone\n\
+        cp \"$CONTAINER/Documents/\"*.png native-review/\nxcrun simctl io \"$DEVICE\" screenshot native-review/simulator-screen.png\ntest \"$(find native-review -name\
+        \ '*.png' | wc -l | tr -d ' ')\" = 13\n"
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: synthetic-native-widget-review
+        path: native-review/
+        retention-days: 1
+  native-container:
+    runs-on: macos-15-intel
+    needs: native-review
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build real synthetic WidgetKit extension and inspect SpringBoard container
+      shell: bash
+      run: "set -euo pipefail\nROOT=\"$RUNNER_TEMP/WidgetContainerReview\"\nmkdir -p \"$ROOT/Host\" \"$ROOT/Widget\" \"$ROOT/UITests\" native-container\ncp targets/widget/CouponWidget.swift\
+        \ \"$ROOT/Widget/\"\ncp -R targets/widget/Assets.xcassets \"$ROOT/Widget/\"\ncp -R targets/widget/fonts \"$ROOT/Widget/\"\npython3 - \"$ROOT\" <<'PY'\nimport\
+        \ pathlib,sys\nroot=pathlib.Path(sys.argv[1])\ns=pathlib.Path('targets/widget/SharedStore.swift').read_text().split('enum SharedStore {')[0]\ns+=\"\"\"enum\
+        \ SharedStore {\n    static func read() -> WidgetPayload {\n        let coupons = (0..<4).map { i in WidgetCoupon(id: i + 1, publicId: \"synthetic-\\\\(i)\"\
+        , company: \"דוגמה \\\\(i + 1)\", code: \"DEMO0000DEMO0000\", remainingValue: 240, expiration: nil, logoFile: nil, cardExp: nil, cvv: nil, purpose: nil) }\n\
+        \        return WidgetPayload(activeCouponsCount: 24, oneTimeCouponsCount: 0, totalRemainingValue: 3240, coupons: coupons, urgentCoupon: nil, urgentDaysRemaining:\
+        \ nil, upcoming: nil, mascotTier: nil, expiringCount: nil, expiringIds: nil, celebration: nil, celebrationText: nil, celebrationUntil: nil)\n    }\n}\n\"\"\
+        \"\n(root/'Widget/SharedStore.swift').write_text(s)\nPY\ncat > \"$ROOT/Host/App.swift\" <<'SWIFT'\nimport SwiftUI\nimport WidgetKit\n@main struct ContainerReviewHost:\
+        \ App {\n    var body: some Scene {\n        WindowGroup { Text(\"Synthetic WidgetKit container review\").onAppear { WidgetCenter.shared.reloadAllTimelines()\
+        \ } }\n    }\n}\nSWIFT\ncat > \"$ROOT/UITests/ContainerTests.swift\" <<'SWIFT'\nimport XCTest\nfinal class ContainerTests: XCTestCase {\n    func testRealWidgetContainer()\
+        \ throws {\n        continueAfterFailure = false\n        let host = XCUIApplication()\n        host.launch()\n        XCUIDevice.shared.press(.home)\n  \
+        \      let board = XCUIApplication(bundleIdentifier: \"com.apple.springboard\")\n        let icon = board.icons[\"Widget Review\"].firstMatch\n        for\
+        \ _ in 0..<3 { if icon.exists { break }; board.swipeLeft() }\n        print(\"HOME TREE\", board.debugDescription)\n        XCTAssertTrue(icon.waitForExistence(timeout:\
+        \ 10))\n        icon.press(forDuration: 1.5)\n        let editHome = board.buttons[\"Edit Home Screen\"]\n        if editHome.waitForExistence(timeout: 5)\
+        \ { editHome.tap() }\n        else { board.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.65)).press(forDuration: 1.5) }\n        print(\"EDIT TREE\"\
+        , board.debugDescription)\n        let edit = board.buttons[\"Edit\"]\n        if edit.waitForExistence(timeout: 5) { edit.tap() }\n        print(\"ADD TREE\"\
+        , board.debugDescription)\n        let addMenu = board.buttons.matching(NSPredicate(format: \"label CONTAINS[c] %@\", \"Add Widget\")).firstMatch\n      \
+        \  if addMenu.waitForExistence(timeout: 5) { addMenu.tap() }\n        else {\n            let addCell = board.cells.matching(NSPredicate(format: \"label CONTAINS[c]\
+        \ %@\", \"Add Widget\")).firstMatch\n            XCTAssertTrue(addCell.waitForExistence(timeout: 5)); addCell.tap()\n        }\n        let search = board.searchFields.firstMatch\n\
+        \        XCTAssertTrue(search.waitForExistence(timeout: 10)); search.tap(); search.typeText(\"Widget Review\")\n        print(\"SEARCH TREE\", board.debugDescription)\n\
+        \        let result = board.staticTexts[\"Widget Review\"].firstMatch\n        if result.waitForExistence(timeout: 10) { result.tap() }\n        else {\n\
+        \            let cell = board.cells.firstMatch\n            XCTAssertTrue(cell.waitForExistence(timeout: 10)); cell.tap()\n        }\n        print(\"GALLERY\
+        \ TREE\", board.debugDescription)\n        let gallery = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); gallery.name = \"actual-widget-gallery\"\
+        ; gallery.lifetime = .keepAlways; add(gallery)\n        board.swipeLeft()\n        let addWidget = board.buttons.matching(NSPredicate(format: \"label CONTAINS[c]\
+        \ %@\", \"Add Widget\")).firstMatch\n        XCTAssertTrue(addWidget.waitForExistence(timeout: 10)); addWidget.tap()\n        let done = board.buttons[\"\
+        Done\"]\n        if done.waitForExistence(timeout: 5) { done.tap() }\n        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: \"\
+        exists == true\"), object: board.staticTexts[\"בארנק שלך\"].firstMatch)\n        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 15), .completed)\n\
+        \        print(\"INSTALLED TREE\", board.debugDescription)\n        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); screenshot.name\
+        \ = \"actual-widget-home-screen\"; screenshot.lifetime = .keepAlways; add(screenshot)\n    }\n}\nSWIFT\ncat > \"$ROOT/project.yml\" <<'YAML'\nname: WidgetContainerReview\n\
+        options:\n  deploymentTarget: {iOS: '17.0'}\nsettings:\n  base:\n    SWIFT_VERSION: '5.0'\n    CODE_SIGNING_ALLOWED: NO\n    TARGETED_DEVICE_FAMILY: '1'\n\
+        targets:\n  ContainerHost:\n    type: application\n    platform: iOS\n    sources: [Host]\n    dependencies: [{target: ContainerWidget}]\n    settings:\n\
+        \      PRODUCT_BUNDLE_IDENTIFIER: example.synthetic.containerreview\n      GENERATE_INFOPLIST_FILE: YES\n      INFOPLIST_KEY_CFBundleDisplayName: Widget Review\n\
+        \      INFOPLIST_KEY_UILaunchScreen_Generation: YES\n  ContainerWidget:\n    type: app-extension\n    platform: iOS\n    sources: [Widget]\n    settings:\n\
+        \      PRODUCT_BUNDLE_IDENTIFIER: example.synthetic.containerreview.widget\n      APPLICATION_EXTENSION_API_ONLY: YES\n    info:\n      path: Widget/Info.plist\n\
+        \      properties:\n        CFBundleDisplayName: Widget Review\n        NSExtension:\n          NSExtensionPointIdentifier: com.apple.widgetkit-extension\n\
+        \        UIAppFonts:\n          - Heebo_400Regular.ttf\n          - Heebo_500Medium.ttf\n          - Heebo_700Bold.ttf\n          - Heebo_800ExtraBold.ttf\n\
+        \  ContainerUITests:\n    type: bundle.ui-testing\n    platform: iOS\n    sources: [UITests]\n    dependencies: [{target: ContainerHost}]\n    settings:\n\
+        \      PRODUCT_BUNDLE_IDENTIFIER: example.synthetic.containerreview.tests\n      GENERATE_INFOPLIST_FILE: YES\n      TEST_TARGET_NAME: ContainerHost\nschemes:\n\
+        \  ContainerReview:\n    build:\n      targets:\n        ContainerHost: all\n        ContainerUITests: [test]\n    test:\n      targets: [ContainerUITests]\n\
+        YAML\nif ! command -v xcodegen; then brew install xcodegen; fi\n(cd \"$ROOT\" && xcodegen generate)\nDEVICE=$(xcrun simctl list devices available -j | python3\
+        \ -c 'import json,sys;d=json.load(sys.stdin);print(next(x[\"udid\"] for v in d[\"devices\"].values() for x in v if \"iPhone\" in x[\"name\"]))')\nxcrun simctl\
+        \ boot \"$DEVICE\"\nxcrun simctl bootstatus \"$DEVICE\" -b\ntrap 'xcrun simctl io \"$DEVICE\" screenshot native-container/final-simulator-state.png || true'\
+        \ EXIT\nxcrun simctl spawn \"$DEVICE\" defaults write NSGlobalDomain AppleLanguages -array en\nxcrun simctl spawn \"$DEVICE\" defaults write NSGlobalDomain\
+        \ AppleLocale en_US\nxcodebuild build-for-testing -project \"$ROOT/WidgetContainerReview.xcodeproj\" -scheme ContainerReview -destination \"id=$DEVICE\" -derivedDataPath\
+        \ \"$ROOT/dd\" CODE_SIGNING_ALLOWED=NO > native-container/build.log 2>&1 || { tail -100 native-container/build.log; exit 1; }\nxcrun simctl install \"$DEVICE\"\
+        \ \"$ROOT/dd/Build/Products/Debug-iphonesimulator/ContainerHost.app\"\nxcrun simctl launch \"$DEVICE\" example.synthetic.containerreview\nxcodebuild test-without-building\
+        \ -project \"$ROOT/WidgetContainerReview.xcodeproj\" -scheme ContainerReview -destination \"id=$DEVICE\" -derivedDataPath \"$ROOT/dd\" -resultBundlePath \"\
+        $GITHUB_WORKSPACE/native-container/ContainerReview.xcresult\" CODE_SIGNING_ALLOWED=NO > native-container/test.log 2>&1 || { tail -100 native-container/test.log;\
+        \ exit 1; }\nxcrun simctl io \"$DEVICE\" screenshot native-container/actual-widget-home-screen.png\nxcrun xcresulttool export attachments --path native-container/ContainerReview.xcresult\
+        \ --output-path native-container/attachments || true\n"
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: synthetic-widgetkit-container-review
+        path: native-container/
+        retention-days: 1
+'on':
+  push:
+    branches:
+    - fix/widget-wallet-hierarchy-20261123
+    paths:
+    - targets/widget/CouponWidget.swift
+    - .github/workflows/widget-native-review.yml
