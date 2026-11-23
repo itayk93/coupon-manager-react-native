@@ -58,6 +58,7 @@
     "date-fns": "^4.1.0",
     "expo": "~57.0.27",
     "expo-asset": "~57.0.11",
+    "expo-background-task": "~57.0.21",
     "expo-blur": "~57.0.3",
     "expo-camera": "~57.0.4",
     "expo-clipboard": "~57.0.1",
