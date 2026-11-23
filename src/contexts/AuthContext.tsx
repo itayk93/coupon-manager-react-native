@@ -10,6 +10,7 @@ import { flushActivityLog, logActivity } from "@/lib/activityLog";
 import { claimPendingReferral, resetReferralClaim } from "@/lib/referralClaim";
 import { clearLocalPrivateData } from "@/lib/localPrivateData";
 import { clearLocalExpiryAlerts } from "@/lib/localExpiryAlerts";
+import { stopWidgetBackgroundRefresh } from "@/lib/widgetBackgroundTask";
 import { clearOfflineCoupons } from "@/lib/offlineCoupons";
 
 type AuthContextType = {
@@ -122,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async (options: { forgetDeviceData?: boolean } = {}) => {
     const identity = user?.email || session?.email;
+    await stopWidgetBackgroundRefresh().catch(() => {});
     try {
       // Logged and flushed before the session is torn down: the log endpoint
       // authenticates with the JWT, so anything still queued afterwards has
@@ -173,4 +175,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
+      }
