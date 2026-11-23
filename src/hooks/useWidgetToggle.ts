@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useCoupons, useUpdateCoupon, type DecryptedCoupon } from "@/hooks/useCoupons";
 import { notify } from "@/lib/notify";
 import {
@@ -18,6 +19,16 @@ import {
 export function useWidgetToggle(coupon: DecryptedCoupon | null | undefined) {
   const { data: allCoupons = [] } = useCoupons();
   const updateCoupon = useUpdateCoupon();
+  const [savedSequence, setSavedSequence] = useState(0);
+  const pending = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const commit = (updates: Partial<DecryptedCoupon>, message: string) => {
+    pending.current = true; setIsSaving(true); setSavedSequence(0);
+    updateCoupon.mutate({ id: coupon!.id, updates }, {
+      onSuccess: () => { setSavedSequence(n => n + 1); notify.success(message); },
+      onSettled: () => { pending.current = false; setIsSaving(false); },
+    });
+  };
 
   const inWidget = coupon ? isInWidget(coupon) : false;
   const isFull = isWidgetFull(allCoupons);
@@ -26,14 +37,10 @@ export function useWidgetToggle(coupon: DecryptedCoupon | null | undefined) {
   const canToggle = coupon ? isWidgetEligible(coupon) || inWidget : false;
 
   const toggle = () => {
-    if (!coupon) return;
+    if (!coupon || pending.current) return;
 
     if (inWidget) {
-      updateCoupon.mutate({
-        id: coupon.id,
-        updates: { show_in_widget: false, widget_display_order: null },
-      });
-      notify.success("הקופון הוסר מהווידג'ט");
+      commit({ show_in_widget: false, widget_display_order: null }, "הקופון הוסר מהווידג'ט");
       return;
     }
 
@@ -47,15 +54,13 @@ export function useWidgetToggle(coupon: DecryptedCoupon | null | undefined) {
       return;
     }
 
-    updateCoupon.mutate({
-      id: coupon.id,
-      updates: { show_in_widget: true, widget_display_order: nextWidgetOrder(allCoupons) },
-    });
-    notify.success("הקופון נוסף לווידג'ט");
+    commit({ show_in_widget: true, widget_display_order: nextWidgetOrder(allCoupons) }, "הקופון נוסף לווידג'ט");
   };
 
   return {
     inWidget,
+    savedSequence,
+    isSaving,
     isFull,
     canToggle,
     /** True when the button should be visible but inert. */
