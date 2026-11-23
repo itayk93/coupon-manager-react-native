@@ -480,98 +480,175 @@ struct CouponMascotSmallView: View {
     }
 }
 
-// MARK: - Medium
+// MARK: - Merchant-card widgets (medium and large only)
 
-private struct CouponMediumView: View {
-    let payload: WidgetPayload
+private struct MerchantCardView: View {
+    let coupon: WidgetCoupon
+    let index: Int
+    let date: Date
 
-    private var couponsToShow: [WidgetCoupon] { Array(payload.coupons.prefix(2)) }
+    private var darkInk: Bool { index % 4 != 0 }
+    private var ink: Color { darkInk ? WidgetStyle.chrome : .white }
+    private var fill: Color {
+        switch index % 4 {
+        case 0: return Color(red: 0.72, green: 0.25, blue: 0.15)
+        case 1: return Color(red: 0.59, green: 0.66, blue: 0.93)
+        case 2: return Color(red: 0.65, green: 0.83, blue: 0.74)
+        default: return Color(red: 0.96, green: 0.91, blue: 0.82)
+        }
+    }
+    private var destination: URL {
+        URL(string: "couponmaster:///coupons/\(coupon.publicId ?? String(coupon.id))")
+            ?? URL(string: "couponmaster:///coupons")!
+    }
 
     var body: some View {
-        ZStack {
-            WidgetStyle.background.edgesIgnoringSafeArea(.all)
-
-            VStack(alignment: .leading, spacing: 8) {
-                if couponsToShow.isEmpty {
-                    emptyState(text: "בחר עד 2 קופונים")
+        Link(destination: destination) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                    CompanyLogoView(company: coupon.company, logoFile: coupon.logoFile, size: 22)
+                    Text(coupon.company)
+                        .couponFont(12, .bold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                if let purpose = coupon.worthText {
+                    Text(purpose)
+                        .couponFont(17, .bold)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                 } else {
-                    Spacer()
-                    ForEach(couponsToShow) { coupon in
-                        CouponCardView(coupon: coupon)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    if couponsToShow.count == 1 {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(WidgetStyle.cardFill)
-                            .overlay(
-                                Text("בחר קופון נוסף")
-                                    .couponFont(12)
-                                    .foregroundColor(WidgetStyle.textSubtle)
-                            )
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                    }
-                    Spacer()
+                    Text(formatShekels(coupon.remainingValue))
+                        .couponFont(27, .extraBold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                        .environment(\.layoutDirection, .leftToRight)
+                }
+                Spacer(minLength: 0)
+                if let days = coupon.daysUntilExpiration(from: date), days <= 7 {
+                    Text(days == 0 ? "בתוקף עד היום" : "נותרו \(days) ימים")
+                        .couponFont(10, .bold)
+                        .foregroundColor(.yellow)
+                        .padding(.horizontal, 5)
+                        .background(Capsule().fill(WidgetStyle.chrome))
+                        .lineLimit(1)
+                }
+                Text(formatCouponCode(coupon.code))
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .environment(\.layoutDirection, .leftToRight)
+                    .lineLimit(4)
+                    .minimumScaleFactor(0.75)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                if coupon.cardExp?.isEmpty == false || coupon.cvv?.isEmpty == false {
+                    Text([coupon.cardExp.map { "תוקף: \($0)" }, coupon.cvv.map { "CVV: \($0)" }]
+                        .compactMap { $0 }.joined(separator: " · "))
+                        .couponFont(10, .medium)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
             }
-            .padding()
+            .foregroundColor(ink)
+            .padding(10)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(RoundedRectangle(cornerRadius: 17).fill(fill))
         }
-        .widgetBackground(Color.clear)
     }
 }
 
-// MARK: - Large
-
-private struct CouponLargeView: View {
+private struct MerchantWidgetView: View {
     let payload: WidgetPayload
+    let date: Date
+    var large: Bool
+    private var selected: [WidgetCoupon] { Array(payload.coupons.prefix(large ? 4 : 2)) }
 
     var body: some View {
-        ZStack {
-            WidgetStyle.background.edgesIgnoringSafeArea(.all)
-
-            VStack(spacing: 4) {
-                HStack(spacing: 12) {
+        VStack(spacing: large ? 10 : 7) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
                     AppLogoView(height: 20)
-
-                    VStack(alignment: .center, spacing: 2) {
-                        Text("קופונים פעילים: \(payload.activeCouponsCount)")
-                            .couponFont(14, .bold)
-                            .foregroundColor(.white)
-
-                        Text("יתרה: " + formatShekels(payload.totalRemainingValue))
-                            .couponFont(14, .medium)
-                            .foregroundColor(.white)
+                    if large {
+                        Text("\(payload.activeCouponsCount) קופונים")
+                            .couponFont(11)
+                            .foregroundColor(WidgetStyle.textSubtle)
                     }
-                    .frame(maxWidth: .infinity)
-
-                    Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-
-                Rectangle()
-                    .fill(WidgetStyle.cardStroke)
-                    .frame(height: 1)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 8)
-
-                VStack(spacing: 10) {
-                    if payload.coupons.isEmpty {
-                        emptyState(text: "אין קופונים פעילים")
-                    } else {
-                        ForEach(payload.coupons) { coupon in
-                            CouponCardView(coupon: coupon, compact: true)
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 0) {
+                    if large {
+                        Text("בארנק שלך").couponFont(11).foregroundColor(WidgetStyle.textSubtle)
+                    }
+                    Text((large ? "" : "בארנק: ") + formatShekels(payload.totalRemainingValue))
+                        .couponFont(large ? 32 : 12, .bold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .environment(\.layoutDirection, .leftToRight)
+                }
+            }
+            if selected.isEmpty {
+                emptyState(text: "בחר קופונים להצגה באפליקציה")
+            } else {
+                // Explicit rows give every card equal height, including 1/3-card selections.
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        MerchantCardView(coupon: selected[0], index: 0, date: date)
+                        if selected.count > 1 {
+                            MerchantCardView(coupon: selected[1], index: 1, date: date)
+                        } else { placeholder }
+                    }
+                    if large {
+                        HStack(spacing: 8) {
+                            if selected.count > 2 {
+                                MerchantCardView(coupon: selected[2], index: 2, date: date)
+                            } else { placeholder }
+                            if selected.count > 3 {
+                                MerchantCardView(coupon: selected[3], index: 3, date: date)
+                            } else { placeholder }
                         }
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
             }
-            .padding(.top, 4)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            if large {
+                HStack {
+                    if let days = payload.mostUrgent(at: date)?.days {
+                        Text(days == 0 ? "קופון בתוקף עד היום" : "קופון פג בשבוע הקרוב")
+                            .foregroundColor(WidgetStyle.warning)
+                    }
+                    Spacer(minLength: 4)
+                    if let updated = payload.updatedDate {
+                        Text("עודכן ") + Text(updated, style: .time)
+                    }
+                }
+                .couponFont(10)
+                .foregroundColor(WidgetStyle.textSubtle)
+                .lineLimit(1)
+            }
         }
-        .widgetBackground(Color.clear)
+        .padding(12)
+        .widgetBackground(WidgetStyle.background)
     }
+
+    private var placeholder: some View {
+        Link(destination: URL(string: "couponmaster:///coupons")!) {
+            Text("בחר קופון נוסף")
+                .couponFont(12)
+                .foregroundColor(WidgetStyle.textSubtle)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(RoundedRectangle(cornerRadius: 17).fill(WidgetStyle.cardFill))
+        }
+    }
+}
+
+private struct CouponMediumView: View {
+    let payload: WidgetPayload
+    let date: Date
+    var body: some View { MerchantWidgetView(payload: payload, date: date, large: false) }
+}
+
+private struct CouponLargeView: View {
+    let payload: WidgetPayload
+    let date: Date
+    var body: some View { MerchantWidgetView(payload: payload, date: date, large: true) }
 }
 
 @ViewBuilder
@@ -719,8 +796,8 @@ struct CouponWidgetEntryView: View {
     var body: some View {
         Group {
             switch family {
-            case .systemMedium: CouponMediumView(payload: entry.payload)
-            case .systemLarge: CouponLargeView(payload: entry.payload)
+            case .systemMedium: CouponMediumView(payload: entry.payload, date: entry.date)
+            case .systemLarge: CouponLargeView(payload: entry.payload, date: entry.date)
             default:
                 if entry.payload.showsCelebration(at: entry.date) {
                     CouponCelebrationSmallView(payload: entry.payload)
