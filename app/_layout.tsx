@@ -1,3 +1,4 @@
+import "@/lib/widgetBackgroundTask";
 import { useEffect, useState } from "react";
 import {
   I18nManager,
