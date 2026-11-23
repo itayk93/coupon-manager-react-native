@@ -511,16 +511,24 @@ private struct MerchantCardView: View {
             .map { String(characters[$0..<min($0 + perLine, characters.count)]) }
             .joined(separator: "\n")
     }
+    private var denseCode: Bool { coupon.code.count > 24 }
+    private var compactHeader: Bool { compact || denseCode }
     private var codeSize: CGFloat {
-        coupon.code.count > 24 ? (compact ? 11 : 14) : (compact ? 14 : 16)
+        denseCode ? (compact ? 9 : 12) : (compact ? 14 : 16)
     }
 
     var body: some View {
         Link(destination: destination) {
             VStack(alignment: .leading, spacing: compact ? 2 : 3) {
-                if compact {
+                if compactHeader {
                     HStack(alignment: .center, spacing: 4) {
-                        CompanyLogoView(company: coupon.company, logoFile: coupon.logoFile, size: 16)
+                        if denseCode, let days = coupon.daysUntilExpiration(from: date), days <= 7 {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.yellow)
+                        } else {
+                            CompanyLogoView(company: coupon.company, logoFile: coupon.logoFile, size: 16)
+                        }
                         Text(coupon.company)
                             .couponFont(11, .bold)
                             .lineLimit(1)
@@ -528,7 +536,7 @@ private struct MerchantCardView: View {
                         Spacer(minLength: 2)
                         if coupon.worthText == nil {
                             Text(formatShekels(coupon.remainingValue))
-                                .couponFont(18, .extraBold)
+                                .couponFont(denseCode && compact ? 14 : 18, .extraBold)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                                 .environment(\.layoutDirection, .leftToRight)
@@ -559,7 +567,7 @@ private struct MerchantCardView: View {
                     }
                 }
                 Spacer(minLength: 0)
-                if let days = coupon.daysUntilExpiration(from: date), days <= 7 {
+                if !denseCode, let days = coupon.daysUntilExpiration(from: date), days <= 7 {
                     Text(days == 0 ? "בתוקף עד היום" : "נותרו \(days) ימים")
                         .couponFont(10, .bold)
                         .foregroundColor(.yellow)
@@ -573,19 +581,20 @@ private struct MerchantCardView: View {
                     .multilineTextAlignment(.leading)
                     .lineSpacing(1)
                     .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
                     .minimumScaleFactor(0.8)
                     .layoutPriority(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if coupon.cardExp?.isEmpty == false || coupon.cvv?.isEmpty == false {
                     Text([coupon.cardExp.map { "תוקף: \($0)" }, coupon.cvv.map { "CVV: \($0)" }]
                         .compactMap { $0 }.joined(separator: " · "))
-                        .couponFont(10, .medium)
+                        .couponFont(denseCode && compact ? 8 : 10, .medium)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
             }
             .foregroundColor(ink)
-            .padding(compact ? 6 : 10)
+            .padding(denseCode ? (compact ? 4 : 6) : (compact ? 6 : 10))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(RoundedRectangle(cornerRadius: 17).fill(fill))
         }
