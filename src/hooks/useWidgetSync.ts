@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCoupons } from "@/hooks/useCoupons";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProfile } from "@/hooks/useProfile";
+import { startWidgetBackgroundRefresh, stopWidgetBackgroundRefresh, widgetWriteGuard } from "@/lib/widgetBackgroundTask";
 import { syncWidget } from "@/lib/widgetSync";
 import { clearWidgetData, isWidgetSupported } from "../../modules/coupon-widget";
 
@@ -40,11 +41,16 @@ export function useWidgetSync() {
       // Don't leave coupon codes on the home screen after sign-out. The widget
       // itself is for every account — `users.allow_widget_access` is a legacy
       // column from the old product and deliberately not consulted here.
+      void stopWidgetBackgroundRefresh().catch(() => {});
       clearWidgetData();
       return;
     }
 
-    if (coupons) void syncWidget(coupons, imagePathByCompany, profile?.created_at ?? null);
+    let active = true;
+    void startWidgetBackgroundRefresh().catch(() => {});
+    const mayWrite = widgetWriteGuard();
+    if (coupons) void syncWidget(coupons, imagePathByCompany, profile?.created_at ?? null, () => active && mayWrite());
+    return () => { active = false; };
   }, [isLoading, user, coupons, imagePathByCompany, profile?.created_at]);
 
   // The widget only shows what the app last wrote, and the app only learns of
