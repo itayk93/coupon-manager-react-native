@@ -1,3 +1,4 @@
+import {WidgetSetupGuide} from '@/components/WidgetSetupGuide';
 import React from "react";
 import {
   View,
@@ -119,6 +120,7 @@ export function WidgetSettingsScreen() {
       <Header title="ווידג'ט מסך הבית" />
 
       <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
+        <WidgetSetupGuide theme={theme} />
         {isAdmin ? <WidgetDebugPanel /> : null}
 
         <View style={[styles.intro, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
