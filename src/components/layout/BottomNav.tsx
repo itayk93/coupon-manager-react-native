@@ -1,6 +1,9 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter, useSegments } from "expo-router";
+import { PressableScale } from "@/components/ui/PressableScale";
+import { useNativeDriver } from "@/lib/animation";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Plus, Share2, Ticket, User } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -115,9 +118,9 @@ export function BottomNav() {
 
         if (item.primary) {
           return (
-            <TouchableOpacity
+            <PressableScale
               key={item.path}
-              activeOpacity={0.85}
+              scaleTo={0.9}
               onPress={() => handlePress(item, active)}
               style={styles.item}
               accessibilityRole="button"
@@ -132,15 +135,15 @@ export function BottomNav() {
               >
                 <item.Icon color="#ffffff" size={26} strokeWidth={2.6} />
               </View>
-            </TouchableOpacity>
+            </PressableScale>
           );
         }
 
         const color = active ? theme.primary : theme.textSubtle;
         return (
-          <TouchableOpacity
+          <PressableScale
             key={item.path}
-            activeOpacity={0.7}
+            scaleTo={0.94}
             onPress={() => handlePress(item, active)}
             style={styles.item}
             accessibilityRole="button"
@@ -160,15 +163,56 @@ export function BottomNav() {
                   : styles.itemStack,
               ]}
             >
-              <View style={item.iconNudgeX ? { transform: [{ translateX: item.iconNudgeX }] } : undefined}>
-                <item.Icon color={color} size={20} strokeWidth={2.2} />
-              </View>
+              <NavIcon Icon={item.Icon} color={color} active={active} nudgeX={item.iconNudgeX} />
               <Text style={[styles.label, { color }]} numberOfLines={1}>{item.label}</Text>
             </View>
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
     </View>
+  );
+}
+
+type NavIconProps = {
+  Icon: React.ComponentType<{ color: string; size: number; strokeWidth: number }>;
+  color: string;
+  active: boolean;
+  nudgeX?: number;
+};
+
+/**
+ * Tab icon with the tab-switch animation from the motion reference: when a
+ * tab becomes active its icon "lands" — it starts slightly shrunk and
+ * springs to full size. Inactive tabs stay put, so the pop reads as the
+ * bar acknowledging the switch rather than the whole row wiggling.
+ */
+function NavIcon({ Icon, color, active, nudgeX }: NavIconProps) {
+  const reduceMotion = useReduceMotion();
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const wasActive = React.useRef(active);
+
+  React.useEffect(() => {
+    if (active && !wasActive.current && !reduceMotion) {
+      scale.setValue(0.7);
+      Animated.spring(scale, {
+        toValue: 1,
+        damping: 11,
+        stiffness: 320,
+        mass: 0.5,
+        useNativeDriver,
+      }).start();
+    }
+    wasActive.current = active;
+  }, [active, reduceMotion, scale]);
+
+  return (
+    <Animated.View
+      style={{
+        transform: [{ scale }, ...(nudgeX ? [{ translateX: nudgeX }] : [])],
+      }}
+    >
+      <Icon color={color} size={20} strokeWidth={2.2} />
+    </Animated.View>
   );
 }
 
