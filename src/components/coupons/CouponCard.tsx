@@ -17,6 +17,7 @@ import { DecryptedCoupon } from "@/hooks/useCoupons";
 import { getCompanyColor, getCompanyLogoSource, getContrastText } from "@/lib/companyLogos";
 import { ShimmerLogo } from "@/components/coupons/ShimmerLogo";
 import { useHoldAction } from "@/hooks/useHoldAction";
+import { usePopOnTrue } from "@/hooks/usePopOnTrue";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { couponRouteId } from "@/lib/entityId";
@@ -52,6 +53,9 @@ export function CouponCard({
   const router = useRouter();
   const { theme } = useAppTheme();
   const [copied, setCopied] = React.useState(false);
+  // The copied state swaps the button's contents; the pop keeps that swap
+  // from reading as a hard cut (motion reference: copy confirmation).
+  const copyPop = usePopOnTrue(copied);
   const logoUri = getCompanyLogoSource(coupon.company);
 
   const total = coupon.value || 0;
@@ -318,12 +322,14 @@ export function CouponCard({
             onPress={handleCopy}
             style={[styles.actionBtn, { backgroundColor: headerColor }]}
           >
-            {copied ? (
-              <Check size={14} color={headerText} />
-            ) : null}
-            <Text style={[styles.actionText, { color: headerText }]}>
-              {copied ? "הועתק" : "העתקת קוד"}
-            </Text>
+            <Animated.View style={[styles.actionBtnContent, copyPop]}>
+              {copied ? (
+                <Check size={14} color={headerText} />
+              ) : null}
+              <Text style={[styles.actionText, { color: headerText }]}>
+                {copied ? "הועתק" : "העתקת קוד"}
+              </Text>
+            </Animated.View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -517,6 +523,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     borderRadius: radii.md,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  // Inner row carries the button's contents so the copied-state pop can
+  // scale them together without moving the button's own box.
+  actionBtnContent: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
