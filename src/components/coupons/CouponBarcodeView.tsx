@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { usePopOnTrue } from "@/hooks/usePopOnTrue";
 import {
+  Animated,
   View,
   Text,
   StyleSheet,
@@ -25,6 +27,9 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
   const { theme } = useAppTheme();
   const [copied, setCopied] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  // One pop shared by both copied-state surfaces (button + modal badge),
+  // so whichever is on screen springs when the copy lands.
+  const copyPop = usePopOnTrue(copied);
 
   const code = coupon.code || "";
 
@@ -75,14 +80,16 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
                 : { backgroundColor: theme.primary },
             ]}
           >
-            {copied ? (
-              <Check size={18} color="#ffffff" />
-            ) : (
-              <Copy size={18} color="#ffffff" />
-            )}
-            <Text style={styles.actionButtonText}>
-              {copied ? "הועתק!" : "העתק קוד"}
-            </Text>
+            <Animated.View style={[styles.actionButtonContent, copyPop]}>
+              {copied ? (
+                <Check size={18} color="#ffffff" />
+              ) : (
+                <Copy size={18} color="#ffffff" />
+              )}
+              <Text style={styles.actionButtonText}>
+                {copied ? "הועתק!" : "העתק קוד"}
+              </Text>
+            </Animated.View>
           </TouchableOpacity>
 
           {code ? (
@@ -156,14 +163,16 @@ export function CouponBarcodeView({ coupon }: CouponBarcodeViewProps) {
             ]}
           >
             <View style={styles.modalCodeCopyBadge}>
-              {copied ? (
-                <Check size={14} color="#ffffff" />
-              ) : (
-                <Copy size={14} color="#ffffff" />
-              )}
-              <Text style={styles.modalCodeCopyText}>
-                {copied ? "הועתק" : "העתק"}
-              </Text>
+              <Animated.View style={[styles.modalCodeCopyBadgeContent, copyPop]}>
+                {copied ? (
+                  <Check size={14} color="#ffffff" />
+                ) : (
+                  <Copy size={14} color="#ffffff" />
+                )}
+                <Text style={styles.modalCodeCopyText}>
+                  {copied ? "הועתק" : "העתק"}
+                </Text>
+              </Animated.View>
             </View>
             <Text
               style={[styles.modalCodeDigits, { color: theme.text }]}
@@ -250,6 +259,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 14,
+  },
+  // Inner rows carry the contents so the copied-state pop scales them
+  // without moving the surrounding button/badge box.
+  actionButtonContent: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  modalCodeCopyBadgeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   actionButtonText: {
     color: "#ffffff",
