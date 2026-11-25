@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  TouchableOpacity,
   Text,
   ActivityIndicator,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   TextStyle,
   Platform,
 } from "react-native";
+import { PressableScale } from "./PressableScale";
 import * as Haptics from "expo-haptics";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, shadows } from "@/lib/theme";
@@ -106,8 +106,11 @@ export function Button({
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
+    // PressableScale gives every Button the house press: a small dip that
+    // springs back, instead of TouchableOpacity's flat fade. Buttons are
+    // small targets, so they dip slightly deeper than cards (0.96 vs 0.97).
+    <PressableScale
+      scaleTo={0.96}
       onPress={handlePress}
       disabled={disabled || loading}
       style={[
@@ -142,7 +145,7 @@ export function Button({
           {icon ? <>{icon}</> : null}
         </>
       )}
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
