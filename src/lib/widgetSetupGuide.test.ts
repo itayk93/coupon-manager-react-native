@@ -1,0 +1,4 @@
+import{it,expect}from'vitest';import{readFileSync}from'node:fs';
+const guide=readFileSync('src/components/WidgetSetupGuide.tsx','utf8'),screen=readFileSync('src/screens/settings/WidgetSettingsScreen.tsx','utf8');
+it('shows useful existing widget content and platform-specific setup without changing selections',()=>{expect(screen).toContain('<WidgetSetupGuide theme={theme} />');for(const value of ["Platform.OS==='ios'","Platform.OS==='android'",'הוספה באייפון','הוספה באנדרואיד','Expo Go','מערכת ההפעלה','קודים עשויים להיות גלויים'])expect(guide).toContain(value);expect(guide).not.toMatch(/mutate\(|setWidgetData\(|registerTaskAsync\(|requestPermissions/)});
+it('preserves explicit coupon choice and does not auto-add coupons from setup',()=>{expect(screen).toContain('show_in_widget: true');expect(screen).toContain('show_in_widget: false');expect(guide).toContain('בחרו בהמשך את הקופונים');expect(guide).not.toContain('show_in_widget')});
