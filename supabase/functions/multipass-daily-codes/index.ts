@@ -143,7 +143,7 @@ async function processScrapeResults(body: Record<string, unknown>) {
     const { data: allTransactions, error: totalsError } = await db.from('coupon_transaction')
       .select('usage_amount,recharge_amount')
       .eq('coupon_id', coupon.id)
-      .eq('source', 'Multipass');
+      .ilike('source', 'multipass');
     if (totalsError) throw totalsError;
     const usedTotal = (allTransactions || []).reduce((sum, tx) => sum + Number(tx.usage_amount || 0), 0);
     const rechargeTotal = (allTransactions || []).reduce((sum, tx) => sum + Number(tx.recharge_amount || 0), 0);
