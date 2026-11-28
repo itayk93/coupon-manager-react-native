@@ -1,3 +1,4 @@
+import { withoutVerifiedMirrors } from "@/lib/verifiedCouponTransactions";
 import { couponUsedValue } from "@/lib/couponTotals";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,7 +197,7 @@ export function useSavingsByMonth(coupons: DecryptedCoupon[] = []) {
         fetchLedger<UsageLedgerRow>("coupon_usage", "id, coupon_id, timestamp, used_amount, details, action", ids),
         fetchLedger<TransactionLedgerRow>(
           "coupon_transaction",
-          "id, coupon_id, transaction_date, usage_amount, recharge_amount, location, source",
+          "id, coupon_id, transaction_date, usage_amount, recharge_amount, location, source, reference_number",
           ids
         ),
       ]);
@@ -267,7 +268,7 @@ export function useCouponUsageHistory(coupon: DecryptedCoupon | null) {
         });
       });
 
-      (txData || []).forEach((t) => {
+      withoutVerifiedMirrors(txData || []).forEach((t) => {
         const amount = ledgerAmountFromTransaction(t.recharge_amount, t.usage_amount);
         const details = t.location || t.source || "עסקת קופון";
         if (isHiddenLedgerRow(details)) return;
