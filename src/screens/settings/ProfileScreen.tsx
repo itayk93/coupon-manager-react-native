@@ -113,7 +113,8 @@ export function ProfileScreen() {
     if (linkedProviders.includes(provider)) return;
     setLinkingProvider(provider);
     try {
-      await linkSocialProvider(provider);
+      const completed = await linkSocialProvider(provider);
+      if (!completed) return;
       await loadLinkedProviders();
       notify.success("החיבור נוסף לחשבון הקיים");
     } catch (err: any) {

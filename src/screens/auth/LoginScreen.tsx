@@ -77,7 +77,8 @@ export function LoginScreen() {
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setSocialLoading(provider);
     try {
-      await signInWithSocialProvider(provider);
+      const completed = await signInWithSocialProvider(provider);
+      if (!completed) return;
       logActivity("login_success", { metadata: { method: provider } });
       if (Platform.OS !== "web") {
         router.replace({ pathname: "/(auth)/onboarding", params: { social: provider } });

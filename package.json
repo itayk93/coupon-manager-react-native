@@ -40,6 +40,9 @@
     "qa:android:devices": "./scripts/qa-android-devices.sh",
     "qa:android:screens": "./scripts/qa-android-screen-matrix.sh",
     "typecheck": "tsc --noEmit -p tsconfig.native.json",
+    "build:web": "CI=1 expo export --platform web --output-dir .expo/e2e-web",
+    "test:e2e": "npm run build:web && playwright test",
+    "test:e2e:run": "playwright test",
     "multipass:daily": "HEADLESS=true node scripts/run-daily-multipass.mjs"
   },
   "dependencies": {
@@ -106,6 +109,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.13",
     "@bacons/apple-targets": "^5.0.0",
+    "@playwright/test": "^1.65.1",
     "@types/pg": "^8.23.1",
     "@types/react": "~19.2.2",
     "babel-preset-expo": "~57.0.14",

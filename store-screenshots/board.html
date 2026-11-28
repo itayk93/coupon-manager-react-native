@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>קופון מאסטר — App Store Screenshots</title>
+<style>
+:root{--bg:#0f0f11;--ink:#f2f2f4;--ink2:#9d9da6;--line:#26262b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;-webkit-font-smoothing:antialiased}
+header{padding:36px 24px 8px;max-width:1400px;margin:0 auto}h1{font-size:clamp(26px,3.6vw,42px);letter-spacing:-.02em;margin:0 0 6px}
+header p{color:var(--ink2);margin:0}.set{max-width:1400px;margin:28px auto 0;padding:0 24px}
+h2{font-size:18px;margin:0 0 2px}.set p,.search p{color:var(--ink2);margin:0 0 12px;font-size:14px}
+.row{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#000}
+.row img{display:block;height:min(62vh,640px);width:auto;cursor:zoom-in}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;overflow:auto;cursor:zoom-out;z-index:9}
+.lb.on{display:block}.lb img{height:96vh;width:auto;display:block;margin:2vh auto}
+.search{max-width:1400px;margin:24px auto 0;padding:0 24px}.search h2{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search button{font:inherit;font-size:13px;color:var(--ink);background:#1b1b1f;border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
+.search button:focus-visible,.tile:focus-visible{outline:2px solid #ffd34d;outline-offset:2px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.tile{display:block;background:#fff;color:#111;border-radius:16px;padding:12px;text-decoration:none;scroll-margin-top:12px}
+.tile span{display:block;font-size:13px;font-weight:600;margin:0 2px 8px}
+.tile div{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.tile img{display:block;width:100%;height:auto;border-radius:9px}
+.grid.dark .tile{background:#000;color:#f2f2f4}.set{scroll-margin-top:12px}
+@media (max-width:640px){header,.set,.search{padding:0 16px}header{padding-top:24px}.row img{height:52vh}}
+</style></head><body><header><h1>קופון מאסטר — App Store Screenshots</h1><p>First, how each set looks in search results. Below that, every set in full: scroll it sideways, or click it to see it full height.</p></header>
+<section class="search"><h2>In search results <button type="button" aria-pressed="false">Show on dark</button></h2>
+<p>Search shows a set's first three frames at about this size. Click one to jump to the full set.</p>
+<div class="grid">
+<a class="tile" href="#store-screenshots"><span>v01 · עולם קופוני</span><div><img src="thumbs/01.jpg" alt="" loading="lazy"><img src="thumbs/02.jpg" alt="" loading="lazy"><img src="thumbs/03.jpg" alt="" loading="lazy"></div></a>
+</div></section>
+<section class="set" id="store-screenshots"><h2>v01 · עולם קופוני</h2><p>fun / gen z · kuponi is always there</p><div class="row"><img src="preview.jpg" alt="store-screenshots" loading="lazy"></div></section>
+<div class="lb"><img alt=""></div>
+<script>const lb=document.querySelector('.lb'),li=lb.querySelector('img');
+document.querySelectorAll('.row img').forEach(i=>i.onclick=()=>{li.src=i.src;lb.classList.add('on')});
+lb.onclick=()=>lb.classList.remove('on');document.onkeydown=e=>{if(e.key==='Escape')lb.classList.remove('on')};
+const g=document.querySelector('.grid'),b=document.querySelector('.search button');
+b.onclick=()=>{const d=g.classList.toggle('dark');b.setAttribute('aria-pressed',d);b.textContent=d?'Show on light':'Show on dark'};</script>
+<div style="height:64px"></div></body></html>

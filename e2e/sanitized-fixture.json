@@ -1,0 +1,104 @@
+{
+  "authUser": {
+    "id": "e2e-auth-user-0001",
+    "email": "e2e-tester@example.test",
+    "role": "authenticated",
+    "aud": "authenticated"
+  },
+  "legacyUser": {
+    "id": 9001,
+    "public_id": "usr_e2e_9001",
+    "auth_user_id": "e2e-auth-user-0001",
+    "email": "e2e-tester@example.test",
+    "first_name": "טסטר",
+    "last_name": "אוטומציה",
+    "gender": "male",
+    "is_admin": false,
+    "is_confirmed": true,
+    "dismissed_onboarding": true,
+    "show_onboarding_widget": false
+  },
+  "companies": [
+    { "id": 1, "name": "BuyMe", "image_path": "" },
+    { "id": 2, "name": "שופרסל", "image_path": "" },
+    { "id": 3, "name": "מגה ספורט", "image_path": "" }
+  ],
+  "coupons": [
+    {
+      "id": 101,
+      "public_id": "cpn_e2e_101",
+      "user_id": 9001,
+      "company": "BuyMe",
+      "code": "E2E-BM-1001",
+      "value": 300,
+      "cost": 250,
+      "used_value": 50,
+      "status": "פעיל",
+      "expiration": "2027-06-30",
+      "date_added": "2026-10-01T10:00:00Z",
+      "description": "שובר מתנה טסט",
+      "is_one_time": false,
+      "purpose": null,
+      "auto_update": false,
+      "is_shared_with_me": false
+    },
+    {
+      "id": 102,
+      "public_id": "cpn_e2e_102",
+      "user_id": 9001,
+      "company": "שופרסל",
+      "code": "E2E-SH-2002",
+      "value": 150,
+      "cost": 140,
+      "used_value": 0,
+      "status": "פעיל",
+      "expiration": "2026-12-03",
+      "date_added": "2026-10-15T12:00:00Z",
+      "description": "קופון עומד לפוג בקרוב",
+      "is_one_time": true,
+      "purpose": "קניות סוף שבוע",
+      "auto_update": false,
+      "is_shared_with_me": false
+    },
+    {
+      "id": 103,
+      "public_id": "cpn_e2e_103",
+      "user_id": 9001,
+      "company": "מגה ספורט",
+      "code": "E2E-MS-3003",
+      "value": 200,
+      "cost": 180,
+      "used_value": 200,
+      "status": "נוצל",
+      "expiration": "2026-11-30",
+      "date_added": "2026-08-10T09:00:00Z",
+      "description": "שובר שנוצל במלואו",
+      "is_one_time": false,
+      "purpose": null,
+      "auto_update": false,
+      "is_shared_with_me": false
+    }
+  ],
+  "notifications": [
+    {
+      "id": 501,
+      "user_id": 9001,
+      "title": "תזכורת תוקף",
+      "message": "הקופון של שופרסל עומד לפוג בקרוב",
+      "viewed": false,
+      "created_at": "2026-11-27T08:00:00Z"
+    }
+  ],
+  "usageHistory": {
+    "101": [
+      {
+        "id": 701,
+        "coupon_id": 101,
+        "transaction_amount": -50,
+        "details": "מימוש חלקי בסניף",
+        "timestamp": "2026-11-05T14:20:00Z",
+        "source_table": "coupon_transaction"
+      }
+    ]
+  }
+}

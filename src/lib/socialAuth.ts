@@ -45,7 +45,7 @@ async function completeNativeOAuth(url: string | null, redirectTo: string) {
   return true;
 }
 
-export async function signInWithSocialProvider(provider: SocialProvider) {
+export async function signInWithSocialProvider(provider: SocialProvider): Promise<boolean> {
   const isWeb = Platform.OS === "web";
   const redirectTo = isWeb ? Linking.createURL("onboarding", { queryParams: { social: provider } }) : NATIVE_REDIRECT_URL;
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -57,12 +57,12 @@ export async function signInWithSocialProvider(provider: SocialProvider) {
   });
 
   if (error) throw error;
-  if (isWeb) return;
-  await completeNativeOAuth(data.url, redirectTo);
+  if (isWeb) return true;
+  return completeNativeOAuth(data.url, redirectTo);
 }
 
 /** Links another verified provider to the signed-in user instead of creating a second account. */
-export async function linkSocialProvider(provider: SocialProvider) {
+export async function linkSocialProvider(provider: SocialProvider): Promise<boolean> {
   const isWeb = Platform.OS === "web";
   const redirectTo = isWeb ? Linking.createURL("profile") : NATIVE_REDIRECT_URL;
   const { data, error } = await supabase.auth.linkIdentity({
@@ -74,6 +74,6 @@ export async function linkSocialProvider(provider: SocialProvider) {
   });
 
   if (error) throw error;
-  if (isWeb) return;
-  await completeNativeOAuth(data.url, redirectTo);
+  if (isWeb) return true;
+  return completeNativeOAuth(data.url, redirectTo);
 }

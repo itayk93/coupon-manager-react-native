@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="he"><head><meta charset="utf-8">
+<!--
+name: v01 · עולם קופוני
+lane: fun / gen z
+hook: a continuous world
+move: kuponi is always there
+levers: familiarity (frames 1–6, kuponi recurs), curiosity gap (seam 1|2, kuponi crosses), gaze cueing (frame 1, kuponi looks at headline), isolation effect (one accent a frame), loss aversion (frame 5, panic at expiry), peak-end (frame 6, widget in your pocket)
+frames:
+  1 | כל השוברים שלך,              | kuponi with magnifying glass, crosses seam 1|2
+  2 | במקום *אחד*.                 | vault UI card with real store logos, gift card crossing seam 2|3
+  3 | סרוק ו*שמור*                 | AI camera scanner card, kuponi peeking seam 3|4
+  4 | תמיד *תדע* כמה נשאר          | live balance gauge, panicking kuponi crossing seam 4|5
+  5 | לא *נפספס* תפוגה             | urgent expiry alerts, panicking kuponi arriving
+  6 | הארנק שלך, *בכיס*.           | home-screen widget on dark navy closer
+-->
+<title>קופון מאסטר</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root { --fw: 440px; --fh: 956px; }
+
+  /* Strip layout MUST be LTR so frame 1 is leftmost */
+  body {
+    direction: ltr;
+    background: #0b0c0e;
+    margin: 0;
+    font-family: 'Heebo', -apple-system, sans-serif;
+  }
+  .strip {
+    direction: ltr;
+  }
+
+  /* Palette */
+  :root {
+    --sky-top: #cfe4fc;
+    --sky-mid: #e3effd;
+    --sky-bot: #bdd7f6;
+    --brand: #1f6fd1;
+    --brand-dark: #15202e;
+    --tint: #edf4fe;
+    --bg-warm: #faf9f6;
+    --white: #ffffff;
+    --ink: #101828;
+    --ink2: #475467;
+    --accent: #7c3aed;
+    --coral: #e76f51;
+    --coral-bg: #fff1ed;
+    --success: #16a34a;
+    --warn: #f59e0b;
+  }
+
+  /* Typography - Hebrew RTL */
+  .hd {
+    font-family: 'Heebo', sans-serif;
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 50px;
+    line-height: 1.06;
+    direction: rtl;
+    text-align: right;
+    margin: 0;
+  }
+  .hd em {
+    font-style: normal;
+    color: var(--brand);
+  }
+  .sub {
+    font-family: 'Heebo', sans-serif;
+    font-weight: 500;
+    color: var(--ink2);
+    font-size: 20px;
+    line-height: 1.35;
+    direction: rtl;
+    text-align: right;
+    margin: 10px 0 0;
+  }
+
+  /* Frames styling */
+  .frame { overflow: hidden; }
+  .f1, .f2 { background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 45%, var(--sky-bot) 100%); }
+  .f3 { background: var(--bg-warm); }
+  .f4 { background: var(--tint); }
+  .f5 { background: var(--bg-warm); }
+  .f6 { background: var(--brand-dark); }
+  .f6 .hd { color: var(--white); }
+  .f6 .hd em { color: #64b5f6; }
+  .f6 .sub { color: rgba(255,255,255,0.7); }
+
+  /* Soft sky clouds */
+  .cloud {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    filter: blur(10px);
+    pointer-events: none;
+  }
+
+  /* Clean UI Cards */
+  .ui-card {
+    background: var(--white);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.04);
+    border: 1px solid rgba(16, 24, 40, 0.06);
+    direction: rtl;
+    text-align: right;
+    box-sizing: border-box;
+  }
+  .ui-card .card-title {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ui-card .card-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand);
+    background: var(--tint);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  /* Coupon list row */
+  .coupon-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f2f3f7;
+    direction: rtl;
+  }
+  .coupon-row:last-child { border-bottom: none; }
+  .coupon-logo-box {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #f8f9fa;
+    border: 1px solid rgba(0,0,0,0.06);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .coupon-logo-box img {
+    width: 32px; height: 32px;
+    object-fit: contain;
+  }
+  .coupon-info { flex: 1; min-width: 0; }
+  .coupon-name { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .coupon-detail { font-size: 12px; color: var(--ink2); margin-top: 2px; }
+  .coupon-bal {
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--brand);
+    flex-shrink: 0;
+    direction: ltr;
+  }
+
+  /* Free badge */
+  .pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    border-radius: 999px;
+    padding: 7px 16px 7px 10px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--brand);
+    box-shadow: 0 4px 12px rgba(31, 111, 209, 0.15);
+    direction: rtl;
+    border: 1px solid rgba(31, 111, 209, 0.12);
+  }
+  .pill-badge img {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+  }
+
+  /* Floating voucher ticket crossing seam 2|3 */
+  /* Seam 2|3 falls exactly in the empty middle gap of 30px between the logo (frame 2) and price (frame 3) */
+  .seam-giftcard {
+    background: linear-gradient(135deg, #1f6fd1 0%, #154a8f 100%);
+    border-radius: 18px;
+    padding: 12px 18px;
+    box-shadow: 0 14px 32px rgba(31, 111, 209, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    color: white;
+  }
+
+  /* Scanner card */
+  .scanner-box {
+    background: #0f172a;
+    border-radius: 18px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 240px;
+    box-sizing: border-box;
+  }
+  .viewfinder {
+    width: 130px; height: 130px;
+    border: 2.5px solid rgba(255, 255, 255, 0.85);
+    border-radius: 14px;
+    position: relative;
+  }
+  .laser-line {
+    position: absolute;
+    left: 8px; right: 8px;
+    top: 48%;
+    height: 3px;
+    background: #22c55e;
+    box-shadow: 0 0 14px #22c55e, 0 0 4px #22c55e;
+    border-radius: 2px;
+  }
+  .scan-success-bar {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    direction: rtl;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    box-sizing: border-box;
+    margin-top: 14px;
+  }
+
+  /* Gauge */
+  .gauge-ring {
+    width: 146px; height: 146px;
+    border-radius: 50%;
+    background: conic-gradient(var(--brand) 0deg 260deg, #dbeafe 260deg 360deg);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .gauge-inner {
+    width: 116px; height: 116px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .gauge-num {
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--brand);
+    direction: ltr;
+  }
+  .gauge-sub {
+    font-size: 13px;
+    color: var(--ink2);
+    font-weight: 500;
+  }
+
+  /* Notification card */
+  .notif-card {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 0 6px 20px rgba(16, 24, 40, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    direction: rtl;
+    border: 1px solid rgba(16, 24, 40, 0.06);
+    box-sizing: border-box;
+  }
+  .notif-icon-box {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .notif-text { flex: 1; min-width: 0; text-align: right; }
+  .notif-title { font-weight: 700; font-size: 14px; color: var(--ink); }
+  .notif-body { font-size: 12px; color: var(--ink2); margin-top: 2px; }
+  .notif-time { font-size: 11px; color: #98a2b3; flex-shrink: 0; }
+
+  /* Widget preview */
+  .widget-box {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 26px;
+    padding: 18px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    direction: rtl;
+    box-sizing: border-box;
+  }
+  .widget-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .widget-app-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--white);
+  }
+  .widget-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .widget-item:last-child { border-bottom: none; }
+  .widget-item-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: rgba(255,255,255,0.92);
+    flex: 1;
+    text-align: right;
+  }
+  .widget-item-bal {
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--white);
+    direction: ltr;
+  }
+</style></head>
+<body>
+<div class="strip">
+  <!-- 6 Frames sections -->
+  <section class="frame f1" data-name="01"></section>
+  <section class="frame f2" data-name="02"></section>
+  <section class="frame f3" data-name="03"></section>
+  <section class="frame f4" data-name="04"></section>
+  <section class="frame f5" data-name="05"></section>
+  <section class="frame f6" data-name="06"></section>
+
+  <!-- ==================== FRAME 1 & 2: THE HOOK ==================== -->
+
+  <!-- Clouds across sky -->
+  <div class="cloud at" style="--f:1;--x:40px;--y:80px;width:150px;height:45px;opacity:0.6"></div>
+  <div class="cloud at" style="--f:1;--x:260px;--y:180px;width:110px;height:35px;opacity:0.45"></div>
+  <div class="cloud at" style="--f:2;--x:60px;--y:120px;width:140px;height:40px;opacity:0.5"></div>
+  <div class="cloud at" style="--f:2;--x:260px;--y:190px;width:120px;height:35px;opacity:0.4"></div>
+
+  <!-- Headlines -->
+  <h1 class="hd at" style="--f:1;--x:36px;--y:70px;width:360px;color:var(--brand-dark)">כל השוברים שלך,</h1>
+  <div class="pill-badge at" style="--f:1;--x:36px;--y:160px">
+    <img src="art/icon.png" alt="">
+    חינם לגמרי · בעברית
+  </div>
+
+  <h1 class="hd at" style="--f:2;--x:36px;--y:70px;width:360px;color:var(--brand-dark)">במקום <em>אחד</em>.</h1>
+  <p class="sub at" style="--f:2;--x:36px;--y:135px;width:360px">הארנק החכם של ישראל</p>
+
+  <!-- Kuponi 3D holding magnifying glass crossing seam 1|2 -->
+  <!-- Seam 1|2 is at x=440. Kuponi spans from x=160 to x=640 (width 480). 280px in frame 1, 200px in frame 2. Both >= 60px! -->
+  <img class="at" style="--f:1;--x:160px;--y:260px;width:480px;filter:drop-shadow(0 24px 36px rgba(15,32,46,0.18));pointer-events:none" src="art/original_mascot.png" alt="">
+
+  <!-- Frame 2: Vault UI card -->
+  <div class="ui-card at" style="--f:2;--x:40px;--y:470px;width:360px">
+    <div class="card-title">
+      <span>הקופונים שלי</span>
+      <span class="card-badge">4 פעילים</span>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/wolt.png" alt="Wolt"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">Wolt</div>
+        <div class="coupon-detail">בתוקף עד 15.02.27</div>
+      </div>
+      <div class="coupon-bal">₪75</div>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/shufersal.png" alt="שופרסל"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">שופרסל</div>
+        <div class="coupon-detail">בתוקף עד 01.04.27</div>
+      </div>
+      <div class="coupon-bal">₪120</div>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/buyme.png" alt="BuyMe"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">BuyMe</div>
+        <div class="coupon-detail">בתוקף עד 10.05.27</div>
+      </div>
+      <div class="coupon-bal">₪200</div>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/kfc.png" alt="KFC"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">KFC</div>
+        <div class="coupon-detail">בתוקף עד 20.03.27</div>
+      </div>
+      <div class="coupon-bal">₪50</div>
+    </div>
+  </div>
+
+  <!-- Floating Gift Card crossing seam 2|3 -->
+  <!-- Seam 2|3 is at x=880 (f=2, x=440). Card placed at f=2, x=340, width=200. Left: 780 (100px in f2), Right: 980 (100px in f3). -->
+  <!-- Inside: Logo at left (in f2), ₪75 at right (in f3). The seam 880 passes right through the empty middle spacer, so no text is cut! -->
+  <div class="seam-giftcard at" style="--f:2;--x:340px;--y:835px;width:200px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="coupon-logo-box" style="width:34px;height:34px;background:#fff"><img src="art/logos/wolt.png" alt="" style="width:24px;height:24px"></div>
+    </div>
+    <div style="font-weight:800;font-size:16px;color:#fff;direction:ltr">₪75.00</div>
+  </div>
+
+  <!-- ==================== FRAME 3: SCANNER ==================== -->
+  <h2 class="hd at" style="--f:3;--x:36px;--y:70px;width:368px">סרוק ו<em>שמור</em></h2>
+  <p class="sub at" style="--f:3;--x:36px;--y:135px;width:368px">זיהוי חכם מהיר מהמצלמה</p>
+
+  <div class="ui-card at" style="--f:3;--x:40px;--y:220px;width:360px;padding:16px">
+    <div class="scanner-box">
+      <div class="viewfinder">
+        <div class="laser-line"></div>
+      </div>
+      <div style="margin-top:16px;color:rgba(255,255,255,0.75);font-size:13px;font-weight:500;direction:rtl">סורק ברקוד או צילום מסך...</div>
+    </div>
+    <div class="scan-success-bar">
+      <div style="width:36px;height:36px;border-radius:10px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;flex-shrink:0">✓</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px;color:var(--ink)">זוהה בהצלחה: BuyMe</div>
+        <div style="font-size:12px;color:var(--ink2)">קוד שובר: 8942-XXXX-1200</div>
+      </div>
+      <div style="font-weight:800;font-size:16px;color:var(--brand);direction:ltr">₪200</div>
+    </div>
+  </div>
+
+  <!-- Kuponi peeking crossing seam 3|4 -->
+  <!-- Seam 3|4 is at x=1320 (f=3, x=440). Placed at f=3, x=330, width=200. Left: 1210 (110px in f3), Right: 1410 (90px in f4). Both >= 60px! No text cut. -->
+  <img class="at" style="--f:3;--x:330px;--y:670px;width:200px;filter:drop-shadow(0 16px 24px rgba(0,0,0,0.12));pointer-events:none" src="art/mascot-normal.png" alt="">
+
+  <!-- ==================== FRAME 4: BALANCE TRACKING ==================== -->
+  <h2 class="hd at" style="--f:4;--x:36px;--y:70px;width:368px">תמיד <em>תדע</em><br>כמה נשאר</h2>
+
+  <div class="ui-card at" style="--f:4;--x:40px;--y:210px;width:360px">
+    <div class="gauge-ring">
+      <div class="gauge-inner">
+        <div class="gauge-num">₪445</div>
+        <div class="gauge-sub">סה״כ ביתרה</div>
+      </div>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/shufersal.png" alt="שופרסל"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">שופרסל</div>
+        <div class="coupon-detail">נותרו ₪120 מתוך ₪200</div>
+      </div>
+      <div style="width:70px;height:7px;border-radius:4px;background:#e2e8f0;overflow:hidden;flex-shrink:0"><div style="width:60%;height:100%;background:var(--brand);border-radius:4px"></div></div>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/buyme.png" alt="BuyMe"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">BuyMe</div>
+        <div class="coupon-detail">נותרו ₪200 מתוך ₪200</div>
+      </div>
+      <div style="width:70px;height:7px;border-radius:4px;background:#e2e8f0;overflow:hidden;flex-shrink:0"><div style="width:100%;height:100%;background:var(--brand);border-radius:4px"></div></div>
+    </div>
+
+    <div class="coupon-row">
+      <div class="coupon-logo-box"><img src="art/logos/wolt.png" alt="Wolt"></div>
+      <div class="coupon-info">
+        <div class="coupon-name">Wolt</div>
+        <div class="coupon-detail">נותרו ₪75 מתוך ₪100</div>
+      </div>
+      <div style="width:70px;height:7px;border-radius:4px;background:#e2e8f0;overflow:hidden;flex-shrink:0"><div style="width:75%;height:100%;background:var(--brand);border-radius:4px"></div></div>
+    </div>
+  </div>
+
+  <!-- Panicking Kuponi crossing seam 4|5! Runs from frame 4 to frame 5 -->
+  <!-- Seam 4|5 is at x=1760 (f=4, x=440). Placed at f=4, x=310, width=240. Left: 1630 (130px in f4), Right: 1870 (110px in f5). Both >= 60px! No text cut. -->
+  <img class="at" style="--f:4;--x:310px;--y:660px;width:240px;filter:drop-shadow(0 18px 32px rgba(231,111,81,0.25));pointer-events:none" src="art/mascot-panic.png" alt="">
+
+  <!-- ==================== FRAME 5: EXPIRY ALERTS ==================== -->
+  <h2 class="hd at" style="--f:5;--x:36px;--y:70px;width:368px">לא <em>נפספס</em><br>תפוגה</h2>
+
+  <!-- Notification 1 -->
+  <div class="notif-card at" style="--f:5;--x:40px;--y:210px;width:360px">
+    <div class="notif-icon-box" style="background:#fef3c7;color:#d97706">⚠️</div>
+    <div class="notif-text">
+      <div class="notif-title">תזכורת: שובר BuyMe</div>
+      <div class="notif-body">יפוג בעוד שבוע — נותרו ₪200</div>
+    </div>
+    <div class="notif-time">היום</div>
+  </div>
+
+  <!-- Notification 2 -->
+  <div class="notif-card at" style="--f:5;--x:40px;--y:310px;width:360px">
+    <div class="notif-icon-box" style="background:#dcfce7;color:#16a34a">✓</div>
+    <div class="notif-text">
+      <div class="notif-title">שובר KFC נוצל בהצלחה</div>
+      <div class="notif-body">חסכת ₪50 · סניף הרצליה</div>
+    </div>
+    <div class="notif-time">אתמול</div>
+  </div>
+
+  <!-- Notification 3 (alert at bottom of frame 5) -->
+  <div class="notif-card at" style="--f:5;--x:40px;--y:410px;width:360px">
+    <div class="notif-icon-box" style="background:var(--coral-bg);color:var(--coral)">⏰</div>
+    <div class="notif-text">
+      <div class="notif-title">שובר Wolt יפוג בקרוב!</div>
+      <div class="notif-body">נותרו ₪75 · בתוקף עוד 3 ימים</div>
+    </div>
+    <div class="notif-time">עכשיו</div>
+  </div>
+
+  <!-- Kuponi waving crossing seam 5|6 into the widget closer -->
+  <!-- Seam 5|6 is at x=2200 (f=5, x=440). Placed at f=5, x=330, width=220. Left: 2090 (110px in f5), Right: 2310 (110px in f6). Both >= 60px! No text cut. -->
+  <img class="at" style="--f:5;--x:330px;--y:700px;width:220px;filter:drop-shadow(0 16px 30px rgba(0,0,0,0.25));pointer-events:none" src="art/mascot-normal.png" alt="">
+
+  <!-- ==================== FRAME 6: WIDGET CLOSER ==================== -->
+  <h2 class="hd at" style="--f:6;--x:36px;--y:70px;width:368px;color:white">הארנק שלך,<br><em>בכיס</em>.</h2>
+  <p class="sub at" style="--f:6;--x:36px;--y:185px;width:368px;color:rgba(255,255,255,0.7)">וידג׳ט ישיר למסך הבית</p>
+
+  <div class="widget-box at" style="--f:6;--x:40px;--y:270px;width:360px">
+    <div class="widget-top">
+      <img src="art/icon.png" alt="" style="width:28px;height:28px;border-radius:8px">
+      <span class="widget-app-title">קופון מאסטר</span>
+    </div>
+
+    <div class="widget-item">
+      <div class="coupon-logo-box" style="width:34px;height:34px;background:#fff"><img src="art/logos/shufersal.png" alt="" style="width:24px;height:24px"></div>
+      <span class="widget-item-name">שופרסל</span>
+      <span class="widget-item-bal">₪120</span>
+    </div>
+
+    <div class="widget-item">
+      <div class="coupon-logo-box" style="width:34px;height:34px;background:#fff"><img src="art/logos/wolt.png" alt="" style="width:24px;height:24px"></div>
+      <span class="widget-item-name">Wolt</span>
+      <span class="widget-item-bal">₪75</span>
+    </div>
+
+    <div class="widget-item">
+      <div class="coupon-logo-box" style="width:34px;height:34px;background:#fff"><img src="art/logos/buyme.png" alt="" style="width:24px;height:24px"></div>
+      <span class="widget-item-name">BuyMe</span>
+      <span class="widget-item-bal">₪200</span>
+    </div>
+
+    <div class="widget-item">
+      <div class="coupon-logo-box" style="width:34px;height:34px;background:#fff"><img src="art/logos/kfc.png" alt="" style="width:24px;height:24px"></div>
+      <span class="widget-item-name">KFC</span>
+      <span class="widget-item-bal">₪50</span>
+    </div>
+  </div>
+
+  <!-- Store badge label at bottom of frame 6 -->
+  <div class="pill-badge at" style="--f:6;--x:110px;--y:840px;background:rgba(255,255,255,0.12);color:white;border-color:rgba(255,255,255,0.2);box-shadow:none">
+    <img src="art/icon.png" alt="">
+    זמין חינם ב-App Store
+  </div>
+
+</div>
+</body></html>
