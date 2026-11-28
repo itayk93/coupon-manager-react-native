@@ -295,7 +295,7 @@ async function main() {
             coalesce(sum(usage_amount), 0)::float8 as used,
             coalesce(sum(recharge_amount), 0)::float8 as recharged
           from public.coupon_transaction
-          where coupon_id = $1 and source = 'Multipass'
+          where coupon_id = $1 and lower(source) = 'multipass'
         `, [coupon.id])).rows[0];
         const rechargeTotal = Number(totals.recharged || 0);
         // Round to agorot: float sums like 33+37.8+17.9+11.3 land on 99.99999999999999
