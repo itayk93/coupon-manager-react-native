@@ -1,3 +1,4 @@
+import { couponRemainingValue, remainingAfterUsage } from "@/lib/couponTotals";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
@@ -218,7 +219,7 @@ export function QuickUsageModal({
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId);
   const isOneTimeCoupon = selectedCoupon?.is_one_time === true;
   const remaining = selectedCoupon
-    ? Math.max(0, (selectedCoupon.value || 0) - (selectedCoupon.used_value || 0))
+    ? Math.max(0, couponRemainingValue(selectedCoupon))
     : 0;
 
   // Existing ledger for the chosen coupon, so a detected usage that the server
@@ -492,13 +493,14 @@ export function QuickUsageModal({
       onImportCompleted?.();
       onClose();
       if (savedCoupon) {
+        const added = result.insertedCount === valid.length
+          ? valid.reduce((sum, item) => sum + item.amount, 0)
+          : null;
         pushIsland(recordedUsageIsland({
           company: savedCoupon.company || "",
           count: result.insertedCount,
-          amount: result.insertedCount === valid.length
-            ? valid.reduce((sum, item) => sum + item.amount, 0)
-            : null,
-          remaining: Math.max(0, (savedCoupon.value || 0) - result.newUsed),
+          amount: added,
+          remaining: remainingAfterUsage(savedCoupon, result.newUsed, added),
           fullyUsed: result.fullyUsed,
         }));
       }
@@ -786,7 +788,7 @@ export function QuickUsageModal({
               keyExtractor={(c) => String(c.id)}
               style={{ maxHeight: 200 }}
               renderItem={({ item }) => {
-                const rem = Math.max(0, (item.value || 0) - (item.used_value || 0));
+                const rem = Math.max(0, couponRemainingValue(item));
                 const isCurrent = item.id === selectedCouponId;
                 return (
                   <TouchableOpacity

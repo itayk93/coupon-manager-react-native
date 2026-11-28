@@ -32,7 +32,7 @@ import { StatusDrilldownModal } from "@/components/dashboard/StatusDrilldownModa
 import type { CouponStatusFilter } from "@/components/dashboard/StatusDrilldownModal";
 import type { DecryptedCoupon } from "@/hooks/useCoupons";
 import { couponRouteId } from "@/lib/entityId";
-import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
+import { isCouponExpired, isCouponUsed, couponUsedValue } from "@/lib/couponTotals";
 import { useCouponSales } from "@/hooks/useCouponSales";
 import { Kuponi } from "@/components/ui/Kuponi";
 import { useSavingsByMonth } from "@/hooks/useCouponUsage";
@@ -69,7 +69,7 @@ export function StatisticsScreen() {
     [coupons]
   );
   const usedValue = useMemo(
-    () => coupons.reduce((sum, c) => sum + (c.used_value || 0), 0),
+    () => coupons.reduce((sum, c) => sum + couponUsedValue(c), 0),
     [coupons]
   );
   // Saved = bought below face value, on the part actually spent. Coupons that

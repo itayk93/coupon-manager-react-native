@@ -1,4 +1,5 @@
 import { companyKey } from "@/lib/companyName";
+import { couponUsedValue } from "@/lib/couponTotals";
 import { formatIls, formatIlsCompact } from "@/lib/formatIls";
 import type { IslandCopy } from "@/lib/islandCopy";
 
@@ -20,6 +21,7 @@ export type NearbyCandidate = {
   company: string;
   value: number | null;
   used_value: number | null;
+  ledger_used_value?: number;
   status: string | null;
   expiration: string | null;
 };
@@ -43,7 +45,7 @@ export function distanceMeters(a: Point, b: Point): number {
 }
 
 function remainingFor(coupon: NearbyCandidate): number {
-  return Math.max(0, (coupon.value ?? 0) - (coupon.used_value ?? 0));
+  return Math.max(0, (coupon.value ?? 0) - couponUsedValue(coupon));
 }
 
 function isUsableToday(coupon: NearbyCandidate, today: string): boolean {

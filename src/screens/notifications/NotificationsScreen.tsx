@@ -1,3 +1,4 @@
+import { couponRemainingValue } from "@/lib/couponTotals";
 import React from "react";
 import {
   View,
@@ -74,7 +75,7 @@ export function NotificationsScreen() {
         couponId: c.id,
         couponPublicId: c.public_id,
         title: `${c.company} מחכה למימוש`,
-        message: `נשארו ${days} ימים ו־${formatIls((c.value || 0) - (c.used_value || 0))} לנצל.`,
+        message: `נשארו ${days} ימים ו־${formatIls(Math.max(0, couponRemainingValue(c)))} לנצל.`,
         type: "warning",
         urgent: days <= 3,
         date: days <= 3 ? "היום" : `בעוד ${days} ימים`,

@@ -1,3 +1,4 @@
+import { couponUsedValue } from "@/lib/couponTotals";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,7 +94,7 @@ export function useCouponUsageStats(coupons: DecryptedCoupon[] = []) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["coupon_usage_stats", user?.id, coupons.map((c) => `${c.id}:${c.used_value}`).join(",")],
+    queryKey: ["coupon_usage_stats", user?.id, coupons.map((c) => `${c.id}:${couponUsedValue(c)}`).join(",")],
     queryFn: async (): Promise<CouponUsageStats> => {
       if (!user || coupons.length === 0) {
         return {
@@ -129,7 +130,7 @@ export function useCouponUsageStats(coupons: DecryptedCoupon[] = []) {
 
       // If a coupon has used_value > 0 but no explicit rows
       coupons.forEach((coupon) => {
-        if ((coupon.used_value || 0) > 0) {
+        if (couponUsedValue(coupon) > 0) {
           if (!usageCountByCoupon[coupon.id]) {
             usageCountByCoupon[coupon.id] = 1;
           }
@@ -187,9 +188,9 @@ async function fetchLedger<T>(table: "coupon_usage" | "coupon_transaction", colu
 export function useSavingsByMonth(coupons: DecryptedCoupon[] = []) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["savings_by_month", user?.id, coupons.map((c) => `${c.id}:${c.used_value}:${c.cost}`).join(",")],
+    queryKey: ["savings_by_month", user?.id, coupons.map((c) => `${c.id}:${couponUsedValue(c)}:${c.cost}`).join(",")],
     queryFn: async (): Promise<Record<string, number>> => {
-      const ids = coupons.filter((c) => savingsRate(c) > 0 && (c.used_value ?? 0) > 0).map((c) => c.id);
+      const ids = coupons.filter((c) => savingsRate(c) > 0 && couponUsedValue(c) > 0).map((c) => c.id);
       if (ids.length === 0) return {};
       const [usage, transactions] = await Promise.all([
         fetchLedger<UsageLedgerRow>("coupon_usage", "id, coupon_id, timestamp, used_amount, details, action", ids),

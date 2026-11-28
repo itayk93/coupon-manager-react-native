@@ -4,6 +4,7 @@ import {
   ledgerAmountFromTransaction,
   ledgerAmountFromUsage,
 } from "./couponLedger";
+import { couponUsedValue } from "./couponTotals";
 
 /**
  * One definition of "how much did I save", shared by the statistics screen,
@@ -16,7 +17,7 @@ import {
  * counted separately so it does not inflate the savings figure.
  */
 
-type SavingsCoupon = Pick<DecryptedCoupon, "value" | "cost" | "used_value">;
+type SavingsCoupon = Pick<DecryptedCoupon, "value" | "cost" | "used_value" | "ledger_used_value">;
 
 /** Cost 0 (or missing) with a real face value: received, not bought. */
 export function isGiftCoupon(coupon: { value?: number | null; cost?: number | null }): boolean {
@@ -44,8 +45,8 @@ export function savingsRate(coupon: SavingsCoupon): number {
 }
 
 /** Spent so far, never more than the coupon's face value. */
-function spent(coupon: Pick<DecryptedCoupon, "value" | "used_value">): number {
-  return Math.min(Math.max(0, coupon.used_value ?? 0), Math.max(0, coupon.value ?? 0));
+function spent(coupon: Pick<DecryptedCoupon, "value" | "used_value" | "ledger_used_value">): number {
+  return Math.min(Math.max(0, couponUsedValue(coupon)), Math.max(0, coupon.value ?? 0));
 }
 
 /** Money saved on what was actually spent from a bought coupon. */
@@ -87,13 +88,13 @@ type SpendEvent = { at: number; amount: number };
  * When each shekel of a coupon was spent.
  *
  * Reads the ledger the same way the coupon history does (hidden audit rows
- * out, loadings ignored), then trusts `used_value` for the total: the dated
+ * out, loadings ignored), then trusts `couponUsedValue` for the total: the dated
  * rows are kept oldest first up to that total, and any spending the ledger
  * never recorded (legacy imports) is dated to when the coupon was added, which
  * is also where the history screen shows it.
  */
 export function spendEvents(
-  coupon: Pick<DecryptedCoupon, "value" | "used_value" | "date_added">,
+  coupon: Pick<DecryptedCoupon, "value" | "used_value" | "ledger_used_value" | "date_added">,
   usage: UsageLedgerRow[],
   transactions: TransactionLedgerRow[]
 ): SpendEvent[] {
@@ -127,7 +128,7 @@ export function spendEvents(
 
 /** Savings per calendar month (device clock), keyed `${year}-${monthIndex}`. */
 export function savingsByMonth(
-  coupons: Pick<DecryptedCoupon, "id" | "value" | "cost" | "used_value" | "date_added">[],
+  coupons: Pick<DecryptedCoupon, "id" | "value" | "cost" | "used_value" | "ledger_used_value" | "date_added">[],
   usage: UsageLedgerRow[],
   transactions: TransactionLedgerRow[]
 ): Record<string, number> {

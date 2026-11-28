@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { CalendarDays, ChevronDown, ChevronRight } from "lucide-react-native";
 import { Modal } from "@/components/ui/Modal";
 import { DecryptedCoupon } from "@/hooks/useCoupons";
-import { couponRemainingValue } from "@/lib/couponTotals";
+import { couponRemainingValue, couponUsedValue } from "@/lib/couponTotals";
 import { isReceivedCoupon, realizedSavings } from "@/lib/couponSavings";
 import { useLastNonNull } from "@/hooks/useLastNonNull";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -53,7 +53,7 @@ function metricValue(coupon: DecryptedCoupon, metric: KpiMetric): number {
     case "savings":
       return realizedSavings(coupon);
     case "used":
-      return coupon.used_value || 0;
+      return couponUsedValue(coupon);
     case "value":
       return coupon.value || 0;
     case "gift":

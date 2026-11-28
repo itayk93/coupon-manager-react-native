@@ -33,7 +33,7 @@ import { formatIls } from "@/lib/formatIls";
 import { formatDateShort, daysUntil } from "@/lib/formatDate";
 import { companyKey } from "@/lib/companyName";
 import { couponRouteId } from "@/lib/entityId";
-import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
+import { isCouponExpired, isCouponUsed, couponRemainingValue, couponUsedValue } from "@/lib/couponTotals";
 
 type CouponRowProps = {
   coupon: DecryptedCoupon;
@@ -146,7 +146,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
   );
 
   const total = rows.reduce(
-    (sum, c) => sum + Math.max(0, (c.value || 0) - (c.used_value || 0)),
+    (sum, c) => sum + Math.max(0, couponRemainingValue(c)),
     0
   );
 
@@ -326,7 +326,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
           >
             {rows.map((c) => {
               const total = c.value || 0;
-              const used = c.used_value || 0;
+              const used = couponUsedValue(c);
               const remaining = Math.max(0, total - used);
               const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
 
@@ -504,7 +504,7 @@ export function CompanySheet({ company, coupons, onClose }: CompanySheetProps) {
                     style={[styles.codeBalanceValue, { color: theme.text }]}
                     maxFontSizeMultiplier={1.3}
                   >
-                    {formatIls(Math.max(0, (openCode.value || 0) - (openCode.used_value || 0)))}
+                    {formatIls(Math.max(0, couponRemainingValue(openCode)))}
                   </Text>
                 </View>
 

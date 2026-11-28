@@ -1,3 +1,4 @@
+import { couponRemainingValue } from "@/lib/couponTotals";
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -23,7 +24,7 @@ import {
   useRespondToShare,
   type ShareType,
 } from "@/hooks/useSharing";
-import { useCoupons } from "@/hooks/useCoupons";
+import { useCoupons, DecryptedCoupon } from "@/hooks/useCoupons";
 import { getCompanyLogoSource } from "@/lib/companyLogos";
 import { couponRouteId } from "@/lib/entityId";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -65,7 +66,7 @@ export function SharingScreen() {
   const [emailError, setEmailError] = useState("");
   const shareableCoupons = useMemo(
     () => coupons.filter(
-      (c) => !c.is_shared_with_me && Math.max(0, (c.value || 0) - (c.used_value || 0)) > 0
+      (c) => !c.is_shared_with_me && couponRemainingValue(c) > 0
     ),
     [coupons]
   );
@@ -218,10 +219,9 @@ export function SharingScreen() {
             sharedWithMe.length > 0 ? (
               <ResponsiveGrid minItemWidth={300} maxColumns={2}>
                 {sharedWithMe.map((item) => {
-                  const rem = Math.max(
-                    0,
-                    (item.coupon?.value || 0) - (item.coupon?.used_value || 0)
-                  );
+                  // The share row carries stored spending only; the wallet copy has the ledger.
+                  const shared = coupons.find((c) => c.id === item.coupon?.id) ?? item.coupon;
+                  const rem = shared ? Math.max(0, couponRemainingValue(shared as DecryptedCoupon)) : 0;
                   return (
                     <TouchableOpacity
                       key={item.id}
@@ -450,7 +450,7 @@ export function SharingScreen() {
           <ScrollView style={{ maxHeight: 220, marginBottom: picker.total > picker.shown.length ? 4 : 14 }}>
             {picker.shown.map((c) => {
               const isSelected = selectedCouponId === c.id;
-              const rem = Math.max(0, (c.value || 0) - (c.used_value || 0));
+              const rem = Math.max(0, couponRemainingValue(c));
               return (
                 <TouchableOpacity
                   key={c.id}

@@ -14,12 +14,21 @@ export function isSpendableCoupon(coupon: DecryptedCoupon): boolean {
   return coupon.status !== "נוצל";
 }
 
-export function couponUsedValue(coupon: DecryptedCoupon): number {
+export function couponUsedValue(coupon: { used_value?: number | null; ledger_used_value?: number }): number {
   return Math.max(coupon.used_value ?? 0, coupon.ledger_used_value ?? 0);
 }
 
 export function couponRemainingValue(coupon: DecryptedCoupon): number {
   return (coupon.value ?? 0) - couponUsedValue(coupon);
+}
+
+/**
+ * Balance to announce right after recording usage. The server returns the stored
+ * total, which can trail the ledger, so the lower of the two readings wins.
+ * `added` is null when it is unknown how much of a batch was inserted.
+ */
+export function remainingAfterUsage(coupon: DecryptedCoupon, newStoredUsed: number, added: number | null): number {
+  return Math.max(0, Math.min((coupon.value ?? 0) - newStoredUsed, couponRemainingValue(coupon) - (added ?? 0)));
 }
 
 export function isCouponUsed(coupon: DecryptedCoupon): boolean {
