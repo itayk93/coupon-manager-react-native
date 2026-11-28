@@ -69,6 +69,7 @@ import { notify } from "@/lib/notify";
 import { logActivity } from "@/lib/activityLog";
 import { formatIls } from "@/lib/formatIls";
 import { formatDateHebrew, daysUntil } from "@/lib/formatDate";
+import { couponUsedValue } from "@/lib/couponTotals";
 import { effectiveUsedValue } from "@/lib/couponLedger";
 import { CouponDetailsSkeleton } from "@/components/coupons/CouponCardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
@@ -265,7 +266,7 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
     .map((row) => row.transaction_amount);
   const effectiveUsed = effectiveUsedValue(
     coupon.value || 0,
-    coupon.used_value || 0,
+    couponUsedValue(coupon),
     ledgerAmounts
   );
   const remaining = Math.max(0, (coupon.value || 0) - effectiveUsed);
@@ -494,7 +495,7 @@ export function CouponDetailScreen({ couponId: pinned, embedded = false, onDismi
                   style={[styles.gaugeVal, { color: theme.textMuted }]}
                   maxFontSizeMultiplier={1.3}
                 >
-                  {formatIls(coupon.used_value || 0)}
+                  {formatIls(effectiveUsed)}
                 </Text>
               </View>
 

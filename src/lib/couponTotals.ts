@@ -14,8 +14,12 @@ export function isSpendableCoupon(coupon: DecryptedCoupon): boolean {
   return coupon.status !== "נוצל";
 }
 
+export function couponUsedValue(coupon: DecryptedCoupon): number {
+  return Math.max(coupon.used_value ?? 0, coupon.ledger_used_value ?? 0);
+}
+
 export function couponRemainingValue(coupon: DecryptedCoupon): number {
-  return (coupon.value ?? 0) - (coupon.used_value ?? 0);
+  return (coupon.value ?? 0) - couponUsedValue(coupon);
 }
 
 export function isCouponUsed(coupon: DecryptedCoupon): boolean {

@@ -1,3 +1,4 @@
+import { loadCouponLedgerBalances } from "@/lib/loadCouponLedgerBalances";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Coupon } from "@/integrations/supabase";
 import { matchCompanyName } from "@/lib/companyMatch";
@@ -30,8 +31,10 @@ function writeCouponToCache(
   userId: number | undefined,
   coupon: DecryptedCoupon
 ) {
+  const previous = queryClient.getQueryData<DecryptedCoupon[]>(["coupons", userId])?.find(c => c.id === coupon.id);
+  const projected = { ...coupon, ledger_used_value: coupon.ledger_used_value ?? previous?.ledger_used_value };
   const wallet = queryClient.setQueryData<DecryptedCoupon[]>(["coupons", userId], (current) =>
-    current ? mergeCouponIntoWallet(current, coupon) : current
+    current ? mergeCouponIntoWallet(current, projected) : current
   );
   // No refetch follows any more, so the offline mirror is refreshed here —
   // otherwise a wallet opened without signal would show the pre-edit copy.
@@ -41,7 +44,7 @@ function writeCouponToCache(
   // whichever the route carried, so match on the coupon itself.
   queryClient.setQueriesData<DecryptedCoupon>(
     { queryKey: ["coupon"], predicate: (query) => (query.state.data as DecryptedCoupon | undefined)?.id === coupon.id },
-    (current) => (current ? { ...coupon, is_shared_with_me: current.is_shared_with_me } : current)
+    (current) => (current ? { ...projected, ledger_used_value: projected.ledger_used_value ?? current.ledger_used_value, is_shared_with_me: current.is_shared_with_me } : current)
   );
 }
 
@@ -54,7 +57,7 @@ export function useCoupons() {
       if (!user) throw new Error("Not authenticated");
 
       try {
-        const coupons = await couponVault<DecryptedCoupon[]>({ action: "list" });
+        const coupons = await loadCouponLedgerBalances(await couponVault<DecryptedCoupon[]>({ action: "list" }));
         void saveOfflineCoupons(user.id, coupons);
         return coupons;
       } catch (error) {
@@ -99,7 +102,8 @@ export function useCoupon(couponIdentifier: string | number | undefined) {
     queryFn: async () => {
       if (!user || !hasValidIdentifier) throw new Error("Invalid request");
 
-      return couponVault<DecryptedCoupon>({ action: "get", id: legacyId, publicId });
+      const coupon = await couponVault<DecryptedCoupon>({ action: "get", id: legacyId, publicId });
+      return (await loadCouponLedgerBalances([coupon]))[0];
     },
     enabled: !!user && hasValidIdentifier,
     initialData: fromWallet,
@@ -193,6 +197,7 @@ export function useAddCoupon() {
         auto_update: newCoupon.auto_update ?? false,
       };
 
+      delete (couponToInsert as Partial<DecryptedCoupon>).ledger_used_value;
       return couponVault<DecryptedCoupon>({ action: "create", coupon: couponToInsert });
     },
     onSuccess: (created) => {
@@ -226,6 +231,7 @@ export function useUpdateCoupon() {
       if (!user) throw new Error("Not authenticated");
 
       const normalizedUpdates: Record<string, unknown> = { ...updates };
+      delete normalizedUpdates.ledger_used_value;
 
       if (updates.company !== undefined) {
         normalizedUpdates.company = canonicalCompany(updates.company, queryClient);
@@ -279,6 +285,10 @@ export function useUpdateCoupon() {
     onSuccess: (updated, { id, updates }) => {
       // Replace the optimistic copy with what the vault actually stored.
       writeCouponToCache(queryClient, user?.id, updated);
+      // Refresh read-only ledger metadata after the write, without making a
+      // successful edit look failed if the separate read is unavailable.
+      queryClient.invalidateQueries({ queryKey: ["coupons", user?.id] });
+      invalidateCouponDetail(queryClient, id);
       // Which fields changed, never their values — an edit to a code must not
       // put the code in the activity log.
       logActivity("edit_coupon_submit", {

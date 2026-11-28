@@ -21,7 +21,7 @@ import { usePopOnTrue } from "@/hooks/usePopOnTrue";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii, shadows } from "@/lib/theme";
 import { couponRouteId } from "@/lib/entityId";
-import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
+import { isCouponExpired, isCouponUsed, couponUsedValue } from "@/lib/couponTotals";
 
 
 type CouponCardProps = {
@@ -59,7 +59,7 @@ export function CouponCard({
   const logoUri = getCompanyLogoSource(coupon.company);
 
   const total = coupon.value || 0;
-  const used = coupon.used_value || 0;
+  const used = couponUsedValue(coupon);
   const remaining = Math.max(0, total - used);
   const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
 

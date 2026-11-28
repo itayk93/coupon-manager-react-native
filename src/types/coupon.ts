@@ -20,6 +20,8 @@ export type DecryptedCoupon = Omit<
   cvv: string | null;
   card_exp: string | null;
   is_shared_with_me?: boolean;
+  /** Read-only derived spending. Never persisted to coupon.used_value. */
+  ledger_used_value?: number;
 };
 
 export type ParsedCoupon = {

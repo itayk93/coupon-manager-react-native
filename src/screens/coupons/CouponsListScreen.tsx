@@ -51,7 +51,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { fonts, radii } from "@/lib/theme";
 import { couponRouteId } from "@/lib/entityId";
 import { daysUntil } from "@/lib/formatDate";
-import { isCouponExpired, isCouponUsed } from "@/lib/couponTotals";
+import { isCouponExpired, isCouponUsed, couponRemainingValue } from "@/lib/couponTotals";
 import { notify } from "@/lib/notify";
 import { matchesCouponSearch } from "@/lib/couponSearch";
 import { companyKey } from "@/lib/companyName";
@@ -311,7 +311,7 @@ export function CouponsListScreen() {
   const usableCoupons = useMemo(
     () =>
       coupons.filter((coupon) => {
-        const remaining = (coupon.value || 0) - (coupon.used_value || 0);
+        const remaining = couponRemainingValue(coupon);
         if (coupon.status === "נוצל" || remaining <= 0) return false;
         if (coupon.expiration && new Date(coupon.expiration).getTime() < Date.now()) return false;
         return true;
@@ -903,7 +903,7 @@ export function CouponsListScreen() {
       >
         <View style={styles.merchantResultsList}>
           {merchantResultCoupons.map((coupon) => {
-            const remaining = Math.max(0, (coupon.value || 0) - (coupon.used_value || 0));
+            const remaining = Math.max(0, couponRemainingValue(coupon));
             const match = merchantSearch.data?.matches.find((item) => item.couponId === coupon.id);
             return (
               <TouchableOpacity
