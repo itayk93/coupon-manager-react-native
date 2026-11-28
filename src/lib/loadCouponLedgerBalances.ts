@@ -16,7 +16,7 @@ export async function loadCouponLedgerBalances(coupons: DecryptedCoupon[]): Prom
       for (let from = 0; ; from += PAGE_SIZE) {
         const columns = table === "coupon_usage"
           ? "id,coupon_id,used_amount,details,action"
-          : "id,coupon_id,recharge_amount,usage_amount,location,source";
+          : "id,coupon_id,recharge_amount,usage_amount,location,source,reference_number,transaction_date";
         const { data, error } = await supabase.from(table).select(columns).in("coupon_id", ids).order("id").range(from, from + PAGE_SIZE - 1);
         if (error) throw error;
         if (table === "coupon_usage") usage.push(...((data ?? []) as unknown as Parameters<typeof withLedgerBalances>[1]));

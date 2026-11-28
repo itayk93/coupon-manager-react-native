@@ -1,3 +1,4 @@
+import { withoutVerifiedMirrors } from "./verifiedCouponTransactions";
 import type { DecryptedCoupon } from "@/types/coupon";
 import {
   isHiddenLedgerRow,
@@ -74,6 +75,8 @@ export type UsageLedgerRow = {
 };
 
 export type TransactionLedgerRow = {
+  id?: number;
+  reference_number?: string | null;
   coupon_id: number;
   transaction_date: string | null;
   usage_amount: number | null;
@@ -105,7 +108,7 @@ export function spendEvents(
     const at = row.timestamp ? Date.parse(row.timestamp) : NaN;
     if (amount > 0 && Number.isFinite(at)) dated.push({ at, amount });
   }
-  for (const row of transactions) {
+  for (const row of withoutVerifiedMirrors(transactions)) {
     if (isHiddenLedgerRow(row.location || row.source || "")) continue;
     const amount = -ledgerAmountFromTransaction(row.recharge_amount, row.usage_amount);
     const at = row.transaction_date ? Date.parse(row.transaction_date) : NaN;
